@@ -336,7 +336,11 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
           <FittedScene scene={scene} steps={stepsShown} />
           {phase === 'countdown' && (
             <div className="recorder-count" role="status" aria-live="assertive">
-              {count > 0 ? count : ''}
+              {count > 0 && (
+                <span key={count} className="recorder-count-number">
+                  {count}
+                </span>
+              )}
             </div>
           )}
         </div>

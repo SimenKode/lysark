@@ -1582,6 +1582,22 @@ describe('shapes', () => {
     expect(codesOf(result)).toEqual([]);
   });
 
+  it('imports a rectangle with a point as a sign, pointing the way it did', () => {
+    const sign = (attrs: string): string =>
+      sp({
+        xfrm: xfrm(0, 0, 40, 10, attrs),
+        spPr: `<a:prstGeom prst="homePlate"><a:avLst/></a:prstGeom>${solid(srgb('7800F0'))}`,
+        body: txBody(para('<a:r><a:t>A</a:t></a:r>')),
+      });
+    const result = shapesFrom(sign('') + sign(' flipH="1"'));
+    expect(shapesOf(result).map((shape) => [shape.geometry, shape.flipH ?? false])).toEqual([
+      ['sign', false],
+      ['sign', true],
+    ]);
+    expect(shapesOf(result)[0]!.content).toBeDefined();
+    expect(codesOf(result)).toEqual([]); // nothing was simplified, so nothing to report
+  });
+
   it('keeps the text of a shape, and turns invisible shapes into text or nothing', () => {
     const result = shapesFrom(
       sp({

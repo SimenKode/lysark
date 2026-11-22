@@ -214,7 +214,7 @@ describe.skipIf(!built)('the program, end to end', () => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] });
     }, logoPackage);
     await page.getByRole('button', { name: 'Innstillinger' }).click();
-    await page.getByRole('button', { name: 'Velg mappa med logopakka …' }).click();
+    await page.getByRole('button', { name: 'Velg mappa med logopakka' }).click();
     await expect.poll(() => page.locator('.logo-status .ok').count()).toBe(2);
     await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
     // Light surface: the purple logo, bottom left, unchanged proportions.
@@ -309,6 +309,12 @@ describe.skipIf(!built)('the program, end to end', () => {
     await player.waitForSelector('.lp-panel:not([hidden])');
     expect(await player.locator('#lp-panel-title').textContent()).toBe('Mer om A');
     expect(await player.locator('.lp-panel .lm-body img').count()).toBe(1);
+    // The box has popped out before the picture is taken.
+    await expect
+      .poll(() => player.locator('.lp-panel').evaluate((el) => getComputedStyle(el).opacity), {
+        timeout: 15_000,
+      })
+      .toBe('1');
     await shot(player, '06-spiller-laer-mer');
     await player.keyboard.press('Escape');
     await expect.poll(() => player.locator('.lp-panel').isHidden()).toBe(true);

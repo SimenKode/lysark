@@ -105,6 +105,8 @@ export interface LogoStatus {
   en: Record<LogoVariant, boolean>;
   /** Changes whenever a logo file changes, to defeat caching. */
   version: number;
+  /** USN's closing animation is in place; `seconds` is its length. */
+  closing?: { seconds: number };
 }
 
 /** True when a logo can be shown for the language (English falls back to Norwegian). */
@@ -189,6 +191,9 @@ export interface LysarkApi {
   /** Lets the owner pick the folder with USN's unpacked logo package. */
   chooseLogoFolder(): Promise<LogoStatus>;
   clearLogos(): Promise<LogoStatus>;
+  /** Lets the owner pick USN's closing animation (a video file); a copy is kept in the settings. */
+  chooseClosingAnimation(): Promise<LogoStatus>;
+  clearClosingAnimation(): Promise<LogoStatus>;
   showInFolder(path: string): Promise<void>;
   /** Tells the main process whether there are unsaved changes. */
   setDocumentState(state: { dirty: boolean; title: string }): void;
@@ -205,6 +210,11 @@ export function mediaUrl(file: string): string {
 /** URL of one of the owner's logo files. */
 export function logoUrl(language: LogoLanguage, variant: LogoVariant, version: number): string {
   return `lysark-media://brand/${language}-${variant}?v=${version}`;
+}
+
+/** URL of USN's closing animation, from the owner's settings. */
+export function closingUrl(version: number): string {
+  return `lysark-media://brand/closing?v=${version}`;
 }
 
 /** Address the interface uses to show a gallery picture; the main process fetches it. */

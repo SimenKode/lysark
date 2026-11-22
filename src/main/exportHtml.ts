@@ -11,7 +11,7 @@ import { hasSound } from '../shared/render/clock';
 import { encodeSceneSound, sampleReader } from './audio';
 import { requireFfmpeg } from './ffmpeg';
 import { mediaPath } from './projectIo';
-import { logoFile } from './settings';
+import { closingAnimation, logoFile } from './settings';
 
 const FONT_FILES: Record<FontFace, string> = {
   'sans-regular': 'LiberationSans-Regular.ttf',
@@ -77,7 +77,9 @@ function sources(
     const file = logoFile(project.meta.language, variant);
     if (file) logo[variant] = { mime: file.mime, data: readFileSync(file.file) };
   }
+  const film = closingAnimation();
   return {
+    ...(film ? { closing: { mime: film.mime, data: readFileSync(film.file) } } : {}),
     playerJs: readFileSync(join(__dirname, '../player/player.js'), 'utf8'),
     readFont: (face) => readFileSync(join(app.getAppPath(), 'resources/fonts', FONT_FILES[face])),
     readAsset: (file) => generated.get(file) ?? readFileSync(mediaPath(dir, file)),

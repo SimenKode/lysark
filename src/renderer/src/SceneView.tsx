@@ -2,7 +2,7 @@
 // not changed are kept between renders, so images do not reload while the
 // owner edits something else.
 import { memo, useLayoutEffect, useRef } from 'react';
-import { hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
+import { closingUrl, hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
 import { sceneState } from '../../shared/render/timeline';
@@ -26,6 +26,7 @@ export function renderContext(project: Project, logo: LogoStatus): RenderContext
       dark: hasLogo(logo, language, 'dark') ? logoUrl(language, 'dark', logo.version) : undefined,
     },
     strings: SCENE_STRINGS[project.meta.language],
+    closing: logo.closing ? closingUrl(logo.version) : undefined,
   };
 }
 

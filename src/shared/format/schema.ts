@@ -10,8 +10,10 @@ export const FORMAT_NAME = 'lysark';
  * 3: shapes can carry their own stroke width.
  * 4: slides can carry sound (a recording as a list of clips); assets can be
  *    sound files; the project carries its choices for video export.
+ * 5: the "sign" shape (a rectangle with a point); a closing slide can play
+ *    the brand's closing animation.
  */
-export const FORMAT_VERSION = 4;
+export const FORMAT_VERSION = 5;
 
 export { STAGE } from './constants';
 
@@ -246,7 +248,12 @@ export type ImageElement = z.infer<typeof ImageElement>;
 
 /** The thinnest and thickest stroke a shape can be given. */
 export const STROKE_WIDTH = { min: 1, max: 60 } as const;
-export const SHAPE_GEOMETRIES = ['rect', 'roundRect', 'ellipse', 'line', 'arrow'] as const;
+/**
+ * "sign" is a rectangle with a point on one side, like a road sign that
+ * points the way (PowerPoint's "homePlate"). It points right, or left when
+ * `flipH` is set.
+ */
+export const SHAPE_GEOMETRIES = ['rect', 'roundRect', 'ellipse', 'sign', 'line', 'arrow'] as const;
 export const ShapeElement = z.object({
   ...elementBase,
   type: z.literal('shape'),
@@ -258,7 +265,7 @@ export const ShapeElement = z.object({
    * of an arrow grows with it. When absent the theme's thickness is used.
    */
   strokeWidth: z.number().min(STROKE_WIDTH.min).max(STROKE_WIDTH.max).optional(),
-  /** For line and arrow: which diagonal of the box, and the arrow direction. */
+  /** For line and arrow: which diagonal of the box, and the arrow direction. For sign: the point is on the left. */
   flipH: z.boolean().optional(),
   flipV: z.boolean().optional(),
   content: RichText.optional(),
@@ -427,6 +434,13 @@ export const Scene = z.object({
    * video and in "Spill av". A slide without one stands for a default time.
    */
   audio: SceneAudio.optional(),
+  /**
+   * The slide plays the brand's closing animation by itself when it is
+   * shown: once, without controls and without sound. The film is the
+   * owner's own file, kept in the program's settings like the logo and
+   * never in a project; only its length, in seconds, is stored here.
+   */
+  closingAnimation: z.object({ seconds: z.number().positive().max(120) }).optional(),
   imported: z
     .object({ slide: z.number().int().min(1), warnings: z.array(ImportWarning) })
     .optional(),

@@ -3,7 +3,7 @@
 // which moment to draw, and takes a picture of the result. The picture is
 // a pure function of (project, theme, time): the same render code as the
 // editor and the HTML player, driven by the shared clock.
-import { hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
+import { closingUrl, hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Project, Scene } from '../../shared/format/schema';
 import {
   VIDEO_SIZE,
@@ -51,8 +51,9 @@ style.textContent = `${STAGE_CSS}
 html, body { margin: 0; overflow: hidden; background: #000; }
 #frame { position: relative; width: ${VIDEO_SIZE.width}px; height: ${VIDEO_SIZE.height}px; overflow: hidden; }
 #frame > .layer { position: absolute; inset: 0; }
-/* A video cannot open a panel: no "+" marks and no "Lær mer" buttons. */
+/* A video cannot open a panel: no "+" marks, no rings and no "Lær mer" buttons. */
 .ls-more-badge, .ls-el-deepdive { display: none !important; }
+.ls-more-ring > .ls-image { outline: none !important; }
 `;
 document.head.appendChild(style);
 
@@ -139,7 +140,23 @@ async function place(
   }
   applySceneState(el, sceneStateAt(job!.scenes[index]!, t));
   layer.style.opacity = String(opacity);
+  await seekFilm(el, t);
   return false;
+}
+
+/** Shows the picture of the closing animation that belongs to time `t` on its slide. */
+async function seekFilm(el: HTMLElement, t: number): Promise<void> {
+  const film = el.querySelector<HTMLVideoElement>('video.ls-closing');
+  if (!film || !Number.isFinite(film.duration)) return;
+  const target = Math.max(0, Math.min(film.duration - 0.001, t));
+  if (Math.abs(film.currentTime - target) < 0.001) return;
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      film.addEventListener('seeked', () => resolve(), { once: true });
+      film.currentTime = target;
+    }),
+    timeout(4000),
+  ]);
 }
 
 window.lysarkFrame = {
@@ -169,6 +186,7 @@ window.lysarkFrame = {
         dark: hasLogo(logo, language, 'dark') ? logoUrl(language, 'dark', logo.version) : undefined,
       },
       strings: SCENE_STRINGS[language],
+      closing: logo.closing ? closingUrl(logo.version) : undefined,
     };
     await document.fonts.ready;
   },

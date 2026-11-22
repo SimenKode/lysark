@@ -4,7 +4,13 @@
 import type { Element as SceneElement, Project, Scene } from '../shared/format/schema';
 import { PALETTE } from '../shared/theme/palette';
 import { getTheme, sceneSurface } from '../shared/theme/theme';
-import { collectCredits, renderCredit, renderMore } from '../shared/render/more';
+import {
+  collectCredits,
+  placePopover,
+  popoverWidth,
+  renderCredit,
+  renderMore,
+} from '../shared/render/more';
 import {
   SCENE_STRINGS,
   activateWebFrames,
@@ -32,10 +38,15 @@ export interface PlayerAssetRef {
   href?: string;
 }
 
+/** Where the exported file keeps the brand's closing animation (base64). */
+export const CLOSING_SCRIPT_ID = 'ls-brand-closing';
+
 export interface PlayerData {
   project: Project;
   assets: Record<string, PlayerAssetRef>;
   logo: { light?: string; dark?: string };
+  /** The brand's closing animation lies in the file, with this type. */
+  closing?: { mime: string };
 }
 
 type Attrs = Record<string, string | boolean | undefined>;
@@ -105,7 +116,17 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     assetUrl,
     logo: data.logo,
     strings: SCENE_STRINGS[lang],
+    closing: closingFilm(),
   };
+
+  /** The address of the closing animation that lies in the file, if it does. */
+  function closingFilm(): string | undefined {
+    const holder = data.closing ? document.getElementById(CLOSING_SCRIPT_ID) : null;
+    if (!data.closing || !holder?.textContent) return undefined;
+    return URL.createObjectURL(
+      new Blob([decodeBase64(holder.textContent)], { type: data.closing.mime }),
+    );
+  }
 
   const sceneTitle = (scene: Scene, index: number): string =>
     scene.title.trim() || t.untitled(index + 1);
@@ -115,6 +136,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   let stepsShown = 0;
   let frame = 0;
   let moreOpener: HTMLElement | null = null;
+  /** The slide that is on screen, to know which way a change goes. */
+  let shownIndex = 0;
   const rendered = new Map<string, HTMLElement>();
   /** "Spill av": the voice plays, and steps and slides follow it. */
   let playing = false;
@@ -353,6 +376,41 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     stage.style.transform = `scale(${scale})`;
     // The "+" mark is 56 px on the stage; on screen it never gets smaller than 28 px.
     stage.style.setProperty('--ls-badge-scale', String(Math.max(1, 28 / (56 * scale))));
+    placePanel();
+  }
+
+  /**
+   * Puts the "Lær mer" box beside the element it belongs to. The box lies on
+   * top of the slide; the slide keeps its size and its place.
+   */
+  function placePanel(): void {
+    if (panel.hidden || !moreOpener || panel.classList.contains('lp-panel-wide')) return;
+    const body = panel.parentElement!.getBoundingClientRect();
+    // The box keeps to the slide's own area, so the round arrows stay free.
+    const area = viewport.getBoundingClientRect();
+    const owner = moreOpener.closest<HTMLElement>('[data-el]') ?? moreOpener;
+    const anchor = owner.getBoundingClientRect();
+    const mark = moreOpener.getBoundingClientRect();
+    const width = popoverWidth(
+      { left: anchor.left - area.left, right: anchor.right - area.left },
+      area.width,
+    );
+    panel.style.setProperty('--lp-pop-w', `${width}px`);
+    panel.style.setProperty('--lp-pop-h', `${area.height - 32}px`);
+    const place = placePopover(
+      {
+        left: anchor.left - area.left,
+        top: anchor.top - area.top,
+        right: anchor.right - area.left,
+        bottom: anchor.bottom - area.top,
+      },
+      { x: mark.left + mark.width / 2 - area.left, y: mark.top + mark.height / 2 - area.top },
+      { width: area.width, height: area.height },
+      { width, height: Math.min(panel.offsetHeight, area.height - 32) },
+    );
+    panel.style.setProperty('--lp-pop-x', `${place.left + area.left - body.left}px`);
+    panel.style.setProperty('--lp-pop-y', `${place.top + area.top - body.top}px`);
+    panel.style.transformOrigin = `${place.originX}px ${place.originY}px`;
   }
 
   function animateStep(scene: Scene, el: HTMLElement): void {
@@ -383,6 +441,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const changed = stage.firstElementChild !== el;
 
     if (changed) {
+      // The new slide glides in from the side one is going towards.
+      el.classList.remove('lp-enter-next', 'lp-enter-prev');
+      if (stage.firstElementChild) {
+        el.classList.add(index >= shownIndex ? 'lp-enter-next' : 'lp-enter-prev');
+      }
+      shownIndex = index;
       if (previous) {
         for (const video of Array.from(stage.querySelectorAll('video'))) video.pause();
         // A scene where web content was fetched is drawn afresh next time,
@@ -394,6 +458,23 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       // A YouTube video the owner has put on the slide is fetched now, when
       // the slide is shown, and never before.
       activateWebFrames(el);
+      // The closing animation starts by itself, from its beginning, once.
+      // It has no sound, so the browser lets it. For those who have asked
+      // for less motion, its last picture stands instead.
+      const film = el.querySelector<HTMLVideoElement>('video.ls-closing');
+      if (film) {
+        if (reducedMotion) {
+          const toEnd = (): void => {
+            if (Number.isFinite(film.duration))
+              film.currentTime = Math.max(0, film.duration - 0.05);
+          };
+          if (film.readyState >= 1) toEnd();
+          else film.addEventListener('loadedmetadata', toEnd, { once: true });
+        } else {
+          film.currentTime = 0;
+          void film.play().catch(() => undefined);
+        }
+      }
       viewport.style.background = PALETTE[sceneSurface(theme, scene)];
       viewport.setAttribute(
         'aria-label',
@@ -574,8 +655,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     panel.hidden = false;
     panel.scrollTop = 0;
     opener.setAttribute('aria-expanded', 'true');
-    fit();
-    panelTitle.focus();
+    placePanel();
+    // The box pops out of the mark each time it is opened.
+    panel.classList.remove('lp-pop-in');
+    void panel.offsetWidth;
+    panel.classList.add('lp-pop-in');
+    panelTitle.focus({ preventScroll: true });
   }
 
   function closeMore(restoreFocus: boolean): void {
@@ -588,7 +673,6 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     moreOpener?.setAttribute('aria-expanded', 'false');
     if (restoreFocus) moreOpener?.focus();
     moreOpener = null;
-    fit();
   }
 
   function toggleFullscreen(): void {
@@ -623,6 +707,9 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         if (!panel.hidden && moreOpener === opener) closeMore(true);
         else openMore(element, opener);
       }
+    } else if (!panel.hidden && !panel.contains(target) && viewport.contains(target)) {
+      // A click on the slide beside the box puts the box away.
+      closeMore(false);
     }
     // A click on the slide itself does nothing: slides hold things to click
     // on. The arrows, the keyboard and a swipe go on.
@@ -789,6 +876,13 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   });
 
   new ResizeObserver(fit).observe(viewport);
+  // The box grows when its pictures arrive; it is then put in place again.
+  new ResizeObserver(placePanel).observe(panel);
+  for (const node of [stage, root]) {
+    node.addEventListener('animationend', (event) => {
+      (event.target as HTMLElement).classList?.remove('lp-enter-next', 'lp-enter-prev');
+    });
+  }
   fit();
 
   const fromHash = parseInt(location.hash.replace('#', ''), 10);

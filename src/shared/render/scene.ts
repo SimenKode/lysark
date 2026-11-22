@@ -64,6 +64,8 @@ export interface SceneStrings {
   creditSource: string;
   creditCropped: string;
   logoAlt: string;
+  /** What the closing animation is, for those who cannot see it. */
+  closingAlt: string;
 }
 
 export interface RenderContext {
@@ -75,6 +77,8 @@ export interface RenderContext {
   assetUrl: (assetId: string) => string | undefined;
   /** URLs of USN's original logo files, when the owner has supplied them. */
   logo: { light?: string; dark?: string };
+  /** URL of USN's closing animation, when the owner has supplied it. */
+  closing?: string;
   strings: SceneStrings;
 }
 
@@ -176,6 +180,14 @@ export function arrowHeadLength(strokeWidth: number): number {
   return strokeWidth * 3 + 6;
 }
 
+/** The side margin of text in a shape when the shape has none of its own (see .ls-shape-content). */
+const SHAPE_TEXT_MARGIN = 14;
+
+/** How far the point of a sign reaches in from its end: half the short side, as in PowerPoint. */
+export function signPoint(w: number, h: number): number {
+  return Math.min(Math.min(w, h) / 2, w * 0.6);
+}
+
 function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): Node {
   const { doc, theme } = ctx;
   const { w, h } = el.box;
@@ -231,7 +243,20 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
     fill,
     ...(outlined ? { stroke: lineColor, 'stroke-width': sw } : {}),
   };
-  if (el.geometry === 'ellipse') {
+  const point = el.geometry === 'sign' ? signPoint(w, h) : 0;
+  if (el.geometry === 'sign') {
+    // A rectangle with a point: flat end, two long sides, and the point.
+    const corners = [
+      [inset, inset],
+      [w - point, inset],
+      [w - inset, h / 2],
+      [w - point, h - inset],
+      [inset, h - inset],
+    ].map(([x, y]) => `${el.flipH ? w - x! : x},${y}`);
+    root.appendChild(
+      svg(doc, 'polygon', { points: corners.join(' '), 'stroke-linejoin': 'round', ...common }),
+    );
+  } else if (el.geometry === 'ellipse') {
     root.appendChild(
       svg(doc, 'ellipse', {
         cx: w / 2,
@@ -271,6 +296,12 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
     if (el.textInset) {
       const { l, t, r, b } = el.textInset;
       content.style.padding = `${t}px ${r}px ${b}px ${l}px`;
+    }
+    // The text of a sign keeps clear of its point.
+    if (point && !el.textRotation) {
+      const side = el.flipH ? 'paddingLeft' : 'paddingRight';
+      const own = (el.flipH ? el.textInset?.l : el.textInset?.r) ?? SHAPE_TEXT_MARGIN;
+      content.style[side] = `${own + point * 0.7}px`;
     }
     if (el.textRotation) {
       // A text area with width and height swapped, turned about the shape's centre.
@@ -804,6 +835,28 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
 
   if (scene.decoration) root.appendChild(renderDecoration(ctx, scene, surface));
 
+  // The brand's closing animation: a film that fills the slide, with no
+  // controls and no sound. The player starts it when the slide is shown;
+  // while editing, its last picture stands. Without the owner's file there
+  // is nothing to show, and nothing is put in its place.
+  if (scene.closingAnimation && ctx.closing) {
+    const film = doc.createElement('video');
+    film.className = 'ls-closing';
+    film.src = ctx.closing;
+    film.muted = true;
+    film.playsInline = true;
+    film.preload = 'auto';
+    film.disablePictureInPicture = true;
+    film.setAttribute('aria-label', ctx.strings.closingAlt);
+    film.tabIndex = -1;
+    if (ctx.mode === 'edit') {
+      film.addEventListener('loadedmetadata', () => {
+        if (Number.isFinite(film.duration)) film.currentTime = Math.max(0, film.duration - 0.05);
+      });
+    }
+    root.appendChild(film);
+  }
+
   const zIndex = new Map(scene.elements.map((el, i) => [el.id, i + 1]));
   for (const el of readingOrder(scene.elements)) {
     const wrap = doc.createElement('div');
@@ -821,6 +874,14 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     if (more) {
       // The mark comes right after the element, also in reading and tab order.
       wrap.classList.add('ls-has-more');
+      if (el.type === 'image') {
+        // A picture that has more to tell gets a ring, so it is seen to be something to press.
+        wrap.classList.add('ls-more-ring');
+        wrap.style.setProperty(
+          '--ls-more-ring',
+          PALETTE[isDarkSurface(surface) ? 'hvit' : 'lilla'],
+        );
+      }
       wrap.appendChild(renderMoreBadge(ctx, surface, el, more));
     }
     root.appendChild(wrap);
@@ -865,6 +926,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     creditSource: 'Kilde',
     creditCropped: 'beskåret',
     logoAlt: 'Universitetet i Sørøst-Norge',
+    closingAlt: 'Universitetet i Sørøst-Norge: avslutningsanimasjon med logoen',
   },
   en: {
     deepDive: 'Learn more',
@@ -888,5 +950,6 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     creditSource: 'Source',
     creditCropped: 'cropped',
     logoAlt: 'University of South-Eastern Norway',
+    closingAlt: 'University of South-Eastern Norway: closing animation with the logo',
   },
 };

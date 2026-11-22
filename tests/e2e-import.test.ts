@@ -101,7 +101,7 @@ describe.skipIf(!built)('importing a PowerPoint file, end to end', () => {
   });
 
   it('imports, creates the project folder and shows the report', async () => {
-    await page.getByRole('button', { name: 'Importer PowerPoint …' }).click();
+    await page.getByRole('button', { name: 'Importer PowerPoint' }).click();
     await page.waitForSelector('dialog.dialog[open]');
     const report = (await page.locator('dialog.dialog').textContent()) ?? '';
     expect(report).toContain('Testimport.pptx');

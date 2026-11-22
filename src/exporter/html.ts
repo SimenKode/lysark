@@ -6,7 +6,7 @@ import { INLINE_VIDEO_LIMIT_BYTES } from '../shared/limits';
 import { MORE_CSS, STAGE_CSS } from '../shared/render/css';
 import { moreAssets } from '../shared/render/more';
 import { PLAYER_CSS } from '../player/css';
-import type { PlayerAssetRef, PlayerData } from '../player/player';
+import { CLOSING_SCRIPT_ID, type PlayerAssetRef, type PlayerData } from '../player/player';
 
 export type FontFace =
   | 'sans-regular'
@@ -32,6 +32,8 @@ export interface ExportSources {
   /** Reads an asset's bytes from the project's media folder. */
   readAsset: (file: string) => Uint8Array;
   logo: { light?: { mime: string; data: Uint8Array }; dark?: { mime: string; data: Uint8Array } };
+  /** USN's closing animation, when the owner has supplied it. */
+  closing?: { mime: string; data: Uint8Array };
   /**
    * Where a video that is not inlined will be reachable from the HTML file.
    * Returning undefined means it cannot be placed, and it is inlined anyway.
@@ -170,6 +172,14 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
     if (file) logo[variant] = `data:${file.mime};base64,${base64(file.data)}`;
   }
   const wantsLogo = project.scenes.some((s) => s.showLogo);
+  // The closing animation is written into the file once, when a slide plays it.
+  const closing = project.scenes.some((s) => s.closingAnimation) ? sources.closing : undefined;
+  if (closing) {
+    inlinedBytes += closing.data.byteLength;
+    assetScripts.push(
+      `<script type="application/base64" id="${CLOSING_SCRIPT_ID}">${base64(closing.data)}</script>`,
+    );
+  }
 
   const fontCss = usedFonts(project)
     .map((face) => {
@@ -178,7 +188,12 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
     })
     .join('\n');
 
-  const data: PlayerData = { project, assets, logo };
+  const data: PlayerData = {
+    project,
+    assets,
+    logo,
+    ...(closing ? { closing: { mime: closing.mime } } : {}),
+  };
   // No script may load from elsewhere and nothing may phone home. A frame
   // is only ever created when the viewer presses "play" on web content the
   // author has put in, and then only over https.

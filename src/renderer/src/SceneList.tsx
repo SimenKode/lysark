@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { newScene } from '../../shared/format/factory';
 import type { SceneKind } from '../../shared/format/schema';
+import { Icon } from './Icon';
 import { SceneView } from './SceneView';
-import { KIND_NAMES, cloneScene } from './ops';
+import { KIND_NAMES, cloneScene, playClosingAnimation } from './ops';
 import { useStore } from './store';
 
 const STAGE_WIDTH = 1920;
@@ -42,6 +43,8 @@ export function SceneList() {
 
   const add = (kind: SceneKind): void => {
     const scene = newScene(kind);
+    // A new closing slide plays USN's closing animation when the owner has supplied it.
+    if (kind === 'closing' && logo.closing) playClosingAnimation(scene, logo.closing.seconds);
     update((draft) => {
       draft.scenes.splice(index + 1, 0, scene);
     });
@@ -95,10 +98,11 @@ export function SceneList() {
         <div className="menu-anchor">
           <button
             type="button"
-            className="strong"
+            className="strong with-icon"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(!menuOpen)}
           >
+            <Icon name="plus" />
             Nytt lysark
           </button>
           {menuOpen && (
@@ -111,27 +115,45 @@ export function SceneList() {
             </div>
           )}
         </div>
-        <button type="button" title="Lag kopi av lysarket" disabled={index < 0} onClick={duplicate}>
-          Kopi
+        <button
+          type="button"
+          className="icon-only"
+          aria-label="Lag kopi av lysarket"
+          title="Lag kopi av lysarket"
+          disabled={index < 0}
+          onClick={duplicate}
+        >
+          <Icon name="copy" />
         </button>
         <button
           type="button"
+          className="icon-only"
+          aria-label="Flytt lysarket opp"
           title="Flytt lysarket opp"
           disabled={index <= 0}
           onClick={() => move(-1)}
         >
-          ↑
+          <Icon name="up" />
         </button>
         <button
           type="button"
+          className="icon-only"
+          aria-label="Flytt lysarket ned"
           title="Flytt lysarket ned"
           disabled={index < 0 || index >= project.scenes.length - 1}
           onClick={() => move(1)}
         >
-          ↓
+          <Icon name="down" />
         </button>
-        <button type="button" title="Slett lysarket" disabled={index < 0} onClick={remove}>
-          Slett
+        <button
+          type="button"
+          className="icon-only danger"
+          aria-label="Slett lysarket"
+          title="Slett lysarket"
+          disabled={index < 0}
+          onClick={remove}
+        >
+          <Icon name="trash" />
         </button>
       </div>
       <ol ref={list} onKeyDown={onKeyDown}>

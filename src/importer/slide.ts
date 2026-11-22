@@ -106,6 +106,8 @@ const SHAPE_GEOMETRY: Record<string, ShapeElement['geometry']> = {
   flowChartAlternateProcess: 'roundRect',
   ellipse: 'ellipse',
   flowChartConnector: 'ellipse',
+  // A rectangle with a point, used as a label that points at something.
+  homePlate: 'sign',
 };
 
 /** Block arrows become plain arrows through the middle of their box. */
@@ -749,6 +751,8 @@ class SlideImporter {
       stroke: fill.kind === 'none' && line.kind === 'color' ? line.hex : undefined,
       content: text.isEmpty ? undefined : text,
       bodyProperties,
+      // A sign that is mirrored points the other way.
+      ...(geometry === 'sign' && placed.flipH ? { flipH: true } : {}),
     });
   }
 

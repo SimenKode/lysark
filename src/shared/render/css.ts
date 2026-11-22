@@ -152,6 +152,9 @@ button.ls-webvideo-play { cursor: pointer; }
   transform: scale(var(--ls-badge-scale, 1));
 }
 button.ls-more-badge { cursor: pointer; }
+/* The closing animation fills the slide, behind anything else on it. */
+.ls-closing { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.ls-more-ring > .ls-image { outline: 6px solid var(--ls-more-ring); outline-offset: 0; }
 `;
 
 /**

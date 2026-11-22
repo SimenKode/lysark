@@ -35,6 +35,7 @@ import {
   deleteElements,
   describeElement,
   describeMore,
+  playClosingAnimation,
   removeFromSteps,
   reorderElement,
   stepOf,
@@ -381,7 +382,7 @@ function ImageFields({ el }: { el: Extract<Element, { type: 'image' }> }) {
       )}
       <div className="button-row">
         <button type="button" onClick={() => void replaceImage(el.id)}>
-          Bytt bilde …
+          Bytt bilde
         </button>
       </div>
     </>
@@ -421,6 +422,22 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
           ))}
         </select>
       </Field>
+      {el.geometry === 'sign' && (
+        <Field label="Spissen peker mot">
+          <select
+            value={el.flipH ? 'left' : 'right'}
+            onChange={(e) =>
+              update<typeof el>((s) => {
+                if (e.target.value === 'left') s.flipH = true;
+                else delete s.flipH;
+              })
+            }
+          >
+            <option value="right">Høyre</option>
+            <option value="left">Venstre</option>
+          </select>
+        </Field>
+      )}
       {!line && (
         <Swatches
           label="Fyll"
@@ -591,7 +608,7 @@ function YouTubeStill(props: {
             });
           }}
         >
-          {fetching ? 'Henter …' : props.has ? 'Hent forhåndsbilde på nytt' : 'Hent forhåndsbilde'}
+          {fetching ? 'Henter' : props.has ? 'Hent forhåndsbilde på nytt' : 'Hent forhåndsbilde'}
         </button>
         {props.has && (
           <button type="button" onClick={props.onRemove}>
@@ -706,7 +723,7 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
                 })
               }
             >
-              Bytt videofil …
+              Bytt videofil
             </button>
           </div>
         </>
@@ -736,7 +753,7 @@ function MoreFields({ el }: { el: Element }) {
         <p className="hint">{describeMore(el.more)}</p>
         <div className="button-row">
           <button type="button" className="strong" onClick={() => openBuilder(el.id)}>
-            Bygg innholdet …
+            Bygg innholdet
           </button>
         </div>
       </>
@@ -753,7 +770,7 @@ function MoreFields({ el }: { el: Element }) {
           </p>
           <div className="button-row">
             <button type="button" onClick={() => openBuilder(el.id)}>
-              Rediger «Lær mer» …
+              Rediger «Lær mer»
             </button>
             <button
               type="button"
@@ -776,7 +793,7 @@ function MoreFields({ el }: { el: Element }) {
           </p>
           <div className="button-row">
             <button type="button" onClick={() => openBuilder(el.id)}>
-              Legg til «Lær mer» …
+              Legg til «Lær mer»
             </button>
           </div>
         </>
@@ -942,6 +959,43 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
             Bytt former
           </button>
         </div>
+      )}
+      {scene.kind === 'closing' && (
+        <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={!!scene.closingAnimation}
+              disabled={!logo.closing && !scene.closingAnimation}
+              onChange={(e) =>
+                updateScene((s) => {
+                  if (e.target.checked && logo.closing) {
+                    playClosingAnimation(s, logo.closing.seconds);
+                  } else {
+                    delete s.closingAnimation;
+                  }
+                })
+              }
+            />
+            Spill USNs avslutningsanimasjon når lysarket vises
+          </label>
+          {!logo.closing ? (
+            <p className="warning">
+              USNs avslutningsanimasjon er ikke valgt ennå.{' '}
+              <button type="button" className="link-button" onClick={onLogo}>
+                Velg videofila
+              </button>
+            </p>
+          ) : (
+            scene.closingAnimation && (
+              <p className="hint">
+                Animasjonen starter av seg selv, uten knapper og uten lyd, og varer{' '}
+                {Math.round(scene.closingAnimation.seconds)} sekunder. Her i redigeringen ser du det
+                siste bildet.
+              </p>
+            )
+          )}
+        </>
       )}
       <label className="check">
         <input

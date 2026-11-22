@@ -44,21 +44,31 @@ export function sceneState(scene: Scene, stepsShown: number, elapsed: number): M
   return state;
 }
 
-/** Applies a state to a rendered scene. */
+/** How far below its place (in stage pixels) an element starts when it glides in. */
+export const STEP_RISE = 28;
+
+/**
+ * Applies a state to a rendered scene. An element that is on its way in is
+ * partly see-through and glides up the last bit to its place.
+ */
 export function applySceneState(sceneEl: Element, state: Map<string, number>): void {
   for (const el of Array.from(sceneEl.querySelectorAll<HTMLElement>('[data-el]'))) {
     const opacity = state.get(el.dataset.el!);
     if (opacity === undefined || opacity >= 1) {
       el.style.opacity = '';
       el.style.visibility = '';
+      el.style.translate = '';
       el.removeAttribute('aria-hidden');
     } else if (opacity <= 0) {
       el.style.opacity = '0';
       el.style.visibility = 'hidden';
+      el.style.translate = '';
       el.setAttribute('aria-hidden', 'true');
     } else {
       el.style.opacity = String(opacity);
       el.style.visibility = '';
+      // "translate" is its own property, so an element that is turned keeps its turn.
+      el.style.translate = `0 ${((1 - opacity) * STEP_RISE).toFixed(2)}px`;
       el.removeAttribute('aria-hidden');
     }
   }

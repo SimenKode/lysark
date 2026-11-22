@@ -10,7 +10,8 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { extname, join } from 'node:path';
 import type { LogoLanguage, LogoStatus, LogoVariant } from '../shared/api';
 
 interface LogoFile {
@@ -24,6 +25,8 @@ interface Settings {
   logo: Partial<Record<LogoKey, LogoFile>>;
   logoVersion: number;
   recent: string[];
+  /** USN's closing animation, as the owner supplied it; `seconds` is its length. */
+  closing?: LogoFile & { seconds: number; sha256: string };
 }
 
 /**
@@ -61,6 +64,7 @@ function load(): Settings {
     logo: loaded.logo ?? {},
     logoVersion: loaded.logoVersion ?? 0,
     recent: Array.isArray(loaded.recent) ? loaded.recent : [],
+    closing: loaded.closing,
   };
   return cache;
 }
@@ -76,11 +80,59 @@ function stored(key: LogoKey): LogoFile | undefined {
 }
 
 export function logoStatus(): LogoStatus {
+  const closing = closingAnimation();
   return {
     nb: { light: !!stored('nb-light'), dark: !!stored('nb-dark') },
     en: { light: !!stored('en-light'), dark: !!stored('en-dark') },
     version: load().logoVersion,
+    ...(closing ? { closing: { seconds: closing.seconds } } : {}),
   };
+}
+
+const CLOSING_MIME: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+};
+export const CLOSING_EXTENSIONS = Object.keys(CLOSING_MIME).map((e) => e.slice(1));
+
+/** USN's closing animation, when the owner has supplied it. */
+export function closingAnimation(): (LogoFile & { seconds: number; sha256: string }) | undefined {
+  const closing = load().closing;
+  return closing && existsSync(closing.file) ? closing : undefined;
+}
+
+/**
+ * Stores a copy of the closing animation, byte for byte, in the program's
+ * own settings folder. Like the logo it is never altered and never put in a
+ * project or in git. `seconds` is its length, measured by the caller.
+ */
+export function setClosingAnimation(source: string, seconds: number): void {
+  const mime = CLOSING_MIME[extname(source).toLowerCase()];
+  if (!mime) throw new Error('Avslutningsanimasjonen må være en MP4- eller WebM-fil.');
+  if (!(seconds > 0)) throw new Error('Videofila kan ikke leses.');
+  const data = readFileSync(source);
+  mkdirSync(brandDir(), { recursive: true });
+  const s = load();
+  if (s.closing) rmSync(s.closing.file, { force: true });
+  const target = join(brandDir(), `avslutning${extname(source).toLowerCase()}`);
+  writeFileSync(target, data);
+  s.closing = {
+    file: target,
+    mime,
+    seconds,
+    sha256: createHash('sha256').update(data).digest('hex'),
+  };
+  s.logoVersion += 1;
+  save();
+}
+
+export function clearClosingAnimation(): void {
+  const s = load();
+  if (s.closing) rmSync(s.closing.file, { force: true });
+  delete s.closing;
+  s.logoVersion += 1;
+  save();
 }
 
 /**

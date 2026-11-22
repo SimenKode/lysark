@@ -6,6 +6,7 @@ import type { ShapeElement, TextRole } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
 import { formatTime, sceneDuration } from '../../shared/render/clock';
 import { AudioPanel } from './AudioPanel';
+import { Icon } from './Icon';
 import { ImportReportDialog, PdfImportDialog, SettingsDialog } from './Dialogs';
 import { Inspector } from './Inspector';
 import { MediaDialog } from './MediaDialog';
@@ -68,17 +69,21 @@ function Welcome() {
           og en video med stemmen din, i USNs visuelle profil.
         </p>
         <div className="welcome-actions">
-          <button type="button" className="strong big" onClick={() => void importPptx()}>
-            Importer PowerPoint …
+          <button type="button" className="strong big with-icon" onClick={() => void importPptx()}>
+            <Icon name="slides" />
+            Importer PowerPoint
           </button>
-          <button type="button" className="big" onClick={() => void importPdf()}>
-            Importer PDF …
+          <button type="button" className="big with-icon" onClick={() => void importPdf()}>
+            <Icon name="pdf" />
+            Importer PDF
           </button>
-          <button type="button" className="big" onClick={() => void openProject()}>
-            Åpne prosjekt …
+          <button type="button" className="big with-icon" onClick={() => void openProject()}>
+            <Icon name="folder" />
+            Åpne prosjekt
           </button>
-          <button type="button" className="big" onClick={() => void newProject()}>
-            Nytt, tomt prosjekt …
+          <button type="button" className="big with-icon" onClick={() => void newProject()}>
+            <Icon name="newFile" />
+            Nytt, tomt prosjekt
           </button>
         </div>
         {recent.length > 0 && (
@@ -128,44 +133,63 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
       <div className="topbar-actions">
         <button
           type="button"
+          className="icon-only"
           onClick={() => useStore.getState().undo()}
           disabled={!canUndo}
+          aria-label="Angre"
           title="Angre (Ctrl+Z)"
         >
-          Angre
+          <Icon name="undo" />
         </button>
         <button
           type="button"
+          className="icon-only"
           onClick={() => useStore.getState().redo()}
           disabled={!canRedo}
+          aria-label="Gjør om"
           title="Gjør om (Ctrl+Shift+Z)"
         >
-          Gjør om
+          <Icon name="redo" />
         </button>
         <span className="gap" />
-        <button type="button" onClick={() => void save()} title="Lagre (Ctrl+S)">
+        <button
+          type="button"
+          className="with-icon"
+          onClick={() => void save()}
+          title="Lagre (Ctrl+S)"
+        >
+          <Icon name="save" />
           {dirty ? 'Lagre •' : 'Lagret'}
         </button>
-        <button type="button" onClick={onSettings}>
+        <button type="button" className="with-icon" onClick={onSettings}>
+          <Icon name="settings" />
           Innstillinger
         </button>
-        <button type="button" onClick={() => void preview()} title="Forhåndsvis (F5)">
+        <button
+          type="button"
+          className="with-icon"
+          onClick={() => void preview()}
+          title="Forhåndsvis (F5)"
+        >
+          <Icon name="eye" />
           Forhåndsvis
         </button>
         <button
           type="button"
-          className="strong"
+          className="strong with-icon"
           onClick={() => void exportHtml()}
           title="Eksporter HTML (Ctrl+E)"
         >
+          <Icon name="export" />
           Eksporter HTML
         </button>
         <button
           type="button"
-          className="strong"
+          className="strong with-icon"
           onClick={() => useStore.getState().setVideoDialog(true)}
-          title="Eksporter video (Ctrl+Shift+E)"
+          title="Eksporter video eller GIF (Ctrl+Shift+E)"
         >
+          <Icon name="film" />
           Eksporter video
         </button>
       </div>
@@ -195,7 +219,13 @@ function InsertBar() {
     <div className="insertbar" role="toolbar" aria-label="Sett inn">
       <span className="bar-label">Sett inn</span>
       <div className="menu-anchor">
-        <button type="button" aria-expanded={menu === 'text'} onClick={toggle('text')}>
+        <button
+          type="button"
+          className="with-icon"
+          aria-expanded={menu === 'text'}
+          onClick={toggle('text')}
+        >
+          <Icon name="text" />
           Tekst
         </button>
         {menu === 'text' && (
@@ -213,11 +243,18 @@ function InsertBar() {
           </div>
         )}
       </div>
-      <button type="button" onClick={() => void insertImage()}>
+      <button type="button" className="with-icon" onClick={() => void insertImage()}>
+        <Icon name="image" />
         Bilde
       </button>
       <div className="menu-anchor">
-        <button type="button" aria-expanded={menu === 'shape'} onClick={toggle('shape')}>
+        <button
+          type="button"
+          className="with-icon"
+          aria-expanded={menu === 'shape'}
+          onClick={toggle('shape')}
+        >
+          <Icon name="shape" />
           Form
         </button>
         {menu === 'shape' && (
@@ -235,11 +272,22 @@ function InsertBar() {
           </div>
         )}
       </div>
-      <button type="button" onClick={() => add(() => newTableElement(scene, theme), false)}>
+      <button
+        type="button"
+        className="with-icon"
+        onClick={() => add(() => newTableElement(scene, theme), false)}
+      >
+        <Icon name="table" />
         Tabell
       </button>
       <div className="menu-anchor">
-        <button type="button" aria-expanded={menu === 'video'} onClick={toggle('video')}>
+        <button
+          type="button"
+          className="with-icon"
+          aria-expanded={menu === 'video'}
+          onClick={toggle('video')}
+        >
+          <Icon name="film" />
           Video
         </button>
         {menu === 'video' && (
@@ -252,7 +300,7 @@ function InsertBar() {
                 void insertVideoFile();
               }}
             >
-              Fra fil …
+              Fra fil
             </button>
             <button
               type="button"
@@ -284,8 +332,10 @@ function InsertBar() {
         type="button"
         aria-pressed={showGrid}
         onClick={() => useStore.getState().toggleGrid()}
+        className="with-icon"
         title="Vis rutenett (Ctrl+G)"
       >
+        <Icon name="grid" />
         Rutenett
       </button>
     </div>

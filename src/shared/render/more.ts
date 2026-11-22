@@ -17,6 +17,58 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+export interface PopoverPlace {
+  left: number;
+  top: number;
+  /** The point the box seems to pop out of, measured from the box's own corner. */
+  originX: number;
+  originY: number;
+}
+
+/**
+ * Where the "Lær mer" box goes. It pops out beside the element it belongs
+ * to, on the side with room for it, and lies on top of the slide instead of
+ * pushing it aside. When neither side has room it lies over the slide,
+ * towards the side with the most space. All numbers are in the same units,
+ * measured from the top left corner of `bounds`.
+ */
+export function placePopover(
+  anchor: { left: number; top: number; right: number; bottom: number },
+  from: { x: number; y: number },
+  bounds: { width: number; height: number },
+  box: { width: number; height: number },
+  margin = 16,
+): PopoverPlace {
+  const gap = margin;
+  const roomRight = bounds.width - anchor.right - gap - margin;
+  const roomLeft = anchor.left - gap - margin;
+  let left: number;
+  if (roomRight >= box.width) left = anchor.right + gap;
+  else if (roomLeft >= box.width) left = anchor.left - gap - box.width;
+  else left = roomRight >= roomLeft ? bounds.width - margin - box.width : margin;
+  left = Math.max(margin, Math.min(bounds.width - margin - box.width, left));
+  const top = Math.max(margin, Math.min(bounds.height - margin - box.height, anchor.top));
+  return { left, top, originX: from.x - left, originY: from.y - top };
+}
+
+/**
+ * How wide the "Lær mer" box is. It is `preferred` wide when that fits
+ * beside the element or when it has to lie over the slide anyway; when a
+ * side has a little less room, the box is made narrower to fit there, down
+ * to `least`, rather than cover the element it belongs to.
+ */
+export function popoverWidth(
+  anchor: { left: number; right: number },
+  boundsWidth: number,
+  preferred = 560,
+  least = 400,
+  margin = 16,
+): number {
+  const widest = Math.min(preferred, boundsWidth - 2 * margin);
+  const room = Math.max(boundsWidth - anchor.right, anchor.left) - 2 * margin;
+  return room >= widest ? widest : room >= least ? room : widest;
+}
+
 /** True when a credit says anything at all. */
 export function hasCredit(credit: Credit | undefined): credit is Credit {
   return !!credit && !!(credit.author?.trim() || credit.license?.trim() || credit.title?.trim());

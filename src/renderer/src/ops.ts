@@ -31,10 +31,23 @@ export const KIND_NAMES: Record<SceneKind, string> = {
   closing: 'Avslutning',
 };
 
+/**
+ * Makes a slide play the brand's closing animation. The film has a white
+ * ground and carries the logo itself, so the slide is white and shows no
+ * logo or brand shapes of its own.
+ */
+export function playClosingAnimation(scene: Scene, seconds: number): void {
+  scene.closingAnimation = { seconds };
+  scene.background = 'hvit';
+  scene.showLogo = false;
+  scene.decoration = false;
+}
+
 export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {
   rect: 'Rektangel',
   roundRect: 'Avrundet rektangel',
   ellipse: 'Ellipse',
+  sign: 'Skilt (rektangel med spiss)',
   line: 'Linje',
   arrow: 'Pil',
 };
@@ -107,7 +120,7 @@ export function newShapeElement(
     type: 'shape',
     geometry,
     ...(isLine ? {} : { fill: 'lilla' as const }),
-    box: placeNew(scene, theme, isLine ? 400 : 360, isLine ? 1 : 220),
+    box: placeNew(scene, theme, isLine ? 400 : 360, isLine ? 1 : geometry === 'sign' ? 140 : 220),
   };
 }
 

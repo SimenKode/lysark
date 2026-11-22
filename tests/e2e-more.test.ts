@@ -86,7 +86,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
 
   it('opens the builder from the side panel and shows the panel as the student sees it', async () => {
     await page.locator('.stage-inner .ls-el-image').click({ position: { x: 20, y: 20 } });
-    await page.getByRole('button', { name: 'Rediger «Lær mer» …' }).click();
+    await page.getByRole('button', { name: 'Rediger «Lær mer»' }).click();
     await page.waitForSelector('.builder');
     expect(await page.locator('.block-card').count()).toBe(5);
     const preview = page.locator('.builder-panel');
@@ -174,7 +174,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     );
     await page.locator('.block-add').getByRole('button', { name: 'Bilde' }).click();
     await page.locator('.media-dialog').getByRole('tab', { name: 'Last opp' }).click();
-    await page.getByRole('button', { name: 'Last opp medie …' }).click();
+    await page.getByRole('button', { name: 'Last opp medie' }).click();
     await page.waitForSelector('.media-upload-preview');
     await page.getByLabel('Opphavsperson').fill('Person B');
     await page.getByLabel('Lisens').fill('Egen');
@@ -274,7 +274,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     const menu = page.locator('.context-menu');
     await menu.waitFor();
     await shot(page, 'm06-hoyreklikk');
-    await menu.getByRole('menuitem', { name: 'Legg til «Lær mer» …' }).click();
+    await menu.getByRole('menuitem', { name: 'Legg til «Lær mer»' }).click();
     await page.waitForSelector('.builder');
     expect(await page.locator('.block-card').count()).toBe(0);
     await page.locator('.block-add').getByRole('button', { name: 'Tekst' }).click();
@@ -290,7 +290,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     await page.locator('.stage-inner .ls-el-table').click({ button: 'right' });
     await page
       .locator('.context-menu')
-      .getByRole('menuitem', { name: 'Legg til «Lær mer» …' })
+      .getByRole('menuitem', { name: 'Legg til «Lær mer»' })
       .click();
     await page.getByRole('button', { name: 'Ferdig' }).click();
     expect(await page.locator('.stage-inner .ls-more-badge').count()).toBe(2);
@@ -354,7 +354,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
         }>;
       }>;
     };
-    expect(saved.version).toBe(4);
+    expect(saved.version).toBe(5);
     const image = saved.scenes[1]!.elements.find((e) => e.type === 'image')!;
     expect(image.more!.title).toBe('Om bildet A');
     expect(image.more!.corner).toBe('bl');
@@ -386,6 +386,9 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     // Served from this machine, so embedded video behaves as it will from the learning platform.
     expect(player.url()).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{36}\/index\.html#2$/);
 
+    const slideWidth = await player
+      .locator('.lp-stagebox')
+      .evaluate((el) => el.getBoundingClientRect().width);
     const badge = player.locator('.lp-stage .ls-el-image .ls-more-badge');
     expect(await badge.getAttribute('aria-label')).toBe('Lær mer om: Om bildet A');
     await badge.focus();
@@ -398,6 +401,31 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       .toBe('lp-panel-title');
     const panel = player.locator('.lp-panel');
     expect(await panel.locator('.lm-table th').count()).toBe(2);
+    // The box lies on top of the slide, beside the picture; the slide keeps its size.
+    const layout = await player.evaluate(() => {
+      const rect = (selector: string): DOMRect =>
+        document.querySelector(selector)!.getBoundingClientRect();
+      const [pop, slide, picture] = [
+        rect('.lp-panel'),
+        rect('.lp-stagebox'),
+        rect('.lp-stage .ls-el-image'),
+      ];
+      const style = getComputedStyle(document.querySelector('.lp-panel')!);
+      return { pop, slide, picture, position: style.position, animation: style.animationName };
+    });
+    expect(layout.position).toBe('absolute');
+    expect(layout.animation).toBe('lp-pop'); // it pops out
+    expect(layout.slide.width).toBe(slideWidth);
+    expect(layout.pop.left).toBeGreaterThanOrEqual(layout.slide.left);
+    expect(layout.pop.right).toBeLessThanOrEqual(layout.slide.right + 1);
+    // Beside the picture, not over it: this picture has room on its left.
+    expect(layout.pop.right).toBeLessThanOrEqual(layout.picture.left);
+    // A picture that carries "Lær mer" has a ring in the theme's purple.
+    expect(
+      await player
+        .locator('.lp-stage .ls-el-image .ls-image')
+        .evaluate((el) => getComputedStyle(el).outlineColor),
+    ).toBe('rgb(120, 0, 240)');
     // The YouTube video is YouTube's player, fetched now that the panel is
     // open. The embedded page is still a button, and is not fetched.
     const inPanel = 'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0';
@@ -407,6 +435,12 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       'https://www.youtube.com/watch?v=AAAAAAAAAAA',
     );
     await expect.poll(asked).toEqual([inPanel]);
+    // The box has popped out before the picture is taken.
+    await expect
+      .poll(() => player.locator('.lp-panel').evaluate((el) => getComputedStyle(el).opacity), {
+        timeout: 15_000,
+      })
+      .toBe('1');
     await shot(player, 'm07-spiller-panel');
 
     await panel.getByRole('button', { name: 'Utvid' }).click();

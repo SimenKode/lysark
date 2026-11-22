@@ -37,6 +37,7 @@ import {
   toWebVtt,
 } from '../src/shared/render/captions';
 import {
+  CLOSING_HOLD_SECONDS,
   FADE_SECONDS,
   SAMPLE_RATE,
   SILENT_SCENE_SECONDS,
@@ -145,6 +146,23 @@ describe('the clock', () => {
     expect(stillUntil(scenes, plan, 3, 'cut')).toBe(5);
     expect(stillUntil(scenes, plan, 6, 'cut')).toBe(10); // until the next slide
     expect(stillUntil(scenes, plan, 10.1, 'fade')).toBe(10.1); // the slides are fading
+  });
+
+  it('lets a slide with the closing animation stand as long as the film, every picture a new one', () => {
+    const scene = newScene('closing', 'Slutt');
+    scene.closingAnimation = { seconds: 10 };
+    expect(sceneDuration(scene)).toBe(10 + CLOSING_HOLD_SECONDS);
+    expect(isAnimatingAt(scene, 0)).toBe(true);
+    expect(isAnimatingAt(scene, 9.9)).toBe(true);
+    expect(isAnimatingAt(scene, 10.5)).toBe(false);
+    const scenes = [slide(), scene];
+    const plan = schedule(scenes);
+    // While the film runs nothing stands still; afterwards its last picture does.
+    expect(stillUntil(scenes, plan, 12, 'cut')).toBe(12);
+    expect(stillUntil(scenes, plan, 21, 'cut')).toBe(22);
+    // Sound on the slide decides its length, as on any slide.
+    scene.audio = { clips: [{ id: 'p', kind: 'pause', duration: 30 }] };
+    expect(sceneDuration(scene)).toBe(30);
   });
 
   it('writes times the way people read them, and has defaults for video', () => {

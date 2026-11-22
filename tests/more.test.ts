@@ -10,7 +10,14 @@ import {
   type Project,
   type Scene,
 } from '../src/shared/format/schema';
-import { collectCredits, creditText, renderCredit, renderMore } from '../src/shared/render/more';
+import {
+  collectCredits,
+  creditText,
+  placePopover,
+  popoverWidth,
+  renderCredit,
+  renderMore,
+} from '../src/shared/render/more';
 import {
   SCENE_STRINGS,
   activateWebFrames,
@@ -233,6 +240,56 @@ describe('the panel', () => {
     expect(moreTitle(ctx, image)).toBe('Om bildet');
     expect(moreTitle(ctx, { ...button, more: { title: ' ', blocks: [] } })).toBe('Mer om A');
     expect(moreTitle(ctx, { ...button, label: '', more: undefined })).toBe('Lær mer');
+  });
+});
+
+describe('where the "Lær mer" box goes', () => {
+  const bounds = { width: 1280, height: 720 };
+  const box = { width: 560, height: 300 };
+
+  it('pops out beside the element, on the side that has room', () => {
+    // An element on the left: the box goes to its right, level with its top.
+    const left = placePopover(
+      { left: 100, top: 200, right: 400, bottom: 400 },
+      { x: 400, y: 200 },
+      bounds,
+      box,
+    );
+    expect(left).toEqual({ left: 416, top: 200, originX: -16, originY: 0 });
+    // An element on the right: the box goes to its left.
+    const right = placePopover(
+      { left: 900, top: 100, right: 1200, bottom: 300 },
+      { x: 1200, y: 100 },
+      bounds,
+      box,
+    );
+    expect(right.left).toBe(900 - 16 - 560);
+    expect(right.originX).toBe(1200 - right.left); // it pops out of the mark, wherever the box lies
+  });
+
+  it('is made a little narrower to fit beside the element, rather than cover it', () => {
+    expect(popoverWidth({ left: 100, right: 400 }, 1280)).toBe(560); // room enough
+    expect(popoverWidth({ left: 560, right: 800 }, 1080)).toBe(528); // fits on the left, narrower
+    expect(popoverWidth({ left: 300, right: 800 }, 1080)).toBe(560); // no side has room: over the slide
+  });
+
+  it('lies over the slide when neither side has room, and never leaves the window', () => {
+    const wide = placePopover(
+      { left: 200, top: 650, right: 1100, bottom: 700 },
+      { x: 1100, y: 650 },
+      bounds,
+      box,
+    );
+    expect(wide.left).toBeGreaterThanOrEqual(16);
+    expect(wide.left + box.width).toBeLessThanOrEqual(bounds.width - 16);
+    expect(wide.top + box.height).toBe(bounds.height - 16); // moved up to fit
+    const tall = placePopover(
+      { left: 0, top: -50, right: 50, bottom: 0 },
+      { x: 50, y: 0 },
+      bounds,
+      { width: 560, height: 688 },
+    );
+    expect(tall.top).toBe(16);
   });
 });
 

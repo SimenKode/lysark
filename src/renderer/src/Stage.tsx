@@ -649,10 +649,10 @@ export function Stage() {
             }}
           >
             {menuElement.type === 'deepdive'
-              ? 'Bygg innholdet …'
+              ? 'Bygg innholdet'
               : menuElement.more && menuElement.more.blocks.length > 0
-                ? 'Rediger «Lær mer» …'
-                : 'Legg til «Lær mer» …'}
+                ? 'Rediger «Lær mer»'
+                : 'Legg til «Lær mer»'}
           </button>
           <button
             type="button"

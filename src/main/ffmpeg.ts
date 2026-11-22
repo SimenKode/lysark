@@ -4,7 +4,7 @@
 // owner asks for: exporting video, and turning sound into the formats the
 // project and the exported HTML use. It never touches the network.
 import { app } from 'electron';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -67,6 +67,21 @@ export function runFfmpeg(args: string[]): FfmpegRun {
   // A write to a program that has stopped must not bring Lysark down.
   child.stdin.on('error', () => undefined);
   return { process: child, done };
+}
+
+/** The length of a video or sound file in seconds, as FFmpeg reads it; undefined when it cannot. */
+export function mediaSeconds(file: string): number | undefined {
+  const program = ffmpegPath();
+  if (!program) return undefined;
+  // FFmpeg describes its input on standard error, and "fails" for want of an output; that is expected.
+  const said = spawnSync(program, ['-hide_banner', '-nostdin', '-i', file], {
+    encoding: 'utf8',
+    windowsHide: true,
+  }).stderr;
+  const match = /Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/.exec(said ?? '');
+  if (!match) return undefined;
+  const seconds = Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+  return seconds > 0 ? seconds : undefined;
 }
 
 /**

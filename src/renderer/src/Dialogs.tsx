@@ -1,7 +1,13 @@
 // Dialogs: the import report, and project and logo settings.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ImportReport } from '../../shared/api';
-import { cancelPdfImport, chooseLogoFolder, clearLogos } from './actions';
+import {
+  cancelPdfImport,
+  chooseClosingAnimation,
+  chooseLogoFolder,
+  clearClosingAnimation,
+  clearLogos,
+} from './actions';
 import { useStore } from './store';
 
 function Dialog(props: {
@@ -219,11 +225,37 @@ export function SettingsDialog(props: { onClose: () => void }) {
         </ul>
         <div className="button-row">
           <button type="button" onClick={() => void chooseLogoFolder()}>
-            Velg mappa med logopakka …
+            Velg mappa med logopakka
           </button>
           {anyLogo && (
             <button type="button" onClick={() => void clearLogos()}>
               Fjern logoen
+            </button>
+          )}
+        </div>
+      </section>
+      <section>
+        <h3>USNs avslutningsanimasjon</h3>
+        <p>
+          Filmen der USNs logo tegnes opp, slik den ligger på siste lysark i USNs PowerPoint-mal.
+          Lysark tar vare på en kopi, helt uendret, og avslutningslysark kan spille den av seg selv:
+          én gang, uten knapper og uten lyd. Importerer du en forelesning som har den, plukkes den
+          opp automatisk.
+        </p>
+        <ul className="logo-status">
+          <li className={logo.closing ? 'ok' : 'hint'}>
+            {logo.closing
+              ? `Avslutningsanimasjon: funnet (${Math.round(logo.closing.seconds)} sekunder)`
+              : 'Avslutningsanimasjon: ikke valgt'}
+          </li>
+        </ul>
+        <div className="button-row">
+          <button type="button" onClick={() => void chooseClosingAnimation()}>
+            Velg videofila
+          </button>
+          {logo.closing && (
+            <button type="button" onClick={() => void clearClosingAnimation()}>
+              Fjern animasjonen
             </button>
           )}
         </div>

@@ -72,5 +72,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 2) project.version = 3;
   // 3 -> 4 only added optional things (sound on slides, choices for video).
   if (project.version === 3) project.version = 4;
+  // 4 -> 5 only added things (a shape, and a choice on closing slides).
+  if (project.version === 4) project.version = 5;
   return project;
 }

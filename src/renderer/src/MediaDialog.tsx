@@ -182,7 +182,7 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
           autoFocus
         />
         <button type="submit" className="strong" disabled={busy || !query.trim()}>
-          {busy ? 'Søker …' : 'Søk'}
+          {busy ? 'Søker' : 'Søk'}
         </button>
       </form>
       {error && (
@@ -213,7 +213,7 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
           </ul>
           {next !== undefined && hits.length > 0 && (
             <button type="button" disabled={busy} onClick={() => void search(next)}>
-              {busy ? 'Henter …' : 'Vis flere'}
+              {busy ? 'Henter' : 'Vis flere'}
             </button>
           )}
         </div>
@@ -238,7 +238,7 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
               disabled={fetching}
               onClick={() => void insert()}
             >
-              {fetching ? 'Henter bildet …' : 'Sett inn'}
+              {fetching ? 'Henter bildet' : 'Sett inn'}
             </button>
           </aside>
         )}
@@ -276,7 +276,7 @@ function UploadTab(props: { kind: MediaRequest['kind']; onInsert: (added: AddedM
           disabled={busy}
           onClick={() => void choose()}
         >
-          {added ? 'Velg en annen fil …' : 'Last opp medie …'}
+          {added ? 'Velg en annen fil' : 'Last opp medie'}
         </button>
       </div>
       {added && (

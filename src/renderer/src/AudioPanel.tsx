@@ -24,6 +24,7 @@ import {
   stepsShownAt,
   trackDuration,
 } from '../../shared/render/clock';
+import { Icon } from './Icon';
 import { importSoundFile } from './actions';
 import { loadSceneSamples, playScene, samplesOf, type Playback } from './audio/engine';
 import { currentScene, useStore } from './store';
@@ -435,11 +436,13 @@ export function AudioPanel() {
       <LectureStrip project={project} sceneId={scene.id} />
       <div className="audio-bar" role="toolbar" aria-label="Lyd">
         {playing ? (
-          <button type="button" className="strong" onClick={stop}>
+          <button type="button" className="strong with-icon" onClick={stop}>
+            <Icon name="stop" />
             Stopp
           </button>
         ) : (
-          <button type="button" className="strong" onClick={() => void play(playhead)}>
+          <button type="button" className="strong with-icon" onClick={() => void play(playhead)}>
+            <Icon name="play" />
             Spill av
           </button>
         )}
@@ -453,28 +456,33 @@ export function AudioPanel() {
         <span className="gap" />
         <button
           type="button"
+          className="with-icon"
           onClick={() => {
             stop();
             useStore.getState().openRecorder({});
           }}
           title="Les inn stemmen, fra dette lysarket og utover (Ctrl+R)"
         >
-          Les inn …
+          <Icon name="mic" />
+          Les inn
         </button>
         {sound && playhead > 0.05 && playhead < track - 0.05 && (
           <button
             type="button"
+            className="with-icon"
             onClick={() => {
               stop();
               useStore.getState().openRecorder({ keepBefore: playhead });
             }}
             title="Behold lyden fram til spillehodet, og les inn resten på nytt"
           >
-            Ta om herfra …
+            <Icon name="mic" />
+            Ta om herfra
           </button>
         )}
-        <button type="button" onClick={() => void importSoundFile()}>
-          Importer lydfil …
+        <button type="button" className="with-icon" onClick={() => void importSoundFile()}>
+          <Icon name="import" />
+          Importer lydfil
         </button>
       </div>
 

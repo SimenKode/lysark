@@ -39,10 +39,18 @@ export function hasSound(scene: Pick<Scene, 'audio'>): boolean {
   return (scene.audio?.clips ?? []).some((clip) => clip.kind === 'sound');
 }
 
+/** What the clock needs to know about a slide. */
+export type Timed = Pick<Scene, 'audio' | 'timeline'> & Partial<Pick<Scene, 'closingAnimation'>>;
+
+/** How long the last picture of the closing animation stands after the film has ended. */
+export const CLOSING_HOLD_SECONDS = 2;
+
 /** How long a slide stands in video and in "Spill av". */
-export function sceneDuration(scene: Pick<Scene, 'audio' | 'timeline'>): number {
+export function sceneDuration(scene: Timed): number {
   const track = trackDuration(scene.audio);
   if (track > 0) return track;
+  // A slide with the closing animation stands as long as the film, and a little more.
+  if (scene.closingAnimation) return scene.closingAnimation.seconds + CLOSING_HOLD_SECONDS;
   return SILENT_SCENE_SECONDS + SILENT_STEP_SECONDS * scene.timeline.length;
 }
 
@@ -51,7 +59,7 @@ export function sceneDuration(scene: Pick<Scene, 'audio' | 'timeline'>): number 
  * slide. A step with a time keeps it (inside the slide); steps without one
  * are spread evenly. The times never go backwards.
  */
-export function stepTimes(scene: Pick<Scene, 'audio' | 'timeline'>): number[] {
+export function stepTimes(scene: Timed): number[] {
   const duration = sceneDuration(scene);
   const count = scene.timeline.length;
   let previous = 0;
@@ -68,7 +76,7 @@ function easeOutCubic(t: number): number {
 }
 
 /** How many steps have been triggered `t` seconds into the slide. */
-export function stepsShownAt(scene: Pick<Scene, 'audio' | 'timeline'>, t: number): number {
+export function stepsShownAt(scene: Timed, t: number): number {
   return stepTimes(scene).filter((at) => at <= t).length;
 }
 
@@ -99,7 +107,9 @@ export function sceneStateAt(
 }
 
 /** True while something on the slide is still moving at `t`. */
-export function isAnimatingAt(scene: Pick<Scene, 'audio' | 'timeline'>, t: number): boolean {
+export function isAnimatingAt(scene: Timed, t: number): boolean {
+  // The closing animation is a film: every picture of it is a new one.
+  if (scene.closingAnimation && t < scene.closingAnimation.seconds + 1 / VIDEO_FPS) return true;
   const times = stepTimes(scene);
   return scene.timeline.some((step, index) => {
     const since = t - times[index]!;
@@ -120,7 +130,7 @@ export interface Schedule {
 }
 
 /** When each slide starts and how long it stands. */
-export function schedule(scenes: ReadonlyArray<Pick<Scene, 'audio' | 'timeline'>>): Schedule {
+export function schedule(scenes: ReadonlyArray<Timed>): Schedule {
   const entries: ScheduleEntry[] = [];
   let start = 0;
   scenes.forEach((scene, index) => {
@@ -164,7 +174,7 @@ export function frameAt(plan: Schedule, time: number, transition: 'cut' | 'fade'
  * at `time`. Returns `time` itself while something is moving.
  */
 export function stillUntil(
-  scenes: ReadonlyArray<Pick<Scene, 'audio' | 'timeline'>>,
+  scenes: ReadonlyArray<Timed>,
   plan: Schedule,
   time: number,
   transition: 'cut' | 'fade',

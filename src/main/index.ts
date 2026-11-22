@@ -30,7 +30,8 @@ import { PDF_LIMIT_BYTES } from '../shared/limits';
 import type { CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
 import { buildPreview, exportHtml } from './exportHtml';
-import { ffmpegPath } from './ffmpeg';
+import { adoptClosingAnimation } from './closing';
+import { ffmpegPath, mediaSeconds } from './ffmpeg';
 import { exportVideo, type VideoJob } from './video';
 import { isPreviewUrl, servePreview, stopPreviewServer } from './previewServer';
 import { commonsPreview, downloadCommons, proxyPicture, searchCommons, youtubeStill } from './web';
@@ -56,11 +57,15 @@ import {
   type ImportFolder,
 } from './projectIo';
 import {
+  CLOSING_EXTENSIONS,
+  clearClosingAnimation,
   clearLogos,
+  closingAnimation,
   logoFile,
   logoStatus,
   recentProjects,
   rememberProject,
+  setClosingAnimation,
   setLogosFromFolder,
 } from './settings';
 
@@ -145,6 +150,12 @@ function registerMediaProtocol(): void {
   protocol.handle('lysark-media', (request) => {
     try {
       const url = new URL(request.url);
+      if (url.hostname === 'brand' && url.pathname === '/closing') {
+        const film = closingAnimation();
+        return film
+          ? serveFile(film.file, film.mime, request)
+          : new Response(null, { status: 404 });
+      }
       if (url.hostname === 'brand') {
         const match = /^\/(nb|en)-(light|dark)$/.exec(url.pathname);
         const file = match
@@ -487,8 +498,11 @@ function registerHandlers(): void {
     if (pick.canceled || !source) return null;
     const dir = await askForNewFolder(basename(source, '.pptx'));
     if (!dir) return null;
-    const { project, report } = importPptxToFolder(source, dir);
-    return { ...opened(dir, project), report, sourceName: basename(source) };
+    const imported = importPptxToFolder(source, dir);
+    // USN's closing animation on the last slide plays by itself from now on.
+    const project = adoptClosingAnimation(dir, imported.project);
+    if (project !== imported.project) saveProject(dir, project);
+    return { ...opened(dir, project), report: imported.report, sourceName: basename(source) };
   });
 
   handle('lysark:save', (dir: string, project: Project): void => {
@@ -792,6 +806,33 @@ function registerHandlers(): void {
     });
     const folder = result.filePaths[0];
     if (!result.canceled && folder) setLogosFromFolder(folder);
+    return logoStatus();
+  });
+
+  handle('lysark:choose-closing', async (): Promise<LogoStatus> => {
+    if (!mainWindow) return logoStatus();
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Velg USNs avslutningsanimasjon',
+      buttonLabel: 'Velg fil',
+      filters: [{ name: 'Video', extensions: CLOSING_EXTENSIONS }],
+      properties: ['openFile'],
+    });
+    const file = result.filePaths[0];
+    if (result.canceled || !file) return logoStatus();
+    const seconds = mediaSeconds(file);
+    if (seconds === undefined) {
+      throw new Error(
+        ffmpegPath()
+          ? 'Videofila kan ikke leses.'
+          : 'FFmpeg mangler, så lengden på videoen kan ikke måles.',
+      );
+    }
+    setClosingAnimation(file, seconds);
+    return logoStatus();
+  });
+
+  handle('lysark:clear-closing', (): LogoStatus => {
+    clearClosingAnimation();
     return logoStatus();
   });
 

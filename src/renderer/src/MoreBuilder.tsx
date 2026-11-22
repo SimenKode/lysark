@@ -1,15 +1,23 @@
-// The builder for "Lær mer" content: a window over the whole workspace with
-// the building blocks on the left and, on the right, the panel exactly as a
-// student will see it (drawn by the same code as the player uses).
+// The builder for "Lær mer" content: a window over the workspace with the
+// content on the left and, on the right, the slide itself with the box
+// popped out beside the element, exactly as a student will see it (drawn
+// and placed by the same code as the player uses).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { mediaUrl } from '../../shared/api';
 import { plainText, richText } from '../../shared/format/factory';
 import { MORE_CORNERS, type Element, type More, type MoreBlock } from '../../shared/format/schema';
-import { creditText, hasCredit, renderMore } from '../../shared/render/more';
+import { STAGE } from '../../shared/format/constants';
+import {
+  creditText,
+  hasCredit,
+  placePopover,
+  popoverWidth,
+  renderMore,
+} from '../../shared/render/more';
 import { SCENE_STRINGS, moreCorner, moreTitle } from '../../shared/render/scene';
 import { embedTarget, youtubeRef } from '../../shared/render/web';
 import { RichTextField } from './RichTextField';
-import { renderContext } from './SceneView';
+import { SceneView, renderContext } from './SceneView';
 import { fetchYouTubeStill, megabytes, pickMedia } from './actions';
 import { BLOCK_NAMES, CORNER_NAMES, describeElement, moveBlock, newBlock } from './ops';
 import { currentScene, useStore } from './store';
@@ -130,7 +138,7 @@ function ImageEditor({ elementId, block }: { elementId: string; block: Block<'im
               })
             }
           >
-            Bytt bilde …
+            Bytt bilde
           </button>
         </div>
       </div>
@@ -179,7 +187,7 @@ function VideoEditor({ elementId, block }: { elementId: string; block: Block<'vi
                 })
               }
             >
-              Bytt videofil …
+              Bytt videofil
             </button>
           </div>
         </>
@@ -231,7 +239,7 @@ function VideoEditor({ elementId, block }: { elementId: string; block: Block<'vi
                     }}
                   >
                     {fetching
-                      ? 'Henter …'
+                      ? 'Henter'
                       : poster
                         ? 'Hent forhåndsbilde på nytt'
                         : 'Hent forhåndsbilde'}
@@ -416,29 +424,115 @@ function BlockEditor({ elementId, block }: { elementId: string; block: MoreBlock
   }
 }
 
-// ---------- The preview ----------
+// ---------- The preview: the slide itself, with the box popped out ----------
+
+/** The student's window in the preview: the slide at two thirds of its size. */
+const VIEW = { width: 1280, height: 720 };
+const VIEW_SCALE = VIEW.width / STAGE.width;
 
 function Preview({ element }: { element: Element }) {
   const project = useStore((s) => s.project)!;
   const logo = useStore((s) => s.logo);
+  const scene = useStore(currentScene);
+  const area = useRef<HTMLDivElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(0);
+  const [place, setPlace] = useState({ left: 16, top: 16, width: 560 });
   const more = element.more;
   const ctx = renderContext(project, logo);
+  const { box } = element;
+  const shown = fit > 0 && !!scene;
+
+  // The view is drawn as large as the space allows.
+  useLayoutEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    const measure = (): void =>
+      setFit(Math.max(0.05, Math.min(el.clientWidth / VIEW.width, el.clientHeight / VIEW.height)));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   useLayoutEffect(() => {
     if (!host.current) return;
     host.current.replaceChildren(
       renderMore(renderContext(project, logo), more ?? { title: '', blocks: [] }),
     );
     // The assets decide what pictures show; the content decides the rest.
-  }, [more, project.assets, project.meta.language, logo]);
+    // (`shown`: the box is first drawn when the view has been measured.)
+  }, [more, project.assets, project.meta.language, logo, shown]);
+
+  // The box goes where the player will put it: beside the element, on top of the slide.
+  useLayoutEffect(() => {
+    const el = pop.current;
+    if (!el) return;
+    const put = (): void => {
+      const anchor = {
+        left: box.x * VIEW_SCALE,
+        top: box.y * VIEW_SCALE,
+        right: (box.x + box.w) * VIEW_SCALE,
+        bottom: (box.y + box.h) * VIEW_SCALE,
+      };
+      const corner = moreCorner(element);
+      const from = {
+        x: corner.endsWith('r') ? anchor.right : anchor.left,
+        y: corner.startsWith('t') ? anchor.top : anchor.bottom,
+      };
+      const width = popoverWidth(anchor, VIEW.width);
+      const next = placePopover(anchor, from, VIEW, {
+        width,
+        height: Math.min(el.offsetHeight, VIEW.height - 32),
+      });
+      setPlace((old) =>
+        old.left === next.left && old.top === next.top && old.width === width
+          ? old
+          : { left: next.left, top: next.top, width },
+      );
+    };
+    put();
+    const observer = new ResizeObserver(put);
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [box.x, box.y, box.w, box.h, more?.corner, shown]);
+
   return (
     <section className="builder-preview" aria-label="Slik ser studenten det">
-      <p className="builder-caption">Slik ser studenten det</p>
-      <div className="builder-panel">
-        <h2>{moreTitle(ctx, element)}</h2>
-        <div ref={host} />
-        {(!more || more.blocks.length === 0) && (
-          <p className="hint">Panelet er tomt. Legg til innhold til venstre.</p>
+      <p className="builder-caption">
+        Slik ser studenten det: boksen spretter ut ved elementet når «+» trykkes
+      </p>
+      <div className="builder-view" ref={area}>
+        {shown && scene && (
+          <div
+            className="builder-view-box"
+            style={{ width: VIEW.width * fit, height: VIEW.height * fit }}
+          >
+            <div className="builder-view-inner" style={{ transform: `scale(${fit})` }}>
+              <div className="builder-slide" style={{ transform: `scale(${VIEW_SCALE})` }}>
+                <SceneView scene={scene} project={project} logo={logo} />
+              </div>
+              <div
+                className="builder-panel"
+                ref={pop}
+                style={{ left: place.left, top: place.top, width: place.width }}
+              >
+                <div className="builder-panel-head">
+                  <h2>{moreTitle(ctx, element)}</h2>
+                  <span className="builder-panel-tools" aria-hidden="true">
+                    <span>Utvid</span>
+                    <span>Lukk</span>
+                  </span>
+                </div>
+                <div ref={host} />
+                {(!more || more.blocks.length === 0) && (
+                  <p className="hint">Boksen er tom. Legg til innhold til venstre.</p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>
@@ -700,7 +794,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
                       void addVideoFile();
                     }}
                   >
-                    Fra fil …
+                    Fra fil
                   </button>
                 </div>
               )}

@@ -22,9 +22,11 @@ import {
   SCENE_STRINGS,
   arrowHeadLength,
   renderScene,
+  signPoint,
   type RenderContext,
 } from '../src/shared/render/scene';
 import {
+  STEP_RISE,
   applySceneState,
   pruneTimeline,
   sceneState,
@@ -206,6 +208,21 @@ describe('timeline', () => {
     expect(sceneState(scene, 2, 0).has('a')).toBe(false);
     expect(stepDuration(scene.timeline[0]!)).toBe(0.4);
     expect(stepDuration(scene.timeline[1]!)).toBe(0.2);
+  });
+
+  it('lets an element glide up into place while it comes in', () => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    const el = renderScene(context(project), scene);
+    const target = scene.timeline[0]!.actions[0]!.target;
+    const node = el.querySelector<HTMLElement>(`[data-el="${target}"]`)!;
+    applySceneState(el, new Map([[target, 0.5]]));
+    expect(node.style.translate).toBe(`0 ${(STEP_RISE / 2).toFixed(2)}px`);
+    expect(node.style.opacity).toBe('0.5');
+    applySceneState(el, new Map([[target, 1]]));
+    expect(node.style.translate).toBe('');
+    applySceneState(el, new Map([[target, 0]]));
+    expect(node.style.translate).toBe('');
   });
 
   it('hides elements from assistive technology until their step', () => {
@@ -628,6 +645,114 @@ describe('stroke width of shapes', () => {
     expect(() => parseProject(data)).toThrow(/strokeWidth/);
     const old = { ...(JSON.parse(JSON.stringify(project)) as Project), version: 2 };
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
+  });
+});
+
+describe('the closing animation', () => {
+  const exportSources = (_project: Project): ExportSources => ({
+    playerJs: 'window.__player = true;',
+    readFont: (face) => new TextEncoder().encode(`font:${face}`),
+    readAsset: (file) => new TextEncoder().encode(`asset:${file}`),
+    logo: {},
+    sidecarHref: () => undefined,
+  });
+  const closing = (): { project: Project; scene: Scene } => {
+    const { project } = sampleProject();
+    const scene = project.scenes[2]!;
+    scene.closingAnimation = { seconds: 10 };
+    return { project, scene };
+  };
+
+  it('is a film that fills the slide, with no controls and no sound', () => {
+    const { project, scene } = closing();
+    const el = renderScene({ ...context(project), closing: 'film:closing' }, scene);
+    const film = el.querySelector<HTMLVideoElement>('video.ls-closing')!;
+    expect(film.getAttribute('src')).toBe('film:closing');
+    expect(film.muted).toBe(true);
+    expect(film.controls).toBe(false);
+    expect(film.getAttribute('aria-label')).toContain('avslutningsanimasjon');
+    // Elements on the slide lie on top of the film.
+    expect(el.querySelector('video.ls-closing ~ .ls-el')).not.toBeNull();
+  });
+
+  it('shows nothing in its place when the owner has not supplied the film', () => {
+    const { project, scene } = closing();
+    expect(renderScene(context(project), scene).querySelector('video')).toBeNull();
+    delete scene.closingAnimation;
+    expect(
+      renderScene({ ...context(project), closing: 'film:closing' }, scene).querySelector('video'),
+    ).toBeNull();
+  });
+
+  it('is written into the HTML file once, and only when a slide plays it', () => {
+    const { project } = closing();
+    const film = { mime: 'video/mp4', data: new Uint8Array([1, 2, 3, 4]) };
+    const html = buildHtml(project, { ...exportSources(project), closing: film }).html;
+    expect(html.match(/id="ls-brand-closing"/g)).toHaveLength(1);
+    expect(html).toContain('"closing":{"mime":"video/mp4"}');
+    for (const scene of project.scenes) delete scene.closingAnimation;
+    const without = buildHtml(project, { ...exportSources(project), closing: film }).html;
+    expect(without).not.toContain('ls-brand-closing');
+  });
+
+  it('is part of the format', () => {
+    const { project } = closing();
+    expect(() => parseProject(JSON.parse(JSON.stringify(project)))).not.toThrow();
+    project.scenes[2]!.closingAnimation = { seconds: 0 };
+    expect(() => parseProject(JSON.parse(JSON.stringify(project)))).toThrow(/closingAnimation/);
+  });
+});
+
+describe('the sign shape', () => {
+  const draw = (flipH: boolean, text = true): HTMLElement => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    scene.timeline = [];
+    scene.elements = [
+      {
+        id: 'e_sign',
+        type: 'shape',
+        geometry: 'sign',
+        fill: 'lilla',
+        box: { x: 0, y: 0, w: 400, h: 100, rotation: 0 },
+        ...(flipH ? { flipH: true } : {}),
+        ...(text ? { content: richText('A') } : {}),
+      },
+    ];
+    return renderScene(context(project), scene);
+  };
+
+  it('is a rectangle with a point on the right, half the short side deep', () => {
+    expect(signPoint(400, 100)).toBe(50);
+    const points = draw(false).querySelector('polygon')!.getAttribute('points');
+    expect(points).toBe('0,0 350,0 400,50 350,100 0,100');
+  });
+
+  it('points left when it is mirrored, and keeps its text clear of the point', () => {
+    const el = draw(true);
+    expect(el.querySelector('polygon')!.getAttribute('points')).toBe(
+      '400,0 50,0 0,50 50,100 400,100',
+    );
+    expect(el.querySelector<HTMLElement>('.ls-shape-content')!.style.paddingLeft).toBe('49px');
+    expect(draw(false).querySelector<HTMLElement>('.ls-shape-content')!.style.paddingRight).toBe(
+      '49px',
+    );
+  });
+
+  it('is part of the format from version 5, and older files are lifted', () => {
+    const { project } = sampleProject();
+    const data = JSON.parse(JSON.stringify(project)) as Project;
+    data.scenes[1]!.elements.push({
+      id: 'e_sign',
+      type: 'shape',
+      geometry: 'sign',
+      box: { x: 0, y: 0, w: 400, h: 100, rotation: 0 },
+    });
+    expect(() => parseProject(data)).not.toThrow();
+    expect(FORMAT_VERSION).toBeGreaterThanOrEqual(5);
+    expect(parseProject({ ...JSON.parse(JSON.stringify(project)), version: 4 }).version).toBe(
+      FORMAT_VERSION,
+    );
   });
 });
 

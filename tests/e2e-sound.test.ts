@@ -108,7 +108,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
 
   it('records a slide: the arrow key sets the time of each step', async () => {
     await page.locator('.lecture-block').nth(1).click();
-    await page.getByRole('button', { name: 'Les inn …' }).click();
+    await page.getByRole('button', { name: 'Les inn', exact: true }).click();
     const recorder = page.locator('.recorder');
     await recorder.waitFor();
     expect(await recorder.locator('.recorder-where').textContent()).toContain('Lysark 2 av 3');
@@ -204,7 +204,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     expect(await dialog.textContent()).toContain('1920 × 1080');
     await dialog.getByLabel('Mellom lysarkene').selectOption('fade');
     await shot(page, 'l05-videodialog');
-    await dialog.getByRole('button', { name: 'Eksporter video …' }).click();
+    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
     await expect
       .poll(() => page.locator('.notice').textContent(), { timeout: 120_000, interval: 500 })
       .toContain('Videoen er lagret');
@@ -269,7 +269,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     );
     expect(await dialog.textContent()).toContain('(1 lysark)');
     await shot(page, 'l07-gif-dialog');
-    await dialog.getByRole('button', { name: 'Eksporter GIF …' }).click();
+    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
     await expect
       .poll(() => page.locator('.notice').textContent(), { timeout: 120_000, interval: 500 })
       .toContain('GIF-fila er lagret');
@@ -296,7 +296,9 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await dialog.getByLabel('Første lysark').fill('3');
     await dialog.getByLabel('Siste lysark').fill('2');
     expect(await dialog.textContent()).toContain('Skriv to lysarknumre mellom 1 og 3');
-    expect(await dialog.getByRole('button', { name: 'Eksporter GIF …' }).isDisabled()).toBe(true);
+    expect(await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).isDisabled()).toBe(
+      true,
+    );
     await dialog.getByRole('button', { name: 'Lukk' }).click();
   }, 180_000);
 
@@ -380,14 +382,16 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await answerSaveDialog(out);
     await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
     const dialog = page.locator('dialog.video-dialog');
-    await dialog.getByRole('button', { name: 'Eksporter video …' }).click();
+    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
     await dialog
       .locator('.video-progress', { hasText: 'Tegner bilde' })
       .waitFor({ timeout: 60_000 });
     expect(existsSync(out)).toBe(true); // FFmpeg has begun writing
     await dialog.getByRole('button', { name: 'Avbryt eksporten' }).click();
     // The dialog is back to where it was, with nothing said and nothing left on disk.
-    await dialog.getByRole('button', { name: 'Eksporter video …' }).waitFor({ timeout: 20_000 });
+    await dialog
+      .getByRole('button', { name: 'Velg fil og eksporter' })
+      .waitFor({ timeout: 20_000 });
     await expect.poll(() => existsSync(out)).toBe(false);
     expect(await page.locator('.notice-error').count()).toBe(0);
     await dialog.getByRole('button', { name: 'Lukk' }).click();

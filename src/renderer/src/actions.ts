@@ -71,6 +71,8 @@ export async function importPptx(): Promise<void> {
   if (!(await leaveCurrent())) return;
   const imported = await guard(() => api().importPptx());
   if (!imported) return;
+  // The import may have taken USN's closing animation into the settings.
+  await refreshLogo();
   const state = useStore.getState();
   state.load(imported.dir, imported.project);
   state.setReport({ report: imported.report, sourceName: imported.sourceName });
@@ -539,6 +541,16 @@ export async function chooseLogoFolder(): Promise<void> {
 
 export async function clearLogos(): Promise<void> {
   const status = await guard(() => api().clearLogos());
+  if (status) useStore.getState().setLogo(status);
+}
+
+export async function chooseClosingAnimation(): Promise<void> {
+  const status = await guard(() => api().chooseClosingAnimation());
+  if (status) useStore.getState().setLogo(status);
+}
+
+export async function clearClosingAnimation(): Promise<void> {
+  const status = await guard(() => api().clearClosingAnimation());
   if (status) useStore.getState().setLogo(status);
 }
 

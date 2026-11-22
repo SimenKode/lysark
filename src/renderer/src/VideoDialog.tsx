@@ -302,7 +302,7 @@ export function VideoDialog() {
                 ).finally(() => setBusy(false));
               }}
             >
-              {gif ? 'Eksporter GIF …' : 'Eksporter video …'}
+              Velg fil og eksporter
             </button>
           </>
         )}
