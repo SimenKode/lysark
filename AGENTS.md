@@ -110,7 +110,13 @@ the manual, raise it with the owner instead of choosing silently.
   them (see the comment at its top). Compare against the owner's own PDF
   exports before and after any change to the importer.
 
+- `tools/windows-vm.py` drives the owner's Windows 11 test VM; read its
+  header before using it, and never press Enter on text you did not type.
+
 ## Working with the owner
+
+- `HANDOFF.md` holds the current status and the owner's feedback. Read it
+  at the start of a session and keep it true.
 
 - Ask design questions together and early, each with one recommendation.
   Do not start building a delivery before its questions are answered.

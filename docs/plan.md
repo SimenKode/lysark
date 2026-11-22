@@ -125,10 +125,17 @@ Det filene viste om innholdet:
 
 Gjenstår før leveransen er ferdig:
 
-1. **Windows 11.** Programmet er ikke startet på Windows.
-2. **Læringsplattformen.** HTML-fila er ikke prøvd der.
-3. **Godkjenning av uttrykket** på dine egne scener.
-4. **De øvrige lysarkene.** Bare 30 av 315 er sett på side om side.
+1. **Canvas.** HTML-fila er ikke prøvd der.
+2. **Godkjenning av uttrykket** på dine egne scener.
+3. **De øvrige lysarkene.** Bare 30 av 315 er sett på side om side.
+4. **Windows-installasjonsfil.** Bare zip-utgaven finnes.
+
+### Prøvd på Windows 11
+
+Zip-utgaven er prøvd for hånd i eierens Windows 11-VM 22.11.2026: start,
+import av en ekte forelesning, logo fra logopakka, tekstredigering,
+lagring, forhåndsvisning, eksport og avspilling i Edge virket. Detaljer og
+det som ikke ble prøvd, står i [HANDOFF.md](../HANDOFF.md).
 
 Kjente begrensninger i importen (kommer i rapporten der det er relevant):
 
@@ -148,6 +155,6 @@ Kjente begrensninger i importen (kommer i rapporten der det er relevant):
 
 ## Rekkefølgen videre
 
-1. Uttrykket godkjennes på dine egne scener.
-2. Utprøving på Windows 11 og i læringsplattformen.
+1. Eieren skriver tilbakemeldinger i [HANDOFF.md](../HANDOFF.md).
+2. Uttrykket godkjennes, og HTML-fila prøves i Canvas.
 3. Leveranse 2.

@@ -8,12 +8,8 @@ Logopakka og forelesningene kom 22.11.2026 og ligger i `merkevare/` og
 forelesningene er bygd på USNs PowerPoint-mal og er i 16:9, og video er
 mest lenker til YouTube og Vimeo, med enkelte lokale filer.
 
-Disse tilleggsspørsmålene er fortsatt ubesvart:
-
-- Hvilken læringsplattform bruker du, og hvordan legger du ut filer der
-  i dag? (spørsmål 2)
-- Har du en Windows 11-maskin å prøve på, og styres den av USN?
-  (spørsmål 3)
+Senere samme dag svarte eieren på resten: læringsplattformen er Canvas, og
+han har en Windows 11-VM som programmet er prøvd i.
 
 Ett valg ble justert under byggingen: rene tittel- og seksjonslysark
 (bare tittel og undertittel) får temaets oppsett ved import, med teksten

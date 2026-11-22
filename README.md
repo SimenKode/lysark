@@ -14,9 +14,9 @@ Linux Mint / Ubuntu.
 Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
 eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint, og
 importen er prøvd mot åtte ekte forelesninger. Det som gjenstår før
-leveransen kan kalles ferdig, står i [docs/plan.md](docs/plan.md):
-utprøving på Windows 11 og i læringsplattformen, og godkjenning av
-uttrykket.
+leveransen kan kalles ferdig, står i [HANDOFF.md](HANDOFF.md):
+tilbakemeldinger fra eieren, godkjenning av uttrykket og utprøving i
+Canvas. Zip-utgaven er prøvd på Windows 11.
 
 ## Slik bruker du programmet
 
@@ -63,6 +63,7 @@ lagring, eksport og avspilling.
 
 | Fil | Innhold |
 | --- | --- |
+| [HANDOFF.md](HANDOFF.md) | Status, hva som er prøvd, og eierens tilbakemeldinger til neste økt |
 | [AGENTS.md](AGENTS.md) | Reglene alle som arbeider i prosjektet skal følge |
 | [docs/plan.md](docs/plan.md) | De tre leveransene og hva som er med i hver |
 | [docs/stakk.md](docs/stakk.md) | Valgt teknologi, begrunnelse og lisens per avhengighet |
