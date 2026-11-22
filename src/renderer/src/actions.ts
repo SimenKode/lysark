@@ -232,6 +232,95 @@ export async function unpackProject(): Promise<void> {
   if (opened) useStore.getState().load(opened.dir, opened.project);
 }
 
+/** Opens an HTML file exported by Lysark as a new project. */
+export async function openHtmlFile(): Promise<void> {
+  if (!(await leaveCurrent())) return;
+  const opened = await guard(() => api().openHtmlFile());
+  if (!opened) return;
+  const state = useStore.getState();
+  state.load(opened.dir, opened.project);
+  state.setNotice({
+    kind: 'info',
+    text: [`${opened.sourceName} er åpnet som et nytt prosjekt.`, ...opened.notes].join(' '),
+  });
+}
+
+/** The PDF import that is under way, so that it can be stopped. */
+let pdfImport: AbortController | null = null;
+
+function listed(numbers: number[]): string {
+  return numbers.length === 1
+    ? String(numbers[0])
+    : `${numbers.slice(0, -1).join(', ')} og ${numbers[numbers.length - 1]}`;
+}
+
+/**
+ * Imports a PDF: every page becomes a scene with the page as a picture.
+ * The pages are drawn here, in the interface; the main process picks the
+ * file, makes the project folder and stores the pictures. Nothing is opened
+ * until every page is in place, and an import that is stopped or fails
+ * leaves nothing behind.
+ */
+export async function importPdf(): Promise<void> {
+  if (pdfImport) return;
+  if (!(await leaveCurrent())) return;
+  const picked = await guard(() => api().pickPdf());
+  if (!picked) return;
+  const control = new AbortController();
+  pdfImport = control;
+  const setProgress = useStore.getState().setPdfProgress;
+  setProgress({ name: picked.name, page: 0, pages: 0 });
+  let finished = false;
+  try {
+    const { importPdfPages } = await import('./pdfRender');
+    const project = await importPdfPages(picked.data, {
+      name: picked.name,
+      signal: control.signal,
+      begin: () => api().beginPdfImport(),
+      progress: (page, pages) => setProgress({ name: picked.name, page, pages }),
+      store: (page, data) => api().addPdfPage(page, data),
+    });
+    if (!project) return;
+    const opened = await api().finishPdfImport(project);
+    finished = true;
+    const state = useStore.getState();
+    state.load(opened.dir, opened.project);
+    const scenes = opened.project.scenes;
+    const noText = scenes.flatMap((scene, index) =>
+      scene.imported?.warnings.length ? [index + 1] : [],
+    );
+    const parts = [
+      `${picked.name} er importert: ${scenes.length} lysark. Hver side er et bilde, med teksten på siden som alternativ tekst.`,
+    ];
+    if (noText.length > 0) {
+      parts.push(
+        noText.length === scenes.length
+          ? 'Ingen tekst kunne hentes ut av sidene; skriv alternativ tekst for bildene.'
+          : noText.length <= 10
+            ? `Lysark ${listed(noText)} har ingen tekst som kunne hentes ut; skriv alternativ tekst der.`
+            : `${noText.length} lysark har ingen tekst som kunne hentes ut; de er merket i lista.`,
+      );
+    }
+    state.setNotice({ kind: 'info', text: parts.join(' ') });
+  } catch (error) {
+    if (!(error instanceof Error && error.name === 'ImportCancelled')) fail(error);
+  } finally {
+    // Takes away the folder and the pictures of an import that did not get to the end.
+    if (!finished) {
+      await api()
+        .cancelPdfImport()
+        .catch(() => undefined);
+    }
+    pdfImport = null;
+    setProgress(null);
+  }
+}
+
+/** Stops the PDF import that is under way. */
+export function cancelPdfImport(): void {
+  pdfImport?.abort();
+}
+
 function imageSize(url: string): Promise<{ w: number; h: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();

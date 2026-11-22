@@ -16,6 +16,19 @@ export interface ImportedProject extends OpenedProject {
   sourceName: string;
 }
 
+/** An HTML file exported by Lysark, opened as a new project. */
+export interface OpenedHtml extends OpenedProject {
+  sourceName: string;
+  /** What could not be taken along, in Norwegian bokmål. */
+  notes: string[];
+}
+
+/** A PDF the owner has picked for import. Its pages are drawn in the interface. */
+export interface PickedPdf {
+  name: string;
+  data: Uint8Array;
+}
+
 export interface AddedMedia {
   id: string;
   asset: Asset;
@@ -105,7 +118,9 @@ export type MenuCommand =
   | 'duplicate'
   | 'toggle-grid'
   | 'pack'
-  | 'unpack';
+  | 'unpack'
+  | 'open-html'
+  | 'import-pdf';
 
 export interface LysarkApi {
   newProject(): Promise<OpenedProject | null>;
@@ -139,6 +154,21 @@ export interface LysarkApi {
   packProject(dir: string): Promise<{ path: string; bytes: number } | null>;
   /** Unpacks a packed project into a new folder and opens it. */
   unpackProject(): Promise<OpenedProject | null>;
+  /** Makes a project in a new folder out of an HTML file exported by Lysark, and opens it. */
+  openHtmlFile(): Promise<OpenedHtml | null>;
+  /** Lets the owner pick a PDF and hands over its bytes. */
+  pickPdf(): Promise<PickedPdf | null>;
+  /**
+   * Asks where the project made from the picked PDF is to lie, and makes the
+   * folder. False when the owner cancels.
+   */
+  beginPdfImport(): Promise<boolean>;
+  /** Stores the picture (WebP) of one page in the folder of the import that is under way. */
+  addPdfPage(page: number, data: Uint8Array): Promise<AddedMedia>;
+  /** Writes the project of the import that is under way, and opens it. */
+  finishPdfImport(project: Project): Promise<OpenedProject>;
+  /** Drops the import that is under way and takes away what it has written. */
+  cancelPdfImport(): Promise<void>;
   preview(dir: string, project: Project, sceneIndex: number): Promise<void>;
   recentProjects(): Promise<string[]>;
   /** A project the program was started with, if any. */

@@ -14,12 +14,12 @@ import {
   writeSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import { newId } from '../shared/format/factory';
 import type { Asset, Project, Scene } from '../shared/format/schema';
 import { readWavInfo, renderTrack, secondsToSamples, wavSamples } from '../shared/audio/wav';
 import { SAMPLE_RATE, hasSound, sceneDuration, type Schedule } from '../shared/render/clock';
-import { runFfmpeg, writeTo } from './ffmpeg';
+import { ffmpegPath, runFfmpeg, writeTo } from './ffmpeg';
 import { mediaPath } from './projectIo';
 
 export interface AddedSound {
@@ -193,6 +193,66 @@ export async function encodeSceneSound(
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
+}
+
+/**
+ * After an exported HTML file has been opened as a project: its sound is
+ * AAC, one file per slide. Each is turned back into the project's format
+ * (WAV), so the sound can be edited and exported again like any other.
+ * Without FFmpeg that cannot be done; the slides then lose their sound,
+ * and a note says so.
+ */
+export async function restoreSound(
+  dir: string,
+  source: Project,
+): Promise<{ project: Project; notes: string[] }> {
+  const compressed = Object.entries(source.assets).filter(
+    ([, asset]) => asset.kind === 'audio' && !asset.file.endsWith('.wav'),
+  );
+  if (compressed.length === 0) return { project: source, notes: [] };
+  const project = structuredClone(source);
+  const notes: string[] = [];
+  const lost = new Set<string>();
+  for (const [id, asset] of compressed) {
+    const file = mediaPath(dir, asset.file);
+    try {
+      if (!ffmpegPath()) throw new Error('FFmpeg mangler');
+      const wav = await decodeToWav(new Uint8Array(readFileSync(file)), extname(asset.file));
+      const stored = storeWav(dir, wav, asset.name ?? 'Stemme');
+      project.assets[id] = stored.asset;
+      for (const scene of project.scenes) {
+        for (const clip of scene.audio?.clips ?? []) {
+          if (clip.kind !== 'sound' || clip.asset !== id) continue;
+          clip.to = Math.min(clip.to, stored.seconds);
+          clip.from = Math.min(clip.from, Math.max(0, clip.to - 0.01));
+        }
+      }
+    } catch {
+      lost.add(id);
+      delete project.assets[id];
+    }
+    rmSync(file, { force: true });
+  }
+  if (lost.size > 0) {
+    let slides = 0;
+    for (const scene of project.scenes) {
+      if (!scene.audio?.clips.some((clip) => clip.kind === 'sound' && lost.has(clip.asset))) {
+        continue;
+      }
+      slides += 1;
+      delete scene.audio;
+      for (const step of scene.timeline) delete step.at;
+    }
+    notes.push(
+      `Lyden på ${slides} lysark kunne ikke gjøres om til prosjektets lydformat og er ikke med` +
+        (ffmpegPath() ? '.' : ', fordi FFmpeg mangler.'),
+    );
+  } else {
+    notes.push(
+      'Stemmen er med, slik den var da HTML-fila ble laget: klipp og pauser er slått sammen til ett opptak per lysark.',
+    );
+  }
+  return { project, notes };
 }
 
 /** Turns a compressed sound file (from an exported HTML file) back into the project's format. */

@@ -16,13 +16,14 @@
     "fetch:ffmpeg": "node tools/fetch-ffmpeg.mjs",
     "dist:linux": "npm run fetch:ffmpeg -- linux-x64 && npm run build && electron-builder --linux",
     "dist:win": "npm run fetch:ffmpeg -- win32-x64 && npm run build && electron-builder --win zip",
-    "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/sound.test.ts tests/commons.test.ts tests/importer.test.ts tests/projectIo.test.ts",
+    "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/sound.test.ts tests/commons.test.ts tests/importer.test.ts tests/importer-html.test.ts tests/importer-pdf.test.ts tests/projectIo.test.ts",
     "dist:win-installer": "npm run fetch:ffmpeg -- win32-x64 && npm run build && electron-builder --win nsis"
   },
   "dependencies": {
     "fast-xml-parser": "^5.12.1",
     "fflate": "^0.8.3",
     "immer": "^11.2.10",
+    "pdfjs-dist": "^6.5.438",
     "prosemirror-commands": "^1.7.2",
     "prosemirror-history": "^1.5.2",
     "prosemirror-keymap": "^1.2.3",
@@ -63,7 +64,9 @@
     "files": [
       "out/**",
       "resources/fonts/**",
-      "package.json"
+      "package.json",
+      "!node_modules/pdfjs-dist/**",
+      "!node_modules/@napi-rs/**"
     ],
     "asar": true,
     "linux": {

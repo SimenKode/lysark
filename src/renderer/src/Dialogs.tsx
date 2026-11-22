@@ -1,7 +1,7 @@
 // Dialogs: the import report, and project and logo settings.
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ImportReport } from '../../shared/api';
-import { chooseLogoFolder, clearLogos } from './actions';
+import { cancelPdfImport, chooseLogoFolder, clearLogos } from './actions';
 import { useStore } from './store';
 
 function Dialog(props: {
@@ -92,6 +92,55 @@ export function ImportReportDialog(props: {
         </>
       )}
     </Dialog>
+  );
+}
+
+/** Shown while a PDF is imported. It cannot be closed, only stopped. */
+export function PdfImportDialog() {
+  const progress = useStore((s) => s.pdfProgress);
+  const [stopping, setStopping] = useState(false);
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+  if (!progress) return null;
+  const stop = (): void => {
+    setStopping(true);
+    cancelPdfImport();
+  };
+  return (
+    <dialog
+      ref={ref}
+      className="dialog pdf-import"
+      onCancel={(event) => {
+        // Escape stops the import; the dialog goes away when the import has let go.
+        event.preventDefault();
+        stop();
+      }}
+    >
+      <h2>Importerer PDF</h2>
+      <p>
+        <strong>{progress.name}</strong>
+      </p>
+      <p role="status">
+        {stopping
+          ? 'Avbryter …'
+          : progress.pages > 0
+            ? `Importerer side ${progress.page} av ${progress.pages} …`
+            : 'Leser PDF-fila …'}
+      </p>
+      {progress.pages > 0 ? (
+        <progress max={progress.pages} value={progress.page - 1} />
+      ) : (
+        <progress />
+      )}
+      <div className="dialog-actions">
+        <button type="button" onClick={stop} disabled={stopping}>
+          Avbryt
+        </button>
+      </div>
+    </dialog>
   );
 }
 

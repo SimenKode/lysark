@@ -25,6 +25,13 @@ export interface MediaRequest {
   resolve: (assetId: string | undefined) => void;
 }
 
+/** How far the import of a PDF has come. */
+export interface PdfProgress {
+  name: string;
+  page: number;
+  pages: number;
+}
+
 interface State {
   dir: string | null;
   project: Project | null;
@@ -58,6 +65,8 @@ interface State {
   videoDialog: boolean;
   /** How far a running video export has come. */
   videoProgress: VideoProgress | null;
+  /** A PDF is being imported: how far it has come. `pages` is 0 until the file is read. */
+  pdfProgress: PdfProgress | null;
 
   load(dir: string, project: Project): void;
   close(): void;
@@ -85,6 +94,7 @@ interface State {
   openRecorder(recorder: State['recorder']): void;
   setVideoDialog(open: boolean): void;
   setVideoProgress(progress: VideoProgress | null): void;
+  setPdfProgress(progress: PdfProgress | null): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -112,6 +122,7 @@ export const useStore = create<State>((set, get) => ({
   recorder: null,
   videoDialog: false,
   videoProgress: null,
+  pdfProgress: null,
 
   load(dir, project) {
     set({
@@ -266,6 +277,10 @@ export const useStore = create<State>((set, get) => ({
 
   setVideoProgress(progress) {
     set({ videoProgress: progress });
+  },
+
+  setPdfProgress(progress) {
+    set({ pdfProgress: progress });
   },
 }));
 

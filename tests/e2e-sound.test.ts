@@ -290,5 +290,41 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await expect
       .poll(() => player.locator('.lp-play').textContent(), { timeout: 10_000 })
       .toBe('Spill av');
+    await player.close();
+  }, 120_000);
+
+  it('opens the HTML file as a project again, with the voice as sound that can be edited', async () => {
+    const dir = join(work, 'fra-html');
+    await app.evaluate(
+      ({ dialog, Menu }, paths) => {
+        dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [paths.html] });
+        dialog.showSaveDialog = async () => ({ canceled: false, filePath: paths.dir });
+        dialog.showMessageBoxSync = () => 1;
+        const file = Menu.getApplicationMenu()!.items.find((item) => item.label === 'Fil')!;
+        file.submenu!.items.find((item) => item.label === 'Åpne HTML-fil …')!.click();
+      },
+      { html: join(work, 'forelesning.html'), dir },
+    );
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+      .toContain('er åpnet som et nytt prosjekt');
+    expect(await page.locator('.notice').textContent()).toContain('Stemmen er med');
+    const opened = JSON.parse(readFileSync(join(dir, 'prosjekt.json'), 'utf8')) as Project;
+    const scene = opened.scenes[1]!;
+    // One recording for the slide, in the project's own format, and the steps keep their times.
+    expect(scene.audio!.clips).toHaveLength(1);
+    const clip = scene.audio!.clips[0]!;
+    const asset = opened.assets[clip.kind === 'sound' ? clip.asset : '']!;
+    expect(asset).toMatchObject({ kind: 'audio', mime: 'audio/wav' });
+    const wav = new Uint8Array(readFileSync(join(dir, asset.file)));
+    expect(readWavInfo(wav)).toMatchObject({ sampleRate: 48000, channels: 1, bitsPerSample: 16 });
+    expect(scene.timeline.every((step) => step.at !== undefined)).toBe(true);
+    expect(Object.values(opened.assets).some((a) => a.mime === 'audio/mp4')).toBe(false);
+    // The slides without sound keep the lengths their pauses gave them.
+    expect(opened.scenes[0]!.audio!.clips).toEqual([
+      { id: expect.any(String), kind: 'pause', duration: 2 },
+    ]);
+    await page.getByRole('tab', { name: /^Lyd/ }).click();
+    await expect.poll(total).toMatch(/^Hele forelesningen: 0:\d\d$/);
   }, 120_000);
 });
