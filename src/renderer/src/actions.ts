@@ -7,8 +7,12 @@ import {
   type CommonsResult,
   type LysarkApi,
 } from '../../shared/api';
+import { appendSound, cutRange, replaceSound } from '../../shared/audio/edit';
+import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
-import type { Element } from '../../shared/format/schema';
+import type { Element, Project } from '../../shared/format/schema';
+import { formatTime, trackDuration } from '../../shared/render/clock';
+import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
 import { currentScene, isDirty, useStore } from './store';
@@ -112,8 +116,106 @@ export async function exportHtml(): Promise<void> {
       `${summary.sidecarFiles} stor${summary.sidecarFiles === 1 ? '' : 'e'} video${summary.sidecarFiles === 1 ? '' : 'er'} ligger i mappa ved siden av og må følge med fila.`,
     );
   }
+  if (summary.hasSound) parts.push('Stemmen din er med: studentene kan trykke «Spill av».');
   if (summary.logoMissing) parts.push('Logoen er ikke med, fordi USNs logofiler ikke er valgt.');
   state.setNotice({ kind: 'info', text: parts.join(' '), path: summary.path });
+}
+
+/** Exports the lecture as video with the given choices. The dialog shows the progress. */
+export async function exportVideo(choices: NonNullable<Project['video']>): Promise<void> {
+  const state = useStore.getState();
+  if (!state.dir || !state.project) return;
+  if (state.project.scenes.length === 0) {
+    state.setNotice({ kind: 'error', text: 'Prosjektet har ingen lysark å lage video av.' });
+    return;
+  }
+  // The choices are part of the project, so the next export starts from them.
+  state.update((draft) => {
+    draft.video = choices;
+  });
+  const { dir, project } = useStore.getState();
+  state.setVideoProgress({ phase: 'sound', frame: 0, frames: 1 });
+  const stop = api().onVideoProgress((progress) => useStore.getState().setVideoProgress(progress));
+  try {
+    const summary = await guard(() => api().exportVideo(dir!, project!));
+    if (!summary) return;
+    const parts = [
+      `Videoen er lagret (${formatTime(summary.seconds)}, ${megabytes(summary.bytes)}).`,
+      summary.captions
+        ? 'Tekstingen ligger i en egen fil ved siden av (samme navn, .vtt).'
+        : 'Ingen lysark har manus, så det er ikke laget teksting.',
+    ];
+    useStore.getState().setNotice({ kind: 'info', text: parts.join(' '), path: summary.path });
+    useStore.getState().setVideoDialog(false);
+  } finally {
+    stop();
+    useStore.getState().setVideoProgress(null);
+  }
+}
+
+export function cancelVideo(): void {
+  api().cancelVideo();
+}
+
+export function hasFfmpeg(): Promise<boolean> {
+  return api()
+    .hasFfmpeg()
+    .catch(() => false);
+}
+
+/**
+ * Stores what was recorded for one slide and makes it the slide's sound.
+ * `stepAts` are the times the owner pressed on to each step, in seconds
+ * from the start of this recording. With `keepBefore`, the slide's sound
+ * before that time is kept and the recording follows it.
+ */
+export async function saveRecording(
+  sceneId: string,
+  samples: Float32Array,
+  stepAts: ReadonlyArray<number | undefined>,
+  keepBefore?: number,
+): Promise<boolean> {
+  const { dir, project } = useStore.getState();
+  const index = project?.scenes.findIndex((s) => s.id === sceneId) ?? -1;
+  if (!dir || !project || index < 0) return false;
+  const wav = encodeWav(samples);
+  const added = await guard(() => api().addRecording(dir, wav, `Opptak lysark ${index + 1}`));
+  if (!added) return false;
+  rememberSamples(added.asset.file, wavSamples(wav));
+  useStore.getState().update((draft) => {
+    const scene = draft.scenes.find((s) => s.id === sceneId);
+    if (!scene) return;
+    draft.assets[added.id] = added.asset;
+    const id = (): string => newId('c');
+    if (keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0) {
+      const kept = Math.min(keepBefore, trackDuration(scene.audio));
+      cutRange(scene, kept, trackDuration(scene.audio), id);
+      appendSound(scene, added.id, added.seconds, id);
+      scene.timeline.forEach((step, i) => {
+        const at = stepAts[i];
+        if (at !== undefined) step.at = kept + at;
+        else if (step.at !== undefined && step.at >= kept) delete step.at;
+      });
+    } else {
+      replaceSound(scene, added.id, added.seconds, stepAts, id);
+    }
+  });
+  return true;
+}
+
+/** Lets the owner pick a sound file and puts it at the end of the current slide's sound. */
+export async function importSoundFile(): Promise<void> {
+  const state = useStore.getState();
+  const scene = currentScene(state);
+  if (!state.dir || !scene) return;
+  const added = await guard(() => api().importSound(state.dir!));
+  if (!added) return;
+  useStore.getState().update((draft) => {
+    const target = draft.scenes.find((s) => s.id === scene.id);
+    if (!target) return;
+    draft.assets[added.id] = added.asset;
+    appendSound(target, added.id, added.seconds, () => newId('c'));
+  });
 }
 
 export async function packProject(): Promise<void> {

@@ -84,6 +84,9 @@ export function usedAssets(project: Project): Set<string> {
       }
       for (const id of moreAssets(el.more)) used.add(id);
     }
+    for (const clip of scene.audio?.clips ?? []) {
+      if (clip.kind === 'sound') used.add(clip.asset);
+    }
   }
   return used;
 }

@@ -62,7 +62,7 @@ body { background: ${C.indigo}; }
 .lp-toc-num { flex: none; min-width: 1.8em; font-variant-numeric: tabular-nums; }
 
 .lp-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.lp-panel-head h2 { outline: none; }
+.lp-panel-head h2, .lp-panel, .lp-script { outline: none; }
 .lp-panel-tools { display: flex; gap: 8px; flex: none; }
 /* Rich content (tables, video, embedded pages) can take the whole width. */
 .lp-panel.lp-panel-wide { position: absolute; inset: 0; z-index: 30; width: auto; border-left: 0; }
@@ -93,6 +93,8 @@ body { background: ${C.indigo}; }
 .lp-btn-light { border-color: ${C.lilla}; color: ${C.lilla}; background: ${C.hvit}; }
 .lp-btn-light:hover { background: ${C.lysIndigo}; }
 .lp-app :focus-visible { outline: 3px solid ${C.syregronn}; outline-offset: 2px; }
+/* The slide area and the panels take the focus so that keys reach them; they need no ring. */
+.lp-app .lp-viewport:focus-visible, .lp-app .lp-panel:focus-visible, .lp-app .lp-script:focus-visible { outline: none; }
 .lp-toc :focus-visible, .lp-panel :focus-visible, .lp-script :focus-visible, .lp-help :focus-visible {
   outline-color: ${C.lilla};
 }

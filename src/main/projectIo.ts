@@ -34,6 +34,11 @@ const VIDEO_MIME: Record<string, string> = {
   '.webm': 'video/webm',
 };
 
+const AUDIO_MIME: Record<string, string> = {
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+};
+
 export const MEDIA_EXTENSIONS = {
   image: Object.keys(IMAGE_MIME).map((e) => e.slice(1)),
   video: Object.keys(VIDEO_MIME).map((e) => e.slice(1)),
@@ -41,7 +46,7 @@ export const MEDIA_EXTENSIONS = {
 
 export function mimeOf(file: string): string | undefined {
   const ext = extname(file).toLowerCase();
-  return IMAGE_MIME[ext] ?? VIDEO_MIME[ext];
+  return IMAGE_MIME[ext] ?? VIDEO_MIME[ext] ?? AUDIO_MIME[ext];
 }
 
 /** Absolute path of a media file, refusing anything outside media/. */

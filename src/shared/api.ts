@@ -46,6 +46,29 @@ export interface ExportSummary {
   sidecarDir?: string;
   sidecarFiles: number;
   logoMissing: boolean;
+  /** The file carries the owner's voice, and can play itself ("Spill av"). */
+  hasSound: boolean;
+}
+
+/** A sound file that has been added to the project. */
+export interface AddedSound extends AddedMedia {
+  /** Its length. */
+  seconds: number;
+}
+
+export interface VideoProgress {
+  phase: 'sound' | 'frames' | 'finishing';
+  /** Pictures handed to FFmpeg so far, and how many there will be. */
+  frame: number;
+  frames: number;
+}
+
+export interface VideoSummary {
+  path: string;
+  bytes: number;
+  seconds: number;
+  /** The captions file (WebVTT) written next to the video, when any slide has a manuscript. */
+  captions?: string;
 }
 
 export type LogoVariant = 'light' | 'dark';
@@ -73,6 +96,8 @@ export type MenuCommand =
   | 'save-then-close'
   | 'preview'
   | 'export'
+  | 'export-video'
+  | 'record'
   | 'settings'
   | 'undo'
   | 'redo'
@@ -97,6 +122,19 @@ export interface LysarkApi {
   /** Fetches YouTube's still picture of a video into the project. Contacts the network. */
   addYouTubeStill(dir: string, url: string): Promise<AddedMedia>;
   exportHtml(dir: string, project: Project): Promise<ExportSummary | null>;
+  /**
+   * Exports the lecture as an MP4 video with captions next to it. Resolves
+   * with null when the owner cancels. Progress arrives through onVideoProgress.
+   */
+  exportVideo(dir: string, project: Project): Promise<VideoSummary | null>;
+  cancelVideo(): void;
+  onVideoProgress(listener: (progress: VideoProgress) => void): () => void;
+  /** True when FFmpeg, which video and sound export need, is in place. */
+  hasFfmpeg(): Promise<boolean>;
+  /** Stores a recording (a WAV file: mono, 48 kHz, 16 bit) in the project folder. */
+  addRecording(dir: string, wav: Uint8Array, name: string): Promise<AddedSound>;
+  /** Lets the owner pick a sound file; it is converted and stored in the project folder. */
+  importSound(dir: string): Promise<AddedSound | null>;
   /** Packs the saved project folder into one zip file. */
   packProject(dir: string): Promise<{ path: string; bytes: number } | null>;
   /** Unpacks a packed project into a new folder and opens it. */

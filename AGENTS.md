@@ -135,16 +135,38 @@ the manual, raise it with the owner instead of choosing silently.
   the same rules apply to it (only on his click, only the search words),
   its licences are filtered and credited as for Commons, and he is told
   which source was added.
-- Tests never contact the network. Where a test needs Wikimedia, the test
-  answers for it.
+- Tests never contact the network. Where a test needs Wikimedia or
+  YouTube, the test answers for it.
+- The program uses the microphone only while the owner records in the
+  recording window, and never the camera. The main process grants "media"
+  for sound only, and only to the program's own window
+  (`allowMicrophoneOnly` in `src/main/index.ts`). Recordings are stored
+  in the project folder and sent nowhere. Tests record from Chromium's
+  built-in fake microphone, never from a real one.
+- FFmpeg is a separate program that Lysark starts (`src/main/ffmpeg.ts`),
+  never linked in and never in git. One fixed build is fetched by
+  `tools/fetch-ffmpeg.mjs` with its checksum checked, placed in
+  `vendor/ffmpeg/`, and shipped next to the program with its licence text
+  and a link to its source. To change the build, change it there and in
+  `docs/stakk.md`, and tell the owner.
+- All sound in a project is mono WAV, 48 kHz, 16 bit. A recording is never
+  changed: editing changes the list of clips that point into it
+  (`src/shared/audio/edit.ts`). Time is computed by one clock
+  (`src/shared/render/clock.ts`) that the video export, "Spill av" in the
+  HTML player and the editor's sound panel all use.
 
 ## Commands
 
 - `npm run dev` starts the program for development.
 - `npm run typecheck` must be clean.
-- `npm test` builds and runs every test, including three files that
+- `npm test` builds and runs every test, including the `e2e-*` files that
   start the whole program without showing a window (`LYSARK_HIDDEN=1`).
-  Never show windows on the owner's screen from tests.
+  Never show windows on the owner's screen from tests. A window that is
+  not shown draws only about once a second, so anything in those tests
+  that follows an animation needs a generous timeout.
+- `npm run fetch:ffmpeg` fetches FFmpeg into `vendor/ffmpeg/` (about
+  350 MB of downloads, once). `tests/e2e-sound.test.ts` needs it and is
+  skipped without it; the `dist:*` scripts fetch it when it is missing.
 - `npm run dist:linux` and `npm run dist:win` package the program into
   `release/`.
 - `eksempler/` holds the owner's real lectures (never in git).

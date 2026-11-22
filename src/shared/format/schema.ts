@@ -8,8 +8,10 @@ export const FORMAT_NAME = 'lysark';
 /**
  * 2: every element can carry "Lær mer" content (`more`); assets can carry a credit.
  * 3: shapes can carry their own stroke width.
+ * 4: slides can carry sound (a recording as a list of clips); assets can be
+ *    sound files; the project carries its choices for video export.
  */
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 
 export { STAGE } from './constants';
 
@@ -345,6 +347,38 @@ export const Step = z.object({
 });
 export type Step = z.infer<typeof Step>;
 
+// ---------- Sound ----------
+
+/**
+ * One piece of a slide's sound track. A track is a list of clips played one
+ * after the other. Editing never changes a recording: a cut only changes
+ * which parts of it the clips point at, so everything can be undone.
+ */
+export const AudioClip = z.discriminatedUnion('kind', [
+  z.object({
+    id: z.string().min(1),
+    kind: z.literal('sound'),
+    /** A sound asset: mono WAV, 48 kHz, 16 bit. */
+    asset: z.string(),
+    /** The part of the recording that is played, in seconds from its start. */
+    from: z.number().min(0),
+    to: z.number().positive(),
+  }),
+  /** Silence: the picture stands while nothing is said. */
+  z.object({ id: z.string().min(1), kind: z.literal('pause'), duration: z.number().positive() }),
+]);
+export type AudioClip = z.infer<typeof AudioClip>;
+
+/** Limits of the loudness change of a slide, in decibels. */
+export const GAIN_DB = { min: -18, max: 18 } as const;
+
+export const SceneAudio = z.object({
+  clips: z.array(AudioClip),
+  /** Loudness change for the whole slide, in decibels. 0 when absent. */
+  gain: z.number().min(GAIN_DB.min).max(GAIN_DB.max).optional(),
+});
+export type SceneAudio = z.infer<typeof SceneAudio>;
+
 // ---------- Scenes ----------
 
 export const IMPORT_WARNING_CODES = [
@@ -388,6 +422,11 @@ export const Scene = z.object({
   timeline: z.array(Step),
   /** Voice-over manuscript; comes from the PPTX notes on import. */
   script: z.string(),
+  /**
+   * The slide's sound track. Its length is the length of the slide in
+   * video and in "Spill av". A slide without one stands for a default time.
+   */
+  audio: SceneAudio.optional(),
   imported: z
     .object({ slide: z.number().int().min(1), warnings: z.array(ImportWarning) })
     .optional(),
@@ -412,7 +451,7 @@ export const Credit = z.object({
 export type Credit = z.infer<typeof Credit>;
 
 export const Asset = z.object({
-  kind: z.enum(['image', 'video']),
+  kind: z.enum(['image', 'video', 'audio']),
   /** Path relative to the project folder, always inside media/. */
   file: z.string().regex(/^media\/[A-Za-z0-9._-]+$/),
   mime: z.string(),
@@ -438,6 +477,17 @@ export const Project = z.object({
     /** Let students open the manuscript panel in the exported HTML. */
     showScript: z.boolean(),
   }),
+  /** Choices for the video export. Defaults apply when absent. */
+  video: z
+    .object({
+      /** Between slides: a clean cut, or a short fade. */
+      transition: z.enum(['cut', 'fade']),
+      /** Even out the loudness of the whole video when it is exported. */
+      evenLoudness: z.boolean(),
+      /** End the video with slides that list the picture credits. */
+      credits: z.boolean(),
+    })
+    .optional(),
   assets: z.record(z.string(), Asset),
   scenes: z.array(Scene),
 });

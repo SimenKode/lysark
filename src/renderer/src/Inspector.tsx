@@ -455,10 +455,14 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
           value={el.strokeWidth}
           themeValue={theme.shape.strokeWidth}
           onChange={(value) =>
-            update<typeof el>((s) => {
-              if (value === undefined) delete s.strokeWidth;
-              else s.strokeWidth = value;
-            }, 'stroke')
+            update<typeof el>(
+              (s) => {
+                if (value === undefined) delete s.strokeWidth;
+                else s.strokeWidth = value;
+              },
+              // Dragging the slider is one undo step; "Tilbakestill" is its own.
+              value === undefined ? undefined : 'stroke',
+            )
           }
         />
       )}

@@ -593,10 +593,431 @@ textarea {
   content: counter(lsnum, upper-roman) '.';
 }
 
-.script-panel {
-  padding: 10px 12px 12px;
+.bottom-panel {
+  flex: none;
   background: #fff;
   border-top: 1.5px solid var(--line);
+}
+.bottom-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 0;
+}
+.bottom-tabs button[aria-selected='true'] {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}
+.script-panel {
+  padding: 10px 12px 12px;
+}
+
+/* ---------- Sound: the lecture strip, the track and its tools ---------- */
+.audio-panel {
+  padding: 8px 12px 12px;
+}
+.lecture-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.lecture-blocks {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 2px;
+}
+.lecture-block {
+  flex: 1 1 0;
+  min-width: 14px;
+  min-height: 26px;
+  padding: 0 2px;
+  border-radius: 8px;
+  border: 1.5px solid var(--indigo);
+  background: #fff;
+  color: var(--indigo);
+  font-size: 0.75rem;
+  line-height: 1;
+  overflow: hidden;
+}
+.lecture-block.has-sound {
+  background: var(--lys-indigo);
+}
+.lecture-block[aria-current='true'] {
+  background: var(--lilla);
+  border-color: var(--lilla);
+  color: #fff;
+}
+.lecture-total {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.audio-bar,
+.audio-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.audio-tools {
+  margin-top: 8px;
+}
+.audio-time {
+  min-width: 8.5em;
+  font-variant-numeric: tabular-nums;
+}
+.audio-goon {
+  margin: 0;
+}
+.audio-hint {
+  margin: 6px 0 0;
+}
+.audio-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+}
+.audio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.audio-number {
+  width: 4.2em;
+  text-align: right;
+}
+.audio-gain input[type='range'] {
+  width: 120px;
+  accent-color: var(--lilla);
+}
+.audio-gain output {
+  min-width: 3.6em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.track-wrap {
+  margin-top: 8px;
+}
+.track {
+  position: relative;
+  height: 84px;
+  border: 1.5px solid var(--indigo);
+  border-radius: 12px;
+  background: var(--lys-beige);
+  overflow: hidden;
+  cursor: text;
+  touch-action: none;
+  user-select: none;
+}
+.track:focus-visible {
+  outline: 3px solid var(--oransje);
+  outline-offset: 2px;
+}
+.track-wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.track-clip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px solid rgba(47, 11, 99, 0.35);
+  pointer-events: none;
+}
+.track-pause {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  border-left: 1px solid var(--indigo);
+  border-right: 1px solid var(--indigo);
+  background: repeating-linear-gradient(135deg, var(--lys-indigo) 0 6px, #fff 6px 12px);
+  color: var(--indigo);
+  font-size: 0.75rem;
+  overflow: hidden;
+  cursor: pointer;
+}
+.track-pause:hover:not(:disabled) {
+  background: repeating-linear-gradient(135deg, var(--lys-lilla) 0 6px, #fff 6px 12px);
+}
+.track-pause[aria-pressed='true'] {
+  outline: 3px solid var(--oransje);
+  outline-offset: -3px;
+  color: var(--indigo);
+}
+.track-pause span {
+  padding: 1px 4px;
+  background: #fff;
+  border-radius: 6px;
+}
+.track-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 98, 2, 0.28);
+  border-left: 2px solid var(--oransje);
+  border-right: 2px solid var(--oransje);
+  pointer-events: none;
+}
+.track-step {
+  position: absolute;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin-left: -11px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--lilla);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: ew-resize;
+}
+.track-step::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 64px;
+  margin-left: -1px;
+  background: var(--lilla);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.track-step.is-auto {
+  background: #fff;
+  color: var(--lilla);
+  border-color: var(--lilla);
+}
+.track-step:hover:not(:disabled) {
+  background: var(--indigo);
+  color: #fff;
+}
+.track-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #000;
+  pointer-events: none;
+}
+.track-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- The recording window ---------- */
+.recorder {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--lys-beige);
+  outline: none;
+}
+.recorder-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--indigo);
+  color: #fff;
+}
+.recorder-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+.recorder-where {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recorder-clock {
+  flex: none;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.recorder-clock.is-on {
+  background: var(--oransje);
+  border-color: var(--oransje);
+  color: #000;
+}
+.recorder-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 16px;
+  padding: 16px 20px;
+}
+.recorder-left {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.recorder-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recorder-stage-box {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 1.5px var(--line);
+}
+.recorder-stage-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+.recorder-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(47, 11, 99, 0.72);
+  color: #fff;
+  font-family: 'Liberation Serif', 'Times New Roman', serif;
+  font-size: 12rem;
+  line-height: 1;
+}
+.recorder-side {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: #fff;
+}
+.recorder-side h3 {
+  margin: 0 0 8px;
+}
+.recorder-script {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+.recorder-script p {
+  margin: 0 0 0.7em;
+}
+.recorder-next {
+  flex: none;
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1.5px solid var(--line);
+  font-weight: 700;
+}
+.recorder-foot {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1.5px solid var(--line);
+}
+.recorder-mic {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.recorder-mic select {
+  max-width: 260px;
+}
+.recorder-mic .check {
+  margin: 0 0 6px;
+}
+.recorder-meter {
+  width: 180px;
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--indigo);
+  background: #fff;
+  overflow: hidden;
+}
+.recorder-meter span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--lilla);
+}
+.recorder-meter span[data-hot='true'] {
+  background: var(--oransje);
+}
+.recorder-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recorder-note {
+  flex: none;
+  margin: 0;
+  padding: 8px 20px 12px;
+  background: #fff;
+}
+.recorder-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* ---------- Video export ---------- */
+.video-dialog .dialog-actions {
+  gap: 8px;
+}
+.video-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.video-progress progress {
+  width: 100%;
+  height: 14px;
+  accent-color: var(--lilla);
+}
+.video-missing {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 /* ---------- Side panel ---------- */

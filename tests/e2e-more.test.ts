@@ -354,7 +354,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
         }>;
       }>;
     };
-    expect(saved.version).toBe(3);
+    expect(saved.version).toBe(4);
     const image = saved.scenes[1]!.elements.find((e) => e.type === 'image')!;
     expect(image.more!.title).toBe('Om bildet A');
     expect(image.more!.corner).toBe('bl');

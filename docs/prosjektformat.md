@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 3), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 4), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -49,7 +49,53 @@ cellemarger, og bilder kan blandes med det som ligger under (`blend`,
 brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
-Diagrammaler og lyd er ikke i formatet ennå (leveranse 3 og 4).
+Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
+
+## Format 4: lyd, tid og valg for video
+
+**Opptakene** er lydfiler i `media/` og står i `assets` med
+`kind: 'audio'`. All lyd i et prosjekt er WAV i mono, 48 kHz og 16 bit.
+Da er et tidspunkt i et opptak et bestemt sted i fila, og ingenting må
+dekodes for å klippe. Lydfiler du importerer (MP3, M4A og andre), gjøres
+om til dette formatet når de legges inn.
+
+**Lyden på et lysark** er `audio` på lysarket: en liste med klipp som
+spilles etter hverandre, og en valgfri endring av lydstyrken (`gain`, i
+desibel, fra -18 til 18).
+
+```ts
+type AudioClip =
+  | { id: string; kind: 'sound'; asset: string; from: number; to: number } // sekunder i opptaket
+  | { id: string; kind: 'pause'; duration: number };                      // stillhet
+```
+
+Et opptak endres aldri. Å klippe bort et stykke gjør ett klipp om til to
+som peker på hver sin del av det samme opptaket. Derfor kan alt angres,
+og «originalen beholdes» er sant bokstavelig. En pause er et eget klipp.
+
+**Lengden på et lysark** i video og i «Spill av» er lengden på lyden.
+Et lysark uten lyd står i 5 sekunder, pluss 2 for hvert steg; vil du
+bestemme lengden selv, legger du inn en pause.
+
+**Tidspunktet for et steg** er `at` på steget, i sekunder fra lysarket
+starter. Det settes når du trykker pil høyre under innlesing, og kan
+flyttes på tidslinja. Steg uten tidspunkt fordeles jevnt. Når lyd
+klippes bort eller en pause legges inn, flytter stegene etterpå seg
+tilsvarende, så det som vises, fortsatt følger det som sies.
+
+**Valgene for video** står i `video` på prosjektet: overgang mellom
+lysark (`transition`: rent klipp eller kort toning), jevn lydstyrke
+(`evenLoudness`) og «Bildekilder» som avslutning (`credits`).
+
+**Klokka** (`src/shared/render/clock.ts`) regner ut hva som står på
+skjermen ved et hvilket som helst tidspunkt. Videoeksporten, «Spill av»
+i HTML-fila og lydpanelet i programmet bruker den samme klokka, og den
+leser aldri veggklokka.
+
+**I en eksportert HTML-fil** ligger ikke opptakene. Lyden på hvert
+lysark settes sammen (klipp, pauser, lydstyrke) og kodes som én liten
+AAC-fil, og lysarket peker på den. Åpner du HTML-fila som prosjekt
+igjen, er klippene derfor slått sammen.
 
 ## Format 3: tykkelse på strek
 

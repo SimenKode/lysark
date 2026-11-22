@@ -8,6 +8,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import type {
   AddedMedia,
+  AddedSound,
   CommonsPicture,
   CommonsResult,
   ExportSummary,
@@ -17,11 +18,16 @@ import type {
   LogoVariant,
   MenuCommand,
   OpenedProject,
+  VideoProgress,
+  VideoSummary,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
 import { webPictureUrl } from '../shared/api';
 import type { CommonsHit } from './commons';
+import { SOUND_EXTENSIONS, addRecording, importSound } from './audio';
 import { buildPreview, exportHtml } from './exportHtml';
+import { ffmpegPath } from './ffmpeg';
+import { exportVideo, type VideoJob } from './video';
 import { isPreviewUrl, servePreview, stopPreviewServer } from './previewServer';
 import { commonsPreview, downloadCommons, proxyPicture, searchCommons, youtubeStill } from './web';
 import {
@@ -67,6 +73,8 @@ let previewWindow: BrowserWindow | null = null;
 /** Folder of the project that is open; media is only served from here. */
 let currentDir: string | null = null;
 let documentState = { dirty: false, title: '' };
+/** The video export that is running, if any. One at a time. */
+let videoJob: VideoJob | null = null;
 let closeConfirmed = false;
 
 function send(command: MenuCommand): void {
@@ -166,6 +174,32 @@ function blockNetworkInInterface(): void {
   );
 }
 
+/**
+ * The program gives itself leave to use the microphone, and nothing else:
+ * sound only, never the camera, and only for its own window. Recordings are
+ * stored in the project folder and sent nowhere.
+ */
+function allowMicrophoneOnly(): void {
+  const own = (contents: Electron.WebContents | null): boolean =>
+    !!contents && !!mainWindow && contents.id === mainWindow.webContents.id;
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    const types = (details as { mediaTypes?: string[] }).mediaTypes ?? [];
+    const soundOnly = types.length > 0 && types.every((type) => type === 'audio');
+    callback(permission === 'media' && soundOnly && own(contents));
+  });
+  session.defaultSession.setPermissionCheckHandler((contents, permission, _origin, details) => {
+    if (permission !== 'media') return false;
+    const type = (details as { mediaType?: string }).mediaType;
+    return own(contents) && type !== 'video';
+  });
+  // Every other session (the preview, the network session) is given nothing.
+  for (const partition of ['lysark-preview', 'lysark-web']) {
+    const other = session.fromPartition(partition);
+    other.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+    other.setPermissionCheckHandler(() => false);
+  }
+}
+
 function registerWebPictureProtocol(): void {
   protocol.handle('lysark-web', (request) => {
     try {
@@ -199,13 +233,17 @@ function showAbout(): void {
     title: `Om ${APP_NAME}`,
     message: `${APP_NAME} ${app.getVersion()}`,
     detail:
-      'Gjør PowerPoint-forelesninger om til interaktiv HTML i USNs visuelle profil.\n\n' +
+      'Gjør PowerPoint-forelesninger om til interaktiv HTML og video med stemme, i USNs visuelle profil.\n\n' +
       'Lysark er fri programvare under GNU General Public License, versjon 3 eller senere, ' +
       'og kommer uten noen garanti. Forelesningene du eksporterer, er dine egne.\n\n' +
       'Bygd med fri programvare (Electron, React, ProseMirror, Zod, fflate, fast-xml-parser). ' +
       'Skriftene Liberation Sans og Liberation Serif følger med under SIL Open Font License 1.1.\n\n' +
+      'Video og lyd lages med FFmpeg, et eget program som ligger ved siden av Lysark (mappa ' +
+      '«ffmpeg» blant programfilene). FFmpeg har lisensen GNU GPL versjon 3; lisensteksten og ' +
+      'lenke til kildekoden ligger i den mappa.\n\n' +
       'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
-      'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene.',
+      'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene. ' +
+      'Mikrofonen brukes bare når du leser inn; opptakene lagres i prosjektmappa og sendes ingen steder.',
     buttons: ['Lukk'],
   });
 }
@@ -223,6 +261,13 @@ function buildMenu(): void {
         { type: 'separator' },
         { label: 'Forhåndsvis', accelerator: 'F5', click: () => send('preview') },
         { label: 'Eksporter HTML …', accelerator: 'CmdOrCtrl+E', click: () => send('export') },
+        {
+          label: 'Eksporter video …',
+          accelerator: 'CmdOrCtrl+Shift+E',
+          click: () => send('export-video'),
+        },
+        { type: 'separator' },
+        { label: 'Les inn stemme …', accelerator: 'CmdOrCtrl+R', click: () => send('record') },
         { type: 'separator' },
         { label: 'Pakk prosjektet til én fil …', click: () => send('pack') },
         { label: 'Åpne pakket prosjekt …', click: () => send('unpack') },
@@ -475,7 +520,66 @@ function registerHandlers(): void {
       filters: [{ name: 'HTML', extensions: ['html'] }],
     });
     if (result.canceled || !result.filePath) return null;
-    return exportHtml(dir, project, result.filePath);
+    return await exportHtml(dir, project, result.filePath);
+  });
+
+  handle(
+    'lysark:export-video',
+    async (dir: string, project: Project): Promise<VideoSummary | null> => {
+      if (!mainWindow) return null;
+      if (videoJob) throw new Error('En video eksporteres allerede.');
+      const safeName = (project.meta.title || 'forelesning').replace(/[\\/:*?"<>|]+/g, ' ').trim();
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Eksporter video',
+        buttonLabel: 'Eksporter',
+        defaultPath: join(dirname(dir), `${safeName || 'forelesning'}.mp4`),
+        filters: [{ name: 'MP4-video', extensions: ['mp4'] }],
+      });
+      if (result.canceled || !result.filePath) return null;
+      const outFile = /\.mp4$/i.test(result.filePath) ? result.filePath : `${result.filePath}.mp4`;
+      const devUrl = process.env.ELECTRON_RENDERER_URL;
+      videoJob = exportVideo({
+        dir,
+        project,
+        outFile,
+        logo: logoStatus(),
+        loadFramePage: (window) =>
+          devUrl
+            ? window.loadURL(`${devUrl}/frame.html`)
+            : window.loadFile(join(__dirname, '../renderer/frame.html')),
+        onProgress: (progress: VideoProgress) =>
+          mainWindow?.webContents.send('lysark:video-progress', progress),
+      });
+      try {
+        return await videoJob.done;
+      } finally {
+        videoJob = null;
+      }
+    },
+  );
+
+  ipcMain.on('lysark:cancel-video', () => videoJob?.cancel());
+
+  handle('lysark:has-ffmpeg', (): boolean => ffmpegPath() !== undefined);
+
+  handle('lysark:add-recording', (dir: string, wav: Uint8Array, name: string): AddedSound => {
+    if (!currentDir || resolve(dir) !== resolve(currentDir)) {
+      throw new Error('Opptaket hører ikke til prosjektet som er åpent.');
+    }
+    return addRecording(dir, wav, String(name ?? ''));
+  });
+
+  handle('lysark:import-sound', async (dir: string): Promise<AddedSound | null> => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Velg lydfil',
+      buttonLabel: 'Sett inn',
+      filters: [{ name: 'Lyd', extensions: SOUND_EXTENSIONS }],
+      properties: ['openFile'],
+    });
+    const file = result.filePaths[0];
+    if (result.canceled || !file) return null;
+    return importSound(dir, file);
   });
 
   handle('lysark:pack', async (dir: string): Promise<{ path: string; bytes: number } | null> => {
@@ -509,7 +613,7 @@ function registerHandlers(): void {
     'lysark:preview',
     async (dir: string, project: Project, sceneIndex: number): Promise<void> => {
       const address = await servePreview({
-        html: buildPreview(dir, project),
+        html: await buildPreview(dir, project),
         mediaFile: (name) => {
           const file = mediaPath(dir, `media/${name}`);
           return { file, mime: mimeOf(file) ?? 'application/octet-stream' };
@@ -607,6 +711,7 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     blockNetworkInInterface();
+    allowMicrophoneOnly();
     registerMediaProtocol();
     registerWebPictureProtocol();
     registerHandlers();
@@ -615,6 +720,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('window-all-closed', () => {
+    videoJob?.cancel();
     stopPreviewServer();
     app.quit();
   });

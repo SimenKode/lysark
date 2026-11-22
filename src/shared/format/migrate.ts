@@ -70,5 +70,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 1) lift1to2(project);
   // 2 -> 3 only added an optional field (the stroke width of shapes).
   if (project.version === 2) project.version = 3;
+  // 3 -> 4 only added optional things (sound on slides, choices for video).
+  if (project.version === 3) project.version = 4;
   return project;
 }

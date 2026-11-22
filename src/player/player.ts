@@ -13,6 +13,13 @@ import {
   renderScene,
   type RenderContext,
 } from '../shared/render/scene';
+import {
+  hasSound,
+  sceneDuration,
+  sceneStateAt,
+  stepTimes,
+  stepsShownAt,
+} from '../shared/render/clock';
 import { applySceneState, sceneState, stepDuration } from '../shared/render/timeline';
 import { PLAYER_STRINGS } from './strings';
 
@@ -84,6 +91,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const assetUrl = createAssetStore(data);
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const hasScript = project.export.showScript && scenes.some((s) => s.script.trim() !== '');
+  /** The lecture carries the lecturer's voice and can play itself. */
+  const hasVoice = scenes.some(hasSound);
 
   document.documentElement.lang = lang;
   document.title = project.meta.title;
@@ -107,6 +116,13 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   let frame = 0;
   let moreOpener: HTMLElement | null = null;
   const rendered = new Map<string, HTMLElement>();
+  /** "Spill av": the voice plays, and steps and slides follow it. */
+  let playing = false;
+  let playFrame = 0;
+  /** For a slide without sound: when its time started, by the page's clock. */
+  let silentStart = 0;
+  const voice = new Audio();
+  voice.preload = 'auto';
 
   // ---------- Structure ----------
   const stage = h('div', { class: 'lp-stage' });
@@ -140,7 +156,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const scriptText = h('div', { class: 'lp-script-text' });
   const scriptPanel = h(
     'section',
-    { class: 'lp-script', hidden: true, 'aria-label': t.script },
+    { class: 'lp-script', hidden: true, tabindex: '-1', 'aria-label': t.script },
     h('h2', {}, t.script),
     scriptText,
   );
@@ -180,6 +196,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     {
       class: 'lp-panel',
       hidden: true,
+      // Focusable by a click, so that the scroll keys scroll it after one.
+      tabindex: '-1',
       role: 'dialog',
       'aria-modal': 'false',
       'aria-labelledby': 'lp-panel-title',
@@ -197,6 +215,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     'button',
     { class: 'lp-btn', type: 'button', 'aria-expanded': 'false' },
     t.contents,
+  );
+  const playButton = h(
+    'button',
+    { class: 'lp-btn lp-btn-strong lp-play', type: 'button', hidden: !hasVoice },
+    t.play,
   );
   const counter = h('span', { class: 'lp-counter' });
   const progressFill = h('div');
@@ -232,6 +255,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     'footer',
     { class: 'lp-bar' },
     tocButton,
+    playButton,
     counter,
     progress,
     scriptButton,
@@ -242,7 +266,9 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
 
   const helpClose = h('button', { class: 'lp-btn lp-btn-light', type: 'button' }, t.close);
   const helpList = h('dl');
-  for (const [keys, what] of t.keys) helpList.append(h('dt', {}, keys), h('dd', {}, what));
+  for (const [keys, what] of [...t.keys, ...(hasVoice ? [t.playKey] : [])]) {
+    helpList.append(h('dt', {}, keys), h('dd', {}, what));
+  }
   const helpBox = h(
     'div',
     { class: 'lp-help', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'lp-help-title' },
@@ -390,12 +416,20 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       }
     }
 
-    if (animate) animateStep(scene, el);
+    if (playing) {
+      // While the voice plays, going to a step or a slide by hand moves the voice there.
+      cancelAnimationFrame(frame);
+      startVoice(stepsShown > 0 ? (stepTimes(scene)[stepsShown - 1] ?? 0) : 0);
+    } else if (animate) animateStep(scene, el);
     else {
       cancelAnimationFrame(frame);
       applySceneState(el, sceneState(scene, stepsShown, Infinity));
     }
+    updateChrome();
+  }
 
+  function updateChrome(): void {
+    const scene = scenes[index]!;
     counter.textContent = t.sceneOf(index + 1, scenes.length);
     const within = scene.timeline.length ? stepsShown / (scene.timeline.length + 1) : 0;
     const percent = Math.round(((index + within) / Math.max(1, scenes.length - 1)) * 100);
@@ -404,6 +438,77 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     progress.setAttribute('aria-valuenow', String(clamped));
     prevButton.disabled = index === 0 && stepsShown === 0;
     nextButton.disabled = index === scenes.length - 1 && stepsShown === scene.timeline.length;
+  }
+
+  // ---------- "Spill av": the voice, with steps and slides at the recorded times ----------
+  function voiceTime(scene: Scene): number {
+    return hasSound(scene) ? voice.currentTime : (performance.now() - silentStart) / 1000;
+  }
+
+  /** Starts (or moves) the voice on the slide that is shown, `from` seconds in. */
+  function startVoice(from: number): void {
+    const scene = scenes[index]!;
+    cancelAnimationFrame(playFrame);
+    voice.pause();
+    silentStart = performance.now() - from * 1000;
+    const clip = scene.audio?.clips.find((c) => c.kind === 'sound');
+    const url = clip && clip.kind === 'sound' ? assetUrl(clip.asset) : undefined;
+    if (hasSound(scene) && url) {
+      if (voice.dataset.scene !== scene.id) {
+        voice.src = url;
+        voice.dataset.scene = scene.id;
+      }
+      voice.currentTime = from;
+      void voice.play().catch(() => setPlaying(false));
+    }
+    playFrame = requestAnimationFrame(followVoice);
+  }
+
+  function followVoice(): void {
+    if (!playing) return;
+    const scene = scenes[index]!;
+    const el = sceneElement(scene);
+    const now = voiceTime(scene);
+    const duration = sceneDuration(scene);
+    const done = hasSound(scene) ? voice.ended || now >= duration : now >= duration;
+    if (done) {
+      if (index < scenes.length - 1) {
+        show(index + 1, 0, false); // goes on with the voice of the next slide
+      } else {
+        stepsShown = scene.timeline.length;
+        applySceneState(el, sceneState(scene, stepsShown, Infinity));
+        updateChrome();
+        setPlaying(false);
+      }
+      return;
+    }
+    applySceneState(el, sceneStateAt(scene, now));
+    const shown = stepsShownAt(scene, now);
+    if (shown !== stepsShown) {
+      stepsShown = shown;
+      updateChrome();
+    }
+    playFrame = requestAnimationFrame(followVoice);
+  }
+
+  function setPlaying(on: boolean): void {
+    if (!hasVoice || on === playing) return;
+    playing = on;
+    playButton.textContent = on ? t.pause : t.play;
+    playButton.setAttribute('aria-pressed', String(on));
+    const scene = scenes[index]!;
+    if (on) {
+      cancelAnimationFrame(frame);
+      const times = stepTimes(scene);
+      // Go on from the step that is shown; a finished slide starts again.
+      const atEnd = stepsShown >= scene.timeline.length && scene.timeline.length > 0;
+      startVoice(stepsShown > 0 && !atEnd ? (times[stepsShown - 1] ?? 0) : 0);
+    } else {
+      cancelAnimationFrame(playFrame);
+      voice.pause();
+      // What has come in stays; the rest waits for the keys again.
+      applySceneState(sceneElement(scene), sceneState(scene, stepsShown, Infinity));
+    }
   }
 
   function next(): void {
@@ -460,6 +565,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   function openMore(element: SceneElement, opener: HTMLElement): void {
     const more = moreOf(element);
     if (!more) return;
+    setPlaying(false); // the voice waits while the student reads more
     if (moreOpener && moreOpener !== opener) moreOpener.setAttribute('aria-expanded', 'false');
     moreOpener = opener;
     panelTitle.textContent = moreTitle(ctx, element);
@@ -523,6 +629,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   });
 
   tocButton.addEventListener('click', () => toggleToc());
+  playButton.addEventListener('click', () => setPlaying(!playing));
   prevButton.addEventListener('click', previous);
   nextButton.addEventListener('click', next);
   scriptButton.addEventListener('click', () => toggleScript());
@@ -570,8 +677,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       return;
     }
     const onControl = tag === 'BUTTON' || tag === 'A';
-    // Up and down scroll a panel when the focus is in one; elsewhere they navigate.
+    // The keys that scroll (up, down, Page Up, Page Down, Home, End) scroll a
+    // panel when the focus is in one; elsewhere they navigate.
     const inScroller = target.closest('.lp-panel, .lp-toc, .lp-script') !== null;
+    // In the contents list Home and End still mean the first and the last slide.
+    const inReader = target.closest('.lp-panel, .lp-script') !== null;
     switch (event.key) {
       case 'ArrowDown':
         if (inScroller) return;
@@ -581,12 +691,18 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         if (inScroller) return;
         previous();
         break;
-      case 'ArrowRight':
       case 'PageDown':
+        if (inReader) return;
+        next();
+        break;
+      case 'PageUp':
+        if (inReader) return;
+        previous();
+        break;
+      case 'ArrowRight':
         next();
         break;
       case 'ArrowLeft':
-      case 'PageUp':
         previous();
         break;
       case ' ':
@@ -595,9 +711,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         next();
         break;
       case 'Home':
+        if (inReader) return;
         show(0, 0, false);
         break;
       case 'End':
+        if (inReader) return;
         show(scenes.length - 1, 0, false);
         break;
       case 'i':
@@ -607,6 +725,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       case 'm':
       case 'M':
         toggleScript();
+        break;
+      case 'p':
+      case 'P':
+        if (!hasVoice) return;
+        setPlaying(!playing);
         break;
       case 'f':
       case 'F':

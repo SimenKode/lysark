@@ -825,6 +825,41 @@ for nettet og kontrollerer at ingenting hentes før lysarket vises).
 Skjermbilder er sett på. **Ikke prøvd:** Windows, Canvas, og andre
 nettlesere enn den innebygde.
 
+### 6.16 Økt 5: Windows-utprøving av leveranse 2 og A1–A6, og leveranse 3
+
+**Windows 11 (eierens VM), prøvd for hånd av en hjelpeagent 22.11.2026**
+med zip-utgaven bygget etter A1–A6 (uten lyd og video). Alle 16 punkter
+besto: start, fanen «Lysark», import av Stål (26 lysark), tykkelse på
+pil med «Tilbakestill», høyreklikk og «Legg til utdyping …», byggeren
+med overskrift, tekst og bilde, mediedialogen med «I prosjektet», søk i
+Wikimedia Commons («bro», ett bilde satt inn med kreditering), «+»-merket,
+lagring, forhåndsvisningen med runde piler, klikk som ikke går videre,
+pil opp og ned, panelet med «Utvid» og Esc, **YouTubes spiller i
+lysarket (lysark 8 i Stål; videoen spilte)**, og eksport til HTML åpnet i
+Edge fra disk (stillbilde med «Spill av på YouTube», ingen innebygd
+spiller). Ingen SmartScreen-advarsel.
+
+Funn fra Windows, og hva som er gjort:
+
+| Funn | Tiltak |
+| --- | --- |
+| End hoppet til siste lysark mens «Lær mer»-panelet var åpent og musa hadde klikket i det | Rettet: panelene tar fokus ved klikk, og tastene som ruller (pil opp og ned, Page Up og Down, Home, End) ruller «Lær mer»-panelet og manuspanelet når fokus står der |
+| En tynn, syregrønn ramme rundt hele lysarket i Edge etter klikk og tastetrykk | Rettet: lysarkflaten og panelene har ikke fokusramme |
+| Piltastene navigerer ikke etter at man har klikket i YouTube-spilleren | Ikke rettet: tastene går da til YouTube. De runde pilene virker. Et klikk utenfor spilleren gir tastene tilbake |
+| En tom tekstblokk i byggeren tar ikke imot klikk midt i boksen, bare på første linje | Ikke rettet ennå |
+| I «Utvid» står overskriften «Lær mer» lenger til venstre enn innholdet | Ikke rettet ennå |
+| Siste lysark (USNs logoanimasjon) viser et hvitt bilde med avspillingsknapper | Videoen starter fra hvitt. Henger sammen med spørsmål 3 i 6.14 B |
+| Eksportmeldingen blir stående til man trykker «Lukk» | Slik er det laget |
+
+Ligger igjen i VM-en: `C:\Users\simen\lysark-test\v2\` (programmet og
+`staal2.html`) og `C:\Users\simen\lysark-test\v2-prosjekt\`.
+Skjermbildene fra utprøvingen ble ikke tatt vare på i repoet.
+
+**Leveranse 3 (lyd og video)** er bygget i samme økt. Hva som er laget,
+hva som avviker og hva som er prøvd, står i
+[docs/plan.md](docs/plan.md) under «Status for leveranse 3», og
+formatet i [docs/prosjektformat.md](docs/prosjektformat.md) («Format 4»).
+
 ## 7. Arbeidsordre for neste økt
 
 Eieren vil at neste økt **bygger**, ikke bare planlegger. Rekkefølge:

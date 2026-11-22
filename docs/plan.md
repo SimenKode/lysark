@@ -10,7 +10,7 @@ prøvd på både Linux Mint og Windows 11.
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
-| 3 | Lyd og video | Ikke påbegynt |
+| 3 | Lyd og video | Bygget og prøvd automatisk på Linux Mint (økt 5). Gjenstår: Windows 11 med mikrofon, og at eieren prøver det selv |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
@@ -196,6 +196,64 @@ HTML og video. Til da er repoet privat.
   program med lisenstekst og lenke til kildekoden. Aldri i git.
 - **Mikrofon:** bare lyd, aldri kamera. Valg av mikrofon, støydemping
   på, automatisk styrkeregulering av.
+
+### Status for leveranse 3 (22.11.2026, økt 5)
+
+Bygget:
+
+- **Lydpanelet** under lysarket (fanen «Lyd» ved siden av «Manus»): hele
+  forelesningen som en stripe av lysark med lengder, og lyden på det
+  valgte lysarket som et spor med bølgeform, pauser, steg og spillehode.
+- **Innlesing** («Les inn …», Ctrl+R): lysarket og manuset på skjermen,
+  valg av mikrofon, nivåmåler, nedtelling, pause, «Ta om dette
+  lysarket». Pil høyre går til neste steg (og setter tidspunktet) eller
+  neste lysark (og deler opptaket). «Ta om herfra …» beholder lyden fram
+  til spillehodet. Lydfiler kan importeres.
+- **Redigering:** klipp bort det merkede, starten eller slutten; sett inn
+  pause ved spillehodet; endre eller fjern en pause; dra stegene dit de
+  skal skje; lydstyrke per lysark; fjern lyden. Alt kan angres, og
+  opptakene endres aldri.
+- **Video** («Eksporter video …», Ctrl+Shift+E): MP4, 1920 × 1080,
+  30 bilder i sekundet, H.264 og AAC. Tegnes bilde for bilde av den samme
+  tegnekoden som resten, i et vindu som aldri vises. Rent klipp eller
+  kort toning, jevn lydstyrke, og «Bildekilder» som avslutning.
+- **Teksting** som egen WebVTT-fil ved siden av videoen, laget av
+  manuset.
+- **HTML-fila** får stemmen med og en «Spill av»-knapp: stemmen spilles,
+  og steg og lysark følger på de samme tidspunktene.
+- **FFmpeg** 9.0.2 (GPL-bygget fra BtbN, utgaven fra 31.10.2026) hentes
+  av `tools/fetch-ffmpeg.mjs` med kontroll av sjekksum, og legges ved
+  programmet i mappa `ffmpeg` med lisenstekst og lenke til kildekoden.
+
+Slik ble det, der det avviker fra eller presiserer planen:
+
+- **Tekstingen er beregnet, ikke lyttet fram.** Manuset til et lysark
+  deles i korte biter og fordeles over tiden det snakkes, etter
+  tekstens lengde. Leser du i jevnt tempo, stemmer det godt; hopper du
+  over noe eller snakker fritt, stemmer det dårligere.
+- **Video inne i et lysark vises som stillbilde i MP4-fila** (første
+  bilde, eller forhåndsbildet). YouTube vises som stillbildet sitt. USNs
+  logoanimasjon på siste lysark starter fra hvitt, så den blir et hvitt
+  bilde.
+- **«Dele» er ikke en egen knapp.** Å sette inn en pause eller klippe
+  deler lyden der det trengs.
+- **Lysark uten lyd** står i 5 sekunder, pluss 2 per steg. En pause
+  bestemmer lengden.
+- **Jevn lydstyrke gjelder videoen.** I HTML-fila brukes lydstyrken du
+  har satt per lysark.
+- **Lyden lagres ukomprimert** (WAV, omtrent 6 MB per minutt), så
+  klipping er nøyaktig. I HTML-fila og videoen er den komprimert.
+
+Prøvd automatisk på Linux Mint, også med hele programmet uten vindu:
+innlesing med nettlesermotorens innebygde prøvemikrofon (piper),
+tidspunkt på steg fra piltasten, bølgeform, avspilling, klipping,
+videoeksport (kontrollert med FFmpeg: H.264, 1920 × 1080, 30 bilder i
+sekundet, AAC, riktig lengde, riktig første bilde), teksting, og
+HTML-fila som spiller seg selv. En video av Stål (26 lysark, 2:10, uten
+lyd) ble laget på 40 sekunder og sett på.
+
+Ikke prøvd ennå: en ekte mikrofon, Windows 11, lange opptak (en hel
+forelesning), og andre nettlesere enn den innebygde for «Spill av».
 
 ## Leveranse 4: Figurer og bevegelser
 

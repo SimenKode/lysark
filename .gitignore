@@ -18,3 +18,4 @@ vendor/ffmpeg/
 Thumbs.db
 .vscode/
 .idea/
+.claude/

@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import type { MenuCommand } from '../../shared/api';
 import type { ShapeElement, TextRole } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
+import { formatTime, sceneDuration } from '../../shared/render/clock';
+import { AudioPanel } from './AudioPanel';
 import { ImportReportDialog, SettingsDialog } from './Dialogs';
 import { Inspector } from './Inspector';
 import { MediaDialog } from './MediaDialog';
 import { MoreBuilder } from './MoreBuilder';
+import { Recorder } from './Recorder';
+import { VideoDialog } from './VideoDialog';
 import { SceneList } from './SceneList';
 import { Stage } from './Stage';
 import {
@@ -148,6 +152,14 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
         >
           Eksporter HTML
         </button>
+        <button
+          type="button"
+          className="strong"
+          onClick={() => useStore.getState().setVideoDialog(true)}
+          title="Eksporter video (Ctrl+Shift+E)"
+        >
+          Eksporter video
+        </button>
       </div>
     </header>
   );
@@ -272,6 +284,37 @@ function InsertBar() {
   );
 }
 
+/** Under the slide: its manuscript, or its sound. */
+function BottomPanel() {
+  const scene = useStore(currentScene);
+  const tab = useStore((s) => s.bottomTab);
+  const setTab = useStore((s) => s.setBottomTab);
+  if (!scene) return null;
+  return (
+    <section className="bottom-panel">
+      <div className="bottom-tabs" role="tablist" aria-label="Manus og lyd">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'script'}
+          onClick={() => setTab('script')}
+        >
+          Manus
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'sound'}
+          onClick={() => setTab('sound')}
+        >
+          Lyd ({formatTime(sceneDuration(scene))})
+        </button>
+      </div>
+      {tab === 'script' ? <ScriptPanel /> : <AudioPanel />}
+    </section>
+  );
+}
+
 function ScriptPanel() {
   const scene = useStore(currentScene);
   const updateScene = useStore((s) => s.updateScene);
@@ -325,6 +368,8 @@ export function App() {
   const report = useStore((s) => s.report);
   const builder = useStore((s) => s.builder);
   const mediaRequest = useStore((s) => s.mediaRequest);
+  const recorder = useStore((s) => s.recorder);
+  const videoDialog = useStore((s) => s.videoDialog);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -364,6 +409,15 @@ export function App() {
         case 'export':
           state.setEditing(null);
           return exportHtml();
+        case 'export-video':
+          if (state.project && !state.recorder) state.setVideoDialog(true);
+          return;
+        case 'record':
+          if (state.project && currentScene(state) && !state.builder && !state.videoProgress) {
+            state.setBottomTab('sound');
+            state.openRecorder({});
+          }
+          return;
         case 'settings':
           setSettingsOpen(true);
           return;
@@ -411,14 +465,14 @@ export function App() {
     <>
       {project ? (
         // While the builder is open, nothing behind it can be reached by keyboard or screen reader.
-        <div className="app" inert={!!builder}>
+        <div className="app" inert={!!builder || !!recorder}>
           <TopBar onSettings={() => setSettingsOpen(true)} />
           <div className="workspace">
             <SceneList />
             <div className="centre">
               <InsertBar />
               <Stage />
-              <ScriptPanel />
+              <BottomPanel />
             </div>
             <Inspector onLogo={() => setSettingsOpen(true)} />
           </div>
@@ -436,6 +490,8 @@ export function App() {
       )}
       {project && builder && <MoreBuilder elementId={builder} />}
       {project && mediaRequest && <MediaDialog request={mediaRequest} />}
+      {project && recorder && <Recorder keepBefore={recorder.keepBefore} />}
+      {project && videoDialog && <VideoDialog />}
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </>
   );

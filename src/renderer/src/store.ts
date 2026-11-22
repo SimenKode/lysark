@@ -1,7 +1,7 @@
 // Program state: the open project, what is selected, and undo history.
 import { produce } from 'immer';
 import { create } from 'zustand';
-import type { ImportReport, LogoStatus } from '../../shared/api';
+import type { ImportReport, LogoStatus, VideoProgress } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
 
 export interface Notice {
@@ -46,6 +46,18 @@ interface State {
   /** Id of the element whose "Lær mer" content is open in the builder. */
   builder: string | null;
   mediaRequest: MediaRequest | null;
+  /** Which panel is open under the slide: the manuscript or the sound. */
+  bottomTab: 'script' | 'sound';
+  /**
+   * The recording window is open, starting on the current slide. With
+   * `keepBefore`, the slide's sound before that time is kept and the rest
+   * is recorded anew.
+   */
+  recorder: { keepBefore?: number } | null;
+  /** The dialog for exporting video is open. */
+  videoDialog: boolean;
+  /** How far a running video export has come. */
+  videoProgress: VideoProgress | null;
 
   load(dir: string, project: Project): void;
   close(): void;
@@ -69,6 +81,10 @@ interface State {
   setNotice(notice: Notice | null): void;
   openBuilder(elementId: string | null): void;
   setMediaRequest(request: MediaRequest | null): void;
+  setBottomTab(tab: 'script' | 'sound'): void;
+  openRecorder(recorder: State['recorder']): void;
+  setVideoDialog(open: boolean): void;
+  setVideoProgress(progress: VideoProgress | null): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -92,10 +108,16 @@ export const useStore = create<State>((set, get) => ({
   notice: null,
   builder: null,
   mediaRequest: null,
+  bottomTab: 'script',
+  recorder: null,
+  videoDialog: false,
+  videoProgress: null,
 
   load(dir, project) {
     set({
       builder: null,
+      recorder: null,
+      videoDialog: false,
       dir,
       project,
       saved: project,
@@ -112,6 +134,8 @@ export const useStore = create<State>((set, get) => ({
   close() {
     set({
       builder: null,
+      recorder: null,
+      videoDialog: false,
       dir: null,
       project: null,
       saved: null,
@@ -226,6 +250,22 @@ export const useStore = create<State>((set, get) => ({
 
   setMediaRequest(request) {
     set({ mediaRequest: request });
+  },
+
+  setBottomTab(tab) {
+    set({ bottomTab: tab });
+  },
+
+  openRecorder(recorder) {
+    set({ recorder, editing: null, coalesce: null, previewSteps: null });
+  },
+
+  setVideoDialog(open) {
+    set({ videoDialog: open, editing: null });
+  },
+
+  setVideoProgress(progress) {
+    set({ videoProgress: progress });
   },
 }));
 

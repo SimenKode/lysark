@@ -1,7 +1,7 @@
 // The bridge between the sandboxed interface and the main process. Only
 // the calls listed in LysarkApi are exposed.
 import { contextBridge, ipcRenderer } from 'electron';
-import type { LysarkApi, MenuCommand } from '../shared/api';
+import type { LysarkApi, MenuCommand, VideoProgress } from '../shared/api';
 
 type Reply<T> = { ok: true; value: T } | { ok: false; message: string };
 
@@ -22,6 +22,16 @@ const api: LysarkApi = {
   addCommonsPicture: (dir, title) => call('lysark:commons-add', dir, title),
   addYouTubeStill: (dir, url) => call('lysark:youtube-still', dir, url),
   exportHtml: (dir, project) => call('lysark:export', dir, project),
+  exportVideo: (dir, project) => call('lysark:export-video', dir, project),
+  cancelVideo: () => ipcRenderer.send('lysark:cancel-video'),
+  onVideoProgress: (listener) => {
+    const handler = (_event: unknown, progress: VideoProgress): void => listener(progress);
+    ipcRenderer.on('lysark:video-progress', handler);
+    return () => ipcRenderer.removeListener('lysark:video-progress', handler);
+  },
+  hasFfmpeg: () => call('lysark:has-ffmpeg'),
+  addRecording: (dir, wav, name) => call('lysark:add-recording', dir, wav, name),
+  importSound: (dir) => call('lysark:import-sound', dir),
   packProject: (dir) => call('lysark:pack', dir),
   unpackProject: () => call('lysark:unpack'),
   preview: (dir, project, sceneIndex) => call('lysark:preview', dir, project, sceneIndex),

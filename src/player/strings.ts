@@ -25,6 +25,11 @@ export interface PlayerStrings {
   usedOn: (scenes: number[]) => string;
   helpTitle: string;
   keys: Array<[string, string]>;
+  /** Shown in the help only when the lecture has the lecturer's voice. */
+  playKey: [string, string];
+  /** Starts and stops the lecturer's voice. */
+  play: string;
+  pause: string;
   printNote: string;
 }
 
@@ -61,6 +66,9 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
       ['Esc', 'Lukk panel'],
       ['?', 'Denne hjelpen'],
     ],
+    playKey: ['P', 'Spill av eller stopp stemmen'],
+    play: 'Spill av',
+    pause: 'Pause',
     printNote: 'Skriv ut fra nettleseren for å få alle lysarkene på papir eller som PDF.',
   },
   en: {
@@ -95,6 +103,9 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
       ['Esc', 'Close panel'],
       ['?', 'This help'],
     ],
+    playKey: ['P', 'Play or stop the voice'],
+    play: 'Play',
+    pause: 'Pause',
     printNote: 'Print from the browser to get all slides on paper or as PDF.',
   },
 };
