@@ -1272,15 +1272,83 @@ anbefalt» på de fire spørsmålene.
 - En boks med mer innhold enn det er plass til, vises i videoen så langt
   den rekker. Ingen kan rulle i en video.
 
-**Prøvd.** 21 nye enhetstester (`tests/events.test.ts`) og tre
+**Prøvd.** 18 nye enhetstester (`tests/events.test.ts`) og tre
 ende-til-ende-tester (`tests/e2e-events.test.ts`) på Linux Mint: et
 opptak med falsk mikrofon der boksen åpnes, videoen i boksen spilles,
 boksen lukkes og videoen på lysarket startes og stoppes; MP4-fila
 kontrolleres bilde for bilde (boksens kant er der bare mens den er åpen,
 videoene rører seg bare mens de spiller) og på lyden (filmens tone høres
 bare mens en film spiller); HTML-fila kontrolleres i «Spill av». Hele
-settet: 323 tester. **Ikke prøvd:** Windows, og ekte mikrofon og
-høyttalere.
+settet: 323 tester. **Ikke prøvd:** ekte mikrofon og høyttalere.
+Windows: se 6.22.
+
+### 6.21 Flere lydspor og tidslinje (23.11.2026)
+
+Andre del av leveransen.
+
+**Hva som er nytt.**
+
+- **Fanen «Tidslinje»** under lysarket, ved siden av «Manus» og «Lyd».
+  Lysarkene står på rad, hvert så bredt som det er langt, med en
+  tidslinjal over. Under ligger sporene **Stemme** (bølgeformen til
+  hvert lysark; stemmen klippes fortsatt under «Lyd»), **Musikk** og
+  **Lyd**.
+- **Klipp på sporene.** «Legg til musikk» og «Legg til lyd» henter en
+  lydfil (gjøres om til prosjektets lydformat av FFmpeg) og setter den
+  inn ved spillehodet. Et klipp dras på plass, kortes inn ved å dra i
+  endene (det som kortes bort, er ikke tapt), og kan velges for
+  lydstyrke, «Ton inn», «Ton ut», «Del ved spillehodet», «Fjern klippet»
+  og kreditering. Piltastene flytter et klipp, Delete fjerner det.
+  Et klipp som er lengre enn forelesningen, kan nås helt til enden;
+  det som ligger etter slutten, er skravert og merket «høres ikke».
+- **Festet.** Et klipp er festet til et lysark og et tidspunkt på det,
+  så det følger med når lysark foran blir lengre, kortere eller flyttes.
+  Slettes lysarket, flytter klippet til nabolysarket.
+- **Lysarkets lengde.** Høyre kant av et lysark i tidslinja kan dras
+  (eller flyttes med piltastene). Det er pausen på slutten som endres;
+  det som er sagt, klippes aldri på den måten.
+- **Spill av** i tidslinja spiller hele forelesningen fra spillehodet,
+  lysark for lysark, og lysarket som høres er det som vises.
+- **Demping.** Musikken senkes til en fjerdedel (omtrent 12 dB) mens
+  noen snakker, og kommer mykt tilbake etterpå. Den begynner å gå ned
+  like før første ord der det er mulig, og holder seg nede 0,7 s etter
+  siste ord, så den ikke pumper mellom setninger. «Demp musikken mens
+  noen snakker» slår det av. «Lyd»-sporet dempes ikke.
+- **Eksport.** Den samme koden blander sporene inn i lyden til videoen,
+  til HTML-fila og til avspillingen i programmet
+  (`src/shared/audio/mix.ts`). I HTML-fila ligger musikken i lyden til
+  hvert lysark, så også lysark uten stemme får lyd når musikken går
+  under dem. Kreditering av musikk kommer med i «Bildekilder» og på
+  krediteringslysarkene i videoen.
+
+**En feil som lå der fra før, funnet og rettet.** Grensesnittet kunne
+ikke lese opptak fra disk: medieadressen `lysark-media://` tok ikke del
+i CORS, så `fetch` ble avvist. Det ble ikke oppdaget fordi et opptak som
+nettopp er gjort, ligger i minnet. Åpnet man et prosjekt på nytt, eller
+importerte en lydfil, manglet bølgeformen i «Lyd», og avspillingen der
+var stille. Eksporten var ikke berørt (den leser filene selv). Rettet i
+`src/main/index.ts`, og en test leser nå et opptak som ikke er gjort i
+samme økt, både i tidslinja og i lydpanelet.
+
+**Begrensninger, sagt rett ut.**
+
+- I HTML-fila er musikken delt per lysark, som stemmen. Ved hvert
+  lysarkskifte i «Spill av» kan det bli et bitte lite opphold i
+  musikken. I videoen er den sammenhengende.
+- Avspillingen i programmet (tidslinja og lydpanelet) spiller ikke lyden
+  fra videoer på lysarkene; den er med i videofila og i HTML-fila.
+- Åpnes en eksportert HTML-fil som prosjekt igjen, ligger musikken i
+  lyden på hvert lysark sammen med stemmen, ikke på egne spor.
+- Programmet følger ikke med musikk.
+
+**Prøvd.** 13 nye enhetstester (`tests/tracks.test.ts`) og seks
+ende-til-ende-tester (`tests/e2e-timeline.test.ts`) på Linux Mint: en
+musikkfil (MP3) legges inn, flyttes, kortes inn med musa, tones og
+deles; et lysark gjøres lengre; hele forelesningen spilles; i MP4-fila
+måles musikken (2000 Hz) til omtrent en fjerdedel under stemmen, full
+styrke ellers, borte før klippet starter og etter at det slutter, og
+tonet ut mot slutten; HTML-fila har lyd på alle tre lysarkene.
+Hele settet: 342 tester.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

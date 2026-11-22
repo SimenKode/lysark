@@ -177,6 +177,24 @@ the manual, raise it with the owner instead of choosing silently.
   (`src/shared/audio/edit.ts`). Time is computed by one clock
   (`src/shared/render/clock.ts`) that the video export, "Spill av" in the
   HTML player and the editor's sound panel all use.
+- What the lecturer opens and plays while reading a slide in (a "Lær mer"
+  box, a video file) is kept as events on the slide, with times like the
+  steps' (`Scene.events`). The clock says what is open and where each
+  film stands at any time; the video export and "Spill av" follow it.
+  Whatever cuts or stretches a slide's sound moves the events with the
+  steps.
+- Music and other sound that run under several slides lie on the
+  lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
+  One piece of code mixes them into the sound, with the music lowered
+  under the voice (`src/shared/audio/mix.ts`): the video export, the
+  HTML export and the editor's playback all use it, so they sound the
+  same. The program ships no music.
+- The interface reads project media with `fetch` to draw and play sound.
+  The `lysark-media` scheme must therefore stay CORS-enabled and answer
+  with `Access-Control-Allow-Origin` (`src/main/index.ts`). Without it
+  only recordings made in the same session (still in memory) are drawn
+  and played, which is how the fault went unseen until 23.11.2026. A
+  test reads a recording that was not made in the session.
 
 ## Commands
 

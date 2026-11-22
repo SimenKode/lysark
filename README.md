@@ -53,15 +53,27 @@ zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
 7. **Forhåndsvis** (F5) viser nøyaktig det en eksport vil inneholde.
 8. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
-9. **Les inn stemmen** (fanen «Lyd» under lysarket, «Les inn …», eller
+9. **Les inn stemmen** (fanen «Lyd» under lysarket, «Les inn», eller
    Ctrl+R). Manuset og lysarket står på skjermen. Pil høyre går til neste
    steg eller neste lysark; tidspunktet for hvert steg blir der du
    trykket, og opptaket deles ved hvert lysark. Du kan lese inn hele
    forelesningen i ett strekk og likevel rette ett lysark om gangen.
+   Mens du leser inn, kan du også trykke på lysarket: «+» åpner «Lær
+   mer»-boksen, og en videofil spilles når du trykker på den. Det kommer
+   med i videoen og i «Spill av» på samme tidspunkt. Bruk hodetelefoner
+   når du spiller video med lyd, ellers tar mikrofonen den opp en gang
+   til.
 10. **Rett på lyden** i fanen «Lyd»: merk et stykke og klipp det bort,
     klipp bort starten eller slutten, legg inn en pause, dra stegene dit
     de skal skje, juster lydstyrken, eller ta om fra spillehodet.
     Opptakene endres aldri; alt kan angres.
+    **Musikk og annen lyd** legger du inn i fanen «Tidslinje». Der står
+    lysarkene på rad etter lengde, med sporene Stemme, Musikk og Lyd
+    under. «Legg til musikk» setter en lydfil inn ved spillehodet; dra
+    den på plass, dra i endene for å korte den inn, og velg den for å
+    tone inn og ut, dele den eller endre lydstyrken. Musikken dempes av
+    seg selv mens du snakker. Programmet følger ikke med musikk; bruk
+    filer du har lov til å bruke, og før opp kreditering der.
 11. **Eksporter video** (Ctrl+Shift+E). Du får en MP4-fil (1920 × 1080)
     og tekstingen som en egen fil ved siden av (`.vtt`), laget av
     manuset. Har lysarkene lyd, får også HTML-fila stemmen med, og
@@ -136,10 +148,11 @@ npm run dist:linux
 sjekksum) til `vendor/ffmpeg/`. Uten det kan programmet ikke lage video,
 og testen for lyd og video hoppes over.
 
-`npm test` bygger programmet og kjører alle testene, også seks som
+`npm test` bygger programmet og kjører alle testene, også åtte som
 starter hele programmet (uten å vise vindu) og går gjennom import av
 PowerPoint, PDF og eksportert HTML, redigering, lagring, innlesing med
-en prøvemikrofon, klipping, eksport til HTML og video, og avspilling.
+en prøvemikrofon, klipping, «Lær mer» og video under innlesing,
+tidslinja med musikk, eksport til HTML og video, og avspilling.
 
 ## Dokumenter
 

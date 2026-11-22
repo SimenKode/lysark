@@ -11,7 +11,7 @@ prøvd på både Linux Mint og Windows 11.
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
-| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Gjenstår: en ekte mikrofon, og en ny runde eieren har bedt om (tidslinje, flere lydspor, «Lær mer» og video under innlesing) |
+| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, pakket som 0.3.0, ikke gitt ut). Gjenstår: en ekte mikrofon |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
@@ -305,16 +305,26 @@ Etter at eieren hadde prøvd utgaven med lyd og video (historikk.md
 - **Lisenstekstene** til alt som er bygd inn, følger med programmet.
 - **Versjon 0.2.0** er gitt ut.
 
-### Neste leveranse: tidslinje, flere lydspor, og «Lær mer» og video under innlesing
+### Tidslinje, flere lydspor, og «Lær mer» og video under innlesing
 
-Bedt om av eieren 22.11.2026. Ikke bygget, og ikke påbegynt:
-spørsmålene (fire, hvert med én anbefaling) står i HANDOFF.md og i
-historikk.md 6.19, og venter på svar.
+Bedt om av eieren 22.11.2026. Han svarte «som anbefalt» på de fire
+spørsmålene (historikk.md 6.19), og alt er **bygget 23.11.2026**
+(historikk.md 6.20 og 6.21):
 
-- «Lær mer»-bokser og videoer kan åpnes og spilles under innlesing, og
-  kommer med i videoen og i «Spill av» på de samme tidspunktene.
-- Flere lydspor: musikk og lyd over hele forelesningen, med klipping.
-- En tidslinje med alle lysarkene på rad og lydsporene under.
+- **Under innlesing** kan «Lær mer»-bokser åpnes og videofiler spilles
+  ved å trykke på lysarket. Tidspunktene huskes, og videoen og «Spill
+  av» i HTML-fila gjør det samme på samme tid. Lyden fra videoene er med
+  i videofila.
+- **To lydspor til**, «Musikk» og «Lyd», som går over hele
+  forelesningen. Klipp kan flyttes, kortes inn, deles, tones inn og ut
+  og få egen lydstyrke. Musikken dempes til en fjerdedel mens noen
+  snakker (kan slås av).
+- **Tidslinje**: en fane med lysarkene på rad etter lengde og sporene
+  Stemme, Musikk og Lyd under. Hele forelesningen kan spilles av, og et
+  lysark kan stå lenger eller kortere ved å dra i kanten.
+
+Utenfor, med vilje: YouTube-videoer i videofila (vi har ikke fila), og
+medfølgende musikk (eieren legger inn sin egen).
 
 ## Leveranse 4: Figurer og bevegelser
 
@@ -503,11 +513,11 @@ Rettet i økt 3:
 Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 2 og 3 er bygget. Det som står for tur:
 
-1. **«Lær mer» og video under innlesing**, så **tidslinje og flere
-   lydspor** (ny leveranse, se over), når eieren har svart på de fire
-   spørsmålene. Mer liv og lekenhet og USNs avslutningsanimasjon, som
-   sto her, er bygget.
-2. **Det eieren melder** etter å ha prøvd mikrofon, video og Canvas.
+1. **Det eieren melder** etter å ha prøvd mikrofon, video, musikk og
+   Canvas. «Lær mer» og video under innlesing, tidslinje og flere
+   lydspor, mer liv og lekenhet og USNs avslutningsanimasjon, som sto
+   her, er bygget.
+2. **Ny utgivelse** når eieren ber om den (0.3.0 er pakket lokalt).
 3. **Flere bildekilder**, Openverse først, når resten sitter.
 4. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
    stil).
