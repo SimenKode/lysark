@@ -153,7 +153,12 @@ button.ls-webvideo-play { cursor: pointer; }
 }
 button.ls-more-badge { cursor: pointer; }
 /* The closing animation fills the slide, behind anything else on it. */
-.ls-closing { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+/* It reaches a pixel past every edge: scaled to the window, a film that ends exactly at
+   the edge can leave a hairline of the slide's own colour showing. */
+.ls-closing {
+  position: absolute; left: -1px; top: -1px; width: calc(100% + 2px); height: calc(100% + 2px);
+  object-fit: cover; pointer-events: none;
+}
 .ls-more-ring > .ls-image { outline: 6px solid var(--ls-more-ring); outline-offset: 0; }
 `;
 

@@ -42,10 +42,15 @@ function fullSlideVideo(scene: Scene, last: boolean): { index: number; asset: st
  * the settings. After that, a slide that carries the very same film (byte
  * for byte) is set to play it by itself, and its video element is taken
  * out; a slide with another film is left as it was imported.
- * Returns the project, changed or not.
+ * Returns the project, changed or not, and the slides (numbered from 1)
+ * that now play the film.
  */
-export function adoptClosingAnimation(dir: string, project: Project): Project {
+export function adoptClosingAnimation(
+  dir: string,
+  project: Project,
+): { project: Project; slides: number[] } {
   let out = project;
+  const slides: number[] = [];
   project.scenes.forEach((scene, sceneIndex) => {
     const video = fullSlideVideo(scene, sceneIndex === project.scenes.length - 1);
     const asset = video ? project.assets[video.asset] : undefined;
@@ -72,6 +77,7 @@ export function adoptClosingAnimation(dir: string, project: Project): Project {
     }
     if (!kept || kept.sha256 !== hash) return;
     if (out === project) out = structuredClone(project);
+    slides.push(sceneIndex + 1);
     const target = out.scenes[sceneIndex]!;
     target.elements.splice(video.index, 1);
     target.kind = 'closing';
@@ -106,5 +112,5 @@ export function adoptClosingAnimation(dir: string, project: Project): Project {
     );
     if (!stillUsed) delete out.assets[video.asset];
   });
-  return out;
+  return { project: out, slides };
 }

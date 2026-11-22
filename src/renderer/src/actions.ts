@@ -75,7 +75,11 @@ export async function importPptx(): Promise<void> {
   await refreshLogo();
   const state = useStore.getState();
   state.load(imported.dir, imported.project);
-  state.setReport({ report: imported.report, sourceName: imported.sourceName });
+  state.setReport({
+    report: imported.report,
+    sourceName: imported.sourceName,
+    closingSlides: imported.closingSlides,
+  });
 }
 
 export async function save(): Promise<boolean> {

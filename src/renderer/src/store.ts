@@ -48,7 +48,7 @@ interface State {
   previewSteps: number | null;
   clipboard: Element[];
   logo: LogoStatus;
-  report: { report: ImportReport; sourceName: string } | null;
+  report: { report: ImportReport; sourceName: string; closingSlides?: number[] } | null;
   notice: Notice | null;
   /** Id of the element whose "Lær mer" content is open in the builder. */
   builder: string | null;

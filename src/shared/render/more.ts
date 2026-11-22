@@ -28,8 +28,8 @@ export interface PopoverPlace {
 /**
  * Where the "Lær mer" box goes. It pops out beside the element it belongs
  * to, on the side with room for it, and lies on top of the slide instead of
- * pushing it aside. When neither side has room it lies over the slide,
- * towards the side with the most space. All numbers are in the same units,
+ * pushing it aside. When neither side has room it lies over the slide, on
+ * the side where the mark it pops out of is. All numbers are in the same units,
  * measured from the top left corner of `bounds`.
  */
 export function placePopover(
@@ -45,7 +45,8 @@ export function placePopover(
   let left: number;
   if (roomRight >= box.width) left = anchor.right + gap;
   else if (roomLeft >= box.width) left = anchor.left - gap - box.width;
-  else left = roomRight >= roomLeft ? bounds.width - margin - box.width : margin;
+  // No room beside it: the box lies over the slide, on the side its mark is on.
+  else left = from.x >= bounds.width / 2 ? bounds.width - margin - box.width : margin;
   left = Math.max(margin, Math.min(bounds.width - margin - box.width, left));
   const top = Math.max(margin, Math.min(bounds.height - margin - box.height, anchor.top));
   return { left, top, originX: from.x - left, originY: from.y - top };

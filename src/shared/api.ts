@@ -14,6 +14,8 @@ export interface OpenedProject {
 export interface ImportedProject extends OpenedProject {
   report: ImportReport;
   sourceName: string;
+  /** Slides (numbered from 1) that were set to play USN's closing animation by themselves. */
+  closingSlides?: number[];
 }
 
 /** An HTML file exported by Lysark, opened as a new project. */

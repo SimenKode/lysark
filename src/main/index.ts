@@ -501,9 +501,22 @@ function registerHandlers(): void {
     if (!dir) return null;
     const imported = importPptxToFolder(source, dir);
     // USN's closing animation on the last slide plays by itself from now on.
-    const project = adoptClosingAnimation(dir, imported.project);
+    const adopted = adoptClosingAnimation(dir, imported.project);
+    const { project } = adopted;
     if (project !== imported.project) saveProject(dir, project);
-    return { ...opened(dir, project), report: imported.report, sourceName: basename(source) };
+    // The report said the video covered the logo's place on those slides; that is settled.
+    const report = {
+      ...imported.report,
+      warnings: imported.report.warnings.filter(
+        (w) => !(adopted.slides.includes(w.slide) && w.message.startsWith('Logoen er slått av')),
+      ),
+    };
+    return {
+      ...opened(dir, project),
+      report,
+      sourceName: basename(source),
+      ...(adopted.slides.length > 0 ? { closingSlides: adopted.slides } : {}),
+    };
   });
 
   handle('lysark:save', (dir: string, project: Project): void => {

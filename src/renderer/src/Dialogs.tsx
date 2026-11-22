@@ -46,6 +46,8 @@ function count(n: number, one: string, many: string): string {
 export function ImportReportDialog(props: {
   report: ImportReport;
   sourceName: string;
+  /** Slides that now play USN's closing animation by themselves. */
+  closingSlides?: number[];
   onClose: () => void;
 }) {
   const { report } = props;
@@ -73,6 +75,13 @@ export function ImportReportDialog(props: {
         Plasseringen er beholdt fra PowerPoint. Skrift og farger følger USN-temaet. Se gjennom
         lysarkene, og bruk «Rydd opp lysarket» der noe står skjevt.
       </p>
+      {props.closingSlides && props.closingSlides.length > 0 && (
+        <p>
+          USNs avslutningsanimasjon lå som video på lysark {props.closingSlides.join(' og ')}.
+          Lysark har tatt vare på filmen, og lysarket spiller den nå av seg selv når det vises, uten
+          knapper og uten lyd.
+        </p>
+      )}
       {bySlide.size === 0 ? (
         <p>Alt innholdet kom med.</p>
       ) : (

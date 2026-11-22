@@ -1072,6 +1072,156 @@ rettingen av avbrudd.
 Navnene i resten av denne loggen er de som gjaldt da hver del ble
 skrevet.
 
+### 6.19 Eieren prøvde utgaven med lyd og video (22.11.2026)
+
+Ordrett, med fire skjermbilder (en form som i Lysark var blitt et
+rektangel, den samme formen i PowerPoint med spiss, forhåndsvisningen
+med «Lær mer»-panelet som skjøv lysarket til siden, og knappene «Les
+inn …» og «Importer lydfil …»):
+
+> Ser bra ut. Noen tilbakemeldinger: Vi trenger den trekant+rektangel
+> skilt-formen, veldig praktisk. Synes Lær mer tar deg litt ut av selve
+> lysark byggingen. Tenker at "slik studenten ser det" burde være på
+> selve lysarket som en boks som spretter ut av bildet, ikke skyver alt
+> annet til siden. Den skal også være animert. Hvis det er bilder som
+> får "lær mer" går det an å lage en lilla border rundt dem også.
+> Kanpper med ... burde ikke ha ..., må enten gjøres om, få ikon e.l.
+> Noen knapper er best med tekst, ikon eller begge deler. Gjør en
+> vurdering av hva som bør være hvor. Fiks dette og gjør det du hadde
+> planlagt, så release
+
+Og mens det ble bygget:
+
+> Må også kunne ha flere lydspor, til musikk og klipping av lyd. Ønsker
+> på sikt å også få en visning som viser alle slides på en tidslinje
+> med lydsporene under. Må kunne åpne "lær mer" og spille av videoer i
+> innspillingen av videoer.
+
+**Bygget i samme økt:**
+
+| Hva | Slik ble det |
+| --- | --- |
+| Skiltformen | Ny form `sign` (format 5): rektangel med spiss, mot høyre eller venstre. Spissen er halve den korte siden dyp, som i PowerPoint. PowerPoints «homePlate» importeres som skilt, med teksten og retningen |
+| «Lær mer» på lysarket | I spilleren er panelet til siden borte. Boksen spretter ut ved elementet, oppå lysarket, på den siden det er plass; lysarket flytter seg ikke. Er det litt for trangt, blir boksen smalere heller enn å dekke elementet. «Utvid», «Lukk», Esc og klikk utenfor virker. På mobil kommer boksen opp fra bunnen |
+| Byggeren | Til høyre vises selve lysarket med boksen på plass, tegnet og plassert av samme kode som spilleren, i stedet for et løst panel |
+| Lilla ramme | Bilder med «Lær mer» får en ramme i lilla (hvit på mørk flate). Ikke i video og utskrift |
+| Knappene | Ingen «…» på knapper. Egne strektegnede ikoner (`src/renderer/src/Icon.tsx`), ikke noe ikonbibliotek. Fordelingen står i HANDOFF.md. Menylinja beholder «…» |
+| Liv og lekenhet | Lysark glir inn fra den siden man går mot; steg glir opp på plass (også i video, som ren funksjon av tiden); «+»-merket slår én gang når lysarket kommer; merker, rammer, piler og knapper svarer når man peker og trykker; innholdsliste, hjelp, dialoger og meldinger kommer mykt. Alt slås av for dem som har bedt systemet om lite bevegelse |
+| USNs avslutningsanimasjon | Lysark tar vare på filmen i innstillingene, uendret, slik det gjør med logoen (aldri i prosjektet eller i git). Den plukkes opp første gang en forelesning med den importeres: siste lysark med bare én video som fyller flaten. Senere importer med nøyaktig samme film gjøres om på samme måte. Lysarket spiller filmen av seg selv, én gang, uten knapper og uten lyd; i redigeringen står sluttbildet. I video tegnes den bilde for bilde. Kan også velges under Innstillinger, og et nytt avslutningslysark foreslår den |
+| Lisenstekster | `tools/collect-licenses.mjs` samler lisenstekstene til alt som er bygd inn, og de følger med programmet i mappa `licenses` |
+
+**Prøvd på Linux Mint:** 302 automatiske tester, også mot det pakkede
+programmet. USNs ekte film: import av Stål og Introduksjon gjorde siste
+lysark om; en video av bare det lysarket (12 s) ble sett på bilde for
+bilde (logoen tegnes opp og blir stående) og tok 45 sekunder, fordi
+filmen er i 4K og må spoles for hvert bilde. Skjermbilder av boksen i
+spilleren, byggeren, ikonene og sluttlysarket er sett på.
+
+**Prøvd på Windows 11 (eierens VM), for hånd av en hjelpeagent**, med
+zip-utgaven 0.2.0 slik den var før de fire siste småtingene under. Alle
+12 punkter virket:
+
+- startskjermen («For forelesere: …») med fire knapper med ikon og uten
+  «…»
+- import av Stål: 26 lysark; ikonene i topplinja og lysarklista
+- siste lysark ble «Avslutning» med USNs logo som stillbilde, haken
+  «Spill USNs avslutningsanimasjon når lysarket vises» på, og
+  «Avslutningsanimasjon: funnet (10 sekunder)» under Innstillinger
+- skiltformen fra «Form»-menyen, snudd mot venstre, med tekst
+- «Legg til «Lær mer»» fra høyreklikk; byggeren med lysarket til høyre
+  og boksen på lysarket; «+»-merke og lilla ramme på bildet etterpå
+- forhåndsvisningen: boksen spratt ut oppå lysarket, lysarket sto
+  nøyaktig der det sto, begge pilene var synlige, klikk utenfor tok
+  boksen bort; siste lysark tegnet logoen opp av seg selv uten knapper
+- GIF av lysark 2–3: «GIF-fila er lagret (0:10, 0,1 MB). Den har ikke
+  lyd.» (11 sekunder å lage)
+- video av bare avslutningslysarket (0:12): 57 sekunder å lage; i
+  Windows' spiller tegnes logoen opp og blir stående
+- avbrudd midt i en eksport: tilbake på under to sekunder, ingen
+  feilmelding, ingen fil igjen (rettingen fra 6.17 holder altså på
+  Windows)
+- ikonene i lydpanelet
+
+Fire småting ble funnet, og er rettet etterpå (prøvd på Linux, **ikke
+på Windows etter rettingen**):
+
+| Funn | Tiltak |
+| --- | --- |
+| Boksen lå på forskjellig side i byggeren og i forhåndsvisningen når bildet er nesten like bredt som lysarket | Når ingen side har plass, legges boksen på den siden «+»-merket står, begge steder |
+| En tynn grå strek nederst på avslutningslysarket i forhåndsvisningen | Filmen rekker nå én piksel utenfor hver kant |
+| Eksportdialogen hoppet når teksten i den endret høyde, så klikk kunne treffe feil | Dialogen står fast i overkant og vokser nedover |
+| Importrapporten sa ikke noe om avslutningsanimasjonen, bare at logoen var slått av | Rapporten sier nå at filmen er funnet og at lysarket spiller den selv |
+
+Ellers sett: logoen er ferdig tegnet etter omtrent tre sekunder av de
+ti filmen varer (slik er USNs film), og lagre-dialogen husker ikke
+mappa fra forrige eksport.
+
+**To ting jeg gjorde som eieren bør vite om:**
+
+- **YouTube ble kontaktet én gang ved et uhell.** En prøvekjøring av
+  forhåndsvisningen (ikke en av testene) åpnet «Lær mer»-boksen i
+  testprosjektet, og YouTube-spilleren i den ble hentet for ekte fra
+  `youtube-nocookie.com`, med testprosjektets oppdiktede video-ID.
+  Ingenting om eieren eller prosjektet ble sendt. Alle testene, og
+  regelen for prøvekjøringer, starter nå programmet slik at ingen
+  vertsnavn utenfor maskinen kan slås opp (`tests/fixtures/offline.ts`),
+  og en test beviser det.
+- **AppImage-fila ble forsøkt startet tre ganger uten vindu.**
+  AppImageLauncher, som er installert på eierens maskin, tok over
+  oppstarten hver gang og viste trolig sitt eget spørsmål på skjermen.
+  Programmet startet aldri, og jeg avsluttet prosessene. AppImage-fila
+  er derfor ikke prøvd; innholdet er prøvd utpakket
+  (`release/linux-unpacked`).
+
+**Utgivelse:** versjon 0.2.0 er gitt ut i det private repoet
+(<https://github.com/SimenKode/lysark/releases/tag/v0.2.0>), med
+`Lysark-0.2.0.AppImage` og `Lysark-0.2.0-win.zip`. Repoet er fortsatt
+privat, så utgivelsen er bare synlig for eieren.
+
+**De tre nye ønskene er ikke bygget.** De er en ny, større leveranse, og
+reglene sier at spørsmålene stilles først. Forslaget, med én anbefaling
+per spørsmål:
+
+1. **«Lær mer» og video under innlesing.** I dag settes tidspunktet for
+   hvert steg med pil høyre. Anbefaling: det samme gjelder for «+»-merker
+   og videoer. Trykker du et merke under innlesing, huskes når boksen
+   åpnet og lukket; starter du en video, huskes når den startet og
+   stoppet. Klokka (`src/shared/render/clock.ts`) regner da også ut
+   hvilken boks som er åpen og hvor langt hver video har kommet, og
+   videoeksporten viser boksen og spoler videoen bilde for bilde, slik
+   den nå gjør med avslutningsanimasjonen. Videoens lyd blandes inn av
+   FFmpeg. Opptaket av stemmen går videre mens videoen spiller.
+   YouTube-videoer kan ikke bli med i en videofil.
+
+   Svar:
+
+2. **Flere lydspor.** Anbefaling: to spor i tillegg til stemmen,
+   «Musikk» og «Lyd», som hører til hele forelesningen. Et klipp er en
+   lydfil med start (festet til et lysark og sekunder inn i det, så
+   klippet følger med når lysark flyttes eller endrer lengde), utsnitt,
+   lydstyrke og toning inn og ut. Samme klippeverktøy som for stemmen.
+   Musikken dempes automatisk mens det snakkes (kan slås av). Gjelder
+   både video og «Spill av» i HTML-fila. Programmet følger ikke med
+   musikk; kreditering kan føres som for bilder.
+
+   Svar:
+
+3. **Tidslinje.** Anbefaling: en egen visning der lysarkene står på rad
+   med bredde etter lengde, og sporene Stemme, Musikk og Lyd ligger
+   under. Dra i grensene for å strekke et lysark, dra klipp på plass,
+   og spill av hele forelesningen. Bygges sammen med flere lydspor.
+
+   Svar:
+
+4. **Rekkefølge.** Anbefaling: «Lær mer» og video under innlesing
+   først (bygger på det som finnes), så tidslinje og flere lydspor.
+
+   Svar:
+
+Dette opphever ett tidligere valg: i spørsmål 17
+([sporsmal-videre.md](sporsmal-videre.md)) ble musikk og flere lydspor
+holdt utenfor. Eieren vil nå ha dem.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

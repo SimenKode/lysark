@@ -548,6 +548,7 @@ export function App() {
       <NoticeBar />
       {report && (
         <ImportReportDialog
+          closingSlides={report.closingSlides}
           report={report.report}
           sourceName={report.sourceName}
           onClose={() => useStore.getState().setReport(null)}

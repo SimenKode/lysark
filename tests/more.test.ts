@@ -280,8 +280,15 @@ describe('where the "Lær mer" box goes', () => {
       bounds,
       box,
     );
-    expect(wide.left).toBeGreaterThanOrEqual(16);
-    expect(wide.left + box.width).toBeLessThanOrEqual(bounds.width - 16);
+    // Over the slide, on the side its mark is on: here the mark is on the right.
+    expect(wide.left).toBe(bounds.width - 16 - box.width);
+    const markOnLeft = placePopover(
+      { left: 200, top: 650, right: 1100, bottom: 700 },
+      { x: 200, y: 650 },
+      bounds,
+      box,
+    );
+    expect(markOnLeft.left).toBe(16);
     expect(wide.top + box.height).toBe(bounds.height - 16); // moved up to fit
     const tall = placePopover(
       { left: 0, top: -50, right: 50, bottom: 0 },

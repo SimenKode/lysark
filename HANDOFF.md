@@ -18,14 +18,17 @@ foreleser uten opplæring. Det styrer ordvalg og knapper.
 
 1. **Hente inn** en forelesning: PowerPoint, PDF, eller en HTML-fil du
    har eksportert fra Lysark før.
-2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og endre
-   tykkelsen på piler og streker.
-3. **Legge til «Lær mer»** på hva som helst, med tekst, bilder (også fra
-   Wikimedia Commons), video, tabeller og nettsider.
+2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, endre
+   tykkelsen på piler og streker, og bruke skiltformen (rektangel med
+   spiss) som peker mot noe.
+3. **Legge til «Lær mer»** på hva som helst. Studenten trykker «+», og en
+   boks spretter ut ved elementet, oppå lysarket. Du bygger boksen mens
+   du ser den på lysarket.
 4. **Lese inn stemmen** mens manuset står på skjermen. Pil høyre går til
    neste steg eller neste lysark.
 5. **Rette på lyden:** klippe, legge inn pauser, flytte steg, ta om.
-6. **Eksportere:**
+6. **Avslutte med USNs logoanimasjon**, som spiller av seg selv.
+7. **Eksportere:**
    - HTML-fil, med «Spill av» når du har lest inn stemmen
    - video (MP4) med teksting
    - GIF av ett eller noen få lysark, for korte klipp uten lyd
@@ -34,40 +37,65 @@ foreleser uten opplæring. Det styrer ordvalg og knapper.
 
 | Du sa | Gjort? |
 | --- | --- |
-| Følg anbefalingene i de seks spørsmålene | Navnene er byttet (se under). Resten står under «Neste steg» |
-| PDF skal kunne være inndata | Ja: «Importer PDF …» på startskjermen og i Fil-menyen |
-| Eksport til GIF for småvideoer | Ja: «Eksporter video», velg «GIF» og hvilke lysark |
-| Programmet er for forelesere | Skrevet inn i reglene, README og startskjermen |
-| HANDOFF skal være kort og lettlest | Denne fila. Loggen er flyttet til `docs/historikk.md` |
+| Skiltformen (trekant + rektangel) trengs | Ja: «Form», «Skilt». Importeres også fra PowerPoint |
+| «Lær mer» skal være en boks på selve lysarket, animert, ikke skyve alt til siden | Ja, i spilleren og i byggeren |
+| Lilla ramme rundt bilder med «Lær mer» | Ja |
+| Knapper skal ikke ha «…»; ikon, tekst eller begge der det passer | Ja (se under) |
+| Mer liv og lekenhet | Ja: lysark glir inn, steg glir på plass, merker og knapper svarer |
+| USNs avslutningsanimasjon som eget lysark | Ja: plukkes opp ved import, spiller av seg selv, også i video |
+| Utgivelse | Versjon 0.2.0 (se «Hvor ting er») |
+| Flere lydspor (musikk), tidslinje, og «Lær mer» og video under innlesing | **Ikke bygget.** Trenger svar på fire spørsmål, se under |
 
-Navn som er byttet: «Utdyping» heter **«Lær mer»**, «Byggestein» heter
-**«Innhold»**, «Innbygging» heter **«Nettside»**, «Tilpass til rutenett»
-heter **«Rydd opp lysarket»**, og «Pakk prosjektet til én fil» heter
-**«Lagre som én fil»**.
+**Knappene:** bare ikon på det alle kjenner og bruker hele tiden (angre,
+gjør om, kopier, flytt, slett). Ikon og tekst på det man leter etter
+(importer, lagre, forhåndsvis, eksporter, sett inn, les inn, spill av).
+Bare tekst inne i dialoger og på verktøy uten noe naturlig tegn (klipp,
+pause, «Ferdig»). Menylinja øverst har fortsatt «…» der et valg åpner en
+dialog; det er vanlig skikk i menyer.
 
 ## Det jeg trenger fra deg
 
+### Fire spørsmål om det nye du ba om
+
+«Som anbefalt» holder som svar.
+
+1. **«Lær mer» og video under innlesing.** Anbefaling: mens du leser
+   inn, kan du trykke «+»-merkene og spille av videoer. Programmet
+   husker tidspunktene, slik det gjør med stegene. I videoen spretter
+   boksen ut på samme tid, og en videofil spilles i bildet med sin egen
+   lyd mens opptaket av stemmen din går videre. HTML-fila gjør det samme
+   i «Spill av». En YouTube-video kan ikke bli med i en videofil (vi har
+   ikke fila), så den blir et stillbilde i MP4, men spiller i HTML.
+2. **Flere lydspor.** Anbefaling: to spor til, «Musikk» og «Lyd», som
+   går over hele forelesningen, ikke per lysark. Hvert klipp kan flyttes,
+   klippes, tones inn og ut og få egen lydstyrke. Musikken dempes av seg
+   selv mens du snakker. Programmet følger ikke med musikk; du legger
+   inn egne filer, og kan føre opp kreditering som for bilder.
+3. **Tidslinje.** Anbefaling: en egen visning med lysarkene på rad etter
+   lengde, og sporene Stemme, Musikk og Lyd under. Den bygges sammen med
+   flere lydspor, fordi musikk som går over flere lysark ikke kan
+   plasseres uten den.
+4. **Rekkefølge.** Anbefaling: først «Lær mer» og video under
+   innlesing, så tidslinje og flere lydspor sammen.
+
+### Ellers
+
 1. **Prøv å lese inn med din egen mikrofon.** Det er det viktigste som
-   ikke er prøvd. Les inn tre–fire lysark, klipp bort et feilsnakk, lag
-   video og hør på den.
+   ikke er prøvd.
 2. **Prøv i Canvas** (bare du, ingen KI). Sjekklista står nederst.
-3. **Si hva som skurrer.** Du ville komme med innspill til produktet er
-   fornuftig; skriv dem i startmeldingen nederst.
-4. **Repoet:** første utgave med både HTML og video finnes nå. Om det
-   skal bli offentlig, er din avgjørelse. Tre ting bør du ta stilling
-   til først (detaljer i historikken, 6.12): unntaket som holder dine
-   eksporterte forelesninger utenfor GPL, om USN er komfortabel med at
-   profilen er bygd inn, og hvem som eier koden.
+3. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
+4. **Repoet** er fortsatt privat. Om det skal bli offentlig, er din
+   avgjørelse. Tre ting bør du ta stilling til først (historikken,
+   6.12): unntaket som holder dine eksporterte forelesninger utenfor
+   GPL, om USN er komfortabel med at profilen er bygd inn, og hvem som
+   eier koden.
 
 ## Neste steg, i rekkefølge
 
-1. **Mer liv og lekenhet** (anbefalingen du valgte): myk overgang mellom
-   lysark, elementer som glir inn per steg, knapper og «+»-merker som
-   svarer når man peker, panel som glir inn. Ro i selve faginnholdet.
-2. **USNs avslutningsanimasjon** som et eget avslutningslysark som
-   spiller av seg selv, uten knapper og uten lyd.
+1. **«Lær mer» og video under innlesing** (spørsmål 1 over).
+2. **Tidslinje og flere lydspor** (spørsmål 2 og 3).
 3. **Det du melder** etter å ha prøvd mikrofon og Canvas.
-4. **Flere bildekilder** (Openverse først), når resten sitter.
+4. **Flere bildekilder** (Openverse først).
 5. **Figurer og bevegelser** (leveranse 4), deretter håndlaget stil
    (leveranse 5).
 
@@ -76,22 +104,26 @@ heter **«Rydd opp lysarket»**, og «Pakk prosjektet til én fil» heter
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
 | Automatiske tester | Ja | – |
-| Import, redigering, «Lær mer», HTML | Ja | Ja, for hånd |
+| Import, redigering, HTML | Ja | Ja, for hånd |
+| «Lær mer» som boks på lysarket | Ja | Ja, for hånd |
+| Skiltformen, ikonene, de nye navnene | Ja | Ja, for hånd |
 | YouTube som spiller i lysarket | Bare i test, ikke mot ekte nett | Ja, spilte |
 | Innlesing | Med prøvemikrofon | Med stille inndata |
 | Video (MP4) | Ja, også en ekte forelesning | Ja |
 | «Spill av» i HTML-fila | Ja | Ja, i Edge |
+| USNs avslutningsanimasjon | Ja, med den ekte filmen | Ja, med den ekte filmen |
+| GIF-eksport | Ja | Ja |
 | PDF-import | Ja, din Stål-PDF | Nei |
-| GIF-eksport | Ja | Nei |
-| De nye navnene | Ja | Nei |
 
 **Ikke prøvd noe sted:** en ekte mikrofon, en hel forelesning lest inn i
-ett strekk, og Canvas.
+ett strekk, og Canvas. AppImage-fila selv er heller ikke prøvd av meg:
+AppImageLauncher på maskinen din tar over oppstarten og spør deg først.
+Programmet i fila er prøvd utpakket.
 
 ## Kjente svakheter
 
-- **Video inne i et lysark blir et stillbilde** i video og GIF. USNs
-  logoanimasjon blir derfor et hvitt bilde (rettes med neste steg 2).
+- **Video inne i et lysark blir et stillbilde** i video og GIF (unntatt
+  USNs avslutningsanimasjon, som spilles). Rettes med neste steg 1.
 - **Tekstingen er beregnet** ut fra manusets lengde, ikke lyttet fram.
   Snakker du fritt, stemmer den dårlig.
 - **Tabeller fra PowerPoint** kan bli høyere enn i originalen.
@@ -108,7 +140,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 | Hva | Hvor |
 | --- | --- |
-| Programmet, ferdig pakket | `release/Lysark-0.1.0.AppImage` (Linux) og `release/Lysark-0.1.0-win.zip` (Windows) |
+| Programmet, ferdig pakket | `release/Lysark-0.2.0.AppImage` (Linux) og `release/Lysark-0.2.0-win.zip` (Windows) |
+| Utgivelsen (privat, som repoet) | <https://github.com/SimenKode/lysark/releases/tag/v0.2.0> |
 | Koden | `~/Forelesningsverktoy/lysark`, privat på GitHub (`SimenKode/lysark`) |
 | Planen for de fem leveransene | [docs/plan.md](docs/plan.md) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
@@ -140,7 +173,8 @@ forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger privat på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til
-HTML), 2 («Lær mer») og 3 (lyd, video, GIF, PDF) er bygget.
+HTML), 2 («Lær mer») og 3 (lyd, video, GIF, PDF) er bygget, og versjon
+0.2.0 er gitt ut.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -160,6 +194,9 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
+Mine svar på de fire spørsmålene i HANDOFF.md:
+(skriv her, eller «som anbefalt»)
+
 Det jeg fant da jeg prøvde selv (mikrofon, video, Canvas):
 (skriv her)
 
@@ -167,8 +204,9 @@ Innspill til produktet:
 (skriv her)
 
 Gjør dette:
-1. Rett det jeg fant, og ta innspillene mine.
-2. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
+1. Skriv svarene mine inn i docs/historikk.md, og bygg det jeg valgte.
+2. Rett det jeg fant, og ta innspillene mine.
+3. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
 
 Rapporter ærlig: hva som er prøvd, på hvilket system, og hva som ikke
 er prøvd.

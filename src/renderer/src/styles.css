@@ -1061,6 +1061,11 @@ textarea {
 .video-range .check {
   white-space: nowrap;
 }
+/* Fixed to the top, so the dialog grows downwards when its text changes
+   and nothing moves under the pointer. */
+.video-dialog {
+  margin-top: 6vh;
+}
 .video-dialog .dialog-actions {
   gap: 8px;
 }
