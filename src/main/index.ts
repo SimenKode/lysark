@@ -445,7 +445,14 @@ function registerHandlers(): void {
         previewWindow.on('closed', () => {
           previewWindow = null;
         });
+        // The exported page names itself after the lecture; the window says what it is.
+        previewWindow.on('page-title-updated', (event) => event.preventDefault());
       }
+      previewWindow.setTitle(
+        project.meta.title
+          ? `Forhåndsvisning – ${project.meta.title}`
+          : `Forhåndsvisning – ${APP_NAME}`,
+      );
       await previewWindow.loadFile(file, { hash: String(sceneIndex + 1) });
       if (!HIDDEN) previewWindow.focus();
     },

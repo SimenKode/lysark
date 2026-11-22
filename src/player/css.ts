@@ -56,7 +56,13 @@ body { background: ${C.indigo}; }
   background: ${C.lilla}; transform: translateY(-0.16em);
 }
 .lp-rich .ls-mark { background: var(--ls-mark-field); color: var(--ls-mark-text); padding: 0.04em 0.16em; }
-.lp-rich a, .lp-media a { color: ${C.lilla}; text-underline-offset: 0.14em; }
+.lp-rich a, .lp-media a:not(.ls-videocard) { color: ${C.lilla}; text-underline-offset: 0.14em; }
+/* The link card is drawn for the stage (1920 px wide); in the panel it follows the panel's text. */
+.lp-media .ls-videocard { font-size: 1.15rem; border-radius: 16px; padding: 18px; gap: 10px; }
+.lp-media .ls-videocard-info { gap: 10px; }
+.lp-media .ls-videocard svg { width: 56px; height: 56px; }
+.lp-media .ls-videocard small { font-size: 0.95rem; }
+.lp-media .ls-video-note { font-size: 1rem; padding: 10px 14px; }
 .lp-media { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
 .lp-media figure { margin: 0; }
 .lp-media img, .lp-media video { display: block; max-width: 100%; height: auto; }

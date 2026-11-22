@@ -130,6 +130,33 @@ export function overlapsDecoration(box: { x: number; y: number; w: number; h: nu
   return box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y;
 }
 
+/**
+ * Width of USN's primary logo per unit of height, in Norwegian and in
+ * English (from the viewBox of the files in the logo package).
+ */
+export const LOGO_ASPECT: Record<Project['meta']['language'], number> = {
+  nb: 828.91 / 191,
+  en: 1093.89 / 191,
+};
+
+/**
+ * The area the logo takes on a scene, with the clear space the brand
+ * manual asks for around it (half the height of the N in the symbol).
+ */
+export function logoArea(
+  theme: Theme,
+  language: Project['meta']['language'],
+): { x: number; y: number; w: number; h: number } {
+  const { height, marginX, marginBottom } = theme.logo;
+  const clear = height / 2;
+  return {
+    x: marginX - clear,
+    y: STAGE.height - marginBottom - height - clear,
+    w: height * LOGO_ASPECT[language] + 2 * clear,
+    h: height + 2 * clear,
+  };
+}
+
 export function logoVariant(surface: Surface): 'light' | 'dark' {
   return isDarkSurface(surface) ? 'dark' : 'light';
 }

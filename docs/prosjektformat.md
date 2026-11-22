@@ -38,7 +38,21 @@ Skissen under viser hovedtrekkene slik de ble tegnet før byggingen.
 Noen detaljer ble enklere i den ferdige koden: formatet heter `lysark`,
 tekst er avsnitt med nivå og listetype, farger på elementer er navn fra
 profilpaletten, og hver scene har egne valg for profilformer og logo.
-Diagrammaler og lyd legges til i leveranse 2 og 3.
+Importert tekst kan ha med seg det PowerPoint bestemte: størrelse per
+listenivå (`levelScale`), linjeavstand (`lineHeight`), avstand før
+avsnitt (`spaceBefore`) og innrykk (`indent`), alle målt i forhold til
+tekstens skriftstørrelse. «Temaets størrelse» og «Tilpass til rutenett»
+fjerner dem igjen. Avsnitt kan ha bokstav- eller romertallsnummerering
+(`numberStyle`), og tekstbiter kan være senket eller hevet (`script`).
+Former kan ha egne tekstmarger, justering og dreid tekst, tabeller egne
+cellemarger, og bilder kan blandes med det som ligger under (`blend`,
+brukt for håndskrift).
+En video som er en lenke til en videoside, tegnes som et kort med
+stillbildet sitt (`poster`) når det finnes.
+Diagrammaler og lyd er ikke i formatet ennå. Formatet er ikke endret
+siden leveranse 1 (versjon 1); endringene som trengs for utdyping på alle
+elementer, figurer og lyd, står som spørsmål i
+[sporsmal-videre.md](sporsmal-videre.md).
 
 ```ts
 interface Project {

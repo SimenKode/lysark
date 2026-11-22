@@ -244,10 +244,21 @@ function TextFields({ el, scene }: { el: Extract<Element, { type: 'text' }>; sce
         />
         <button
           type="button"
-          disabled={el.fontSize === undefined}
+          disabled={
+            el.fontSize === undefined &&
+            el.levelScale === undefined &&
+            el.lineHeight === undefined &&
+            el.spaceBefore === undefined &&
+            el.indent === undefined
+          }
+          title="Bruk temaets skriftstørrelse, linjeavstand, avstand mellom avsnitt og innrykk"
           onClick={() =>
             update<typeof el>((t) => {
               delete t.fontSize;
+              delete t.levelScale;
+              delete t.lineHeight;
+              delete t.spaceBefore;
+              delete t.indent;
             })
           }
         >

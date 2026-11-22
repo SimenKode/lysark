@@ -112,6 +112,7 @@ describe.skipIf(!built)('importing a PowerPoint file, end to end', () => {
     expect(readdirSync(join(projectDir, 'media')).length).toBe(1);
     await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
     await expect.poll(() => page.locator('.scene-item').count()).toBe(2);
+    // The file's own title wins over the title slide.
     expect(await page.locator('.project-title').inputValue()).toBe('Testimport');
   });
 

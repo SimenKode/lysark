@@ -1,12 +1,14 @@
 // One slide to one scene: walks the shape tree in z-order and builds the
 // elements, the import warnings, the scene title and the manuscript.
 import { newId } from '../shared/format/factory';
+import { STAGE } from '../shared/format/constants';
 import type {
   Box,
   Crop,
   Element,
   ImageElement,
   ImportWarning,
+  Inset,
   Scene,
   SceneKind,
   ShapeElement,
@@ -18,7 +20,7 @@ import type {
   VideoSource,
 } from '../shared/format/schema';
 import { nearestPaletteColor } from '../shared/theme/palette';
-import { overlapsDecoration } from '../shared/theme/theme';
+import { THEME_REN, logoArea, overlapsDecoration } from '../shared/theme/theme';
 import { arrowEnds, readFill, shapeFill, shapeLine, type ColorContext, type Paint } from './color';
 import {
   basePlaceholderType,
@@ -33,9 +35,13 @@ import {
   type Placeholder,
 } from './deck';
 import {
+  insetBox,
   placeOnStage,
   readGroupFrame,
   readXfrm,
+  freeformStroke,
+  strokeXfrm,
+  turnBox,
   wholeSlide,
   type GroupFrame,
   type Placed,
@@ -46,9 +52,16 @@ import { WARNINGS } from './messages';
 import { extensionOf, type Relationship } from './package';
 import {
   autofitScale,
+  indentsFor,
+  insetsOf,
+  isDefaultInsets,
+  levelScaleFor,
+  lineReductionFactor,
   plainParagraphs,
   readTextBody,
+  spacingFor,
   stageFontSize,
+  verticalTurnOf,
   widthCompensation,
   valignOf,
   type TextBody,
@@ -98,6 +111,8 @@ const SHAPE_GEOMETRY: Record<string, ShapeElement['geometry']> = {
 /** Block arrows become plain arrows through the middle of their box. */
 const BLOCK_ARROWS: Record<string, { horizontal: boolean; reversed: boolean }> = {
   rightArrow: { horizontal: true, reversed: false },
+  notchedRightArrow: { horizontal: true, reversed: false },
+  stripedRightArrow: { horizontal: true, reversed: false },
   leftArrow: { horizontal: true, reversed: true },
   downArrow: { horizontal: false, reversed: false },
   upArrow: { horizontal: false, reversed: true },
@@ -133,6 +148,11 @@ function frameWarning(kind: Exclude<FrameKind, 'table'>, asPicture: boolean): Im
   if (kind === 'chart') return WARNINGS.chart(asPicture);
   if (kind === 'smartart') return WARNINGS.smartart(asPicture);
   return WARNINGS.embeddedObject(asPicture);
+}
+
+/** Arrow shapes other than the straight block arrows (callouts are boxes, not arrows). */
+function isOtherArrow(preset: string): boolean {
+  return /Arrow$/.test(preset) && !BLOCK_ARROWS[preset];
 }
 
 function isLineGeometry(preset: string | undefined): boolean {
@@ -232,6 +252,34 @@ function stretchedBox(box: Box, blipFill: XmlNode | undefined): Box {
   return { ...box, x: box.x + box.w * l, y: box.y + box.h * t, w, h };
 }
 
+const LOGO_AREA = logoArea(THEME_REN, 'nb');
+
+/**
+ * True when an element lies where the logo goes. Text counts only when it
+ * sits at the bottom of the slide, since a tall text box is mostly empty
+ * below its text.
+ */
+export function coversLogo(element: Element): boolean {
+  const { x, y, w, h } = element.box;
+  const a = LOGO_AREA;
+  const overlaps = x < a.x + a.w && x + w > a.x && y < a.y + a.h && y + h > a.y;
+  if (!overlaps) return false;
+  if (element.type !== 'text') return true;
+  return element.valign === 'bottom' || y >= STAGE.height * 0.75;
+}
+
+/** True for a picture or video that fills the whole slide (such as USN's logo animation). */
+function coversStage(element: Element): boolean {
+  const { x, y, w, h } = element.box;
+  return (
+    (element.type === 'image' || element.type === 'video') &&
+    x <= 20 &&
+    y <= 20 &&
+    x + w >= STAGE.width - 20 &&
+    y + h >= STAGE.height - 20
+  );
+}
+
 function defined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
@@ -241,6 +289,7 @@ class SlideImporter {
   private readonly warnings: ImportWarning[] = [];
   private readonly counts: ElementCounts = { texts: 0, images: 0, tables: 0, shapes: 0, videos: 0 };
   private geometryWarned = false;
+  private arrowWarned = false;
 
   private readonly rels: Map<string, Relationship>;
   private readonly layout: LayoutPart | undefined;
@@ -296,13 +345,17 @@ class SlideImporter {
     const decoration =
       (kind === 'title' || kind === 'section') &&
       !this.elements.some((element) => overlapsDecoration(element.box));
+    // A logo that content covers or crowds breaks the brand manual, so the
+    // scene starts without it; the owner can switch it on after tidying up.
+    const showLogo = !this.elements.some(coversLogo);
+    if (!showLogo) this.warn(WARNINGS.logo(this.elements.some(coversStage)));
     const scene: Scene = {
       id: sceneId,
       title,
       kind,
       decoration,
       shapeVariant: this.index % 3,
-      showLogo: true,
+      showLogo,
       elements: this.elements,
       timeline: [],
       script: this.script(),
@@ -408,8 +461,19 @@ class SlideImporter {
       return;
     }
     const imagesBefore = this.counts.images;
+    const elementsBefore = this.elements.length;
     this.walk(fallback.children, groups, groupFill);
     const asPicture = this.counts.images > imagesBefore;
+    // Ink from PowerPoint's pen or highlighter: its picture is drawn so
+    // that what lies under it shows through, as in PowerPoint.
+    if (children(choice, 'p:contentPart').length > 0) {
+      for (const element of this.elements.slice(elementsBefore)) {
+        if (element.type !== 'image') continue;
+        element.blend = 'multiply';
+        element.decorative = true;
+        element.alt = '';
+      }
+    }
     for (const frame of children(choice, 'p:graphicFrame')) {
       const kind = frameKind(frame);
       if (kind !== 'table') this.warn(frameWarning(kind, asPicture));
@@ -467,9 +531,22 @@ class SlideImporter {
     text: TextBody,
     bodyProperties: Array<XmlNode | undefined>,
   ): void {
+    // The text keeps to the area inside PowerPoint's text margins, and
+    // vertical text becomes a turned text box.
+    const insets = insetsOf(bodyProperties);
+    const scale = this.deck.stage.scale;
+    let textBox = insetBox(
+      box,
+      insets.l * scale,
+      insets.t * scale,
+      insets.r * scale,
+      insets.b * scale,
+    );
+    const turn = verticalTurnOf(bodyProperties);
+    if (turn !== 0) textBox = turnBox(textBox, turn);
     const element: TextElement = {
       id: newId('e'),
-      box,
+      box: textBox,
       type: 'text',
       role,
       content: text.content,
@@ -478,6 +555,19 @@ class SlideImporter {
     };
     const fontSize = this.fontSize(text, bodyProperties[0], role);
     if (fontSize !== undefined) element.fontSize = fontSize;
+    const levelScale = levelScaleFor(text, THEME_REN.levelScale);
+    if (levelScale) element.levelScale = levelScale;
+    const indent = indentsFor(text, this.deck.stage.scale, element.fontSize);
+    if (indent) element.indent = indent;
+    Object.assign(
+      element,
+      spacingFor(
+        text,
+        this.compensation(role),
+        THEME_REN.roles[role].lineHeight,
+        lineReductionFactor(bodyProperties[0]),
+      ),
+    );
     this.elements.push(element);
     this.counts.texts += 1;
   }
@@ -491,12 +581,17 @@ class SlideImporter {
     bodyProperties: XmlNode | undefined,
     role: TextRole = 'body',
   ): number | undefined {
-    const factor = role === 'title' || role === 'number' ? 1 : this.sansFactor;
+    const factor = this.compensation(role);
     return stageFontSize(
       text.sizeWeights,
       autofitScale(bodyProperties) * factor,
       this.pixelsPerPoint,
     );
+  }
+
+  /** The factor on imported font sizes for a role (see widthCompensation). */
+  private compensation(role: TextRole): number {
+    return role === 'title' || role === 'number' ? 1 : this.sansFactor;
   }
 
   private placeholder(node: XmlNode, type: string, groups: GroupFrame[]): void {
@@ -574,19 +669,32 @@ class SlideImporter {
     }
     const line = shapeLine(properties, style, this.colors);
     const preset = attr(child(properties, 'a:prstGeom'), 'prst');
+    const xfrm = readXfrm(xfrmNodeOf(node));
+    // A freeform that is an open stroke is a line.
+    const stroke = xfrm
+      ? freeformStroke(child(properties, 'a:custGeom'), xfrm, fill.kind !== 'none')
+      : undefined;
 
-    if (isConnector || isLineGeometry(preset)) {
+    if (isConnector || isLineGeometry(preset) || stroke) {
       // A line without a visible stroke shows nothing.
       if (line.kind !== 'color') return;
+      if (stroke?.approximate && !this.geometryWarned) {
+        this.geometryWarned = true;
+        this.warn(WARNINGS.geometry());
+      }
       const ends = arrowEnds(properties);
       // The arrow head is drawn at the end, so a head at the start reverses the line.
       const reversed = ends.start && !ends.end;
+      const strokePlaced = stroke && xfrm ? this.place(strokeXfrm(xfrm, stroke), groups) : placed;
+      // A freeform stroke may run from right to left or from bottom to top.
+      const leftward = stroke ? stroke.x2 < stroke.x1 : false;
+      const upward = stroke ? stroke.y2 < stroke.y1 : false;
       this.addShape({
-        box: placed.box,
+        box: strokePlaced.box,
         geometry: ends.start || ends.end ? 'arrow' : 'line',
         stroke: line.hex,
-        flipH: placed.flipH !== reversed,
-        flipV: placed.flipV !== reversed,
+        flipH: (strokePlaced.flipH !== leftward) !== reversed,
+        flipV: (strokePlaced.flipV !== upward) !== reversed,
       });
       return;
     }
@@ -610,6 +718,17 @@ class SlideImporter {
 
     if (fill.kind === 'none' && line.kind === 'none') {
       // An invisible shape is only its text (an ordinary text box).
+      addOwnText();
+      return;
+    }
+
+    // Curved, bent and two-headed arrows have no counterpart. A rectangle in
+    // their place would cover what they point at, so they are left out.
+    if (preset && isOtherArrow(preset)) {
+      if (!this.arrowWarned) {
+        this.arrowWarned = true;
+        this.warn(WARNINGS.arrow());
+      }
       addOwnText();
       return;
     }
@@ -657,6 +776,32 @@ class SlideImporter {
       element.content = spec.content.content;
       const fontSize = this.fontSize(spec.content, spec.bodyProperties);
       if (fontSize !== undefined) element.fontSize = fontSize;
+      const levelScale = levelScaleFor(spec.content, THEME_REN.levelScale);
+      if (levelScale) element.levelScale = levelScale;
+      const indent = indentsFor(spec.content, this.deck.stage.scale, element.fontSize);
+      if (indent) element.indent = indent;
+      Object.assign(
+        element,
+        spacingFor(
+          spec.content,
+          this.compensation('body'),
+          THEME_REN.roles.body.lineHeight,
+          lineReductionFactor(spec.bodyProperties),
+        ),
+      );
+      if (spec.content.align !== 'center') element.align = spec.content.align;
+      const anchor = valignOf([spec.bodyProperties]);
+      if (attr(spec.bodyProperties, 'anchor') !== undefined && anchor !== 'middle') {
+        element.valign = anchor;
+      }
+      const turn = verticalTurnOf([spec.bodyProperties]);
+      if (turn !== 0) element.textRotation = turn;
+      // PowerPoint's default margins are the theme's; other margins are kept.
+      const insets = insetsOf([spec.bodyProperties]);
+      if (!isDefaultInsets(insets)) {
+        const px = (emu: number): number => Math.round(emu * this.deck.stage.scale * 10) / 10;
+        element.textInset = { l: px(insets.l), t: px(insets.t), r: px(insets.r), b: px(insets.b) };
+      }
     }
     this.elements.push(element);
     this.counts.shapes += 1;
@@ -814,11 +959,50 @@ class SlideImporter {
     this.warn(frameWarning(kind, asPicture));
   }
 
+  /**
+   * The cell margins most cells of a table have, in stage pixels, when they
+   * are not PowerPoint's defaults (0.1 inch left and right, 0.05 inch top
+   * and bottom, which are the theme's too).
+   */
+  private cellInset(table: XmlNode | undefined): Inset | undefined {
+    const DEFAULT = '91440,45720,91440,45720';
+    const counts = new Map<string, number>();
+    for (const tr of children(table, 'a:tr')) {
+      for (const tc of children(tr, 'a:tc')) {
+        const properties = child(tc, 'a:tcPr');
+        const side = (name: string, fallback: number): number => {
+          const value = intAttr(properties, name);
+          return value !== undefined && value >= 0 ? value : fallback;
+        };
+        const key = [
+          side('marL', 91440),
+          side('marT', 45720),
+          side('marR', 91440),
+          side('marB', 45720),
+        ].join(',');
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    let common = DEFAULT;
+    let most = 0;
+    for (const [key, count] of counts) {
+      if (count > most) {
+        common = key;
+        most = count;
+      }
+    }
+    if (common === DEFAULT) return undefined;
+    const [l, t, r, b] = common
+      .split(',')
+      .map((emu) => Math.round(Number(emu) * this.deck.stage.scale * 10) / 10);
+    return { l: l!, t: t!, r: r!, b: b! };
+  }
+
   private table(frame: XmlNode, table: XmlNode | undefined, groups: GroupFrame[]): void {
-    const environment = this.environment(
-      [this.master?.otherStyle, this.deck.defaultTextStyle],
-      true,
-    );
+    const environment = {
+      ...this.environment([this.master?.otherStyle, this.deck.defaultTextStyle], true),
+      keepGaps: true,
+    };
     const sizeWeights = new Map<number, number>();
     const rows: TableCell[][] = [];
     let widest = 0;
@@ -863,6 +1047,8 @@ class SlideImporter {
     };
     const fontSize = stageFontSize(sizeWeights, this.sansFactor, this.pixelsPerPoint);
     if (fontSize !== undefined) element.fontSize = fontSize;
+    const cellInset = this.cellInset(table);
+    if (cellInset) element.cellInset = cellInset;
     this.elements.push(element);
     this.counts.tables += 1;
   }

@@ -26,7 +26,17 @@ export const WARNINGS = {
   }),
   geometry: (): ImportWarning => ({
     code: 'geometry',
-    message: 'Noen former er forenklet til rektangler.',
+    message: 'Noen former er forenklet til rektangler eller rette linjer.',
+  }),
+  logo: (wholeSlide: boolean): ImportWarning => ({
+    code: 'other',
+    message: wholeSlide
+      ? 'Logoen er slått av fordi et bilde eller en video dekker hele lysbildet.'
+      : 'Logoen er slått av fordi innhold ligger der den skal stå. Flytt innholdet og slå på «Vis USNs logo» hvis scenen skal ha logo.',
+  }),
+  arrow: (): ImportWarning => ({
+    code: 'geometry',
+    message: 'En buet, knekt eller dobbel pil følger ikke med. Tegn den på nytt med en rett pil.',
   }),
   smartart: (asPicture: boolean): ImportWarning => ({
     code: 'smartart',

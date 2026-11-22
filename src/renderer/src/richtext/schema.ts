@@ -2,14 +2,19 @@
 // both directions. A paragraph carries its list kind and level as
 // attributes, exactly like the format does.
 import { Schema, type Mark, type Node as PMNode } from 'prosemirror-model';
-import type { Paragraph, RichText, Run } from '../../../shared/format/schema';
+import {
+  NUMBER_STYLES,
+  type Paragraph,
+  type RichText,
+  type Run,
+} from '../../../shared/format/schema';
 
 export const schema = new Schema({
   nodes: {
     doc: { content: 'paragraph+' },
     paragraph: {
       content: 'inline*',
-      attrs: { level: { default: 0 }, list: { default: 'none' } },
+      attrs: { level: { default: 0 }, list: { default: 'none' }, numberStyle: { default: null } },
       parseDOM: [
         { tag: 'p' },
         { tag: 'div' },
@@ -26,8 +31,12 @@ export const schema = new Schema({
           {
             class: list === 'none' ? 'ls-p' : 'ls-p ls-edit-li',
             'data-list': list,
+            'data-number-style': (node.attrs.numberStyle as string | null) ?? '1.',
             'data-level': String(level),
-            style: level > 0 ? `margin-left:${level * 1.3}em` : '',
+            // --ls-lvlN is the size factor of level N, set by the editing surface.
+            style:
+              `font-size:calc(var(--ls-lvl${level}, 1) * 1em)` +
+              (level > 0 ? `;margin-left:calc(${level * 1.3}em / var(--ls-lvl${level}, 1))` : ''),
           },
           0,
         ];
@@ -62,6 +71,17 @@ export const schema = new Schema({
       parseDOM: [{ tag: 'mark' }],
       toDOM: () => ['mark', { class: 'ls-mark' }, 0],
     },
+    // Kept from imported text (CO₂, m²); a run is one or the other.
+    sub: {
+      excludes: 'sup',
+      parseDOM: [{ tag: 'sub' }],
+      toDOM: () => ['sub', 0],
+    },
+    sup: {
+      excludes: 'sub',
+      parseDOM: [{ tag: 'sup' }],
+      toDOM: () => ['sup', 0],
+    },
     link: {
       attrs: { href: {} },
       inclusive: false,
@@ -80,7 +100,9 @@ export const schema = new Schema({
 });
 
 export function richTextToDoc(rt: RichText): PMNode {
-  const paragraphs = rt.paragraphs.length ? rt.paragraphs : [{ level: 0, list: 'none', runs: [] }];
+  const paragraphs: Paragraph[] = rt.paragraphs.length
+    ? rt.paragraphs
+    : [{ level: 0, list: 'none', runs: [] }];
   return schema.node(
     'doc',
     null,
@@ -91,20 +113,30 @@ export function richTextToDoc(rt: RichText): PMNode {
         if (run.bold) marks.push(schema.marks.strong!.create());
         if (run.italic) marks.push(schema.marks.em!.create());
         if (run.mark) marks.push(schema.marks.highlight!.create());
+        if (run.script === 'sub') marks.push(schema.marks.sub!.create());
+        if (run.script === 'super') marks.push(schema.marks.sup!.create());
         if (run.link) marks.push(schema.marks.link!.create({ href: run.link }));
         run.text.split('\n').forEach((part, i) => {
           if (i > 0) content.push(schema.nodes.hard_break!.create(null, null, marks));
           if (part) content.push(schema.text(part, marks));
         });
       }
-      return schema.node('paragraph', { level: p.level, list: p.list }, content);
+      return schema.node(
+        'paragraph',
+        { level: p.level, list: p.list, numberStyle: p.numberStyle ?? null },
+        content,
+      );
     }),
   );
 }
 
 function sameFormat(a: Run, b: Run): boolean {
   return (
-    !!a.bold === !!b.bold && !!a.italic === !!b.italic && !!a.mark === !!b.mark && a.link === b.link
+    !!a.bold === !!b.bold &&
+    !!a.italic === !!b.italic &&
+    !!a.mark === !!b.mark &&
+    a.link === b.link &&
+    a.script === b.script
   );
 }
 
@@ -118,6 +150,8 @@ export function docToRichText(doc: PMNode): RichText {
         if (mark.type === schema.marks.strong) run.bold = true;
         else if (mark.type === schema.marks.em) run.italic = true;
         else if (mark.type === schema.marks.highlight) run.mark = true;
+        else if (mark.type === schema.marks.sub) run.script = 'sub';
+        else if (mark.type === schema.marks.sup) run.script = 'super';
         else if (mark.type === schema.marks.link) run.link = mark.attrs.href as string;
       }
       const last = runs[runs.length - 1];
@@ -127,7 +161,10 @@ export function docToRichText(doc: PMNode): RichText {
     const level = Math.max(0, Math.min(4, Number(node.attrs.level) || 0));
     const list =
       node.attrs.list === 'bullet' || node.attrs.list === 'number' ? node.attrs.list : 'none';
-    paragraphs.push({ level, list, runs });
+    const paragraph: Paragraph = { level, list, runs };
+    const style = node.attrs.numberStyle as Paragraph['numberStyle'] | null;
+    if (list === 'number' && style && NUMBER_STYLES.includes(style)) paragraph.numberStyle = style;
+    paragraphs.push(paragraph);
   });
   return { paragraphs };
 }

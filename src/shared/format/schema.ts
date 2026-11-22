@@ -58,12 +58,18 @@ export const Run = z.object({
   mark: z.boolean().optional(),
   /** http(s):, mailto: or "#scene:<sceneId>". */
   link: z.string().optional(),
+  /** Subscript or superscript, as in CO₂ and m². */
+  script: z.enum(['sub', 'super']).optional(),
 });
 export type Run = z.infer<typeof Run>;
+
+/** How a numbered paragraph is numbered, as its first marker would read. "1." when absent. */
+export const NUMBER_STYLES = ['1)', 'a.', 'a)', 'A.', 'A)', 'i.', 'I.'] as const;
 
 export const Paragraph = z.object({
   level: z.number().int().min(0).max(4),
   list: z.enum(['none', 'bullet', 'number']),
+  numberStyle: z.enum(NUMBER_STYLES).optional(),
   runs: z.array(Run),
 });
 export type Paragraph = z.infer<typeof Paragraph>;
@@ -89,6 +95,45 @@ const elementBase = {
   name: z.string().optional(),
 };
 
+/**
+ * Font size per list level, as a factor on the element's size. Imported
+ * text keeps the sizes PowerPoint gave each level this way.
+ */
+export const LevelScale = z.array(z.number().positive()).length(5);
+export type LevelScale = z.infer<typeof LevelScale>;
+
+/**
+ * Spacing that imported text keeps from PowerPoint. When absent the
+ * theme's spacing is used.
+ */
+const spacingFields = {
+  /** Line height as a factor of the font size. */
+  lineHeight: z.number().positive().optional(),
+  /**
+   * Space above a paragraph of each list level (0-4), as a factor of the
+   * element's font size. The first paragraph never has space above it.
+   */
+  spaceBefore: z.array(z.number().min(0)).length(5).optional(),
+  /**
+   * Indents of each list level (0-4), as factors of the element's font
+   * size: where the first line or its bullet starts, and where the text
+   * starts. When absent the theme's indents are used.
+   */
+  indent: z
+    .array(z.object({ start: z.number().min(0), text: z.number().min(0) }))
+    .length(5)
+    .optional(),
+};
+
+/** Margins between an edge and the text inside it, in stage pixels. */
+export const Inset = z.object({
+  l: z.number().min(0),
+  t: z.number().min(0),
+  r: z.number().min(0),
+  b: z.number().min(0),
+});
+export type Inset = z.infer<typeof Inset>;
+
 export const TEXT_ROLES = ['title', 'subtitle', 'heading', 'body', 'caption', 'number'] as const;
 export const TextRole = z.enum(TEXT_ROLES);
 export type TextRole = z.infer<typeof TextRole>;
@@ -100,6 +145,9 @@ export const TextElement = z.object({
   content: RichText,
   /** Stage pixels. When absent the role's size from the theme is used. */
   fontSize: z.number().positive().optional(),
+  /** Font size factor per list level (0-4). When absent the theme's is used. */
+  levelScale: LevelScale.optional(),
+  ...spacingFields,
   align: z.enum(['left', 'center', 'right']),
   valign: z.enum(['top', 'middle', 'bottom']),
   /** Optional override; must be allowed on the surface by the contrast table. */
@@ -119,6 +167,11 @@ export const ImageElement = z.object({
   decorative: z.boolean().optional(),
   /** Fractions (0..1) cut from each side of the source image. */
   crop: Crop.optional(),
+  /**
+   * "multiply" lets what lies under the picture show through, as PowerPoint
+   * draws ink from its pen and highlighter.
+   */
+  blend: z.literal('multiply').optional(),
 });
 export type ImageElement = z.infer<typeof ImageElement>;
 
@@ -134,6 +187,15 @@ export const ShapeElement = z.object({
   flipV: z.boolean().optional(),
   content: RichText.optional(),
   fontSize: z.number().positive().optional(),
+  levelScale: LevelScale.optional(),
+  ...spacingFields,
+  /** Alignment of the shape's text. When absent it is centred. */
+  align: z.enum(['left', 'center', 'right']).optional(),
+  valign: z.enum(['top', 'middle', 'bottom']).optional(),
+  /** Text running down (90) or up (270) inside the shape, which itself stays as it is. */
+  textRotation: z.union([z.literal(90), z.literal(270)]).optional(),
+  /** Margins between the shape's edge and its text, in stage pixels. When absent the theme's are used. */
+  textInset: Inset.optional(),
 });
 export type ShapeElement = z.infer<typeof ShapeElement>;
 
@@ -153,6 +215,8 @@ export const TableElement = z.object({
   /** Cells covered by a span of another cell are left out of their row. */
   rows: z.array(z.array(TableCell)).min(1),
   fontSize: z.number().positive().optional(),
+  /** Margins inside each cell, in stage pixels. When absent the theme's are used. */
+  cellInset: Inset.optional(),
 });
 export type TableElement = z.infer<typeof TableElement>;
 

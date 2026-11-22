@@ -27,6 +27,10 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
   if (title && title.type === 'text') {
     const size = roleFontSize(theme, 'title', scene.kind);
     delete title.fontSize;
+    delete title.levelScale;
+    delete title.lineHeight;
+    delete title.spaceBefore;
+    delete title.indent;
     title.align = 'left';
     title.box.rotation = 0;
     if (isFront) {
@@ -43,6 +47,10 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
   }
   if (isFront && subtitle && subtitle.type === 'text') {
     delete subtitle.fontSize;
+    delete subtitle.levelScale;
+    delete subtitle.lineHeight;
+    delete subtitle.spaceBefore;
+    delete subtitle.indent;
     subtitle.align = 'left';
     subtitle.valign = 'top';
     subtitle.box = { x: left, y: 620, w: ends[4]! - left, h: 220, rotation: 0 };
@@ -54,6 +62,10 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
     snapElement(el, starts, ends, contentTop, bottom);
     if (el.type === 'text') {
       delete el.fontSize;
+      delete el.levelScale;
+      delete el.lineHeight;
+      delete el.spaceBefore;
+      delete el.indent;
       el.align = 'left';
     }
   }

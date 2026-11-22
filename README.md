@@ -13,7 +13,8 @@ Linux Mint / Ubuntu.
 
 Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
 eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint, og
-importen er prøvd mot åtte ekte forelesninger. Det som gjenstår før
+importen er prøvd mot åtte ekte forelesninger, der alle 315 lysark er
+sammenlignet med PowerPoints egne PDF-utgaver. Det som gjenstår før
 leveransen kan kalles ferdig, står i [HANDOFF.md](HANDOFF.md):
 tilbakemeldinger fra eieren, godkjenning av uttrykket og utprøving i
 Canvas. Zip-utgaven er prøvd på Windows 11.
@@ -23,8 +24,9 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
 1. **Importer PowerPoint.** Velg PPTX-fila, og deretter hvor prosjektet
    skal ligge. Lysark lager en mappe med `prosjekt.json` og `media/`.
 2. **Les importrapporten.** Den sier hva som kom med, og hva som må lages
-   på nytt (SmartArt, diagrammer, animasjoner, bilder i formater som ikke
-   kan vises). Merknadene står også på hver scene.
+   på nytt (SmartArt, diagrammer, animasjoner, buede piler, bilder i
+   formater som ikke kan vises), og hvor logoen er slått av fordi noe
+   ligger der den skal stå. Merknadene står også på hver scene.
 3. **Rett opp scenene.** Klikk for å velge, dra for å flytte,
    dobbeltklikk for å skrive. «Tilpass til rutenett» (fanen Scene) rydder
    en scene inn i de åtte kolonnene.

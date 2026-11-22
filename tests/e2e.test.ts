@@ -57,6 +57,40 @@ describe.skipIf(!built)('the program, end to end', () => {
     await shot(page, '01-apnet');
   });
 
+  it('keeps the scene pictures inside their box in the list, also with a scrollbar', async () => {
+    const measure = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.scene-item')].map((item) => {
+          const thumb = item.querySelector('.scene-thumb')!;
+          const inner = item.querySelector('.scene-thumb-inner')!;
+          const pad = parseFloat(getComputedStyle(item).paddingRight);
+          return {
+            room: item.getBoundingClientRect().right - pad - thumb.getBoundingClientRect().right,
+            // The scaled scene is exactly as wide as the frame around it.
+            fill: inner.getBoundingClientRect().width - thumb.getBoundingClientRect().width,
+            width: thumb.getBoundingClientRect().width,
+          };
+        }),
+      );
+    const wide = await measure();
+    expect(wide).toHaveLength(3);
+    for (const m of wide) {
+      expect(m.room).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(m.fill)).toBeLessThan(0.5);
+    }
+    // A list too long for the window gets a scrollbar, which takes room from the pictures.
+    await page.evaluate(() => {
+      (document.querySelector('.scene-list ol') as HTMLElement).style.maxHeight = '160px';
+    });
+    await expect.poll(async () => (await measure())[0]!.width).toBeLessThan(wide[0]!.width);
+    await expect.poll(async () => Math.abs((await measure())[0]!.fill)).toBeLessThan(0.5);
+    for (const m of await measure()) expect(m.room).toBeGreaterThanOrEqual(0);
+    await page.evaluate(() => {
+      (document.querySelector('.scene-list ol') as HTMLElement).style.maxHeight = '';
+    });
+    await expect.poll(async () => (await measure())[0]!.width).toBe(wide[0]!.width);
+  });
+
   it('draws the title scene with the brand shapes and the serif title', async () => {
     const scene = page.locator('.stage-inner .ls-scene');
     expect(await scene.locator('.ls-decoration path').count()).toBe(4);
@@ -190,6 +224,12 @@ describe.skipIf(!built)('the program, end to end', () => {
     const player = await opened;
     await player.waitForSelector('.lp-stage .ls-scene');
     await player.setViewportSize({ width: 1280, height: 800 }).catch(() => undefined);
+
+    // The window says it is the preview, also after the page has named itself.
+    const titles = await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows().map((w) => w.getTitle()),
+    );
+    expect(titles.some((title) => title.startsWith('Forhåndsvisning – '))).toBe(true);
 
     // The preview opens on the scene that was open in the editor.
     await expect.poll(() => player.locator('.lp-counter').textContent()).toBe('2 / 3');

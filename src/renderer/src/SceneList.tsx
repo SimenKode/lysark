@@ -6,7 +6,7 @@ import { SceneView } from './SceneView';
 import { KIND_NAMES, cloneScene } from './ops';
 import { useStore } from './store';
 
-const THUMB_SCALE = 0.1;
+const STAGE_WIDTH = 1920;
 
 export function SceneList() {
   const project = useStore((s) => s.project)!;
@@ -16,6 +16,23 @@ export function SceneList() {
   const update = useStore((s) => s.update);
   const [menuOpen, setMenuOpen] = useState(false);
   const current = useRef<HTMLLIElement>(null);
+  const list = useRef<HTMLOListElement>(null);
+  // The thumbnails fill the width the list has left after margins, the
+  // number column and the scrollbar (whose width differs between systems).
+  const [thumbScale, setThumbScale] = useState(0);
+
+  useEffect(() => {
+    const ol = list.current;
+    if (!ol) return;
+    const measure = (): void => {
+      const width = ol.querySelector<HTMLElement>('.scene-thumb')?.clientWidth ?? 0;
+      if (width > 0) setThumbScale(width / STAGE_WIDTH);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(ol);
+    return () => observer.disconnect();
+  }, [project.scenes.length]);
 
   useEffect(() => {
     current.current?.scrollIntoView({ block: 'nearest' });
@@ -117,7 +134,7 @@ export function SceneList() {
           Slett
         </button>
       </div>
-      <ol onKeyDown={onKeyDown}>
+      <ol ref={list} onKeyDown={onKeyDown}>
         {project.scenes.map((scene, i) => {
           const warnings = scene.imported?.warnings.length ?? 0;
           const selected = scene.id === sceneId;
@@ -130,16 +147,15 @@ export function SceneList() {
                 onClick={() => setScene(scene.id)}
               >
                 <span className="scene-number">{i + 1}</span>
-                <span
-                  className="scene-thumb"
-                  style={{ width: 1920 * THUMB_SCALE, height: 1080 * THUMB_SCALE }}
-                >
-                  <span
-                    className="scene-thumb-inner"
-                    style={{ transform: `scale(${THUMB_SCALE})` }}
-                  >
-                    <SceneView scene={scene} project={project} logo={logo} />
-                  </span>
+                <span className="scene-thumb">
+                  {thumbScale > 0 && (
+                    <span
+                      className="scene-thumb-inner"
+                      style={{ transform: `scale(${thumbScale})` }}
+                    >
+                      <SceneView scene={scene} project={project} logo={logo} />
+                    </span>
+                  )}
                 </span>
                 <span className="scene-caption">
                   <span className="scene-title">{scene.title.trim() || 'Uten navn'}</span>

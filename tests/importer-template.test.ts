@@ -109,6 +109,27 @@ describe('USN template', () => {
     expect(result.report.warnings[0]!.message).toMatch(/formler/);
   });
 
+  it('lets what lies under ink from PowerPoint’s pen and highlighter show through', () => {
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      media: { 'image1.png': tinyPng(1, 2, 3) },
+      slides: [
+        {
+          rels: [{ id: 'rIdImage', type: REL.image, target: '../media/image1.png' }],
+          shapes:
+            '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+            '<mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" Requires="p14"><p:contentPart r:id="rIdInk"/></mc:Choice>' +
+            `<mc:Fallback>${pic({ embed: 'rIdImage', xfrm: xfrm(100, 200, 300, 20), name: 'Håndskrift 1' })}</mc:Fallback>` +
+            '</mc:AlternateContent>' +
+            pic({ embed: 'rIdImage', xfrm: xfrm(0, 0, 10, 10) }),
+        },
+      ],
+    });
+    const [ink, photo] = result.project.scenes[0]!.elements;
+    expect(ink).toMatchObject({ type: 'image', blend: 'multiply', decorative: true, alt: '' });
+    expect(photo).not.toHaveProperty('blend');
+  });
+
   it('sees a header row that was made by filling the first row by hand', () => {
     const cell = (value: string, fill: boolean): string =>
       `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p>${text(value)}</a:p></a:txBody><a:tcPr>${fill ? '<a:solidFill><a:srgbClr val="CCCCCC"/></a:solidFill>' : ''}</a:tcPr></a:tc>`;
@@ -131,7 +152,7 @@ describe('USN template', () => {
     expect(headers).toEqual([true, false, false]);
   });
 
-  it('makes running text a tenth smaller when the deck was laid out in a narrower font', () => {
+  it('sets running text smaller when the deck was laid out in a narrower font', () => {
     const slides = [
       {
         shapes:
@@ -153,6 +174,7 @@ describe('USN template', () => {
       );
     // 1 pt is 2 stage pixels. The title is set in the serif font and keeps its size.
     expect(sizes(undefined)).toEqual([80, 40]);
+    // 20 pt at 0.9: lines in Liberation Sans are about a tenth wider than in Calibri.
     expect(sizes('Calibri')).toEqual([80, 36]);
     expect(sizes('Maison Neue Book')).toEqual([80, 36]);
     expect(sizes('Arial')).toEqual([80, 40]);

@@ -140,14 +140,31 @@ function imageSize(url: string): Promise<{ w: number; h: number }> {
   });
 }
 
-function videoSize(url: string): Promise<{ w: number; h: number }> {
+/** Size of a video, and whether this program can show its picture at all. */
+function videoSize(url: string): Promise<{ w: number; h: number; playable: boolean }> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.onloadedmetadata = () =>
-      resolve({ w: video.videoWidth || 16, h: video.videoHeight || 9 });
-    video.onerror = () => resolve({ w: 16, h: 9 });
+      resolve({
+        w: video.videoWidth || 16,
+        h: video.videoHeight || 9,
+        playable: video.videoWidth > 0,
+      });
+    video.onerror = () => resolve({ w: 16, h: 9, playable: false });
     video.src = url;
+  });
+}
+
+/** Tells the owner when a video file was added whose picture cannot be shown. */
+function warnIfUnplayable(playable: boolean): void {
+  if (playable) return;
+  useStore.getState().setNotice({
+    kind: 'error',
+    text:
+      'Lysark kan ikke vise bildet i denne videoen, fordi den er kodet på en måte som ikke støttes ' +
+      '(for eksempel H.265 fra mobil). Den vil heller ikke virke i alle nettlesere. ' +
+      'Lagre den som MP4 med H.264 eller som WebM, og bytt fila.',
   });
 }
 
@@ -217,6 +234,7 @@ export async function insertVideoFile(): Promise<void> {
   const added = await guard(() => api().addMedia(state.dir!, 'video'));
   if (!added) return;
   const size = await videoSize(mediaUrl(added.asset.file));
+  warnIfUnplayable(size.playable);
   const fitted = fitInside({ w: size.w * 100, h: size.h * 100 }, 960, 540);
   addElement(
     {
@@ -253,6 +271,7 @@ export async function addAsset(kind: 'image' | 'video'): Promise<string | undefi
   state.update((draft) => {
     draft.assets[added.id] = added.asset;
   });
+  if (kind === 'video') warnIfUnplayable((await videoSize(mediaUrl(added.asset.file))).playable);
   return added.id;
 }
 

@@ -24,6 +24,7 @@ import {
   STANDARD,
   URI,
   buildPptx,
+  emu,
   cell,
   connector,
   defaultMasterShapes,
@@ -115,7 +116,17 @@ describe('presentation', () => {
     expect(result.project.scenes.map((scene) => scene.title)).toEqual(['A', 'Lysark 2']);
   });
 
-  it('takes the project title from the document properties, else from the file name', () => {
+  it('takes the project title from the document properties, the title slide or the file name', () => {
+    const titled = load(
+      {
+        layouts: [LAYOUT_TITLE],
+        slides: [{ shapes: sp({ ph: 'type="ctrTitle"', body: txBody(para('Forelesning')) }) }],
+        coreTitle: 'PowerPoint-presentasjon',
+      },
+      'Fil 0.pptx',
+    );
+    expect(titled.project.meta.title).toBe('Forelesning');
+    // Content slides do not name the lecture.
     const slides: SlideSpec[] = [{ shapes: titleSp('A') }];
     expect(load({ slides, coreTitle: 'Tittel' }).project.meta.title).toBe('Tittel');
     expect(load({ slides }, 'Fil 1.pptx').project.meta.title).toBe('Fil 1');
@@ -148,14 +159,17 @@ describe('presentation', () => {
 // ---------- Geometry ----------
 
 describe('geometry', () => {
+  // Text without PowerPoint's text margins, so its box is the shape's box.
+  const BARE = { bodyPr: '<a:bodyPr lIns="0" tIns="0" rIns="0" bIns="0"/>' };
+
   it('lets placeholders inherit their position from the layout', () => {
     const result = load({
       layouts: [LAYOUT_TITLE],
       slides: [
         {
           shapes:
-            sp({ ph: 'type="ctrTitle"', body: txBody(para('A')) }) +
-            sp({ ph: 'type="subTitle" idx="1"', body: txBody(para('B')) }),
+            sp({ ph: 'type="ctrTitle"', body: txBody(para('A'), BARE) }) +
+            sp({ ph: 'type="subTitle" idx="1"', body: txBody(para('B'), BARE) }),
         },
       ],
     });
@@ -165,7 +179,14 @@ describe('geometry', () => {
   });
 
   it('lets placeholders inherit their position from the master', () => {
-    const result = load({ slides: [{ shapes: titleSp('A') + bodySp(para('B')) }] });
+    const result = load({
+      slides: [
+        {
+          shapes:
+            sp({ ph: 'type="title"', body: txBody(para('A'), BARE) }) + bodySp(para('B'), BARE),
+        },
+      ],
+    });
     const [title, body] = textsOf(result);
     expect(title!.box).toEqual({ ...MASTER_TITLE_BOX, rotation: 0 });
     expect(body!.box).toEqual({ ...MASTER_BODY_BOX, rotation: 0 });
@@ -178,7 +199,7 @@ describe('geometry', () => {
           shapes: sp({
             ph: 'type="title"',
             xfrm: xfrm(10, 20, 300, 40, ' rot="5400000"'),
-            body: txBody(para('A')),
+            body: txBody(para('A'), BARE),
           }),
         },
       ],
@@ -191,13 +212,13 @@ describe('geometry', () => {
       // In the outer group's child coordinates; children are drawn at double size.
       frame: { x: 400, y: 200, w: 400, h: 200 },
       child: { x: 1000, y: 1000, w: 200, h: 100 },
-      children: textBox(1050, 1025, 100, 50, txBody(para('B'))),
+      children: textBox(1050, 1025, 100, 50, txBody(para('B'), BARE)),
     });
     const outer = group({
       // Children are drawn at half size.
       frame: { x: 100, y: 100, w: 400, h: 200 },
       child: { x: 0, y: 0, w: 800, h: 400 },
-      children: textBox(200, 100, 400, 200, txBody(para('A'))) + inner,
+      children: textBox(200, 100, 400, 200, txBody(para('A'), BARE)) + inner,
     });
     const result = load({ layouts: [LAYOUT_BLANK], slides: [{ shapes: outer }] });
     const [a, b] = textsOf(result);
@@ -263,8 +284,8 @@ describe('geometry', () => {
       slides: [
         {
           shapes:
-            textBox(0, 0, 1440, 1080, txBody(para('A'))) +
-            textBox(100, 200, 300, 400, txBody(para(run('B', 'sz="1800"')))),
+            textBox(0, 0, 1440, 1080, txBody(para('A'), BARE)) +
+            textBox(100, 200, 300, 400, txBody(para(run('B', 'sz="1800"')), BARE)),
         },
       ],
     });
@@ -273,11 +294,106 @@ describe('geometry', () => {
     expect(part!.box).toEqual({ x: 340, y: 200, w: 300, h: 400, rotation: 0 });
     expect(part!.fontSize).toBe(36);
   });
+
+  it('keeps text inside PowerPoint’s text margins, also on turned boxes', () => {
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes:
+            // Default margins: 0.1 inch (14.4 px) left and right, 0.05 inch (7.2 px) top and bottom.
+            textBox(100, 100, 400, 200, txBody(para('A'))) +
+            textBox(
+              100,
+              100,
+              400,
+              200,
+              txBody(para('B'), { bodyPr: '<a:bodyPr lIns="63500" tIns="0" rIns="0" bIns="0"/>' }),
+            ) +
+            sp({
+              txBox: true,
+              xfrm: xfrm(100, 100, 400, 200, ' rot="10800000"'),
+              spPr: '<a:noFill/>',
+              body: txBody(para('C'), {
+                bodyPr: '<a:bodyPr lIns="63500" tIns="0" rIns="0" bIns="0"/>',
+              }),
+            }),
+        },
+      ],
+    });
+    const [a, b, c] = textsOf(result);
+    expect(a!.box).toEqual({ x: 114.4, y: 107.2, w: 371.2, h: 185.6, rotation: 0 });
+    expect(b!.box).toEqual({ x: 110, y: 100, w: 390, h: 200, rotation: 0 });
+    // Upside down, the left margin is on the right.
+    expect(c!.box).toEqual({ x: 100, y: 100, w: 390, h: 200, rotation: 180 });
+  });
+
+  it('turns vertical text inside a filled shape, not the shape', () => {
+    const label = (vert: string): string =>
+      sp({
+        xfrm: xfrm(100, 100, 80, 300),
+        spPr: RECT + solid(srgb('7800F0')),
+        body: txBody(para('A'), { bodyPr: `<a:bodyPr vert="${vert}"/>` }),
+      });
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [{ shapes: label('vert270') + label('vert') + label('horz') }],
+    });
+    const shapes = shapesOf(result);
+    expect(shapes.map((s) => s.textRotation)).toEqual([270, 90, undefined]);
+    expect(shapes.every((s) => s.box.rotation === 0 && s.box.w === 80)).toBe(true);
+  });
+
+  it('turns vertical text into a turned text box', () => {
+    const vertical = (vert: string): string =>
+      textBox(
+        100,
+        100,
+        100,
+        400,
+        txBody(para('A'), {
+          bodyPr: `<a:bodyPr vert="${vert}" lIns="0" tIns="0" rIns="0" bIns="0"/>`,
+        }),
+      );
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [{ shapes: vertical('vert') + vertical('vert270') + vertical('horz') }],
+    });
+    expect(textsOf(result).map((t) => t.box)).toEqual([
+      { x: -50, y: 250, w: 400, h: 100, rotation: 90 },
+      { x: -50, y: 250, w: 400, h: 100, rotation: 270 },
+      { x: 100, y: 100, w: 100, h: 400, rotation: 0 },
+    ]);
+  });
 });
 
 // ---------- Scenes ----------
 
 describe('scenes', () => {
+  it('starts a scene without the logo when content lies where the logo goes', () => {
+    const picture = (x: number, y: number): string =>
+      pic({ embed: 'rIdImage', xfrm: xfrm(x, y, 300, 100) });
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      media: { 'image1.png': PNG_A },
+      slides: [
+        // A picture at the bottom left, over the logo.
+        { rels: [imageRel('rIdImage', 'image1.png')], shapes: picture(100, 950) },
+        // A picture elsewhere, and a tall text box whose text is at the top.
+        {
+          rels: [imageRel('rIdImage', 'image1.png')],
+          shapes: picture(1400, 950) + textBox(100, 300, 800, 760, txBody(para('A'))),
+        },
+        // A caption at the bottom left.
+        { shapes: textBox(100, 960, 800, 80, txBody(para('B'))) },
+      ],
+    });
+    expect(result.project.scenes.map((s) => s.showLogo)).toEqual([false, true, false]);
+    expect(codesOf(result, 0)).toEqual(['other']);
+    expect(result.report.warnings[0]!.message).toContain('Vis USNs logo');
+    expect(codesOf(result, 1)).toEqual([]);
+  });
+
   it('takes the scene kind from the type of the layout', () => {
     const result = load({
       layouts: [LAYOUT_CONTENT, LAYOUT_TITLE, LAYOUT_SECTION, LAYOUT_BLANK, { shapes: '' }],
@@ -719,6 +835,307 @@ describe('text', () => {
     expect(textsOf(result).map((t) => 'fontSize' in t)).toEqual([false, false]);
   });
 
+  it('turns characters in the Symbol font into the characters they show', () => {
+    const symbol = '<a:sym typeface="Symbol" pitchFamily="2" charset="2"/>';
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes: textBox(
+            0,
+            0,
+            100,
+            100,
+            txBody(
+              para(
+                run('R = d/') +
+                  run('\uf06c', '', symbol) +
+                  run(' ') +
+                  run('Dp', '', '<a:latin typeface="Symbol"/>') +
+                  run(' \uf0b1', '', symbol),
+              ),
+            ),
+          ),
+        },
+      ],
+    });
+    expect(plain(textsOf(result)[0]!)).toEqual(['R = d/λ Δπ ±']);
+  });
+
+  it('keeps lettered and roman numbering', () => {
+    const numbered = (type: string, text: string): string =>
+      para(text, `<a:pPr><a:buAutoNum type="${type}"/></a:pPr>`);
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes: textBox(
+            0,
+            0,
+            100,
+            100,
+            txBody(
+              numbered('alphaLcPeriod', 'A') +
+                numbered('arabicPeriod', 'B') +
+                numbered('romanUcPeriod', 'C') +
+                numbered('alphaUcParenR', 'D'),
+            ),
+          ),
+        },
+      ],
+    });
+    expect(textsOf(result)[0]!.content.paragraphs.map((p) => p.numberStyle)).toEqual([
+      'a.',
+      undefined,
+      'I.',
+      'A)',
+    ]);
+  });
+
+  it('leaves out white highlights, which do not show on a white slide', () => {
+    const highlight = (hex: string): string =>
+      `<a:highlight><a:srgbClr val="${hex}"/></a:highlight>`;
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes: textBox(
+            0,
+            0,
+            100,
+            100,
+            txBody(
+              para(
+                run('A ') + run('B', '', highlight('FFFFFF')) + run(' C', '', highlight('FFFF00')),
+              ),
+            ),
+          ),
+        },
+      ],
+    });
+    expect(textsOf(result)[0]!.content.paragraphs[0]!.runs).toEqual([
+      { text: 'A B' },
+      { text: ' C', mark: true },
+    ]);
+  });
+
+  it('keeps subscripts and superscripts', () => {
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes: textBox(
+            0,
+            0,
+            100,
+            100,
+            txBody(
+              para(
+                run('CO') +
+                  run('2', 'baseline="-25000"') +
+                  run(' m') +
+                  run('2', 'baseline="30000"') +
+                  run(' A', 'baseline="0"'),
+              ),
+            ),
+          ),
+        },
+      ],
+    });
+    expect(textsOf(result)[0]!.content.paragraphs[0]!.runs).toEqual([
+      { text: 'CO' },
+      { text: '2', script: 'sub' },
+      { text: ' m' },
+      { text: '2', script: 'super' },
+      { text: ' A' },
+    ]);
+  });
+
+  it('turns highlighted text into the brand’s marking, but not when all of it is highlighted', () => {
+    const highlight = '<a:highlight><a:srgbClr val="FFFF00"/></a:highlight>';
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes:
+            textBox(0, 0, 100, 100, txBody(para('A') + para(run('B', '', highlight)))) +
+            textBox(
+              0,
+              0,
+              100,
+              100,
+              txBody(para(run('C', '', highlight) + run(' ', '', highlight))),
+            ),
+        },
+      ],
+    });
+    const [part, all] = textsOf(result);
+    expect(part!.content.paragraphs.map((p) => p.runs)).toEqual([
+      [{ text: 'A' }],
+      [{ text: 'B', mark: true }],
+    ]);
+    expect(all!.content.paragraphs[0]!.runs).toEqual([{ text: 'C ' }]);
+  });
+
+  it('turns long gaps between words into line breaks, and keeps short ones', () => {
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes: textBox(
+            0,
+            0,
+            800,
+            400,
+            txBody(
+              para('A \t\t   B   C\tD  E') +
+                // A gap made of runs with different formatting.
+                para(run('F ') + run('\t  G', 'b="1"')) +
+                para(run('I') + run('   ', 'i="1"') + run('J')) +
+                para('  H'),
+            ),
+          ),
+        },
+      ],
+    });
+    expect(textsOf(result)[0]!.content.paragraphs.map((p) => p.runs)).toEqual([
+      [{ text: 'A\nB\nC\tD  E' }],
+      [{ text: 'F\n' }, { text: 'G', bold: true }],
+      [{ text: 'I' }, { text: '\n', italic: true }, { text: 'J' }],
+      // Spaces at the start of a paragraph are not a gap between words.
+      [{ text: '  H' }],
+    ]);
+  });
+
+  it('keeps the text margins of a shape when they are not PowerPoint’s defaults', () => {
+    const shape = (bodyPr: string): string =>
+      sp({
+        xfrm: xfrm(0, 0, 300, 100),
+        spPr: RECT + solid(srgb('7800F0')),
+        body: txBody(para('A'), { bodyPr }),
+      });
+    const result = load({
+      layouts: [LAYOUT_BLANK],
+      slides: [
+        {
+          shapes:
+            shape('<a:bodyPr lIns="0" tIns="0" rIns="0" bIns="0"/>') +
+            shape('<a:bodyPr/>') +
+            shape('<a:bodyPr lIns="63500"/>'),
+        },
+      ],
+    });
+    expect(shapesOf(result).map((s) => s.textInset)).toEqual([
+      { l: 0, t: 0, r: 0, b: 0 },
+      undefined,
+      { l: 10, t: 7.2, r: 14.4, b: 7.2 },
+    ]);
+  });
+
+  it('keeps PowerPoint’s indents of list levels', () => {
+    const level = (n: number, marL: number, indent: number): string =>
+      `<a:lvl${n}pPr marL="${marL}" indent="${indent}"><a:buChar char="-"/><a:defRPr sz="2000"/></a:lvl${n}pPr>`;
+    const styles =
+      '<p:titleStyle><a:lvl1pPr><a:defRPr sz="4400"/></a:lvl1pPr></p:titleStyle>' +
+      // Bullets 0.25 inch (36 px) apart, text 36 px after its bullet.
+      `<p:bodyStyle>${level(1, emu(36), -emu(36))}${level(2, emu(72), -emu(36))}</p:bodyStyle>` +
+      '<p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:otherStyle>';
+    const result = load({
+      txStyles: styles,
+      slides: [
+        {
+          shapes:
+            bodySp(para('A') + para('B', '<a:pPr lvl="1"/>')) +
+            textBox(0, 0, 100, 100, txBody(para('C'))),
+        },
+      ],
+    });
+    const [list, plain] = textsOf(result);
+    // 40 px text: 36 px is 0.9 of it. Levels without an indent follow PowerPoint's steps.
+    expect(list!.indent).toEqual([
+      { start: 0, text: 0.9 },
+      { start: 0.9, text: 1.8 },
+      { start: 1.8, text: 2.7 },
+      { start: 2.7, text: 3.6 },
+      { start: 3.6, text: 4.5 },
+    ]);
+    expect(plain!.indent).toBeUndefined();
+  });
+
+  it('keeps PowerPoint’s spacing between paragraphs and lines', () => {
+    const styles =
+      '<p:titleStyle><a:lvl1pPr><a:defRPr sz="4400"/></a:lvl1pPr></p:titleStyle>' +
+      '<p:bodyStyle>' +
+      // 20 pt before level 0, nothing before level 1; lines 0.9 of single spacing.
+      '<a:lvl1pPr><a:lnSpc><a:spcPct val="90000"/></a:lnSpc><a:spcBef><a:spcPts val="2000"/></a:spcBef><a:defRPr sz="2000"/></a:lvl1pPr>' +
+      '<a:lvl2pPr><a:lnSpc><a:spcPct val="90000"/></a:lnSpc><a:spcBef><a:spcPts val="0"/></a:spcBef><a:defRPr sz="2000"/></a:lvl2pPr>' +
+      '</p:bodyStyle>' +
+      '<p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:otherStyle>';
+    const result = load({
+      txStyles: styles,
+      slides: [
+        {
+          shapes:
+            bodySp(para('A') + para('B', '<a:pPr lvl="1"/>') + para('C')) +
+            // Half a line before, on the paragraph itself; and a box with one paragraph.
+            bodySp(
+              para('D') + para('E', '<a:pPr><a:spcBef><a:spcPct val="50000"/></a:spcBef></a:pPr>'),
+            ) +
+            bodySp(para('F')),
+        },
+      ],
+    });
+    const [lists, own, single] = textsOf(result);
+    // 0.9 x 1.2 = 1.08 of the font size, tighter than the theme's.
+    expect(lists!.lineHeight).toBe(1.08);
+    expect(lists!.spaceBefore).toEqual([1, 0, 0, 0, 0]);
+    // 0.5 x 1.2 x 20 pt = 12 pt before E, 0.6 of the 20 pt text.
+    expect(own!.spaceBefore![0]).toBe(0.6);
+    expect(single!.spaceBefore).toBeUndefined();
+    // With Calibri's narrower letters the text is set at 0.9 of its size, and
+    // the spacing grows to keep PowerPoint's distances.
+    const calibri = load({
+      txStyles: styles,
+      bodyTypeface: 'Calibri',
+      slides: [{ shapes: bodySp(para('A') + para('B')) }],
+    });
+    expect(textsOf(calibri)[0]).toMatchObject({
+      fontSize: 36,
+      lineHeight: 1.2,
+      spaceBefore: [1.11, 0, 0, 0, 0],
+    });
+  });
+
+  it('keeps the size of each list level where it differs from the theme', () => {
+    const level = (n: number, size: number): string =>
+      `<a:lvl${n}pPr><a:buChar char="-"/><a:defRPr sz="${size}"/></a:lvl${n}pPr>`;
+    const styles = (sizes: number[]): string =>
+      '<p:titleStyle><a:lvl1pPr><a:defRPr sz="4400"/></a:lvl1pPr></p:titleStyle>' +
+      `<p:bodyStyle>${sizes.map((size, i) => level(i + 1, size)).join('')}</p:bodyStyle>` +
+      '<p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:otherStyle>';
+    const twoLevels = bodySp(para('A') + para('B', '<a:pPr lvl="1"/>'));
+    // Every level the same size, as in USN's template.
+    const same = load({ txStyles: styles([2200, 2200, 2200]), slides: [{ shapes: twoLevels }] });
+    // Level 1 is 90 % of level 0, as in the theme.
+    const likeTheme = load({ txStyles: styles([2000, 1800]), slides: [{ shapes: twoLevels }] });
+    // A size on the run wins over the list style, and a box with one level is left alone.
+    const explicit = load({
+      txStyles: styles([2000, 2000]),
+      slides: [
+        {
+          shapes:
+            bodySp(para('AAAA') + para(run('B', 'sz="1000"'), '<a:pPr lvl="1"/>')) +
+            bodySp(para('A')),
+        },
+      ],
+    });
+    // Levels without text and without a size of their own keep the theme's factors.
+    expect(textsOf(same)[0]!.levelScale).toEqual([1, 1, 1, 0.76, 0.72]);
+    expect(textsOf(likeTheme)[0]!.levelScale).toBeUndefined();
+    expect(textsOf(explicit)[0]!.levelScale).toEqual([1, 0.5, 0.82, 0.76, 0.72]);
+    expect(textsOf(explicit)[1]!.levelScale).toBeUndefined();
+  });
+
   it('resolves the alignment covering the most paragraphs', () => {
     const result = load({
       layouts: [LAYOUT_CONTENT, LAYOUT_TITLE],
@@ -1088,7 +1505,7 @@ describe('shapes', () => {
       sp({ xfrm: xfrm(0, 0, 10, 10), spPr: RECT + solid(scheme('bg1')) }) +
       sp({
         xfrm: xfrm(0, 0, 10, 10),
-        // Colour modifiers are ignored.
+        // A somewhat darker orange is still orange.
         spPr: RECT + solid('<a:schemeClr val="accent2"><a:lumMod val="75000"/></a:schemeClr>'),
       });
     expect(shapesOf(shapesFrom(shapes)).map((shape) => shape.fill)).toEqual([
@@ -1185,9 +1602,10 @@ describe('shapes', () => {
     // 18 pt from the master's style for other text.
     expect(shape.fontSize).toBe(36);
     const text = textsOf(result)[0]!;
+    // Inside the text margins; they take at most half of the narrow width.
     expect(text).toMatchObject({
       role: 'body',
-      box: { x: 10, y: 20, w: 30, h: 40, rotation: 0 },
+      box: { x: 17.5, y: 27.2, w: 15, h: 25.6, rotation: 0 },
     });
     expect(plain(text)).toEqual(['C']);
   });
@@ -1272,6 +1690,122 @@ describe('shapes', () => {
     expect(codesOf(result)).toEqual([]);
   });
 
+  it('applies the colour modifiers that make a colour lighter or darker', () => {
+    const fill = (color: string): string =>
+      sp({ xfrm: xfrm(0, 0, 10, 10), spPr: RECT + solid(color) });
+    const result = shapesFrom(
+      // Dark indigo at 20 % lightness plus 80 %: a pale tint, not indigo.
+      fill('<a:schemeClr val="tx2"><a:lumMod val="20000"/><a:lumOff val="80000"/></a:schemeClr>') +
+        // Purple with only a fifth of the colour left.
+        fill('<a:srgbClr val="7800F0"><a:tint val="20000"/></a:srgbClr>') +
+        // White shaded all the way down is black.
+        fill('<a:srgbClr val="FFFFFF"><a:shade val="0"/></a:srgbClr>') +
+        // Transparency says nothing about the colour.
+        fill('<a:srgbClr val="FF6202"><a:alpha val="50000"/></a:srgbClr>'),
+    );
+    expect(shapesOf(result).map((shape) => shape.fill)).toEqual([
+      'lysLilla',
+      'lysIndigo',
+      'sort',
+      'oransje',
+    ]);
+  });
+
+  it('turns a freeform that is one straight stroke into a line', () => {
+    const stroke = (from: string, to: string, ends = ''): string =>
+      sp({
+        xfrm: xfrm(100, 100, 400, 200),
+        spPr:
+          `<a:custGeom><a:pathLst><a:path w="400" h="200"><a:moveTo><a:pt ${from}/></a:moveTo><a:lnTo><a:pt ${to}/></a:lnTo></a:path></a:pathLst></a:custGeom>` +
+          solid(srgb('FF6202')) +
+          `<a:ln w="25400">${solid(srgb('7800F0'))}${ends}</a:ln>`,
+      });
+    const result = shapesFrom(
+      // From top right to bottom left.
+      stroke('x="400" y="0"', 'x="0" y="200"') +
+        // Across the middle only, from right to left, with an arrow head at the end.
+        stroke('x="300" y="100"', 'x="100" y="100"', '<a:tailEnd type="triangle"/>'),
+    );
+    const [cross, arrow] = shapesOf(result);
+    expect(cross).toMatchObject({
+      geometry: 'line',
+      stroke: 'lilla',
+      flipH: true,
+      box: { x: 100, y: 100, w: 400, h: 200, rotation: 0 },
+    });
+    expect(cross!.flipV).toBeUndefined();
+    expect(arrow).toMatchObject({
+      geometry: 'arrow',
+      flipH: true,
+      box: { x: 200, y: 199.5, w: 200, h: 1, rotation: 0 },
+    });
+    expect(codesOf(result)).toEqual([]);
+  });
+
+  it('draws an open curve without fill as a straight line, and says so', () => {
+    const curve = (fill: string, end = 'x="400" y="200"'): string =>
+      sp({
+        xfrm: xfrm(100, 100, 400, 200),
+        spPr:
+          `<a:custGeom><a:pathLst><a:path w="400" h="200"><a:moveTo><a:pt x="0" y="0"/></a:moveTo>` +
+          `<a:cubicBezTo><a:pt x="100" y="200"/><a:pt x="300" y="0"/><a:pt ${end}/></a:cubicBezTo></a:path></a:pathLst></a:custGeom>` +
+          fill +
+          `<a:ln w="12700">${solid(srgb('7800F0'))}</a:ln>`,
+      });
+    const result = shapesFrom(
+      curve('<a:noFill/>') +
+        // A filled curve is an area, and one that ends at its start has no line to stand for it.
+        curve(solid(srgb('7800F0'))) +
+        curve('<a:noFill/>', 'x="10" y="5"'),
+    );
+    expect(shapesOf(result).map((s) => s.geometry)).toEqual(['line', 'rect', 'rect']);
+    expect(shapesOf(result)[0]!.box).toEqual({ x: 100, y: 100, w: 400, h: 200, rotation: 0 });
+    expect(codesOf(result)).toEqual(['geometry']);
+  });
+
+  it('aligns the text of a shape as in PowerPoint', () => {
+    const shape = (pPr: string, bodyPr: string): string =>
+      sp({
+        xfrm: xfrm(0, 0, 300, 100),
+        spPr: RECT + solid(srgb('7800F0')),
+        body: txBody(para('A', pPr), { bodyPr }),
+      });
+    const result = shapesFrom(
+      shape('<a:pPr algn="l"/>', '<a:bodyPr anchor="t"/>') +
+        shape('<a:pPr algn="ctr"/>', '<a:bodyPr anchor="ctr"/>') +
+        shape('<a:pPr algn="r"/>', '<a:bodyPr/>'),
+    );
+    expect(shapesOf(result).map((s) => [s.align, s.valign])).toEqual([
+      ['left', 'top'],
+      [undefined, undefined],
+      ['right', undefined],
+    ]);
+  });
+
+  it('leaves out curved and bent arrows but keeps their text, with one warning', () => {
+    const arrow = (name: string, body = ''): string =>
+      sp({
+        xfrm: xfrm(100, 100, 400, 300),
+        spPr: `<a:prstGeom prst="${name}"><a:avLst/></a:prstGeom>${solid(srgb('7800F0'))}`,
+        body,
+      });
+    const result = shapesFrom(
+      arrow('curvedRightArrow') +
+        arrow('bentArrow', txBody(para('A'))) +
+        arrow('leftRightArrow') +
+        arrow('notchedRightArrow') +
+        arrow('rightArrowCallout', txBody(para('B'))),
+    );
+    expect(elementsOf(result).map((e) => (e.type === 'shape' ? e.geometry : e.type))).toEqual([
+      'text',
+      'arrow',
+      'rect',
+    ]);
+    expect(plain(textsOf(result)[0]!)).toEqual(['A']);
+    expect(codesOf(result)).toEqual(['geometry', 'geometry']);
+    expect(result.report.warnings[0]!.message).toContain('pil');
+  });
+
   it('simplifies other geometries to rectangles with one warning per slide', () => {
     const result = shapesFrom(
       sp({
@@ -1285,7 +1819,11 @@ describe('shapes', () => {
     );
     expect(shapesOf(result).map((shape) => shape.geometry)).toEqual(['rect', 'rect']);
     expect(result.report.warnings).toEqual([
-      { slide: 1, code: 'geometry', message: 'Noen former er forenklet til rektangler.' },
+      {
+        slide: 1,
+        code: 'geometry',
+        message: 'Noen former er forenklet til rektangler eller rette linjer.',
+      },
     ]);
   });
 });

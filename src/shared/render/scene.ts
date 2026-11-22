@@ -39,6 +39,10 @@ export interface SceneStrings {
   opensInBrowser: string;
   missingImage: string;
   missingVideo: string;
+  /** The file plays, but its picture is coded in a way the browser cannot show. */
+  videoNoPicture: string;
+  /** The file or address cannot be played at all. */
+  videoUnplayable: string;
   logoAlt: string;
 }
 
@@ -72,11 +76,20 @@ function setMarkVars(el: HTMLElement, background: PaletteColor): void {
   el.style.setProperty('--ls-mark-text', PALETTE[mark.text]);
 }
 
-function richTextInto(ctx: RenderContext, target: HTMLElement, content: RichText): void {
+function richTextInto(
+  ctx: RenderContext,
+  target: HTMLElement,
+  content: RichText,
+  levelScale: readonly number[] = ctx.theme.levelScale,
+  spaceBefore?: readonly number[],
+  indent?: ReadonlyArray<{ start: number; text: number }>,
+): void {
   target.appendChild(
     renderRichText(content, {
       doc: ctx.doc,
-      levelScale: ctx.theme.levelScale,
+      levelScale,
+      spaceBefore,
+      indent,
       interactive: ctx.mode === 'play',
     }),
   );
@@ -98,10 +111,10 @@ function renderText(ctx: RenderContext, scene: Scene, surface: Surface, el: Text
   box.style.fontFamily = theme.fonts[role.font];
   box.style.fontSize = `${size}px`;
   box.style.fontWeight = String(role.weight);
-  box.style.lineHeight = String(role.lineHeight);
+  box.style.lineHeight = String(el.lineHeight ?? role.lineHeight);
   box.style.color = PALETTE[color];
   box.style.textAlign = el.align;
-  richTextInto(ctx, box, el.content);
+  richTextInto(ctx, box, el.content, el.levelScale, el.spaceBefore, el.indent);
   return box;
 }
 
@@ -222,12 +235,30 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
     const size = el.fontSize ?? theme.roles.body.size;
     const content = doc.createElement('div');
     content.className = 'ls-shape-content';
+    if (el.align) content.style.textAlign = el.align;
+    if (el.valign) {
+      content.style.justifyContent =
+        el.valign === 'top' ? 'flex-start' : el.valign === 'bottom' ? 'flex-end' : 'center';
+    }
+    if (el.textInset) {
+      const { l, t, r, b } = el.textInset;
+      content.style.padding = `${t}px ${r}px ${b}px ${l}px`;
+    }
+    if (el.textRotation) {
+      // A text area with width and height swapped, turned about the shape's centre.
+      content.style.inset = 'auto';
+      content.style.left = `${(w - h) / 2}px`;
+      content.style.top = `${(h - w) / 2}px`;
+      content.style.width = `${h}px`;
+      content.style.height = `${w}px`;
+      content.style.transform = `rotate(${el.textRotation}deg)`;
+    }
     content.style.fontFamily = theme.fonts.body;
     content.style.fontSize = `${size}px`;
-    content.style.lineHeight = String(theme.roles.body.lineHeight);
+    content.style.lineHeight = String(el.lineHeight ?? theme.roles.body.lineHeight);
     content.style.color = PALETTE[defaultTextColor(theme, background, 'body', size)];
     setMarkVars(content, background);
-    richTextInto(ctx, content, el.content);
+    richTextInto(ctx, content, el.content, el.levelScale, el.spaceBefore, el.indent);
     wrap.appendChild(content);
   }
   return wrap;
@@ -247,6 +278,10 @@ function renderTable(ctx: RenderContext, surface: Surface, el: TableElement): No
   table.style.setProperty('--ls-th-bg', PALETTE[headBg]);
   table.style.setProperty('--ls-th-text', PALETTE.hvit);
   table.style.setProperty('--ls-rule', PALETTE[text]);
+  if (el.cellInset) {
+    const { l, t, r, b } = el.cellInset;
+    table.style.setProperty('--ls-cell-pad', `${t}px ${r}px ${b}px ${l}px`);
+  }
 
   const total = el.columns.reduce((a, b) => a + b, 0);
   const colgroup = doc.createElement('colgroup');
@@ -302,6 +337,28 @@ export function resolveVideo(
     : { kind: 'link', href: link.href };
 }
 
+/**
+ * Says so in the picture when a video cannot be shown, instead of leaving a
+ * black player. A file whose picture is coded in a way the browser does not
+ * support still plays its sound, so the player stays and gets a note.
+ */
+function watchVideo(ctx: RenderContext, figure: HTMLElement, video: HTMLVideoElement): void {
+  const note = (text: string, hidePlayer: boolean): void => {
+    if (figure.querySelector('.ls-video-note')) return;
+    const p = ctx.doc.createElement('p');
+    p.className = 'ls-video-note';
+    p.setAttribute('role', 'note');
+    p.textContent = text;
+    figure.classList.add('ls-video-failed');
+    if (hidePlayer) video.hidden = true;
+    figure.appendChild(p);
+  };
+  video.addEventListener('loadedmetadata', () => {
+    if (!(video.videoWidth > 0)) note(ctx.strings.videoNoPicture, false);
+  });
+  video.addEventListener('error', () => note(ctx.strings.videoUnplayable, true));
+}
+
 /** A video player, or a card that links out when the video cannot be embedded. */
 export function renderVideo(
   ctx: RenderContext,
@@ -312,16 +369,17 @@ export function renderVideo(
 ): HTMLElement {
   const { doc } = ctx;
   const resolved = resolveVideo(source, ctx.assetUrl);
+  const posterUrl = poster ? ctx.assetUrl(poster) : undefined;
   if (resolved.kind === 'file') {
     const figure = doc.createElement('figure');
     figure.className = 'ls-video';
     const video = doc.createElement('video');
+    watchVideo(ctx, figure, video);
     video.src = resolved.url;
     video.preload = 'metadata';
     video.playsInline = true;
     if (ctx.mode === 'play') video.controls = true;
     if (title) video.setAttribute('aria-label', title);
-    const posterUrl = poster ? ctx.assetUrl(poster) : undefined;
     if (posterUrl) video.poster = posterUrl;
     figure.appendChild(video);
     return figure;
@@ -341,12 +399,29 @@ export function renderVideo(
     anchor.target = '_blank';
     anchor.rel = 'noopener noreferrer';
   }
-  card.appendChild(playIcon(doc));
+  // The still picture that came with the video (PowerPoint stores one for
+  // web videos) shows what the link leads to; it is a file in the project.
+  if (posterUrl) {
+    card.classList.add('ls-videocard-poster');
+    const picture = doc.createElement('img');
+    picture.className = 'ls-videocard-img';
+    picture.src = posterUrl;
+    picture.alt = '';
+    picture.draggable = false;
+    card.appendChild(picture);
+  }
+  const info = doc.createElement('span');
+  info.className = 'ls-videocard-info';
+  info.appendChild(playIcon(doc));
+  const text = doc.createElement('span');
+  text.className = 'ls-videocard-text';
   const label = doc.createElement('span');
   label.textContent = title || resolved.href;
   const note = doc.createElement('small');
   note.textContent = ctx.strings.opensInBrowser;
-  card.append(label, note);
+  text.append(label, note);
+  info.appendChild(text);
+  card.appendChild(info);
   return card;
 }
 
@@ -448,6 +523,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     wrap.style.width = `${el.box.w}px`;
     wrap.style.height = `${el.box.h}px`;
     wrap.style.zIndex = String(zIndex.get(el.id));
+    if (el.type === 'image' && el.blend) wrap.style.mixBlendMode = el.blend;
     if (el.box.rotation) wrap.style.transform = `rotate(${el.box.rotation}deg)`;
     wrap.appendChild(renderElement(ctx, scene, surface, el));
     root.appendChild(wrap);
@@ -475,6 +551,10 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     opensInBrowser: 'Åpnes i nettleseren (krever nett)',
     missingImage: 'Bildefila mangler',
     missingVideo: 'Videoen mangler',
+    videoNoPicture:
+      'Bildet i videoen kan ikke vises her, bare lyden. Lagre videoen som MP4 med H.264 eller som WebM.',
+    videoUnplayable:
+      'Videoen kan ikke spilles av her. Fila mangler, kan ikke hentes, eller er kodet på en måte som ikke støttes.',
     logoAlt: 'Universitetet i Sørøst-Norge',
   },
   en: {
@@ -482,6 +562,10 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     opensInBrowser: 'Opens in the browser (needs internet)',
     missingImage: 'The image file is missing',
     missingVideo: 'The video is missing',
+    videoNoPicture:
+      'The picture in this video cannot be shown here, only the sound. Save the video as MP4 with H.264 or as WebM.',
+    videoUnplayable:
+      'The video cannot be played here. The file is missing, cannot be fetched, or is coded in an unsupported way.',
     logoAlt: 'University of South-Eastern Norway',
   },
 };

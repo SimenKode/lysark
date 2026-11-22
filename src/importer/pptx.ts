@@ -7,7 +7,8 @@ import { fitToGrid } from '../shared/layout/fitToGrid';
 import { getTheme } from '../shared/theme/theme';
 import { Deck } from './deck';
 import { MediaStore, type ImportedMedia } from './media';
-import { importSlide } from './slide';
+import { WARNINGS } from './messages';
+import { coversLogo, importSlide } from './slide';
 import { child, type XmlNode } from './xml';
 
 export type { ImportedMedia } from './media';
@@ -63,16 +64,30 @@ function isPlainFrontScene(scene: Scene): boolean {
   return onlyTitles && titles === 1 && subtitles <= 1;
 }
 
-/** Applies the theme's layout to plain title and section scenes (see above). */
+/**
+ * Applies the theme's layout to plain title and section scenes (see above).
+ * A scene that lost its logo to content that has now moved gets it back.
+ */
 export function layOutFrontScenes(project: Project): void {
   const theme = getTheme(project);
+  const logoWarnings = new Set([WARNINGS.logo(false).message, WARNINGS.logo(true).message]);
   for (const scene of project.scenes) {
-    if (isPlainFrontScene(scene)) fitToGrid(scene, theme);
+    if (!isPlainFrontScene(scene)) continue;
+    fitToGrid(scene, theme);
+    if (!scene.showLogo && !scene.elements.some(coversLogo)) {
+      scene.showLogo = true;
+      if (scene.imported) {
+        scene.imported.warnings = scene.imported.warnings.filter(
+          (warning) => !logoWarnings.has(warning.message),
+        );
+      }
+    }
   }
 }
 
 /**
- * Imports a PPTX. Throws an Error with a Norwegian message when the bytes
+ * Imports a PPTX. The project is named after the document title, else the
+ * title slide, else the file name. Throws an Error with a Norwegian message when the bytes
  * are not a readable PowerPoint presentation.
  */
 export function importPptx(bytes: Uint8Array, options: { fileName: string }): ImportResult {
@@ -115,6 +130,14 @@ export function importPptx(bytes: Uint8Array, options: { fileName: string }): Im
       report.warnings.push({ slide: index + 1, code: warning.code, message: warning.message });
     }
   });
+
+  // Without a title of its own, the lecture is named by its title slide.
+  if (documentTitle(deck.pkg.xml(corePart)) === undefined) {
+    const front = project.scenes.find(
+      (scene, index) => scene.kind === 'title' && scene.title !== `Lysark ${index + 1}`,
+    );
+    if (front) project.meta.title = front.title;
+  }
 
   project.assets = media.assets;
   return { project, media: media.media, report };

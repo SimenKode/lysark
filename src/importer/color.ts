@@ -1,6 +1,8 @@
-// Fill and line colours of shapes, resolved to plain hex values. Colour
-// modifiers (lumMod, tint, alpha ...) are ignored on purpose: the result is
-// only used to pick the nearest colour in the theme's palette.
+// Fill and line colours of shapes, resolved to plain hex values. The
+// modifiers that change how light a colour is (lumMod, lumOff, tint, shade)
+// are applied, because they can turn a dark theme colour into a pale one.
+// The rest (alpha, saturation, hue ...) are left out: the result is only
+// used to pick the nearest colour in the theme's palette.
 import { attr, child, descend, intAttr, type XmlNode } from './xml';
 
 export interface ColorContext {
@@ -72,22 +74,117 @@ export function readColorScheme(theme: XmlNode | undefined): Record<string, stri
   return scheme;
 }
 
+function baseColorOf(node: XmlNode, context: ColorContext): string | undefined {
+  switch (node.name) {
+    case 'a:srgbClr':
+      return validHex(attr(node, 'val'));
+    case 'a:schemeClr': {
+      const name = attr(node, 'val') ?? '';
+      return context.scheme[context.map[name] ?? name];
+    }
+    case 'a:sysClr':
+      return validHex(attr(node, 'lastClr')) ?? SYSTEM_COLORS[attr(node, 'val') ?? ''];
+    case 'a:prstClr':
+      return PRESET_COLORS[attr(node, 'val') ?? ''];
+    default:
+      return undefined;
+  }
+}
+
+function toHsl(hex: string): [number, number, number] {
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255) as [
+    number,
+    number,
+    number,
+  ];
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h =
+    max === r
+      ? ((g - b) / d + (g < b ? 6 : 0)) / 6
+      : max === g
+        ? ((b - r) / d + 2) / 6
+        : ((r - g) / d + 4) / 6;
+  return [h, s, l];
+}
+
+function fromHsl(h: number, s: number, l: number): [number, number, number] {
+  if (s === 0) return [l, l, l];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const channel = (t: number): number => {
+    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+    if (u < 1 / 6) return p + (q - p) * 6 * u;
+    if (u < 1 / 2) return q;
+    if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;
+    return p;
+  };
+  return [channel(h + 1 / 3), channel(h), channel(h - 1 / 3)];
+}
+
+function toHex(rgb: [number, number, number]): string {
+  return rgb
+    .map((v) =>
+      Math.round(Math.min(1, Math.max(0, v)) * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')
+    .toUpperCase();
+}
+
+/** Applies lumMod, lumOff, tint and shade, in the order they are written. */
+function applyLightness(hex: string, node: XmlNode): string {
+  let result = hex;
+  for (const modifier of node.children) {
+    const value = (intAttr(modifier, 'val') ?? 100000) / 100000;
+    const rgb = [0, 2, 4].map((i) => Number.parseInt(result.slice(i, i + 2), 16) / 255) as [
+      number,
+      number,
+      number,
+    ];
+    switch (modifier.name) {
+      case 'a:lumMod': {
+        const [h, s, l] = toHsl(result);
+        result = toHex(fromHsl(h, s, l * value));
+        break;
+      }
+      case 'a:lumOff': {
+        const [h, s, l] = toHsl(result);
+        result = toHex(fromHsl(h, s, l + value));
+        break;
+      }
+      case 'a:tint':
+        // Towards white: val is how much of the colour is left.
+        result = toHex(rgb.map((v) => v * value + (1 - value)) as [number, number, number]);
+        break;
+      case 'a:shade':
+        // Towards black.
+        result = toHex(rgb.map((v) => v * value) as [number, number, number]);
+        break;
+      default:
+        break;
+    }
+  }
+  return result;
+}
+
 /** The colour given by the colour child of an element (a:solidFill, a:gs, a:fillRef ...). */
 export function colorOf(parent: XmlNode | undefined, context: ColorContext): string | undefined {
   for (const node of parent?.children ?? []) {
-    switch (node.name) {
-      case 'a:srgbClr':
-        return validHex(attr(node, 'val'));
-      case 'a:schemeClr': {
-        const name = attr(node, 'val') ?? '';
-        return context.scheme[context.map[name] ?? name];
-      }
-      case 'a:sysClr':
-        return validHex(attr(node, 'lastClr')) ?? SYSTEM_COLORS[attr(node, 'val') ?? ''];
-      case 'a:prstClr':
-        return PRESET_COLORS[attr(node, 'val') ?? ''];
-      default:
-        break;
+    const hex = baseColorOf(node, context);
+    if (hex) return applyLightness(hex, node);
+    if (
+      node.name === 'a:srgbClr' ||
+      node.name === 'a:schemeClr' ||
+      node.name === 'a:sysClr' ||
+      node.name === 'a:prstClr'
+    ) {
+      return undefined;
     }
   }
   return undefined;

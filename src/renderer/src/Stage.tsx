@@ -162,6 +162,12 @@ export function Stage() {
     const original = content;
     mount.replaceChildren();
     mount.classList.add('is-editing');
+    // List levels get the same sizes while editing as when the scene is drawn.
+    const levels =
+      (element.type === 'text' || element.type === 'shape') && element.levelScale
+        ? element.levelScale
+        : theme.levelScale;
+    levels.forEach((factor, level) => mount.style.setProperty(`--ls-lvl${level}`, String(factor)));
     const instance = createTextEditor({
       mount,
       content: original,

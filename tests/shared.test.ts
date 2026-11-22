@@ -15,7 +15,7 @@ import {
 } from '../src/shared/format/schema';
 import { fitToGrid } from '../src/shared/layout/fitToGrid';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../src/shared/limits';
-import { classifyLink, renderRichText } from '../src/shared/render/richtext';
+import { classifyLink, numberMarker, renderRichText } from '../src/shared/render/richtext';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../src/shared/render/scene';
 import {
   applySceneState,
@@ -40,7 +40,9 @@ import {
   roleFontSize,
 } from '../src/shared/theme/theme';
 import { docToRichText, richTextToDoc } from '../src/renderer/src/richtext/schema';
+import { WARNINGS } from '../src/importer/messages';
 import { layOutFrontScenes } from '../src/importer/pptx';
+import { coversLogo } from '../src/importer/slide';
 import { sampleProject } from './fixtures/sampleProject';
 
 describe('palette and contrast table (brand manual)', () => {
@@ -301,6 +303,31 @@ describe('rendering', () => {
     expect(classifyLink('#scene:s_1')).toEqual({ kind: 'scene', sceneId: 's_1' });
   });
 
+  it('draws subscripts and superscripts', () => {
+    const host = document.createElement('div');
+    host.appendChild(
+      renderRichText(
+        {
+          paragraphs: [
+            {
+              level: 0,
+              list: 'none',
+              runs: [
+                { text: 'CO' },
+                { text: '2', script: 'sub' },
+                { text: 'm' },
+                { text: '3', script: 'super' },
+              ],
+            },
+          ],
+        },
+        { doc: document, levelScale: [1], interactive: false },
+      ),
+    );
+    expect(host.querySelector('sub')!.textContent).toBe('2');
+    expect(host.querySelector('sup')!.textContent).toBe('3');
+  });
+
   it('numbers lists per level', () => {
     const host = document.createElement('div');
     host.appendChild(
@@ -322,6 +349,210 @@ describe('rendering', () => {
       '2.',
       '1.',
     ]);
+  });
+
+  it('spaces paragraphs as imported, leaving out the space above the first one', () => {
+    const host = document.createElement('div');
+    host.appendChild(
+      renderRichText(
+        {
+          paragraphs: [
+            { level: 0, list: 'none', runs: [{ text: 'A' }] },
+            { level: 0, list: 'bullet', runs: [{ text: 'B' }] },
+            { level: 1, list: 'bullet', runs: [{ text: 'C' }] },
+          ],
+        },
+        {
+          doc: document,
+          levelScale: [1, 0.5],
+          spaceBefore: [1, 0.25, 0, 0, 0],
+          interactive: false,
+        },
+      ),
+    );
+    const [a, b, c] = [...host.querySelectorAll<HTMLElement>('.ls-p, .ls-li')];
+    expect([a!.style.marginTop, b!.style.marginTop, c!.style.marginTop]).toEqual([
+      '0em',
+      '1em',
+      // 0.25 of the text's size, in the em of a paragraph set at half size.
+      '0.5em',
+    ]);
+    expect(host.querySelector<HTMLElement>('.ls-list')!.style.marginTop).toBe('0px');
+  });
+
+  it('indents list levels as imported', () => {
+    const host = document.createElement('div');
+    host.appendChild(
+      renderRichText(
+        {
+          paragraphs: [
+            { level: 0, list: 'bullet', runs: [{ text: 'A' }] },
+            { level: 1, list: 'bullet', runs: [{ text: 'B' }] },
+            { level: 1, list: 'none', runs: [{ text: 'C' }] },
+          ],
+        },
+        {
+          doc: document,
+          levelScale: [1, 0.5],
+          indent: [
+            { start: 0, text: 0.9 },
+            { start: 0.9, text: 1.8 },
+            { start: 1.8, text: 2.7 },
+            { start: 2.7, text: 3.6 },
+            { start: 3.6, text: 4.5 },
+          ],
+          interactive: false,
+        },
+      ),
+    );
+    const [a, b] = [...host.querySelectorAll<HTMLElement>('.ls-li')];
+    const markers = [...host.querySelectorAll<HTMLElement>('.ls-marker')];
+    expect([a!.style.marginLeft, markers[0]!.style.width]).toEqual(['0em', '0.9em']);
+    // In the em of a paragraph set at half size.
+    expect([b!.style.marginLeft, markers[1]!.style.width]).toEqual(['1.8em', '1.8em']);
+    const c = host.querySelector<HTMLElement>('.ls-p')!;
+    expect([c.style.paddingLeft, c.style.textIndent]).toEqual(['3.6em', '-1.8em']);
+  });
+
+  it('goes on numbering past bullets at a deeper level, and starts again after plain text', () => {
+    const host = document.createElement('div');
+    host.appendChild(
+      renderRichText(
+        {
+          paragraphs: [
+            { level: 0, list: 'number', runs: [{ text: 'A' }] },
+            { level: 1, list: 'bullet', runs: [{ text: 'B' }] },
+            { level: 0, list: 'number', runs: [{ text: 'C' }] },
+            { level: 0, list: 'none', runs: [{ text: 'D' }] },
+            { level: 0, list: 'number', runs: [{ text: 'E' }] },
+          ],
+        },
+        { doc: document, levelScale: [1, 0.9], interactive: false },
+      ),
+    );
+    const numbers = [...host.querySelectorAll('ol .ls-marker')].map((m) => m.textContent);
+    expect(numbers).toEqual(['1.', '2.', '1.']);
+    expect([...host.querySelectorAll('ol > li')].map((li) => (li as HTMLLIElement).value)).toEqual([
+      1, 2, 1,
+    ]);
+  });
+});
+
+describe('video', () => {
+  const videoScene = (
+    url: string,
+    withPoster = false,
+  ): { project: Project; scene: Scene; poster: string } => {
+    const { project } = sampleProject();
+    const poster = Object.keys(project.assets)[0]!;
+    const scene = newScene('content', 'Video');
+    scene.elements.push({
+      id: newId('e'),
+      type: 'video',
+      source: { kind: 'url', url },
+      title: 'Video A',
+      ...(withPoster ? { poster } : {}),
+      box: { x: 120, y: 200, w: 960, h: 540, rotation: 0 },
+    });
+    project.scenes.push(scene);
+    return { project, scene, poster };
+  };
+
+  it('shows the still picture of a linked video on the card that opens the browser', () => {
+    const { project, scene, poster } = videoScene('https://example.org/video-a', true);
+    const card = renderScene(context(project), scene).querySelector('a.ls-videocard')!;
+    expect(card.getAttribute('href')).toBe('https://example.org/video-a');
+    expect(card.classList.contains('ls-videocard-poster')).toBe(true);
+    const picture = card.querySelector('img.ls-videocard-img')!;
+    expect(picture.getAttribute('src')).toBe(`asset:${poster}`);
+    expect(picture.getAttribute('alt')).toBe(''); // the title beside it names the video
+    expect(card.textContent).toContain('Video A');
+    expect(card.textContent).toContain(SCENE_STRINGS.nb.opensInBrowser);
+  });
+
+  it('draws a plain card when a linked video has no still picture', () => {
+    const { project, scene } = videoScene('https://example.org/video-a');
+    const card = renderScene(context(project), scene).querySelector('.ls-videocard')!;
+    expect(card.querySelector('img')).toBeNull();
+    expect(card.classList.contains('ls-videocard-poster')).toBe(false);
+  });
+
+  it('says so in the picture when a video has no picture or cannot be played', () => {
+    const { project, scene } = videoScene('https://example.org/a.mp4');
+    const silent = renderScene(context(project), scene).querySelector('.ls-video')!;
+    expect(silent.querySelector('.ls-video-note')).toBeNull();
+    // Sound only: the player stays, with a note.
+    silent.querySelector('video')!.dispatchEvent(new Event('loadedmetadata'));
+    expect(silent.querySelector('.ls-video-note')!.textContent).toBe(
+      SCENE_STRINGS.nb.videoNoPicture,
+    );
+    expect(silent.querySelector('video')!.hidden).toBe(false);
+
+    const broken = renderScene(context(project), scene).querySelector('.ls-video')!;
+    broken.querySelector('video')!.dispatchEvent(new Event('error'));
+    broken.querySelector('video')!.dispatchEvent(new Event('error'));
+    expect(broken.querySelectorAll('.ls-video-note')).toHaveLength(1);
+    expect(broken.querySelector('.ls-video-note')!.textContent).toBe(
+      SCENE_STRINGS.nb.videoUnplayable,
+    );
+    expect(broken.querySelector('video')!.hidden).toBe(true);
+  });
+});
+
+describe('list markers and blending', () => {
+  it('writes the markers of lettered and roman lists', () => {
+    expect([1, 2, 27].map((n) => numberMarker(n, 'a.'))).toEqual(['a.', 'b.', 'aa.']);
+    expect(numberMarker(4, 'I.')).toBe('IV.');
+    expect(numberMarker(3, 'A)')).toBe('C)');
+    expect(numberMarker(9, undefined)).toBe('9.');
+  });
+
+  it('blends ink over what lies under it, and aligns shape text as imported', () => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    const image = scene.elements.find((e) => e.type === 'image');
+    expect(image).toBeDefined();
+    if (image?.type === 'image') image.blend = 'multiply';
+    scene.elements.push({
+      id: 'e_left',
+      type: 'shape',
+      geometry: 'rect',
+      fill: 'lilla',
+      box: { x: 0, y: 0, w: 300, h: 100, rotation: 0 },
+      content: { paragraphs: [{ level: 0, list: 'none', runs: [{ text: 'A' }] }] },
+      align: 'left',
+      valign: 'top',
+    });
+    const el = renderScene(context(project), scene);
+    const wrap = el.querySelector<HTMLElement>(`[data-el="${image!.id}"]`)!;
+    expect(wrap.style.mixBlendMode).toBe('multiply');
+    const content = el.querySelector<HTMLElement>('[data-el="e_left"] .ls-shape-content')!;
+    expect([content.style.textAlign, content.style.justifyContent]).toEqual(['left', 'flex-start']);
+  });
+});
+
+describe('shapes with text', () => {
+  it('turns the text area of a shape with vertical text and keeps its own margins', () => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    scene.elements = [
+      {
+        id: 'e_label',
+        type: 'shape',
+        geometry: 'rect',
+        fill: 'lilla',
+        box: { x: 0, y: 0, w: 80, h: 300, rotation: 0 },
+        content: { paragraphs: [{ level: 0, list: 'none', runs: [{ text: 'A' }] }] },
+        textRotation: 270,
+        textInset: { l: 0, t: 1, r: 2, b: 3 },
+      },
+    ];
+    const el = renderScene(context(project), scene);
+    const content = el.querySelector<HTMLElement>('.ls-shape-content')!;
+    expect(content.style.transform).toBe('rotate(270deg)');
+    expect([content.style.width, content.style.height]).toEqual(['300px', '80px']);
+    expect([content.style.left, content.style.top]).toEqual(['-110px', '110px']);
+    expect(content.style.padding).toBe('1px 2px 3px 0px');
   });
 });
 
@@ -363,6 +594,7 @@ describe('fit to grid', () => {
     for (const el of scene.elements) {
       if (el.type !== 'text') continue;
       expect(el.fontSize).toBeUndefined();
+      expect(el.levelScale).toBeUndefined();
       expect(el.align).toBe('left');
     }
   });
@@ -379,6 +611,19 @@ describe('fit to grid', () => {
     // Content scenes are left where PowerPoint had them.
     expect(project.scenes[1]!.elements[1]!.box.x).toBe(120);
   });
+
+  it('gives a laid out title scene its logo back when nothing covers it any more', () => {
+    const { project } = sampleProject();
+    const front = project.scenes[0]!;
+    // Imported with the title over the logo's place.
+    front.elements[0]!.box = { x: 100, y: 940, w: 900, h: 120, rotation: 0 };
+    expect(front.elements.some(coversLogo)).toBe(true);
+    front.showLogo = false;
+    front.imported = { slide: 1, warnings: [WARNINGS.logo(false), WARNINGS.animation()] };
+    layOutFrontScenes(project);
+    expect(front.showLogo).toBe(true);
+    expect(front.imported.warnings.map((w) => w.code)).toEqual(['animation']);
+  });
 });
 
 describe('rich text in the editor', () => {
@@ -392,6 +637,10 @@ describe('rich text in the editor', () => {
           runs: [
             { text: 'D', italic: true, mark: true },
             { text: 'E', link: 'https://example.org/' },
+            { text: 'CO' },
+            { text: '2', script: 'sub' as const },
+            { text: ' m' },
+            { text: '2', script: 'super' as const },
           ],
         },
         { level: 0, list: 'none' as const, runs: [] },
