@@ -1,5 +1,5 @@
 // The project format. One format is read by the editor, the HTML player and
-// (later) the video export. Content refers to palette tokens and text roles,
+// the video export. Content refers to palette tokens and text roles,
 // never to raw colours or fonts, so a theme change never touches content.
 import { z } from 'zod';
 import { migrateProject } from './migrate';
@@ -336,7 +336,7 @@ export type StepAction = z.infer<typeof StepAction>;
 
 /**
  * A step is "now this comes in". In HTML a key press goes to the next step;
- * in video (delivery 3) each step gets a time, `at`, in seconds from the
+ * in video and in "Spill av" each step has a time, `at`, in seconds from the
  * start of the scene. Elements not targeted by any step are visible from
  * the start.
  */

@@ -1,4 +1,4 @@
-// Renders one scene to DOM. The editor, the HTML player and (later) the
+// Renders one scene to DOM. The editor, the HTML player and the
 // video export all use this function, so they always show the same thing.
 // The result depends only on the arguments: no clock, no randomness.
 import { STAGE } from '../format/constants';

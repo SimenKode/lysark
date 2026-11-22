@@ -193,7 +193,7 @@ interface Scene {
   elements: Element[];                           // back to front
   timeline: Step[];
   script: string;                                // voice-over manuscript, from PPTX notes
-  audio?: { asset: AssetId; gain: number };      // recorded or imported voice (delivery 3)
+  audio?: { clips: AudioClip[]; gain?: number }; // the slide's sound: see "Format 4" above
   imported?: { slide: number; warnings: ImportWarning[] };
 }
 
