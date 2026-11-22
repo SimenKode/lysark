@@ -1,0 +1,20 @@
+# Dependencies and build output
+node_modules/
+dist/
+out/
+release/
+*.log
+
+# Material that must never be committed (see AGENTS.md)
+# USN logo package and other brand files supplied by the owner
+merkevare/
+# The owner's real lectures, used for manual testing
+eksempler/
+# Downloaded FFmpeg binaries
+vendor/ffmpeg/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
