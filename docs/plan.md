@@ -242,7 +242,8 @@ Slik ble det, der det avviker fra eller presiserer planen:
   tekstens lengde. Leser du i jevnt tempo, stemmer det godt; hopper du
   over noe eller snakker fritt, stemmer det dårligere.
 - **Video inne i et lysark vises som stillbilde i MP4-fila** (første
-  bilde, eller forhåndsbildet). YouTube vises som stillbildet sitt. USNs
+  bilde, eller forhåndsbildet). Det samme gjelder bilder som beveger seg
+  (animert GIF). YouTube vises som stillbildet sitt. USNs
   logoanimasjon på siste lysark starter fra hvitt, så den blir et hvitt
   bilde.
 - **«Dele» er ikke en egen knapp.** Å sette inn en pause eller klippe

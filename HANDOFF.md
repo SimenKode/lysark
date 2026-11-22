@@ -117,7 +117,7 @@ stil).
 | PDF-import av en ekte PDF | `PB1020 2025 - 04 - Stål.pdf`: 26 lysark på 17 sekunder, 8,4 MB bilder, riktige titler og tekst. Ett skjermbilde er sett på. De andre sju PDF-ene er ikke prøvd. |
 | Leveranse 2 mot ekte nett | Linux Mint (økt 4): Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen. Windows 11 (økt 5): Commons-søk og YouTubes spiller i lysarket, se 6.16. YouTubes spiller i lysarket er **ikke** prøvd mot ekte nett på Linux Mint etter ombyggingen (A6); der er bare testen som selv svarer for YouTube, kjørt. |
 | Import av de ekte forelesningene | Alle åtte (315 lysark) og malfila importeres uten feil. Økt 2: alle 315 er sammenlignet side om side med PDF-utgavene, før og etter rettingene (se del 4). Gjennomgangen ble gjort av hjelpeagenter som så på bildene, og jeg sjekket funnene og de viktigste rettingene selv. |
-| Windows 11 (eierens VM) | Prøvd for hånd tre ganger med zip-utgaven: leveranse 1 (økt 1, under), leveranse 2 og A1–A6 (økt 5, se 6.16), og lyd og video (økt 5, se 6.17). |
+| Windows 11 (eierens VM) | Prøvd for hånd fire ganger med zip-utgaven: leveranse 1 (økt 1, under), leveranse 2 og A1–A6 (økt 5, se 6.16), lyd og video, og en etterkontroll av rettingene (økt 5, se 6.17). PDF-import og den siste rettingen av avbrudd er ikke prøvd der. |
 | Ekte mikrofon | Ikke prøvd, verken på Linux eller Windows. |
 | Canvas | Ikke prøvd. Eieren prøver selv (6.5). |
 
@@ -938,8 +938,10 @@ Funn fra Windows, og hva som er gjort:
 | Siste lysark (USNs logoanimasjon) viser et hvitt bilde med avspillingsknapper | Videoen starter fra hvitt. Henger sammen med spørsmål 3 i 6.14 B |
 | Eksportmeldingen blir stående til man trykker «Lukk» | Slik er det laget |
 
-Ligger igjen i VM-en: `C:\Users\simen\lysark-test\v2\` (programmet og
-`staal2.html`) og `C:\Users\simen\lysark-test\v2-prosjekt\`.
+Ligger igjen i VM-en under `C:\Users\simen\lysark-test\`: `v2`, `v3` og
+`v4` (tre utgaver av programmet, med eksporterte HTML- og MP4-filer),
+`v2-prosjekt` (nå med to stille opptak) og `v4-fra-html`. Slett dem når
+de ikke trengs.
 Skjermbildene fra utprøvingen ble ikke tatt vare på i repoet.
 
 **Leveranse 3 (lyd og video)** er bygget i samme økt. Hva som er laget,
@@ -979,19 +981,38 @@ Funn fra denne utprøvingen, og hva som er gjort:
 
 | Funn | Tiltak |
 | --- | --- |
-| **Bilder manglet i videoen** på noen lysark (Stål 2, 4 og 24), ulikt fra gang til gang. Samme feil fantes på Linux (lysark 4 og 24), men var ikke oppdaget der | Rettet: bildet ble tatt før et stort fotografi var kommet på skjermen. Et lysark tegnes nå først helt, og eksporten venter til det skjulte vinduet har sluttet å tegne. Kontrollert på Linux med et ark over alle 26 lysark fra videoen. Etterkontroll på Windows: se under |
-| «Avbryt eksporten» hang (funnet av meg på Linux, ikke i VM-en) | Rettet: FFmpeg stoppes straks, også når programmet lukkes. Har fått en egen test |
+| **Bilder manglet i videoen** på noen lysark (Stål 2, 4 og 24), ulikt fra gang til gang. Samme feil fantes på Linux (lysark 4 og 24), men var ikke oppdaget der | Rettet: bildet ble tatt før et stort fotografi var kommet på skjermen. Et lysark tegnes nå først helt, og eksporten venter til det skjulte vinduet har sluttet å tegne. Kontrollert på Linux med et ark over alle 26 lysark fra videoen. Etterkontrollen på Windows (under) bekreftet det |
+| «Avbryt eksporten» hang (funnet av meg på Linux, ikke i VM-en) | Rettet: FFmpeg stoppes straks, også når programmet lukkes. Har fått en egen test. Se også etterkontrollen under |
 | Prosjektet ble «ulagret» av å eksportere video | Rettet: bare når et valg i dialogen er endret |
 | Framdriften vistes før filnavnet var valgt | Rettet |
 | Meldingene nederst dekket knappene i lydpanelet | Rettet: meldingene står nå over lysarket |
 | Klokka i opptaksvinduet begynner på null for hvert lysark | Slik er det ment: den viser lengden på lysarket som leses inn |
 | Lagre-dialogene starter i mappa over prosjektmappa | Slik er det laget |
 
-**Etterkontroll på Windows etter rettingene:** startet 22.11.2026 med
-en ny zip (CD-bildet `release/lysark-test.iso`, mappa `v4` i VM-en).
-Resultatet var ikke kommet da dette ble skrevet. Til det er skrevet inn
-her, gjelder: rettingen av manglende bilder i videoen er kontrollert på
-Linux, **ikke** på Windows.
+**Etterkontroll på Windows etter rettingene** (22.11.2026, ny zip,
+mappa `v4` i VM-en):
+
+- **Bildene er med i videoen.** Lysark 2, 4 og 24 i Stål ble sett på i
+  Windows' egen spiller og sammenlignet med redigeringsflaten, og
+  lysark 3, 6, 10, 15 og 20 i tillegg. Alle bildene og logoen var der.
+  Eksporten (2:19) tok omtrent 55 sekunder.
+- Framdriften vises ikke før filnavnet er valgt, meldingen står over
+  lysarket, og prosjektet er fortsatt «Lagret» etter eksporten.
+- «Åpne HTML-fil …» med fila fra forrige utprøving ga et prosjekt med
+  26 lysark, bildene på plass og lyden tilbake på lysark 2, med
+  meldingen «… er åpnet som et nytt prosjekt. Stemmen er med, slik den
+  var da HTML-fila ble laget: …».
+- **«Avbryt eksporten» stoppet eksporten og ryddet bort fila, men viste
+  en rød melding: «FFmpeg tar ikke imot mer.»** Rettet etterpå: en feil
+  som skyldes at eieren selv avbrøt, vises ikke. Prøvd på Linux med ti
+  avbrudd på ulike tidspunkt (ingen melding, ingen fil igjen, ingen
+  FFmpeg-prosess igjen). **Ikke prøvd på Windows etter denne siste
+  rettingen.**
+- Telleren sto stille noen sekunder på ett lysark (Stål 10) under
+  eksporten. Det er ventingen på at lysarket skal tegne seg ferdig; den
+  er begrenset til noen sekunder per lysark. Lysarket har trolig et
+  bilde som beveger seg (animert GIF); i videoen blir det et stillbilde.
+- PDF-import er ikke prøvd på Windows (ingen PDF i VM-en).
 
 **Lang forelesning (Linux Mint, uten vindu):** et prosjekt med 41
 lysark, ett minutt kunstig lyd på hvert (40 minutter), ble til video på

@@ -219,6 +219,8 @@ export function exportVideo(options: Options): VideoJob {
         // The picture holds for every frame that starts before the next change.
         still = until > time ? Math.ceil(until * VIDEO_FPS - 1e-6) - 1 : frame;
       }
+      // Drawing a new slide can take a moment; the owner may have cancelled meanwhile.
+      if (cancelled) break;
       await writeTo(ffmpeg, pixels);
       if (frame % 15 === 0 || frame === totalFrames - 1) {
         options.onProgress({ phase: 'frames', frame: frame + 1, frames: totalFrames });
@@ -250,6 +252,9 @@ export function exportVideo(options: Options): VideoJob {
   const done = run()
     .catch((error) => {
       stop?.();
+      // Stopping FFmpeg in the middle of a frame makes the hand-over fail;
+      // when the owner asked for the stop, that is not an error to show.
+      if (cancelled) return null;
       throw error;
     })
     .finally(() => {
