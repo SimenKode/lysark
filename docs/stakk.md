@@ -51,6 +51,22 @@ importeres (SmartArt, diagrammer, animasjoner). Biblioteket pptxtojson
 vanskelig å styre mot temaroller. Valget prøves mot eierens ekte filer
 tidlig i leveranse 1.
 
+**PDF som bilder, tegnet i programvinduet.** pdf.js trenger et lerret
+for å tegne, så sidene tegnes i grensesnittet, én om gangen, i dobbel
+oppløsning (høyst 3840 × 2160 piksler), og lagres som WebP med høy
+kvalitet. Målt på 16:9-sider: en side med punkter blir om lag 0,13 MB
+og en side fylt av et fotografi om lag 0,65 MB; som WebP uten tap ville
+de blitt 0,8 og 4 MB, og alle bildene havner i HTML-fila. Hovedprosessen velger
+fila, lager prosjektmappa og tar imot bildene. Arbeideren og dekoderne
+lastes fra programmets egne filer; sikkerhetsreglene for grensesnittet
+er ikke endret.
+
+**Eksportert HTML åpnes uten å kjøres.** «Åpne HTML-fil …» leser
+prosjektet og mediene rett ut av teksten i fila. Ingenting i fila
+kjøres, prosjektet kontrolleres som en vanlig prosjektfil, mediene får
+navn etter sitt eget innhold og havner bare i `media/`, og en stor video
+hentes bare fra mappa HTML-fila selv ligger i.
+
 **Video: bilde for bilde, ikke skjermopptak.** Et skjult vindu tegner
 lysarket for tidspunkt t, bildet hentes ut som rå piksler og sendes rett
 til FFmpeg, så t + 1/30 s, og så videre. Lyden legges på av FFmpeg.
@@ -75,6 +91,52 @@ og ville blitt bygd inn i programmet.
 | fflate | 0.8.3 | MIT | Pakke ut PPTX, pakke prosjekt |
 | fast-xml-parser | 5.12.1 | MIT | Lese XML i PPTX |
 | prosemirror-model, -state, -view, -commands, -history, -keymap | 1.x | MIT | Redigering av formatert tekst (fet, kursiv, markering, lenker, lister) |
+| pdfjs-dist (pdf.js) | 6.5.438 | Apache-2.0 | Lese PDF som inndata: tegne hver side som bilde og hente ut teksten. Se «Hva som er med av pdf.js» under |
+
+#### Hva som er med av pdf.js
+
+Lisensen er kontrollert 22.11.2026 mot pakkens egen lisensfil
+(`node_modules/pdfjs-dist/LICENSE`, Apache License 2.0) og mot
+lisensfilene i undermappene.
+
+Bygd inn i programmet:
+
+| Del | Lisens | Brukes til |
+| --- | --- | --- |
+| `build/pdf.mjs` og `build/pdf.worker.min.mjs` | Apache-2.0 | Selve biblioteket og arbeideren som leser fila |
+| `wasm/openjpeg.wasm` (OpenJPEG) | BSD 2-Clause | Bilder i JPEG 2000 inne i PDF-er |
+| `wasm/jbig2.wasm` (fra PDFium) | BSD 3-Clause og Apache-2.0 | Bilder i JBIG2 og CCITT-faks, som skannede sider bruker |
+
+Lisenstekstene for disse legges ved siden av de bygde filene
+(`out/renderer/licenses/pdfjs-dist/`), og følger med i det pakkede
+programmet.
+
+**Ikke** med, selv om pakken har dem:
+
+- `standard_fonts/` (skriftfiler fra Foxit og Liberation, egne lisenser)
+  og `cmaps/` (tegntabeller fra Adobe, egen lisens). **Følgen:** en PDF
+  som bruker skrifter uten å ha dem med i fila, tegnes med en
+  erstatningsskrift fra maskinen. PDF-er eksportert fra PowerPoint har
+  skriftene med i fila, og tegnes med dem. PDF-er med kinesisk, japansk
+  eller koreansk tekst uten innebygde skrifter kan få feil tegn.
+- `iccs/` og `wasm/qcms_bg.wasm` (fargeprofiler), `wasm/quickjs-eval.*`
+  (skript i PDF-skjemaer, som Lysark ikke kjører) og reservedekoderne
+  uten WebAssembly. **Følgen:** farger som er angitt med en fargeprofil
+  i PDF-en, regnes om på den enkle måten pdf.js har innebygd, og kan
+  avvike litt fra en fargestyrt visning.
+
+Slik er det kontrollert: etter `npm run build` inneholder `out/` ingen
+filer fra `standard_fonts/` eller `cmaps/`; de eneste skriftfilene er
+programmets egne seks Liberation-filer. En test
+(`tests/e2e-pdf.test.ts`) sjekker dette ved hver kjøring. Selve pakken
+`pdfjs-dist` holdes også utenfor det pakkede programmet
+(`build.files` i `package.json`), fordi alt som trengs, allerede er
+bygd inn; innholdet i `app.asar` er sett over etter pakking.
+
+npm installerer også `@napi-rs/canvas` (1.2.0, MIT), fordi pdf.js
+nevner den som valgfri avhengighet for bruk i Node. Lysark tegner PDF i
+programvinduet og bruker den ikke; den bygges ikke inn og pakkes ikke
+med.
 
 ### Leveranse 4 og 5 (tas inn da)
 
@@ -89,7 +151,6 @@ og ville blitt bygd inn i programmet.
 | Program | Lisens | Brukes til |
 | --- | --- | --- |
 | FFmpeg, statisk bygg fra BtbN/FFmpeg-Builds | GPL (med libx264) | Koding til MP4, lydbehandling. Eget program, ikke bygd inn. GPL-bygget er valgt (22.11.2026): en fast, navngitt utgave, hentet med kontroll av sjekksum og lagt ved programmet med lisenstekst og lenke til kildekoden |
-| pdfjs-dist (pdf.js) | Apache-2.0 | Lese PDF som inndata. Bygges inn. Skriftdataene pakken har med seg, kontrolleres før den tas inn |
 
 Lydopptak bruker nettlesermotorens egne funksjoner (mikrofon og
 lydbehandling), uten bibliotek.

@@ -25,6 +25,13 @@ export interface MediaRequest {
   resolve: (assetId: string | undefined) => void;
 }
 
+/** How far the import of a PDF has come. */
+export interface PdfProgress {
+  name: string;
+  page: number;
+  pages: number;
+}
+
 interface State {
   dir: string | null;
   project: Project | null;
@@ -46,6 +53,8 @@ interface State {
   /** Id of the element whose "Lær mer" content is open in the builder. */
   builder: string | null;
   mediaRequest: MediaRequest | null;
+  /** A PDF is being imported: how far it has come. `pages` is 0 until the file is read. */
+  pdfProgress: PdfProgress | null;
 
   load(dir: string, project: Project): void;
   close(): void;
@@ -69,6 +78,7 @@ interface State {
   setNotice(notice: Notice | null): void;
   openBuilder(elementId: string | null): void;
   setMediaRequest(request: MediaRequest | null): void;
+  setPdfProgress(progress: PdfProgress | null): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -92,6 +102,7 @@ export const useStore = create<State>((set, get) => ({
   notice: null,
   builder: null,
   mediaRequest: null,
+  pdfProgress: null,
 
   load(dir, project) {
     set({
@@ -226,6 +237,10 @@ export const useStore = create<State>((set, get) => ({
 
   setMediaRequest(request) {
     set({ mediaRequest: request });
+  },
+
+  setPdfProgress(progress) {
+    set({ pdfProgress: progress });
   },
 }));
 

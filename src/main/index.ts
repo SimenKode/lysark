@@ -3,8 +3,8 @@
 // and reaches files only through these calls.
 import { BrowserWindow, Menu, app, dialog, ipcMain, protocol, session, shell } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
-import { createReadStream, existsSync, statSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import type {
   AddedMedia,
@@ -16,10 +16,13 @@ import type {
   LogoStatus,
   LogoVariant,
   MenuCommand,
+  OpenedHtml,
   OpenedProject,
+  PickedPdf,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
 import { webPictureUrl } from '../shared/api';
+import { PDF_LIMIT_BYTES } from '../shared/limits';
 import type { CommonsHit } from './commons';
 import { buildPreview, exportHtml } from './exportHtml';
 import { isPreviewUrl, servePreview, stopPreviewServer } from './previewServer';
@@ -29,14 +32,21 @@ import {
   PROJECT_FILE,
   addMediaBytes,
   addMediaFile,
+  addPagePicture,
+  beginImportFolder,
   createProject,
+  discardImportFolder,
+  finishImportFolder,
   importPptxToFolder,
   mediaPath,
   mimeOf,
   packProject,
+  readHtmlExport,
   readProject,
   saveProject,
   unpackProject,
+  writeHtmlExport,
+  type ImportFolder,
 } from './projectIo';
 import {
   clearLogos,
@@ -66,6 +76,12 @@ let mainWindow: BrowserWindow | null = null;
 let previewWindow: BrowserWindow | null = null;
 /** Folder of the project that is open; media is only served from here. */
 let currentDir: string | null = null;
+/**
+ * The PDF import that is under way: the file the owner picked, and, once he
+ * has said where the project goes, its folder. The interface draws the pages
+ * and can only add pictures to this folder.
+ */
+let pdfImport: { sourceName: string; folder: ImportFolder | null } | null = null;
 let documentState = { dirty: false, title: '' };
 let closeConfirmed = false;
 
@@ -202,7 +218,7 @@ function showAbout(): void {
       'Gjør PowerPoint-forelesninger om til interaktiv HTML i USNs visuelle profil.\n\n' +
       'Lysark er fri programvare under GNU General Public License, versjon 3 eller senere, ' +
       'og kommer uten noen garanti. Forelesningene du eksporterer, er dine egne.\n\n' +
-      'Bygd med fri programvare (Electron, React, ProseMirror, Zod, fflate, fast-xml-parser). ' +
+      'Bygd med fri programvare (Electron, React, ProseMirror, Zod, fflate, fast-xml-parser, pdf.js). ' +
       'Skriftene Liberation Sans og Liberation Serif følger med under SIL Open Font License 1.1.\n\n' +
       'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
       'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene.',
@@ -218,6 +234,7 @@ function buildMenu(): void {
         { label: 'Nytt prosjekt …', accelerator: 'CmdOrCtrl+N', click: () => send('new') },
         { label: 'Åpne prosjekt …', accelerator: 'CmdOrCtrl+O', click: () => send('open') },
         { label: 'Importer PowerPoint …', accelerator: 'CmdOrCtrl+I', click: () => send('import') },
+        { label: 'Importer PDF …', click: () => send('import-pdf') },
         { type: 'separator' },
         { label: 'Lagre', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
         { type: 'separator' },
@@ -226,6 +243,7 @@ function buildMenu(): void {
         { type: 'separator' },
         { label: 'Pakk prosjektet til én fil …', click: () => send('pack') },
         { label: 'Åpne pakket prosjekt …', click: () => send('unpack') },
+        { label: 'Åpne HTML-fil …', click: () => send('open-html') },
         { type: 'separator' },
         { label: 'Logo fra USN …', click: () => send('settings') },
         { type: 'separator' },
@@ -356,6 +374,12 @@ async function askForNewFolder(suggestedName: string): Promise<string | null> {
     properties: ['createDirectory'],
   });
   return result.canceled || !result.filePath ? null : result.filePath;
+}
+
+/** Drops a PDF import that was not finished, and takes away what it wrote. */
+function dropPdfImport(): void {
+  if (pdfImport?.folder) discardImportFolder(pdfImport.folder);
+  pdfImport = null;
 }
 
 /** A project folder (or its prosjekt.json) given on the command line. */
@@ -505,6 +529,80 @@ function registerHandlers(): void {
     return opened(dir, unpackProject(source, dir));
   });
 
+  handle('lysark:open-html', async (): Promise<OpenedHtml | null> => {
+    if (!mainWindow) return null;
+    const pick = await dialog.showOpenDialog(mainWindow, {
+      title: 'Åpne HTML-fil',
+      buttonLabel: 'Åpne',
+      filters: [{ name: 'HTML eksportert fra Lysark', extensions: ['html', 'htm'] }],
+      properties: ['openFile'],
+    });
+    const source = pick.filePaths[0];
+    if (pick.canceled || !source) return null;
+    // Read and check the file first, so that a file Lysark did not make is
+    // refused before the owner is asked where the project is to lie.
+    const read = readHtmlExport(source);
+    const dir = await askForNewFolder(basename(source, extname(source)));
+    if (!dir) return null;
+    const project = writeHtmlExport(read, dir);
+    return { ...opened(dir, project), sourceName: basename(source), notes: read.content.notes };
+  });
+
+  // PDF import. The pages are drawn in the interface (pdf.js needs a canvas);
+  // the main process picks the file, makes the folder and stores the pictures.
+  handle('lysark:pdf-pick', async (): Promise<PickedPdf | null> => {
+    if (!mainWindow) return null;
+    const pick = await dialog.showOpenDialog(mainWindow, {
+      title: 'Importer PDF',
+      buttonLabel: 'Importer',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      properties: ['openFile'],
+    });
+    const source = pick.filePaths[0];
+    if (pick.canceled || !source) return null;
+    if (statSync(source).size > PDF_LIMIT_BYTES) {
+      throw new Error(
+        `PDF-fila er for stor til å importeres (over ${PDF_LIMIT_BYTES / (1024 * 1024)} MB).`,
+      );
+    }
+    const data = new Uint8Array(readFileSync(source));
+    dropPdfImport();
+    pdfImport = { sourceName: basename(source), folder: null };
+    return { name: pdfImport.sourceName, data };
+  });
+
+  handle('lysark:pdf-begin', async (): Promise<boolean> => {
+    if (!pdfImport || pdfImport.folder) throw new Error('Ingen PDF er valgt.');
+    const dir = await askForNewFolder(pdfImport.sourceName.replace(/\.pdf$/i, ''));
+    if (!dir || !pdfImport) {
+      pdfImport = null;
+      return false;
+    }
+    pdfImport.folder = beginImportFolder(dir);
+    return true;
+  });
+
+  handle('lysark:pdf-page', (page: number, data: Uint8Array): AddedMedia => {
+    if (!pdfImport?.folder) throw new Error('Ingen PDF-import er i gang.');
+    if (!Number.isInteger(page) || page < 1 || !(data instanceof Uint8Array)) {
+      throw new Error('Bildet av siden kan ikke lagres.');
+    }
+    const stem = pdfImport.sourceName.replace(/\.pdf$/i, '');
+    return addPagePicture(pdfImport.folder, data, `${stem} – side ${page}.webp`);
+  });
+
+  handle('lysark:pdf-finish', (project: Project): OpenedProject => {
+    if (!pdfImport?.folder) throw new Error('Ingen PDF-import er i gang.');
+    const folder = pdfImport.folder;
+    const valid = finishImportFolder(folder, project);
+    pdfImport = null;
+    return opened(folder.dir, valid);
+  });
+
+  handle('lysark:pdf-cancel', (): void => {
+    dropPdfImport();
+  });
+
   handle(
     'lysark:preview',
     async (dir: string, project: Project, sceneIndex: number): Promise<void> => {
@@ -615,6 +713,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('window-all-closed', () => {
+    dropPdfImport();
     stopPreviewServer();
     app.quit();
   });

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { MenuCommand } from '../../shared/api';
 import type { ShapeElement, TextRole } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
-import { ImportReportDialog, SettingsDialog } from './Dialogs';
+import { ImportReportDialog, PdfImportDialog, SettingsDialog } from './Dialogs';
 import { Inspector } from './Inspector';
 import { MediaDialog } from './MediaDialog';
 import { MoreBuilder } from './MoreBuilder';
@@ -12,11 +12,13 @@ import { SceneList } from './SceneList';
 import { Stage } from './Stage';
 import {
   exportHtml,
+  importPdf,
   importPptx,
   insertImage,
   insertVideoFile,
   insertVideoLink,
   newProject,
+  openHtmlFile,
   openProject,
   packProject,
   preview,
@@ -325,6 +327,7 @@ export function App() {
   const report = useStore((s) => s.report);
   const builder = useStore((s) => s.builder);
   const mediaRequest = useStore((s) => s.mediaRequest);
+  const pdfProgress = useStore((s) => s.pdfProgress);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -343,6 +346,8 @@ export function App() {
     const run = async (command: MenuCommand): Promise<void> => {
       const state = useStore.getState();
       const active = document.activeElement;
+      // While a PDF is being imported, the menu waits. Closing the window still works.
+      if (state.pdfProgress && command !== 'save-then-close') return;
       switch (command) {
         case 'new':
           return newProject();
@@ -402,6 +407,10 @@ export function App() {
           return packProject();
         case 'unpack':
           return unpackProject();
+        case 'open-html':
+          return openHtmlFile();
+        case 'import-pdf':
+          return importPdf();
       }
     };
     return window.lysark.onCommand((command) => void run(command));
@@ -437,6 +446,7 @@ export function App() {
       {project && builder && <MoreBuilder elementId={builder} />}
       {project && mediaRequest && <MediaDialog request={mediaRequest} />}
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {pdfProgress && <PdfImportDialog />}
     </>
   );
 }

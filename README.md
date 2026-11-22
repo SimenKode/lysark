@@ -52,6 +52,20 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
 8. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
 
+**Andre inndata** (Fil-menyen):
+
+- **«Importer PDF …»** gjør hver side til et lysark med siden som bilde,
+  tegnet i dobbel oppløsning. Teksten på siden blir bildets alternative
+  tekst, så skjermleser og søk virker, og første linje blir lysarkets
+  tittel. Innholdet kan ikke redigeres, men du kan legge på steg, «Lær
+  mer» og manus. Sider uten tekst (skannede sider) merkes, så du kan
+  skrive den alternative teksten selv. PPTX er fortsatt veien til
+  redigerbart innhold.
+- **«Åpne HTML-fil …»** gjør en HTML-fil som er eksportert fra Lysark,
+  til et prosjekt igjen, i en ny mappe. Store videoer tas med hvis mappa
+  de ligger i, står ved siden av HTML-fila; ellers sier programmet
+  hvilke som mangler. Andre HTML-filer avvises.
+
 **YouTube** vises som YouTubes egen spiller, rett i lysarket. Den hentes
 fra YouTube når lysarket vises, og «Åpne på YouTube» står alltid ved
 siden av. Åpnes HTML-fila rett fra disk, vises et stillbilde med en
@@ -84,9 +98,9 @@ npm test
 npm run dist:linux
 ```
 
-`npm test` bygger programmet og kjører alle testene, også to som starter
-hele programmet (uten å vise vindu) og går gjennom import, redigering,
-lagring, eksport og avspilling.
+`npm test` bygger programmet og kjører alle testene, også fem som starter
+hele programmet (uten å vise vindu) og går gjennom import av PowerPoint,
+PDF og eksportert HTML, redigering, lagring, eksport og avspilling.
 
 ## Dokumenter
 
@@ -107,7 +121,7 @@ lagring, eksport og avspilling.
 | Mappe | Innhold |
 | --- | --- |
 | `src/shared/` | Format, tema og tegnekode som alle deler bruker |
-| `src/importer/` | PPTX-import |
+| `src/importer/` | Import av PPTX, PDF og eksportert HTML |
 | `src/player/` | Spilleren som skrives inn i HTML-fila |
 | `src/exporter/` | Bygger HTML-fila |
 | `src/main/`, `src/preload/` | Programmets hovedprosess og broen til grensesnittet |
