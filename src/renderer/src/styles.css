@@ -1212,6 +1212,10 @@ legend {
   --ls-mark-field: var(--medium-syregronn);
   --ls-mark-text: #000;
 }
+/* The text itself fills the box, so a click anywhere in it starts writing. */
+.rich-field-text .ProseMirror {
+  min-height: 90px;
+}
 .rich-field-text .ls-p {
   margin: 0 0 0.5em;
 }

@@ -846,8 +846,8 @@ Funn fra Windows, og hva som er gjort:
 | End hoppet til siste lysark mens «Lær mer»-panelet var åpent og musa hadde klikket i det | Rettet: panelene tar fokus ved klikk, og tastene som ruller (pil opp og ned, Page Up og Down, Home, End) ruller «Lær mer»-panelet og manuspanelet når fokus står der |
 | En tynn, syregrønn ramme rundt hele lysarket i Edge etter klikk og tastetrykk | Rettet: lysarkflaten og panelene har ikke fokusramme |
 | Piltastene navigerer ikke etter at man har klikket i YouTube-spilleren | Ikke rettet: tastene går da til YouTube. De runde pilene virker. Et klikk utenfor spilleren gir tastene tilbake |
-| En tom tekstblokk i byggeren tar ikke imot klikk midt i boksen, bare på første linje | Ikke rettet ennå |
-| I «Utvid» står overskriften «Lær mer» lenger til venstre enn innholdet | Ikke rettet ennå |
+| En tom tekstblokk i byggeren tar ikke imot klikk midt i boksen, bare på første linje | Rettet: hele boksen tar imot klikk (ikke prøvd på Windows etter rettingen) |
+| I «Utvid» står overskriften «Lær mer» lenger til venstre enn innholdet | Rettet: overskriften følger innholdets bredde |
 | Siste lysark (USNs logoanimasjon) viser et hvitt bilde med avspillingsknapper | Videoen starter fra hvitt. Henger sammen med spørsmål 3 i 6.14 B |
 | Eksportmeldingen blir stående til man trykker «Lukk» | Slik er det laget |
 

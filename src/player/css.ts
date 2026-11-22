@@ -67,6 +67,7 @@ body { background: ${C.indigo}; }
 /* Rich content (tables, video, embedded pages) can take the whole width. */
 .lp-panel.lp-panel-wide { position: absolute; inset: 0; z-index: 30; width: auto; border-left: 0; }
 .lp-panel.lp-panel-wide .lp-panel-body { max-width: 1100px; margin: 0 auto; }
+.lp-panel.lp-panel-wide .lp-panel-head { max-width: 1100px; margin: 0 auto; }
 .lp-panel-body { margin-top: 8px; }
 
 .lp-script {

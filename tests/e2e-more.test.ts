@@ -413,6 +413,12 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     expect(await panel.evaluate((el) => el.classList.contains('lp-panel-wide'))).toBe(true);
     expect(await panel.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(1200);
     await shot(player, 'm08-spiller-utvidet');
+    // With the focus in the panel, the keys that scroll do not leave the slide.
+    await player.keyboard.press('End');
+    await player.keyboard.press('PageDown');
+    await player.keyboard.press('ArrowDown');
+    expect(await player.locator('.lp-counter').textContent()).toBe('2 / 3');
+    expect(await panel.isVisible()).toBe(true);
 
     await player.keyboard.press('Escape');
     await expect.poll(() => panel.isHidden()).toBe(true);
