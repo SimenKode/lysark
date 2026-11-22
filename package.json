@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Turns PPTX lectures into interactive HTML and animated video in USN's visual identity",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "main": "./out/main/index.js",
   "scripts": {
     "build:player": "vite build --config vite.player.config.ts",

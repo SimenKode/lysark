@@ -27,6 +27,11 @@ is not part of any other project the owner has.
 
 ## Licences
 
+- Lysark itself is licensed GPL-3.0-or-later (`LICENSE`), chosen by the
+  owner 22.11.2026, with an additional permission that keeps exported
+  presentations out of the GPL (`EXPORT-EXCEPTION.md`). Do not change
+  either without asking him. The rules below about what may be linked in
+  are the owner's and are stricter than the GPL requires; they stand.
 - Only open-source software under a free licence. No paid or freemium
   frameworks, libraries, services or subscriptions, and nothing that is
   "free of charge" under a proprietary licence.
@@ -141,7 +146,12 @@ the manual, raise it with the owner instead of choosing silently.
   `docs/sporsmal-videre.md`; the plan built on them is `docs/plan.md`.
 - The owner has allowed commits on `main` as each tested step is done
   (22.11.2026). Pushing still needs his word.
-- Do not push, create remote repositories or publish anything unless the
-  owner asks.
+- The repository is on GitHub as `SimenKode/lysark`, private until the
+  owner makes it public himself or asks for it. Do not push, change its
+  visibility, create other remote repositories or publish anything
+  (releases, packages) unless the owner asks.
+- Commits use the owner's GitHub no-reply address, set in this
+  repository's git configuration. Never put his private e-mail address in
+  a commit, a file or a request.
 - Keep `docs/plan.md` and `docs/stakk.md` true when plans or dependencies
   change.

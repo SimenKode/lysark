@@ -143,6 +143,8 @@ function showAbout(): void {
     message: `${APP_NAME} ${app.getVersion()}`,
     detail:
       'Gjør PowerPoint-forelesninger om til interaktiv HTML i USNs visuelle profil.\n\n' +
+      'Lysark er fri programvare under GNU General Public License, versjon 3 eller senere, ' +
+      'og kommer uten noen garanti. Forelesningene du eksporterer, er dine egne.\n\n' +
       'Bygd med fri programvare (Electron, React, ProseMirror, Zod, fflate, fast-xml-parser). ' +
       'Skriftene Liberation Sans og Liberation Serif følger med under SIL Open Font License 1.1.\n\n' +
       'Programmet kontakter ikke nettet og samler ingenting.',

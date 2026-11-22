@@ -10,8 +10,11 @@ undersøkt og to feil rundt videolenker er rettet (se
 [6.11](#611-økt-3-det-som-ble-rettet-og-det-som-venter-på-svar)), og
 designspørsmålene for alt som gjenstår, er stilt samlet i
 [docs/sporsmal-videre.md](docs/sporsmal-videre.md) med forslag til ny
-inndeling av planen. **Ingenting nytt bygges før eieren har svart.**
-Ingenting er committet (eieren skal spørres først).
+inndeling av planen. Eieren svarte **«Alt som anbefalt»**, så planen er skrevet om til fem
+leveranser og leveranse 2 er startet (se
+[6.12](#612-eierens-svar-og-åpen-kildekode-22112026)). Samme dag bestemte
+eieren at prosjektet skal bli åpen kildekode på GitHub, med lisensen
+GPL-3.0.
 
 **Økt 2 i korte trekk:** del 6 var ikke fylt ut, så ingenting i
 uttrykket (6.1) er endret, og leveranse 2 er ikke påbegynt. Økten
@@ -30,8 +33,10 @@ så denne fila. Begynn med del 6. Ikke rør noe utenfor denne mappa.
 
 | Hva | Hvor |
 | --- | --- |
-| Prosjektet | `~/Forelesningsverktoy/lysark/`, eget git-repo, gren `main`, ikke pushet |
-| Siste commit | se `git log`; leveranse 1 er `af815cc`, ekte filer og logo `c576ad6`. Endringene fra økt 2 og økt 3 er ikke committet ennå. |
+| Prosjektet | `~/Forelesningsverktoy/lysark/`, eget git-repo, gren `main` |
+| På GitHub | `SimenKode/lysark`, **privat** til eieren selv gjør det offentlig eller ber om det |
+| Lisens | GPL-3.0-or-later ([LICENSE](LICENSE)), med unntak for eksporterte forelesninger ([EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md)) |
+| Commits | se `git log`. Eieren har sagt ja til commits på `main` etter hvert ferdige, testede trinn. Push og publisering krever fortsatt at han ber om det. |
 | Ferdige programfiler | `release/Lysark-0.1.0.AppImage` (Linux) og `release/Lysark-0.1.0-win.zip` (Windows), bygget på nytt etter økt 3 |
 | Spørsmål som venter på svar | [docs/sporsmal-videre.md](docs/sporsmal-videre.md) |
 | Eierens forelesninger | `eksempler/` (åtte PPTX med PDF-utgaver, ikke i git) |
@@ -568,21 +573,72 @@ To ting jeg slo opp og ikke har prøvd selv:
 - Om LGPL-bygget av FFmpeg fra BtbN har en brukbar H.264-koder, fant jeg
   ikke bekreftet. Må sjekkes på selve fila.
 
+### 6.12 Eierens svar og åpen kildekode (22.11.2026)
+
+**Designspørsmålene:** «Alt som anbefalt». Valgene står i
+[docs/sporsmal-videre.md](docs/sporsmal-videre.md), planen i
+[docs/plan.md](docs/plan.md), og unntaket for nettilgang i
+[AGENTS.md](AGENTS.md). Tre ting der er fortsatt åpne: Canvas-prøven
+sammen med eieren, om Windows-VM-en kan få mikrofon, og hvilken fil som
+ga den svarte videospilleren.
+
+**Commits:** eieren valgte én commit for økt 2 og 3, og at jeg committer
+underveis i leveranse 2 når et trinn er ferdig og testene består.
+
+**Åpen kildekode.** Eieren skrev: «Jeg tenker vi kan gjøre prosjektet
+open source på GH». Før noe ble lagt ut, gikk jeg gjennom hva som ville
+blitt offentlig, og eieren valgte:
+
+- **Lisens: GPL-3.0.** Lagt inn som GPL-3.0-or-later («versjon 3 eller
+  senere», den vanlige formen). Si fra hvis det skal være bare versjon 3.
+- **E-post:** commitene er skrevet om til GitHub-kontoens skjulte
+  adresse, og repoet bruker den framover. Den private adressen lå i alle
+  commits, og ville blitt offentlig.
+- **Privat repo nå, offentlig når eieren har sett gjennom det.**
+- **Arbeidsnotatene (denne fila og `docs/`) blir liggende i git.**
+
+Gjennomgangen viste at historikken er ren: ingen forelesninger,
+logofiler, lisensierte skrifter eller programfiler har ligget i git.
+
+Tre ting eieren må ta stilling til før repoet gjøres offentlig:
+
+1. **Unntaket for eksporterte forelesninger**
+   ([EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md)) er skrevet av meg og ikke
+   bekreftet av eieren. Bakgrunn: en eksportert HTML-fil inneholder
+   spilleren fra Lysark. Uten unntaket kunne det reises tvil om hele fila
+   (altså forelesningen) måtte deles under GPL. Unntaket sier at
+   forelesningen er forfatterens egen. Jeg er ikke jurist.
+2. **USNs profil.** Koden gjengir USNs farger og profilformer, og
+   `docs/designmanual.md` oppsummerer designmanualen. Logoen ligger ikke
+   i repoet. En lisens på koden gir ingen rett til USNs profil; README
+   sier det. Eieren bør likevel høre med USN (kommunikasjonsavdelingen)
+   om det er greit at et åpent verktøy bygger inn profilen.
+3. **Hvem eier koden.** Er programmet laget som del av stillingen ved
+   USN, kan arbeidsgiveren ha rettighetene til det (åndsverkloven § 71
+   om datamaskinprogrammer). Da er det USN som må si ja til lisensen.
+   Jeg kan ikke avgjøre dette.
+
+Gjenstår før ferdige programfiler deles offentlig (ikke nødvendig for å
+legge ut kildekoden): en samlet fil med lisenstekstene til bibliotekene
+som bygges inn.
+
+Til leveranse 2: Wikimedia ber programmer oppgi kontaktinformasjon i
+forespørslene. Når repoet er offentlig, kan adressen til repoet brukes
+til det, uten e-post.
+
 ## 7. Det neste økt bør gjøre først
 
-1. Les eierens svar i [docs/sporsmal-videre.md](docs/sporsmal-videre.md)
-   (eller i chat). Uten svar: ikke bygg noe nytt.
-2. Spør eieren om endringene fra økt 2 og økt 3 skal committes, hvis det
-   ikke er gjort.
-3. Etter svarene: skriv om [docs/plan.md](docs/plan.md) til den nye
-   inndelingen, før inn valgene øverst i spørsmålsdokumentet, og endre
-   [AGENTS.md](AGENTS.md) med den ordlyden eieren godkjenner for
-   nettilgang (spørsmål 8). Oppdater
-   [docs/prosjektformat.md](docs/prosjektformat.md) og
-   [docs/stakk.md](docs/stakk.md) når formatet og avhengighetene faktisk
+1. Les [docs/plan.md](docs/plan.md), leveranse 2, og se i `git log` hvor
+   langt byggingen er kommet. Bygg videre trinn for trinn, med tester, og
+   commit hvert ferdige trinn.
+2. Prøv HTML-fila i Canvas sammen med eieren tidlig; det avgjør
+   YouTube-innbyggingen (spørsmål 10 i
+   [docs/sporsmal-videre.md](docs/sporsmal-videre.md)).
+3. Minn eieren på de tre punktene i 6.12 før repoet gjøres offentlig.
+   Ikke push og ikke endre synligheten uten at han ber om det.
+4. Hold [docs/prosjektformat.md](docs/prosjektformat.md) og
+   [docs/stakk.md](docs/stakk.md) sanne når formatet og avhengighetene
    endres.
-4. Prøv HTML-fila i Canvas sammen med eieren tidlig; det avgjør
-   YouTube-innbyggingen (spørsmål 10).
 5. Senere: tabeller i importen (del 5, punkt 5) og endringene fra økt 2
    og 3 i Windows-VM-en.
 

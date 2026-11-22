@@ -9,7 +9,13 @@ Skrivebordsprogram som gjør en PowerPoint-forelesning (PPTX) om til
 begge i USNs visuelle profil. Programmet skal virke på Windows 11 og
 Linux Mint / Ubuntu.
 
+Lysark er fri programvare under GNU General Public License, versjon 3
+eller senere (se [Lisens](#lisens)).
+
 ## Status
+
+Leveranse 2 («Lær mer»-byggeren) er under bygging; planen står i
+[docs/plan.md](docs/plan.md).
 
 Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
 eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint, og
@@ -67,11 +73,13 @@ lagring, eksport og avspilling.
 | --- | --- |
 | [HANDOFF.md](HANDOFF.md) | Status, hva som er prøvd, og eierens tilbakemeldinger til neste økt |
 | [AGENTS.md](AGENTS.md) | Reglene alle som arbeider i prosjektet skal følge |
-| [docs/plan.md](docs/plan.md) | De tre leveransene og hva som er med i hver |
+| [docs/plan.md](docs/plan.md) | De fem leveransene og hva som er med i hver |
 | [docs/stakk.md](docs/stakk.md) | Valgt teknologi, begrunnelse og lisens per avhengighet |
 | [docs/prosjektformat.md](docs/prosjektformat.md) | Prosjektformatet (scener, elementer, tidslinje) |
 | [docs/designmanual.md](docs/designmanual.md) | Det som gjelder fra USNs designmanual, og hvordan programmet følger det |
 | [docs/sporsmal-leveranse-1.md](docs/sporsmal-leveranse-1.md) | Designspørsmålene for leveranse 1, med svar |
+| [docs/sporsmal-videre.md](docs/sporsmal-videre.md) | Designspørsmålene for leveranse 2–5, med svar |
+| [LICENSE](LICENSE), [EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md) | Lisensen, og unntaket for forelesninger du eksporterer |
 
 ## Mapper
 
@@ -88,3 +96,25 @@ lagring, eksport og avspilling.
 
 Ikke i git: `merkevare/` (USNs logopakke), `eksempler/` (ekte
 forelesninger), `release/` (ferdige installasjonsfiler).
+
+## Lisens
+
+Lysark er fri programvare: du kan bruke, endre og dele det videre etter
+[GNU General Public License](LICENSE), versjon 3 eller senere. Deler du en
+endret utgave av programmet, må kildekoden følge med på samme vilkår.
+Programmet kommer uten noen garanti.
+
+**Forelesningene du eksporterer, er dine.** En eksportert HTML-fil
+inneholder spilleren fra Lysark. Et uttrykkelig unntak
+([EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md)) sier at du kan dele slike
+filer på de vilkårene du selv vil, uten at innholdet ditt blir underlagt
+GPL.
+
+Lisensen dekker ikke:
+
+- **USNs navn, logo og visuelle profil.** De tilhører Universitetet i
+  Sørøst-Norge. Logoen følger ikke med; du må selv ha logopakka fra USN.
+- **Skriftene** Liberation Sans og Liberation Serif, som har sin egen frie
+  lisens (SIL Open Font License 1.1, se `resources/fonts/LICENSE`).
+- **Bibliotekene** programmet bygger på. De har egne frie lisenser, se
+  [docs/stakk.md](docs/stakk.md).

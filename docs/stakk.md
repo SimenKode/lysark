@@ -5,6 +5,11 @@ prosjektenes egne lisensfiler. Versjonene er de nyeste den dagen; at de
 virker sammen, bekreftes når prosjektet settes opp, og tabellen rettes
 hvis en versjon må byttes.
 
+Lysark selv har lisensen GPL-3.0-or-later (valgt 22.11.2026), med et
+unntak som holder eksporterte forelesninger utenfor GPL
+([EXPORT-EXCEPTION.md](../EXPORT-EXCEPTION.md)). Alle avhengighetene
+under har lisenser som er forenlige med den.
+
 Regelen (se [AGENTS.md](../AGENTS.md)): kode som bygges inn i programmet,
 har tillatende fri lisens. GPL-programvare brukes bare som eget program
 som startes utenfra (FFmpeg).
@@ -71,7 +76,7 @@ og ville blitt bygd inn i programmet.
 | fast-xml-parser | 5.12.1 | MIT | Lese XML i PPTX |
 | prosemirror-model, -state, -view, -commands, -history, -keymap | 1.x | MIT | Redigering av formatert tekst (fet, kursiv, markering, lenker, lister) |
 
-### Leveranse 2 (tas inn da)
+### Leveranse 4 og 5 (tas inn da)
 
 | Pakke | Versjon | Lisens | Brukes til |
 | --- | --- | --- | --- |
@@ -83,7 +88,8 @@ og ville blitt bygd inn i programmet.
 
 | Program | Lisens | Brukes til |
 | --- | --- | --- |
-| FFmpeg, statisk bygg fra BtbN/FFmpeg-Builds | GPL (med libx264) eller LGPL (med openh264) | Koding til MP4, lydbehandling. Eget program, ikke bygd inn. Hvilket bygg avgjøres i leveranse 3 |
+| FFmpeg, statisk bygg fra BtbN/FFmpeg-Builds | GPL (med libx264) | Koding til MP4, lydbehandling. Eget program, ikke bygd inn. GPL-bygget er valgt (22.11.2026): en fast, navngitt utgave, hentet med kontroll av sjekksum og lagt ved programmet med lisenstekst og lenke til kildekoden |
+| pdfjs-dist (pdf.js) | Apache-2.0 | Lese PDF som inndata. Bygges inn. Skriftdataene pakken har med seg, kontrolleres før den tas inn |
 
 Lydopptak bruker nettlesermotorens egne funksjoner (mikrofon og
 lydbehandling), uten bibliotek.
