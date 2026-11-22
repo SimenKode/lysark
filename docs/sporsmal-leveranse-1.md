@@ -3,19 +3,17 @@
 **Svar 22.11.2026: «Alt som anbefalt».** Alle anbefalingene under er
 dermed valgt, og programmet heter Lysark. Leveranse 1 er bygd etter dem.
 
-Disse tilleggsspørsmålene er fortsatt ubesvart, og trengs for å prøve
-leveransen ferdig:
+Logopakka og forelesningene kom 22.11.2026 og ligger i `merkevare/` og
+`eksempler/`. Filene svarte selv på to av tilleggsspørsmålene:
+forelesningene er bygd på USNs PowerPoint-mal og er i 16:9, og video er
+mest lenker til YouTube og Vimeo, med enkelte lokale filer.
+
+Disse tilleggsspørsmålene er fortsatt ubesvart:
 
 - Hvilken læringsplattform bruker du, og hvordan legger du ut filer der
   i dag? (spørsmål 2)
 - Har du en Windows 11-maskin å prøve på, og styres den av USN?
   (spørsmål 3)
-- To–tre ekte forelesninger i `eksempler/`. Er de bygd på USNs mal og i
-  16:9? (spørsmål 4)
-- Hvor ligger videoene dine vanligvis: som filer hos deg, eller som
-  lenker? (spørsmål 9)
-- USNs logopakke i `merkevare/` (spørsmål 14). I programmet velges
-  filene under Innstillinger.
 
 Ett valg ble justert under byggingen: rene tittel- og seksjonslysark
 (bare tittel og undertittel) får temaets oppsett ved import, med teksten

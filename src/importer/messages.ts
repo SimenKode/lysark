@@ -19,6 +19,11 @@ export const WARNINGS = {
     code: 'background',
     message: 'Bakgrunnsbildet på lysbildet følger ikke med. Temaet bestemmer bakgrunnen.',
   }),
+  formula: (): ImportWarning => ({
+    code: 'text',
+    message:
+      'En tekstboks med formler er tatt med som bilde, slik at formlene blir riktige. Teksten i den kan ikke endres her. Skriv en alternativ tekst som sier hva formelen viser.',
+  }),
   geometry: (): ImportWarning => ({
     code: 'geometry',
     message: 'Noen former er forenklet til rektangler.',

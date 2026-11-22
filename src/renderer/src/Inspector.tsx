@@ -1,6 +1,7 @@
 // The side panel: properties of the selected element, of the scene, and
 // the scene's steps.
 import { useEffect, useState, type ReactNode } from 'react';
+import { hasLogo } from '../../shared/api';
 import { richText } from '../../shared/format/factory';
 import {
   SCENE_KINDS,
@@ -810,7 +811,8 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
   const logo = useStore((s) => s.logo);
   const updateScene = useStore((s) => s.updateScene);
   const theme = getTheme(project);
-  const logoReady = logo.light || logo.dark;
+  const logoReady =
+    hasLogo(logo, project.meta.language, 'light') || hasLogo(logo, project.meta.language, 'dark');
   return (
     <div className="panel-body">
       <Field label="Navn i innholdsoversikten">

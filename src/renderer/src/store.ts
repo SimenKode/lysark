@@ -75,7 +75,7 @@ export const useStore = create<State>((set, get) => ({
   showGrid: false,
   previewSteps: null,
   clipboard: [],
-  logo: { light: false, dark: false, version: 0 },
+  logo: { nb: { light: false, dark: false }, en: { light: false, dark: false }, version: 0 },
   report: null,
   notice: null,
 

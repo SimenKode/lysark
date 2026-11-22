@@ -19,10 +19,14 @@ const FONT_FILES: Record<FontFace, string> = {
   'serif-italic': 'LiberationSerif-Italic.ttf',
 };
 
-function sources(dir: string, sidecarHref: ExportSources['sidecarHref']): ExportSources {
+function sources(
+  dir: string,
+  project: Project,
+  sidecarHref: ExportSources['sidecarHref'],
+): ExportSources {
   const logo: ExportSources['logo'] = {};
   for (const variant of ['light', 'dark'] as LogoVariant[]) {
-    const file = logoFile(variant);
+    const file = logoFile(project.meta.language, variant);
     if (file) logo[variant] = { mime: file.mime, data: readFileSync(file.file) };
   }
   return {
@@ -39,7 +43,7 @@ export function exportHtml(dir: string, project: Project, outFile: string): Expo
   const sidecarName = `${stem}_filer`;
   const result = buildHtml(
     project,
-    sources(dir, (_id, file) => `${encodeURIComponent(sidecarName)}/${basename(file)}`),
+    sources(dir, project, (_id, file) => `${encodeURIComponent(sidecarName)}/${basename(file)}`),
   );
   writeFileSync(outFile, result.html, 'utf8');
   let sidecarDir: string | undefined;
@@ -63,7 +67,7 @@ export function exportHtml(dir: string, project: Project, outFile: string): Expo
 export function writePreview(dir: string, project: Project): string {
   const result = buildHtml(
     project,
-    sources(dir, (_id, file) => pathToFileURL(mediaPath(dir, file)).toString()),
+    sources(dir, project, (_id, file) => pathToFileURL(mediaPath(dir, file)).toString()),
   );
   const folder = join(app.getPath('temp'), 'lysark-forhandsvisning');
   mkdirSync(folder, { recursive: true });

@@ -258,6 +258,8 @@ export const DEFAULT_TX_STYLES =
 export interface LayoutSpec {
   /** The type attribute of p:sldLayout; left out when undefined. */
   type?: string;
+  /** The layout's name in PowerPoint; "Oppsett <n>" when undefined. */
+  name?: string;
   shapes: string;
 }
 
@@ -355,6 +357,8 @@ export interface DeckSpec {
   clrMap?: string;
   /** Theme colours by scheme name (dk1, lt1, accent1 ...), as RRGGBB. */
   themeColors?: Record<string, string>;
+  /** Typeface of running text in the theme. Default "Liberation Sans". */
+  bodyTypeface?: string;
   /** dc:title in docProps/core.xml; no core properties part when undefined. */
   coreTitle?: string;
   /** Content of p:defaultTextStyle in the presentation. */
@@ -402,7 +406,7 @@ function shapeTree(shapes: string): string {
   );
 }
 
-function themeXml(colors: Record<string, string>): string {
+function themeXml(colors: Record<string, string>, bodyTypeface: string): string {
   const order = [
     'dk1',
     'lt1',
@@ -430,7 +434,7 @@ function themeXml(colors: Record<string, string>): string {
     `${XML_HEADER}<a:theme xmlns:a="${NS_A}" name="Testtema"><a:themeElements>` +
     `<a:clrScheme name="Test">${scheme}</a:clrScheme>` +
     '<a:fontScheme name="Test"><a:majorFont><a:latin typeface="Liberation Serif"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>' +
-    '<a:minorFont><a:latin typeface="Liberation Sans"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>' +
+    `<a:minorFont><a:latin typeface="${escapeXml(bodyTypeface)}"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>` +
     '<a:fmtScheme name="Test"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>' +
     '<a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>' +
     '<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>' +
@@ -519,14 +523,17 @@ export function buildPptx(spec: DeckSpec): Uint8Array {
       `<p:txStyles>${spec.txStyles ?? DEFAULT_TX_STYLES}</p:txStyles></p:sldMaster>`,
   );
   add('ppt/slideMasters/_rels/slideMaster1.xml.rels', relationships(masterRels));
-  add('ppt/theme/theme1.xml', themeXml({ ...THEME_COLORS, ...spec.themeColors }));
+  add(
+    'ppt/theme/theme1.xml',
+    themeXml({ ...THEME_COLORS, ...spec.themeColors }, spec.bodyTypeface ?? 'Liberation Sans'),
+  );
 
   // Layouts.
   layouts.forEach((layout, i) => {
     const path = `ppt/slideLayouts/slideLayout${i + 1}.xml`;
     add(
       path,
-      `${XML_HEADER}<p:sldLayout ${ROOT_NS}${layout.type !== undefined ? ` type="${layout.type}"` : ''} preserve="1"><p:cSld name="Oppsett ${i + 1}">${shapeTree(layout.shapes)}</p:cSld>` +
+      `${XML_HEADER}<p:sldLayout ${ROOT_NS}${layout.type !== undefined ? ` type="${layout.type}"` : ''} preserve="1"><p:cSld name="${escapeXml(layout.name ?? `Oppsett ${i + 1}`)}">${shapeTree(layout.shapes)}</p:cSld>` +
         '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>',
     );
     add(

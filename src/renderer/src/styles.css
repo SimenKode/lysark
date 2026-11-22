@@ -857,6 +857,10 @@ legend {
   justify-content: flex-end;
   margin-top: 20px;
 }
+.logo-status {
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
 .logo-row {
   display: flex;
   align-items: center;

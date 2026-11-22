@@ -18,12 +18,10 @@ const api = (): LysarkApi => window.lysark;
 function fail(error: unknown): void {
   const text = error instanceof Error ? error.message : String(error);
   // Electron prefixes errors from the main process; show only our own text.
-  useStore
-    .getState()
-    .setNotice({
-      kind: 'error',
-      text: text.replace(/^Error invoking remote method '[^']+': Error: /, ''),
-    });
+  useStore.getState().setNotice({
+    kind: 'error',
+    text: text.replace(/^Error invoking remote method '[^']+': Error: /, ''),
+  });
 }
 
 async function guard<T>(work: () => Promise<T>): Promise<T | undefined> {
@@ -263,13 +261,13 @@ export async function refreshLogo(): Promise<void> {
   if (status) useStore.getState().setLogo(status);
 }
 
-export async function chooseLogo(variant: 'light' | 'dark'): Promise<void> {
-  const status = await guard(() => api().chooseLogo(variant));
+export async function chooseLogoFolder(): Promise<void> {
+  const status = await guard(() => api().chooseLogoFolder());
   if (status) useStore.getState().setLogo(status);
 }
 
-export async function clearLogo(variant: 'light' | 'dark'): Promise<void> {
-  const status = await guard(() => api().clearLogo(variant));
+export async function clearLogos(): Promise<void> {
+  const status = await guard(() => api().clearLogos());
   if (status) useStore.getState().setLogo(status);
 }
 

@@ -12,10 +12,11 @@ Linux Mint / Ubuntu.
 ## Status
 
 Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
-eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint. Det som
-gjenstår før leveransen kan kalles ferdig, står i
-[docs/plan.md](docs/plan.md): utprøving mot ekte forelesninger, på
-Windows 11 og i læringsplattformen, og USNs logofiler.
+eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint, og
+importen er prøvd mot åtte ekte forelesninger. Det som gjenstår før
+leveransen kan kalles ferdig, står i [docs/plan.md](docs/plan.md):
+utprøving på Windows 11 og i læringsplattformen, og godkjenning av
+uttrykket.
 
 ## Slik bruker du programmet
 
@@ -32,8 +33,9 @@ Windows 11 og i læringsplattformen, og USNs logofiler.
 6. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
 
-USNs logo vises først når originalfilene fra USNs logopakke er valgt under
-Innstillinger.
+USNs logo hentes fra logopakka: under Innstillinger velger du mappa der
+pakka er pakket ut, og Lysark finner hovedlogoen i lilla og hvit, på norsk
+og engelsk.
 
 ## For utvikling
 

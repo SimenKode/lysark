@@ -2,13 +2,14 @@
 // not changed are kept between renders, so images do not reload while the
 // owner edits something else.
 import { memo, useLayoutEffect, useRef } from 'react';
-import { logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
+import { hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
 import { sceneState } from '../../shared/render/timeline';
 import { getTheme } from '../../shared/theme/theme';
 
 export function renderContext(project: Project, logo: LogoStatus): RenderContext {
+  const language = project.meta.language;
   return {
     doc: document,
     project,
@@ -19,8 +20,10 @@ export function renderContext(project: Project, logo: LogoStatus): RenderContext
       return asset ? mediaUrl(asset.file) : undefined;
     },
     logo: {
-      light: logo.light ? logoUrl('light', logo.version) : undefined,
-      dark: logo.dark ? logoUrl('dark', logo.version) : undefined,
+      light: hasLogo(logo, language, 'light')
+        ? logoUrl(language, 'light', logo.version)
+        : undefined,
+      dark: hasLogo(logo, language, 'dark') ? logoUrl(language, 'dark', logo.version) : undefined,
     },
     strings: SCENE_STRINGS[project.meta.language],
   };

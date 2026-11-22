@@ -14,6 +14,8 @@ export interface Placeholder {
 }
 
 export interface MasterPart {
+  /** Typeface of running text in the theme (a:minorFont), e.g. "Calibri". */
+  bodyTypeface?: string;
   placeholders: Placeholder[];
   titleStyle?: XmlNode;
   bodyStyle?: XmlNode;
@@ -25,6 +27,8 @@ export interface MasterPart {
 export interface LayoutPart {
   /** The layout's type attribute, e.g. "title", "secHead", "obj". */
   type?: string;
+  /** The layout's name as shown in PowerPoint, e.g. "Tittellysbilde". */
+  name?: string;
   placeholders: Placeholder[];
   colorMapOverride?: Record<string, string>;
   master?: MasterPart;
@@ -137,6 +141,7 @@ export class Deck {
     if (!root) return undefined;
     const layout: LayoutPart = {
       type: attr(root, 'type'),
+      name: attr(child(root, 'p:cSld'), 'name'),
       placeholders: collectPlaceholders(root),
       colorMapOverride: colorMapOverride(root),
       master: this.master(this.pkg.relatedPart(part, '/slideMaster')),
@@ -153,13 +158,18 @@ export class Deck {
     if (!root) return undefined;
     const styles = child(root, 'p:txStyles');
     const themePart = this.pkg.relatedPart(part, '/theme');
+    const theme = themePart ? this.pkg.xml(themePart) : undefined;
     const master: MasterPart = {
+      bodyTypeface: attr(
+        descend(theme, 'a:themeElements', 'a:fontScheme', 'a:minorFont', 'a:latin'),
+        'typeface',
+      ),
       placeholders: collectPlaceholders(root),
       titleStyle: child(styles, 'p:titleStyle'),
       bodyStyle: child(styles, 'p:bodyStyle'),
       otherStyle: child(styles, 'p:otherStyle'),
       colorMap: child(root, 'p:clrMap')?.attrs ?? {},
-      colorScheme: readColorScheme(themePart ? this.pkg.xml(themePart) : undefined),
+      colorScheme: readColorScheme(theme),
     };
     this.masters.set(part, master);
     return master;

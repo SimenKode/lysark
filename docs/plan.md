@@ -80,20 +80,60 @@ Bygd og prøvd automatisk på Linux Mint:
 - forhåndsvisning og eksport til én HTML-fil
 - spilleren: tastatur, klikk, sveip, innhold, manus, fordypningspanel,
   hjelp, fullskjerm og utskrift
+- USNs logo, hentet uendret fra logopakka (norsk og engelsk, lilla og
+  hvit)
+
+### Prøvd mot de ekte forelesningene
+
+Alle de åtte forelesningene i PB1020 (315 lysark) og malfila importeres
+uten feil. Introduksjonen og de tjue første lysarkene om betong er
+sammenlignet side om side med PDF-utgavene. Etter rettingene under
+stemmer tekst, linjeskift, bilder og tabeller godt overens.
+
+Det de ekte filene avslørte, og som er rettet:
+
+- Forelesningene bruker USNs PowerPoint-mal, som ikke merker hva slags
+  lysark det er. Tittel-, seksjons- og avslutningslysark kjennes nå igjen
+  på navnet på oppsettet («Tittellysbilde», «Deloverskrift»,
+  «Avslutningsside»).
+- Malens eget logobilde på tittellysarket tas ikke med; temaet setter inn
+  logoen.
+- Tekstbokser med formler mistet teksten. PowerPoint lagrer et bilde av
+  hele boksen, og det brukes nå, slik at formlene blir nøyaktig som i
+  PowerPoint. Boksen kan da ikke redigeres, og rapporten sier fra.
+- Lysarkene er satt opp med Calibri (PowerPoint bytter til den når
+  profilskriften Maison Neue ikke er installert). Calibri er smalere enn
+  Arial, så løpende tekst importeres en tidel mindre. Da blir
+  linjeskiftene som i PowerPoint, og teksten holder seg i boksene.
+- Tabeller delte tall over to linjer («B10» ble «B1» og «0»). Tabeller
+  deler aldri ord eller tall lenger.
+- Overskriftsrader som er laget ved å fargelegge første rad for hånd,
+  kjennes igjen.
+
+Det filene viste om innholdet:
+
+- **Ingen av forelesningene har notater.** Manus må derfor skrives i
+  Lysark; importen har ingenting å hente.
+- **Omtrent tre av fire bilder mangler alternativ tekst** (428 av 581).
+  Den må skrives for at HTML-fila skal være universelt utformet.
+- **Video er mest lenker** til YouTube og Vimeo (20 stykker). De vises
+  som en lenke som åpnes i nettleseren. Én forelesning har en lokal
+  video på 112 MB, som legges ved siden av HTML-fila ved eksport. Siste
+  lysark i hver forelesning er USNs logoanimasjon som video.
+- SmartArt finnes på 6 lysark, formler på 2, og 32 lysark har former som
+  er forenklet til rektangler.
 
 Gjenstår før leveransen er ferdig:
 
-1. **Ekte forelesninger.** Importen er bare prøvd mot testfiler laget for
-   formålet, og mot en av dem lagret på nytt av LibreOffice. Ingen fil
-   skrevet av PowerPoint selv er prøvd.
-2. **Windows 11.** Programmet er ikke startet på Windows.
-3. **Læringsplattformen.** HTML-fila er ikke prøvd der.
-4. **Logo.** Ingen logofiler er valgt, så logoen er ikke sett i bruk.
-5. **Godkjenning av uttrykket** på dine egne scener.
+1. **Windows 11.** Programmet er ikke startet på Windows.
+2. **Læringsplattformen.** HTML-fila er ikke prøvd der.
+3. **Godkjenning av uttrykket** på dine egne scener.
+4. **De øvrige lysarkene.** Bare 30 av 315 er sett på side om side.
 
 Kjente begrensninger i importen (kommer i rapporten der det er relevant):
 
 - SmartArt, diagrammer og innebygde objekter følger ikke med.
+- Formler blir bilder av hele tekstboksen, ikke redigerbar matematikk.
 - Bilder i EMF, WMF og TIFF følger ikke med.
 - Farger blir nærmeste profilfarge; lyse og mørke varianter av samme
   farge kan bli like.
@@ -101,13 +141,13 @@ Kjente begrensninger i importen (kommer i rapporten der det er relevant):
   rektangler. Buede koblinger blir rette.
 - Tekst og bilder som ligger i PowerPoint-malen (ikke på lysarket)
   følger ikke med; temaet bestemmer bakgrunn og logo.
-- Tabeller mister fyllfarger, kantlinjer og justering per celle.
+- Tabeller mister fyllfarger, kantlinjer, radhøyder og justering per
+  celle.
+- Avstand mellom avsnitt følger temaet, ikke PowerPoint.
 - Lenker på hele former og bilder følger ikke med, bare lenker i tekst.
 
 ## Rekkefølgen videre
 
-1. Logopakke og to–tre ekte forelesninger på plass (utenfor git).
-2. Importen prøves mot de ekte filene, og rettes der den bommer.
-3. Uttrykket godkjennes på dine egne scener.
-4. Utprøving på Windows 11 og i læringsplattformen.
-5. Leveranse 2.
+1. Uttrykket godkjennes på dine egne scener.
+2. Utprøving på Windows 11 og i læringsplattformen.
+3. Leveranse 2.

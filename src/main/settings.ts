@@ -1,22 +1,43 @@
-// Settings kept between runs: where the owner's USN logo files are, and
-// recently used projects. Stored in the user's own data folder.
+// Settings kept between runs: USN's logo files and recently used projects.
+// Stored in the user's own data folder.
 import { app } from 'electron';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { extname, join } from 'node:path';
-import type { LogoStatus, LogoVariant } from '../shared/api';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { join } from 'node:path';
+import type { LogoLanguage, LogoStatus, LogoVariant } from '../shared/api';
 
 interface LogoFile {
   file: string;
   mime: string;
 }
 
+type LogoKey = `${LogoLanguage}-${LogoVariant}`;
+
 interface Settings {
-  logo: Partial<Record<LogoVariant, LogoFile>>;
+  logo: Partial<Record<LogoKey, LogoFile>>;
   logoVersion: number;
   recent: string[];
 }
 
-const LOGO_MIME: Record<string, string> = { '.svg': 'image/svg+xml', '.png': 'image/png' };
+/**
+ * The files Lysark uses from USN's logo package: the primary logo in purple
+ * for light surfaces and in white for purple and indigo surfaces, in
+ * Norwegian and in English. The names are the package's own.
+ */
+const PACKAGE_FILES: Record<LogoKey, string> = {
+  'nb-light': 'USN-logo_lilla.svg',
+  'nb-dark': 'USN-logo_hvit.svg',
+  'en-light': 'USN-logo_purple-EN.svg',
+  'en-dark': 'USN-logo_white-EN.svg',
+};
+const KEYS = Object.keys(PACKAGE_FILES) as LogoKey[];
 
 function settingsPath(): string {
   return join(app.getPath('userData'), 'innstillinger.json');
@@ -49,43 +70,81 @@ function save(): void {
   writeFileSync(settingsPath(), JSON.stringify(load(), null, 2), 'utf8');
 }
 
-export function logoStatus(): LogoStatus {
-  const s = load();
-  return {
-    light: !!s.logo.light && existsSync(s.logo.light.file),
-    dark: !!s.logo.dark && existsSync(s.logo.dark.file),
-    version: s.logoVersion,
-  };
-}
-
-/** The stored logo file for a variant, if the owner has chosen one. */
-export function logoFile(variant: LogoVariant): LogoFile | undefined {
-  const file = load().logo[variant];
+function stored(key: LogoKey): LogoFile | undefined {
+  const file = load().logo[key];
   return file && existsSync(file.file) ? file : undefined;
 }
 
+export function logoStatus(): LogoStatus {
+  return {
+    nb: { light: !!stored('nb-light'), dark: !!stored('nb-dark') },
+    en: { light: !!stored('en-light'), dark: !!stored('en-dark') },
+    version: load().logoVersion,
+  };
+}
+
 /**
- * Stores a copy of an original logo file. The file is copied byte for
- * byte; the logo is never converted or altered.
+ * The logo file for a language and surface. An English presentation uses
+ * the Norwegian logo when the English one is not in the package.
  */
-export function setLogo(variant: LogoVariant, source: string): void {
-  const ext = extname(source).toLowerCase();
-  const mime = LOGO_MIME[ext];
-  if (!mime) throw new Error('Logoen må være en SVG- eller PNG-fil fra USNs logopakke.');
+export function logoFile(language: LogoLanguage, variant: LogoVariant): LogoFile | undefined {
+  return (
+    stored(`${language}-${variant}`) ?? (language === 'en' ? stored(`nb-${variant}`) : undefined)
+  );
+}
+
+function findFile(folder: string, name: string, depth = 0): string | undefined {
+  if (depth > 6) return undefined;
+  let entries;
+  try {
+    entries = readdirSync(folder, { withFileTypes: true });
+  } catch {
+    return undefined;
+  }
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name === name) return join(folder, entry.name);
+  }
+  for (const entry of entries) {
+    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+      const found = findFile(join(folder, entry.name), name, depth + 1);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Finds the logo files in an unpacked copy of USN's logo package and stores
+ * copies of them. The files are copied byte for byte; the logo is never
+ * converted or altered.
+ */
+export function setLogosFromFolder(folder: string): void {
+  const found = KEYS.map((key) => [key, findFile(folder, PACKAGE_FILES[key])] as const).filter(
+    (entry): entry is readonly [LogoKey, string] => entry[1] !== undefined,
+  );
+  if (!found.some(([key]) => key.startsWith('nb-'))) {
+    throw new Error(
+      `Fant ikke logofilene i mappa. Velg mappa der USNs logopakke er pakket ut (den inneholder ${PACKAGE_FILES['nb-light']} og ${PACKAGE_FILES['nb-dark']}).`,
+    );
+  }
   mkdirSync(brandDir(), { recursive: true });
-  const target = join(brandDir(), `${variant}${ext}`);
-  copyFileSync(source, target);
   const s = load();
-  s.logo[variant] = { file: target, mime };
+  for (const [key, source] of found) {
+    const target = join(brandDir(), `${key}.svg`);
+    copyFileSync(source, target);
+    s.logo[key] = { file: target, mime: 'image/svg+xml' };
+  }
   s.logoVersion += 1;
   save();
 }
 
-export function clearLogo(variant: LogoVariant): void {
+export function clearLogos(): void {
   const s = load();
-  const current = s.logo[variant];
-  if (current) rmSync(current.file, { force: true });
-  delete s.logo[variant];
+  for (const key of KEYS) {
+    const current = s.logo[key];
+    if (current) rmSync(current.file, { force: true });
+  }
+  s.logo = {};
   s.logoVersion += 1;
   save();
 }

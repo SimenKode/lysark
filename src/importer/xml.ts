@@ -23,6 +23,7 @@ const CANONICAL_PREFIX: Record<string, string> = {
   'http://purl.oclc.org/ooxml/officeDocument/relationships': 'r',
   'http://schemas.openxmlformats.org/markup-compatibility/2006': 'mc',
   'http://schemas.microsoft.com/office/powerpoint/2010/main': 'p14',
+  'http://schemas.microsoft.com/office/drawing/2010/main': 'a14',
   'http://schemas.microsoft.com/office/drawing/2017/decorative': 'adec',
   'http://schemas.openxmlformats.org/package/2006/relationships': 'rel',
   'http://schemas.openxmlformats.org/package/2006/metadata/core-properties': 'cp',

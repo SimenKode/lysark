@@ -11,8 +11,9 @@ single-file HTML presentation and (2) an animated MP4 video with recorded
 voice-over, both in USN's visual identity. Targets: Windows 11 and Linux
 Mint / Ubuntu.
 
-The project is self-contained. Do not read, search or change anything
-outside this folder. It is not part of any other project the owner has.
+The project is self-contained and lives in `lysark/`, with its own git
+repository. Do not read, search or change anything outside this folder. It
+is not part of any other project the owner has.
 
 ## Language
 
@@ -103,6 +104,11 @@ the manual, raise it with the owner instead of choosing silently.
   windows on the owner's screen from tests.
 - `npm run dist:linux` and `npm run dist:win` package the program into
   `release/`.
+- `eksempler/` holds the owner's real lectures (never in git).
+  `tests/real-files.test.ts` imports all of them, and
+  `tests/real-screens.test.ts` saves a picture of every scene of one of
+  them (see the comment at its top). Compare against the owner's own PDF
+  exports before and after any change to the importer.
 
 ## Working with the owner
 

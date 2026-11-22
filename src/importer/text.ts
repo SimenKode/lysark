@@ -185,6 +185,24 @@ export function autofitScale(bodyPr: XmlNode | undefined): number {
  * Stage font size for a set of weighted sizes: the size covering the most
  * characters, scaled by autofit. Undefined when no size could be resolved.
  */
+/**
+ * Typefaces that are clearly narrower than Arial. Lysark sets running text
+ * in Liberation Sans, which has Arial's widths, so text written in one of
+ * these would need more room and break its lines differently.
+ *
+ * Maison Neue is USN's profile font. On a machine without it PowerPoint
+ * shows Calibri instead, and that is what the slides were laid out with.
+ */
+const NARROW_TYPEFACE = /^(calibri|carlito|aptos|maison neue)/i;
+
+/**
+ * Factor on imported sizes of running text so that it takes about the room
+ * it had in PowerPoint. Calibri is roughly a tenth narrower than Arial.
+ */
+export function widthCompensation(bodyTypeface: string | undefined): number {
+  return bodyTypeface && NARROW_TYPEFACE.test(bodyTypeface.trim()) ? 0.9 : 1;
+}
+
 export function stageFontSize(
   sizeWeights: Map<number, number>,
   fontScale: number,

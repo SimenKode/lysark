@@ -15,6 +15,9 @@ const built =
 const packaged = process.env.LYSARK_APP;
 /** Set LYSARK_SHOTS to a folder to keep screenshots of each stage. */
 const shots = process.env.LYSARK_SHOTS;
+/** USN's unpacked logo package, when the owner has put it in merkevare/ (never in git). */
+const logoPackage = join(root, 'merkevare');
+const hasLogoPackage = existsSync(join(logoPackage, 'Hovedlogo'));
 
 describe.skipIf(!built)('the program, end to end', () => {
   let work: string;
@@ -128,6 +131,38 @@ describe.skipIf(!built)('the program, end to end', () => {
       .toBe('Lagret');
     const saved = JSON.parse(readFileSync(join(projectDir, 'prosjekt.json'), 'utf8'));
     expect(JSON.stringify(saved)).toContain('Overskrift A ny');
+  });
+
+  it.skipIf(!hasLogoPackage)('finds USN’s logo in the unpacked logo package', async () => {
+    expect(await page.locator('.stage-inner .ls-logo').count()).toBe(0);
+    await app.evaluate(({ dialog }, folder) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] });
+    }, logoPackage);
+    await page.getByRole('button', { name: 'Innstillinger' }).click();
+    await page.getByRole('button', { name: 'Velg mappa med logopakka …' }).click();
+    await expect.poll(() => page.locator('.logo-status .ok').count()).toBe(2);
+    await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
+    // Light surface: the purple logo, bottom left, unchanged proportions.
+    const logo = page.locator('.stage-inner .ls-logo');
+    await expect.poll(() => logo.count()).toBe(1);
+    expect(await logo.getAttribute('src')).toContain('brand/nb-light');
+    await expect
+      .poll(() => logo.evaluate((el) => (el as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
+    const ratio = await logo.evaluate((el) => {
+      const img = el as HTMLImageElement;
+      return img.offsetWidth / img.offsetHeight / (img.naturalWidth / img.naturalHeight);
+    });
+    expect(ratio).toBeCloseTo(1, 2);
+    expect(await logo.evaluate((el) => (el as HTMLElement).style.left)).toBe('120px');
+    // Purple surface: the white logo.
+    await page.locator('.scene-item').first().click();
+    await expect
+      .poll(() => page.locator('.stage-inner .ls-logo').getAttribute('src'))
+      .toContain('brand/nb-dark');
+    await shot(page, '04b-logo');
+    await page.locator('.scene-item').nth(1).click();
+    await page.waitForSelector('.stage-inner .ls-el-table');
   });
 
   it('exports one HTML file that works on its own', async () => {

@@ -49,6 +49,7 @@ import {
   plainParagraphs,
   readTextBody,
   stageFontSize,
+  widthCompensation,
   valignOf,
   type TextBody,
   type TextEnvironment,
@@ -169,10 +170,66 @@ function roleOf(placeholderType: string): TextRole {
   return 'body';
 }
 
-function sceneKindOf(layoutType: string | undefined): SceneKind {
-  if (layoutType === 'title') return 'title';
-  if (layoutType === 'secHead') return 'section';
+/**
+ * The kind of scene, from the layout. Templates often leave out the type
+ * attribute (USN's own does), so the layout's name counts as well.
+ */
+function sceneKindOf(layoutType: string | undefined, layoutName: string | undefined): SceneKind {
+  const name = (layoutName ?? '').trim().toLowerCase();
+  if (layoutType === 'title' || /^(tittellysbilde|title slide|forside)/.test(name)) return 'title';
+  if (layoutType === 'secHead' || /^(deloverskrift|section header|seksjonsoverskrift)/.test(name)) {
+    return 'section';
+  }
+  if (/^(avslutning|closing|avslutt)/.test(name)) return 'closing';
   return 'content';
+}
+
+const MATH = new Set(['a14:m']);
+
+/**
+ * True when the first row's cells are filled and the second row's are not:
+ * a header row made by hand instead of with the table style.
+ */
+function hasFilledFirstRow(table: XmlNode | undefined): boolean {
+  const rows = children(table, 'a:tr');
+  if (rows.length < 2) return false;
+  const filled = (tr: XmlNode): boolean[] =>
+    children(tr, 'a:tc').map((tc) => {
+      const properties = child(tc, 'a:tcPr');
+      return !!(child(properties, 'a:solidFill') ?? child(properties, 'a:gradFill'));
+    });
+  const first = filled(rows[0]!);
+  const second = filled(rows[1]!);
+  return first.length > 0 && first.every(Boolean) && !second.some(Boolean);
+}
+
+/** Plain text of a text body where every formula is written as "[formel]". */
+function textWithoutFormulas(body: XmlNode | undefined): string {
+  const read = (node: XmlNode): string => {
+    if (node.name === 'a14:m') return '[formel]';
+    if (node.name === 'a:t') return node.text;
+    if (node.name === 'a:br') return ' ';
+    return node.children.map(read).join('');
+  };
+  return children(body, 'a:p')
+    .map((p) => read(p).replace(/\s+/g, ' ').trim())
+    .filter((line) => line !== '')
+    .join(' ');
+}
+
+/** A picture fill may be stretched a little beyond the shape; follow that. */
+function stretchedBox(box: Box, blipFill: XmlNode | undefined): Box {
+  const rect = child(child(blipFill, 'a:stretch'), 'a:fillRect');
+  if (!rect) return box;
+  const part = (name: string): number => (intAttr(rect, name) ?? 0) / 100000;
+  const l = part('l');
+  const t = part('t');
+  const r = part('r');
+  const b = part('b');
+  if (l === 0 && t === 0 && r === 0 && b === 0) return box;
+  const w = Math.max(1, box.w * (1 - l - r));
+  const h = Math.max(1, box.h * (1 - t - b));
+  return { ...box, x: box.x + box.w * l, y: box.y + box.h * t, w, h };
 }
 
 function defined<T>(value: T | undefined): value is T {
@@ -190,6 +247,8 @@ class SlideImporter {
   private readonly master: MasterPart | undefined;
   private colors: ColorContext = { map: {}, scheme: {} };
   private readonly pixelsPerPoint: number;
+  /** Factor on sizes of running text, see widthCompensation. */
+  private readonly sansFactor: number;
 
   constructor(
     private readonly deck: Deck,
@@ -204,12 +263,13 @@ class SlideImporter {
     this.layout = deck.layout(deck.pkg.relatedPart(part, '/slideLayout'));
     this.master = this.layout?.master;
     this.pixelsPerPoint = EMU_PER_POINT * deck.stage.scale;
+    this.sansFactor = widthCompensation(this.master?.bodyTypeface);
   }
 
   run(sceneId: string): ImportedSlide {
     const number = this.index + 1;
     const root = this.deck.pkg.xml(this.part);
-    const kind = sceneKindOf(this.layout?.type);
+    const kind = sceneKindOf(this.layout?.type, this.layout?.name);
     let title = `Lysark ${number}`;
 
     if (!root) {
@@ -327,6 +387,26 @@ class SlideImporter {
       this.walk(choice?.children ?? [], groups, groupFill);
       return;
     }
+    // A text box with formulas: PowerPoint stores a picture of the whole box
+    // as the fallback. Use it, so the formulas are shown exactly as written.
+    const formulaShape = children(choice, 'p:sp').find((sp) => findDescendant(sp, MATH));
+    if (formulaShape) {
+      const before = this.elements.length;
+      this.walk(fallback.children, groups, groupFill);
+      const pictures = this.elements.slice(before).filter((e) => e.type === 'image');
+      if (pictures.length > 0) {
+        const alt = textWithoutFormulas(child(formulaShape, 'p:txBody'));
+        for (const picture of pictures) {
+          if (picture.type === 'image' && picture.alt === '') picture.alt = alt;
+        }
+        this.warn(WARNINGS.formula());
+        return;
+      }
+      // No picture came through: fall back to the text itself.
+      this.elements.length = before;
+      this.walk(choice?.children ?? [], groups, groupFill);
+      return;
+    }
     const imagesBefore = this.counts.images;
     this.walk(fallback.children, groups, groupFill);
     const asPicture = this.counts.images > imagesBefore;
@@ -396,19 +476,38 @@ class SlideImporter {
       align: text.align,
       valign: valignOf(bodyProperties),
     };
-    const fontSize = this.fontSize(text, bodyProperties[0]);
+    const fontSize = this.fontSize(text, bodyProperties[0], role);
     if (fontSize !== undefined) element.fontSize = fontSize;
     this.elements.push(element);
     this.counts.texts += 1;
   }
 
-  private fontSize(text: TextBody, bodyProperties: XmlNode | undefined): number | undefined {
-    return stageFontSize(text.sizeWeights, autofitScale(bodyProperties), this.pixelsPerPoint);
+  /**
+   * Titles are set in the serif title font, which is about as narrow as
+   * Calibri; only running text needs the width compensation.
+   */
+  private fontSize(
+    text: TextBody,
+    bodyProperties: XmlNode | undefined,
+    role: TextRole = 'body',
+  ): number | undefined {
+    const factor = role === 'title' || role === 'number' ? 1 : this.sansFactor;
+    return stageFontSize(
+      text.sizeWeights,
+      autofitScale(bodyProperties) * factor,
+      this.pixelsPerPoint,
+    );
   }
 
   private placeholder(node: XmlNode, type: string, groups: GroupFrame[]): void {
     if (SKIPPED_PLACEHOLDERS.has(type)) return;
     const { layout, master } = this.lineage(node);
+    const pictureFill = child(child(node, 'p:spPr'), 'a:blipFill');
+    if (pictureFill) {
+      // A placeholder drawn as a picture (PowerPoint's fallback for text with formulas).
+      const box = this.place(this.xfrmOf(node) ?? wholeSlide(this.deck.stage), groups).box;
+      this.image(pictureFill, nonVisual(node).cNvPr, stretchedBox(box, pictureFill), false);
+    }
     const base = basePlaceholderType(type);
     const masterStyle =
       base === 'title'
@@ -464,7 +563,12 @@ class SlideImporter {
 
     const fill = shapeFill(properties, style, this.colors, groupFill);
     if (fill.kind === 'picture') {
-      this.image(fill.blipFill, nonVisual(node).cNvPr, placed.box, false);
+      this.image(
+        fill.blipFill,
+        nonVisual(node).cNvPr,
+        stretchedBox(placed.box, fill.blipFill),
+        false,
+      );
       addOwnText();
       return;
     }
@@ -638,6 +742,8 @@ class SlideImporter {
     options: { xfrm?: Xfrm; quiet?: boolean } = {},
   ): boolean {
     const { cNvPr, nvPr } = nonVisual(node);
+    // The template's own logo picture is left out: the theme places USN's logo.
+    if ((attr(cNvPr, 'name') ?? '').trim().toLowerCase() === 'logo') return false;
     const blipFill = child(node, 'p:blipFill');
     const quiet = options.quiet ?? false;
     const xfrm = options.xfrm ?? this.xfrmOf(node) ?? wholeSlide(this.deck.stage);
@@ -752,10 +858,10 @@ class SlideImporter {
       box: this.place(this.xfrmOf(frame) ?? wholeSlide(this.deck.stage), groups).box,
       type: 'table',
       columns: widths.length > 0 ? widths : new Array<number>(widest).fill(1),
-      headerRow: boolAttr(child(table, 'a:tblPr'), 'firstRow'),
+      headerRow: boolAttr(child(table, 'a:tblPr'), 'firstRow') || hasFilledFirstRow(table),
       rows,
     };
-    const fontSize = stageFontSize(sizeWeights, 1, this.pixelsPerPoint);
+    const fontSize = stageFontSize(sizeWeights, this.sansFactor, this.pixelsPerPoint);
     if (fontSize !== undefined) element.fontSize = fontSize;
     this.elements.push(element);
     this.counts.tables += 1;

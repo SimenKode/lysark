@@ -1,7 +1,7 @@
 // Dialogs: the import report, and project and logo settings.
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { ImportReport } from '../../shared/api';
-import { chooseLogo, clearLogo } from './actions';
+import { chooseLogoFolder, clearLogos } from './actions';
 import { useStore } from './store';
 
 function Dialog(props: {
@@ -95,31 +95,19 @@ export function ImportReportDialog(props: {
   );
 }
 
-function LogoRow(props: { variant: 'light' | 'dark'; label: string; ready: boolean }) {
-  return (
-    <div className="logo-row">
-      <div>
-        <strong>{props.label}</strong>
-        <div className={props.ready ? 'ok' : 'hint'}>{props.ready ? 'Valgt' : 'Ikke valgt'}</div>
-      </div>
-      <div className="button-row">
-        <button type="button" onClick={() => void chooseLogo(props.variant)}>
-          Velg fil …
-        </button>
-        {props.ready && (
-          <button type="button" onClick={() => void clearLogo(props.variant)}>
-            Fjern
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function SettingsDialog(props: { onClose: () => void }) {
   const project = useStore((s) => s.project);
   const logo = useStore((s) => s.logo);
   const update = useStore((s) => s.update);
+  const anyLogo = logo.nb.light || logo.nb.dark || logo.en.light || logo.en.dark;
+  const found = (set: { light: boolean; dark: boolean }): string =>
+    set.light && set.dark
+      ? 'funnet (lilla og hvit)'
+      : set.light
+        ? 'bare lilla funnet'
+        : set.dark
+          ? 'bare hvit funnet'
+          : 'ikke valgt';
   return (
     <Dialog title="Innstillinger" onClose={props.onClose} wide>
       {project && (
@@ -168,16 +156,28 @@ export function SettingsDialog(props: { onClose: () => void }) {
       <section>
         <h3>USNs logo</h3>
         <p>
-          Velg originalfilene fra USNs logopakke (SVG eller PNG). Lysark kopierer filene uendret og
-          plasserer logoen nede til venstre etter designmanualen. Logoen kan ikke endres i
-          programmet.
+          Velg mappa der USNs logopakke er pakket ut. Lysark finner hovedlogoen i lilla og hvit, på
+          norsk og engelsk, kopierer filene uendret og plasserer logoen nede til venstre etter
+          designmanualen. Logoen kan ikke endres i programmet.
         </p>
-        <LogoRow
-          variant="light"
-          label="Til lyse flater (lilla eller sort logo)"
-          ready={logo.light}
-        />
-        <LogoRow variant="dark" label="Til lilla og indigo flater (hvit logo)" ready={logo.dark} />
+        <ul className="logo-status">
+          <li className={logo.nb.light && logo.nb.dark ? 'ok' : 'hint'}>
+            Norsk logo: {found(logo.nb)}
+          </li>
+          <li className={logo.en.light && logo.en.dark ? 'ok' : 'hint'}>
+            Engelsk logo: {found(logo.en)}
+          </li>
+        </ul>
+        <div className="button-row">
+          <button type="button" onClick={() => void chooseLogoFolder()}>
+            Velg mappa med logopakka …
+          </button>
+          {anyLogo && (
+            <button type="button" onClick={() => void clearLogos()}>
+              Fjern logoen
+            </button>
+          )}
+        </div>
       </section>
     </Dialog>
   );

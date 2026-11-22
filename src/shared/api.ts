@@ -30,14 +30,21 @@ export interface ExportSummary {
   logoMissing: boolean;
 }
 
+export type LogoVariant = 'light' | 'dark';
+export type LogoLanguage = 'nb' | 'en';
+
+/** Which of USN's logo files have been found in the owner's logo package. */
 export interface LogoStatus {
-  light: boolean;
-  dark: boolean;
+  nb: Record<LogoVariant, boolean>;
+  en: Record<LogoVariant, boolean>;
   /** Changes whenever a logo file changes, to defeat caching. */
   version: number;
 }
 
-export type LogoVariant = 'light' | 'dark';
+/** True when a logo can be shown for the language (English falls back to Norwegian). */
+export function hasLogo(status: LogoStatus, language: LogoLanguage, variant: LogoVariant): boolean {
+  return status[language][variant] || status.nb[variant];
+}
 
 /** Commands sent from the application menu to the interface. */
 export type MenuCommand =
@@ -73,8 +80,9 @@ export interface LysarkApi {
   /** A project the program was started with, if any. */
   initialProject(): Promise<string | null>;
   logoStatus(): Promise<LogoStatus>;
-  chooseLogo(variant: LogoVariant): Promise<LogoStatus>;
-  clearLogo(variant: LogoVariant): Promise<LogoStatus>;
+  /** Lets the owner pick the folder with USN's unpacked logo package. */
+  chooseLogoFolder(): Promise<LogoStatus>;
+  clearLogos(): Promise<LogoStatus>;
   showInFolder(path: string): Promise<void>;
   /** Tells the main process whether there are unsaved changes. */
   setDocumentState(state: { dirty: boolean; title: string }): void;
@@ -89,6 +97,6 @@ export function mediaUrl(file: string): string {
 }
 
 /** URL of one of the owner's logo files. */
-export function logoUrl(variant: LogoVariant, version: number): string {
-  return `lysark-media://brand/${variant}?v=${version}`;
+export function logoUrl(language: LogoLanguage, variant: LogoVariant, version: number): string {
+  return `lysark-media://brand/${language}-${variant}?v=${version}`;
 }

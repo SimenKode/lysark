@@ -10,6 +10,7 @@ import type {
   AddedMedia,
   ExportSummary,
   ImportedProject,
+  LogoLanguage,
   LogoStatus,
   LogoVariant,
   MenuCommand,
@@ -31,15 +32,17 @@ import {
   unpackProject,
 } from './projectIo';
 import {
-  clearLogo,
+  clearLogos,
   logoFile,
   logoStatus,
   recentProjects,
   rememberProject,
-  setLogo,
+  setLogosFromFolder,
 } from './settings';
 
 const APP_NAME = 'Lysark';
+// The same settings folder whether the program is run from source or installed.
+app.setName(APP_NAME);
 // Tests run the program without putting a window on the screen.
 const HIDDEN = process.env.LYSARK_HIDDEN === '1';
 
@@ -109,8 +112,10 @@ function registerMediaProtocol(): void {
     try {
       const url = new URL(request.url);
       if (url.hostname === 'brand') {
-        const variant = url.pathname.slice(1) as LogoVariant;
-        const file = variant === 'light' || variant === 'dark' ? logoFile(variant) : undefined;
+        const match = /^\/(nb|en)-(light|dark)$/.exec(url.pathname);
+        const file = match
+          ? logoFile(match[1] as LogoLanguage, match[2] as LogoVariant)
+          : undefined;
         return file
           ? serveFile(file.file, file.mime, request)
           : new Response(null, { status: 404 });
@@ -449,24 +454,20 @@ function registerHandlers(): void {
   handle('lysark:recent', (): string[] => recentProjects());
   handle('lysark:logo-status', (): LogoStatus => logoStatus());
 
-  handle('lysark:choose-logo', async (variant: LogoVariant): Promise<LogoStatus> => {
+  handle('lysark:choose-logo-folder', async (): Promise<LogoStatus> => {
     if (!mainWindow) return logoStatus();
     const result = await dialog.showOpenDialog(mainWindow, {
-      title:
-        variant === 'light'
-          ? 'Velg logo til lyse flater (lilla eller sort)'
-          : 'Velg logo til mørke flater (hvit)',
-      buttonLabel: 'Velg',
-      filters: [{ name: 'Logo (SVG eller PNG)', extensions: ['svg', 'png'] }],
-      properties: ['openFile'],
+      title: 'Velg mappa der USNs logopakke er pakket ut',
+      buttonLabel: 'Velg mappe',
+      properties: ['openDirectory'],
     });
-    const file = result.filePaths[0];
-    if (!result.canceled && file) setLogo(variant, file);
+    const folder = result.filePaths[0];
+    if (!result.canceled && folder) setLogosFromFolder(folder);
     return logoStatus();
   });
 
-  handle('lysark:clear-logo', (variant: LogoVariant): LogoStatus => {
-    clearLogo(variant);
+  handle('lysark:clear-logos', (): LogoStatus => {
+    clearLogos();
     return logoStatus();
   });
 
