@@ -91,9 +91,26 @@ the manual, raise it with the owner instead of choosing silently.
 - Rendering is a pure function of (project, theme, time). Render code
   never reads the wall clock, uses unseeded randomness or depends on the
   network. This is what makes frame-by-frame video export exact.
-- Exported HTML is a single file that works offline, with no requests to
-  any server unless the owner has inserted an external link himself.
-- The program collects nothing and sends nothing anywhere.
+- Exported HTML is a single file that works offline. It makes no request
+  to any server on its own. Content the owner has inserted from the web
+  (a link, a YouTube video, another embed) is fetched only when the
+  viewer activates it; until then the scene shows a still picture that
+  lies in the file.
+- The program collects nothing. It contacts the network only when the
+  owner asks for it in the media dialog (decided 22.11.2026):
+  - a search he types and sends to Wikimedia Commons, and the download of
+    the picture he chooses (`commons.wikimedia.org`,
+    `upload.wikimedia.org`);
+  - the still picture of a YouTube link, when he presses "Hent
+    forhåndsbilde" (`i.ytimg.com`).
+
+  These hosts are an allow-list enforced in the main process; nothing
+  else may be contacted. Nothing happens in the background, at start-up
+  or without a click. No information about the owner, the machine or the
+  project is sent: only the search words and the program's name and
+  version. Render code and the export are unchanged by this: no network.
+  The preview window is the one place that can load what the owner has
+  embedded, exactly as a student's browser would, and only on a click.
 
 ## Commands
 
@@ -120,6 +137,10 @@ the manual, raise it with the owner instead of choosing silently.
 
 - Ask design questions together and early, each with one recommendation.
   Do not start building a delivery before its questions are answered.
+  The answers so far are in `docs/sporsmal-leveranse-1.md` and
+  `docs/sporsmal-videre.md`; the plan built on them is `docs/plan.md`.
+- The owner has allowed commits on `main` as each tested step is done
+  (22.11.2026). Pushing still needs his word.
 - Do not push, create remote repositories or publish anything unless the
   owner asks.
 - Keep `docs/plan.md` and `docs/stakk.md` true when plans or dependencies

@@ -1,9 +1,18 @@
 # Plan
 
-Tre leveranser. Hver er ferdig og brukbar alene, uten stubber eller
-plassholdere. En leveranse begynner først når designspørsmålene for den
-er besvart, og er ferdig først når den er prøvd på både Linux Mint og
-Windows 11.
+Fem leveranser (valgt 22.11.2026, se
+[sporsmal-videre.md](sporsmal-videre.md)). Hver er ferdig og brukbar
+alene, uten stubber eller plassholdere. En leveranse begynner først når
+designspørsmålene for den er besvart, og er ferdig først når den er
+prøvd på både Linux Mint og Windows 11.
+
+| Nr. | Leveranse | Status |
+| --- | --- | --- |
+| 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
+| 2 | «Lær mer»-byggeren | Under bygging |
+| 3 | Lyd og video | Ikke påbegynt |
+| 4 | Figurer og bevegelser | Ikke påbegynt |
+| 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML
 
@@ -22,8 +31,8 @@ eksporterer én HTML-fil studentene kan bruke uten nett.
 **Tema**
 - Ren stil ferdig: palett, kontrasttabell, skriftskala, 8 kolonner,
   profilformer på tittel- og seksjonsscener, logo fra originalfilene.
-- Temaet er bygd slik at håndlaget stil kan legges til i leveranse 2 uten
-  å røre innholdet.
+- Temaet er bygd slik at håndlaget stil kan legges til (leveranse 5)
+  uten å røre innholdet.
 
 **Redigering**
 - Sceneliste: flytte, kopiere, slette, legge til, endre scenetype.
@@ -43,30 +52,103 @@ eksporterer én HTML-fil studentene kan bruke uten nett.
 
 **Ikke med:** animasjonsmaler, håndlaget stil, lyd, video-eksport.
 
-## Leveranse 2: Animasjonsmaler og begge stiler
+## Leveranse 2: «Lær mer»-byggeren
 
-- Åtte maler: tidslinje, prosess, årsak-virkning, venndiagram,
-  søylediagram, linjediagram, lagvis oppbygging, sammenligning.
-- Hver mal har et skjema for innholdet. Malen legger ut delene, og hver
-  del kan flyttes og justeres for hånd etterpå. Hver del kan få sitt eget
-  steg.
-- Bevegelser: tone inn, gli inn, tegne strek, vokse, markere, telle opp.
-- Håndlaget stil: de samme formene med kullstrek over, på lys beige
-  papir. Indigo tavle legges inn som variant hvis USN godkjenner den.
+Du knytter rik utdyping til hva som helst i en scene, og studenten åpner
+den i et panel.
+
+**Utdyping på alle elementer**
+- Alle elementer (tekst, bilde, form, tabell, video) kan ha utdyping:
+  en tittel og en liste med byggesteiner. «+ Lær mer» er fortsatt den
+  enkle veien inn: en knapp i scenen med samme slags utdyping.
+- Byggesteiner: tekst (overskrifter, lister, markering, lenker), bilde
+  (med bildetekst og kreditering), video (fil eller lenke), tabell og
+  innbygging. Rekkefølgen kan endres.
+- Eldre prosjekter løftes automatisk til det nye formatet.
+
+**Byggeren**
+- Et stort vindu over arbeidsflaten: byggesteinene til venstre, panelet
+  slik studenten ser det til høyre.
+- Veier inn: «+ Lær mer», og «Legg til utdyping» på et valgt element
+  (Element-fanen og høyreklikk).
+
+**Spilleren**
+- Et lite, rundt «+»-merke i hjørnet av elementet, alltid synlig. Hele
+  elementet kan klikkes. Merket er en knapp med navn for skjermleser;
+  Enter og mellomrom åpner, Esc lukker og setter fokus tilbake. Hjørnet
+  kan velges per element. Merket vises ikke i utskrift (og ikke i video).
+- Panelet kan utvides til full bredde.
+- «Bildekilder»: oversikt over alle bilder med opphavsperson og lisens.
+
+**Medier**
+- Mediedialog med tre faner: «Søk i Wikimedia Commons», «Last opp» og
+  «I prosjektet».
+- Søket viser bare bilder til fri bruk, CC BY og CC BY-SA. Tittel,
+  opphavsperson, lisens og kilde lagres med bildet og vises under det og
+  i «Bildekilder». Bildet lastes ned i høyst 2560 px bredde.
+- Programmet kontakter nettet bare når du selv søker eller henter et
+  bilde (se [AGENTS.md](../AGENTS.md)).
+
+**YouTube og annen innbygging**
+- To trinn: scenen viser et stillbilde som ligger i fila. Først når
+  studenten klikker, lastes spilleren fra `youtube-nocookie.com`.
+  «Åpne på YouTube» står alltid ved siden av.
+- Annen innbygging: «Innhold fra <vert> – klikk for å laste».
+- Forhåndsvisningen vises fra en adresse på din egen maskin
+  (`127.0.0.1`), slik at innbygging oppfører seg som i Canvas.
+- Stillbilde for en YouTube-lenke hentes når du trykker «Hent
+  forhåndsbilde».
+
+**Prøves i Canvas** sammen med deg før leveransen er ferdig: skript,
+innbygging, filstørrelse, fullskjerm.
+
+**Ikke med:** byggesteinen «figur/animasjon» (kommer med leveranse 4),
+lyd, video-eksport.
+
+## Leveranse 3: Lyd og video
+
+- **Inndata:** prosjekt, PPTX, eksportert HTML («Åpne HTML-fil …» gjør
+  en Lysark-eksport til prosjekt igjen) og PDF (hver side blir en scene
+  med siden som bilde; teksten hentes ut som alternativ tekst; lest med
+  pdf.js, Apache-2.0).
+- **Innspilling fortløpende:** manuset står på skjermen, pil høyre går
+  til neste steg eller scene og setter tidspunktet, og opptaket deles
+  ved scenegrensene. Nedtelling, nivåmåler, pause, «ta om denne scenen».
+  Lydfil kan også importeres.
+- **Tidslinje:** hver scene eier sin lyd og sine tidspunkter; over dette
+  ligger én tidslinje for hele forelesningen.
+- **Grep:** klippe start, slutt og midt i (originalen beholdes), dele,
+  legge inn pause, strekke en scene, flytte tidspunktet for hvert steg,
+  ta om, lydstyrke per scene og jevn styrke ved eksport, rent klipp
+  eller kort toning mellom scener. Ikke musikk, flere lydspor eller
+  hastighetsendring.
+- **Ut:** MP4 1080p, 30 bilder i sekundet, H.264 og AAC, tegnet bilde
+  for bilde mot en virtuell klokke. Teksting som egen WebVTT-fil laget
+  av manuset. HTML-fila får «Spill av» med stemmen og stegene på de
+  samme tidspunktene. «Bildekilder» som valgfri siste scene.
+- **FFmpeg:** GPL-bygget med libx264 fra BtbN/FFmpeg-Builds, en fast
+  utgave hentet med kontroll av sjekksum, lagt ved programmet som eget
+  program med lisenstekst og lenke til kildekoden. Aldri i git.
+- **Mikrofon:** bare lyd, aldri kamera. Valg av mikrofon, støydemping
+  på, automatisk styrkeregulering av.
+
+## Leveranse 4: Figurer og bevegelser
+
+- En figur er statisk til delene får steg; samme bygger for begge.
+- Maler med skjema: merket bilde, prosess, lagvis oppbygging,
+  sammenligning, tidslinje, søyle- og linjediagram. Venndiagram og
+  årsak-virkning etterpå ved behov. Malene starter tomme.
+- Fri figur: bokser, ellipser, piler, koblingslinjer og etiketter som
+  holdes sammen som ett element.
+- Bevegelser: tone inn, gli inn, tegne strek, vokse, markere, telle opp,
+  forsvinne, og zoome inn på et utsnitt.
+- Figurer kan brukes i scener, i «Lær mer» (egen byggestein) og i video.
+
+## Leveranse 5: Håndlaget stil
+
+- De samme formene med kullstrek over, på lys beige papir. Indigo tavle
+  legges inn som variant hvis USN godkjenner den.
 - Bytte mellom stilene med ett valg, uten at innholdet endres.
-- Malene virker i HTML-eksporten fra leveranse 1.
-
-## Leveranse 3: Innspilling og MP4
-
-- Innspilling per scene i programmet, med nedtelling, nivåmåler, ta om
-  igjen og klipping av start og slutt. Lydfil kan også importeres.
-- Manus vises mens du leser inn.
-- Ett tastetrykk under innspilling setter tidspunktet for neste steg.
-  Tidspunktene kan finjusteres på en tidslinje etterpå.
-- Eksport: bilde for bilde mot en virtuell klokke, kodet med FFmpeg til
-  MP4 1080p med lyd. Ikke skjermopptak.
-- Teksting laget av manuset følger med videoen.
-- Innlest lyd kan også følge med HTML-fila.
 
 ## Status for leveranse 1 (22.11.2026)
 
@@ -234,22 +316,10 @@ Rettet i økt 3:
 
 ## Rekkefølgen videre
 
-1. Eieren skriver tilbakemeldinger i [HANDOFF.md](../HANDOFF.md).
-2. Uttrykket godkjennes, og HTML-fila prøves i Canvas.
-3. Eieren kom 22.11.2026 med tre ønsker for det som gjenstår (se
-   HANDOFF.md, 6.9 og 6.10). Designspørsmålene er stilt i
-   [sporsmal-videre.md](sporsmal-videre.md) (økt 3), med forslag til
-   fem leveranser: «Lær mer»-byggeren (2), lyd og video (3), figurer og
-   bevegelser (4) og håndlaget stil (5). **Forslaget gjelder ikke før
-   eieren har svart;** til da står leveranse 2 og 3 over slik de ble
-   skrevet, og ingenting av dem er bygget. De tre ønskene:
-   - **En rik bygger for «Lær mer»:** utdyping knyttet til hvilket som
-     helst element i scenen, et større byggepanel, en mediedialog med
-     bildesøk i Wikimedia Commons og opplasting, og YouTube som virker i
-     forhåndsvisningen. Bildesøket krever at regelen om at programmet
-     aldri kontakter nettet, endres eksplisitt.
-   - **Figurer og animasjoner,** også statiske figurer (leveranse 2).
-   - **Video integrert dypt:** forelesningen gjøres om til HTML, så leses
-     voice-over inn, og det redigeres enkelt (klippe lyd, strekke ut
-     scener). Videoarbeidet skal kunne starte fra et prosjekt, en
-     eksportert HTML-fil, en PPTX eller en PDF (leveranse 3, utvidet).
+1. Leveranse 2 bygges (se over). Canvas prøves sammen med eieren
+   underveis.
+2. Uttrykket (HANDOFF.md 6.1) godkjennes når eieren har sett på det; det
+   er et tema og kan endres uten å røre innholdet.
+3. Leveranse 3, 4 og 5 i den rekkefølgen.
+4. Tabeller i importen rettes når eieren har pekt på lysark som plager
+   ham.

@@ -1,12 +1,19 @@
 # Spørsmål før de neste leveransene
 
-Stilt 22.11.2026 (økt 3), etter tilbakemeldingene dine i
-[HANDOFF.md](../HANDOFF.md) 6.9 og 6.10. **Ingenting av dette er bygget,
-og ingenting bygges før du har svart.** Hvert spørsmål har én anbefaling.
-«Alt som anbefalt» er et gyldig svar; skriv ellers bare numrene du vil ha
-annerledes.
+**Svar 22.11.2026: «Alt som anbefalt».** Alle anbefalingene under er
+dermed valgt. Planen er skrevet om etter dem ([plan.md](plan.md)), og
+unntaket for nettilgang (spørsmål 8) står i [AGENTS.md](../AGENTS.md).
 
-Svar:
+Tre ting er fortsatt åpne, fordi de er spørsmål til deg og ikke
+anbefalinger:
+
+- Canvas må prøves sammen med deg mens du er innlogget (spørsmål 3 og
+  10).
+- Kan Windows-VM-en få en mikrofon (spørsmål 23)?
+- Hvilken fil eller lenke ga den svarte videospilleren (spørsmål 24)?
+
+Spørsmålene slik de ble stilt 22.11.2026 (økt 3), etter tilbakemeldingene
+i [HANDOFF.md](../HANDOFF.md) 6.9 og 6.10:
 
 ---
 
