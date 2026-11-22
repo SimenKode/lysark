@@ -17,12 +17,14 @@ import { tmpdir } from 'node:os';
 import { basename, extname, join } from 'node:path';
 import { newId } from '../shared/format/factory';
 import type { Asset, Project, Scene } from '../shared/format/schema';
-import { mixInto, spanAsset } from '../shared/audio/mix';
+import { mixInto, mixTracks, newDuckState, spanAsset } from '../shared/audio/mix';
 import { readWavInfo, renderTrack, secondsToSamples, wavSamples } from '../shared/audio/wav';
 import {
   SAMPLE_RATE,
   hasSound,
+  placeTracks,
   sceneDuration,
+  videoOptions,
   videoSpans,
   type Schedule,
 } from '../shared/render/clock';
@@ -183,6 +185,31 @@ export function filmSound(dir: string, project: Project): SlideMix {
   };
 }
 
+/** True when the lecture has music or other sound on its own tracks. */
+export function hasTracks(project: Pick<Project, 'tracks'>): boolean {
+  return !!project.tracks && project.tracks.music.length + project.tracks.sound.length > 0;
+}
+
+/**
+ * Puts the lecture's own tracks (music, other sound) into the sound of each
+ * slide. The music steps back while someone speaks, unless the owner has
+ * turned that off. `offset` is where the first slide that is written
+ * begins in the whole lecture, in seconds (a video of some of the slides).
+ * The slides must come in the order of the lecture.
+ */
+export function trackSound(
+  project: Project,
+  samplesOf: (assetId: string) => Int16Array | undefined,
+  offset = 0,
+): SlideMix {
+  const placed = placeTracks(project);
+  const duck = videoOptions(project).duckMusic === false ? null : newDuckState();
+  const shift = secondsToSamples(offset);
+  return async (_scene, start, part) => {
+    mixTracks(part, start + shift, placed, samplesOf, duck);
+  };
+}
+
 /** The sound of one slide, exactly `want` samples long: the voice, and what `mixes` add to it. */
 async function slideSound(
   scene: Scene,
@@ -286,9 +313,21 @@ export async function restoreSound(
   const compressed = Object.entries(source.assets).filter(
     ([, asset]) => asset.kind === 'audio' && !asset.file.endsWith('.wav'),
   );
-  if (compressed.length === 0) return { project: source, notes: [] };
+  if (compressed.length === 0 && !source.tracks) return { project: source, notes: [] };
   const project = structuredClone(source);
   const notes: string[] = [];
+  if (project.tracks) {
+    // In an exported file the music lies in the sound of each slide; what was
+    // left of the tracks was only the names for the list of sources.
+    for (const clip of [...project.tracks.music, ...project.tracks.sound]) {
+      delete project.assets[clip.asset];
+    }
+    delete project.tracks;
+    notes.push(
+      'Musikk og annen lyd fra lydsporene ligger nå i lyden på hvert lysark, sammen med stemmen.',
+    );
+  }
+  if (compressed.length === 0) return { project, notes };
   const lost = new Set<string>();
   for (const [id, asset] of compressed) {
     const file = mediaPath(dir, asset.file);

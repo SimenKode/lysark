@@ -279,5 +279,12 @@ export function collectCredits(project: Project): CreditEntry[] {
       for (const id of moreAssets(element.more)) note(id, index + 1, false);
     }
   });
+  // Music and other sound on the lecture's own tracks, by the slide each clip starts on.
+  for (const track of ['music', 'sound'] as const) {
+    for (const clip of project.tracks?.[track] ?? []) {
+      const index = project.scenes.findIndex((scene) => scene.id === clip.scene);
+      if (index >= 0) note(clip.asset, index + 1, false);
+    }
+  }
   return [...entries.values()];
 }

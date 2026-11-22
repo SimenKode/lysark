@@ -7,8 +7,9 @@ import { basename, dirname, extname, join } from 'node:path';
 import { buildHtml, type ExportSources, type FontFace } from '../exporter/html';
 import type { Project } from '../shared/format/schema';
 import type { ExportSummary, LogoVariant } from '../shared/api';
-import { hasSound } from '../shared/render/clock';
-import { encodeSceneSound, sampleReader } from './audio';
+import { secondsToSamples } from '../shared/audio/wav';
+import { hasSound, placeTracks, schedule } from '../shared/render/clock';
+import { encodeSceneSound, hasTracks, sampleReader, trackSound } from './audio';
 import { requireFfmpeg } from './ffmpeg';
 import { mediaPath } from './projectIo';
 import { closingAnimation, logoFile } from './settings';
@@ -37,18 +38,36 @@ async function withEncodedSound(
   project: Project,
 ): Promise<{ project: Project; generated: Map<string, Uint8Array> }> {
   const generated = new Map<string, Uint8Array>();
-  if (!project.scenes.some(hasSound)) return { project, generated };
+  const tracks = hasTracks(project);
+  if (!tracks && !project.scenes.some(hasSound)) return { project, generated };
   requireFfmpeg();
   const samplesOf = sampleReader(dir, project);
   const out = structuredClone(project);
-  for (const scene of out.scenes) {
-    if (!hasSound(scene)) continue;
-    const key = createHash('sha256').update(JSON.stringify(scene.audio)).digest('hex');
-    let sound = encoded.get(key);
+  // Music and other sound on the lecture's own tracks are put into the sound
+  // of the slides they lie under, so "Spill av" plays them with the voice.
+  // (The sound of a film is not: the film plays itself in the page.)
+  const plan = schedule(project.scenes);
+  const placed = tracks ? placeTracks(project, plan) : [];
+  const mixes = tracks ? [trackSound(project, samplesOf)] : [];
+  // Tells one lecture's music from another's, so the sound kept from an earlier export is not used for the wrong one.
+  const mixKey = tracks ? JSON.stringify([project.tracks, project.video?.duckMusic]) : '';
+  for (const [index, scene] of out.scenes.entries()) {
+    const { start, duration } = plan.entries[index]!;
+    const under = placed.some((p) => p.end > start && p.start < start + duration);
+    if (!hasSound(scene) && !under) continue;
+    const key = createHash('sha256')
+      .update(JSON.stringify(scene.audio ?? null))
+      .update(tracks ? `${mixKey}|${start}|${duration}` : '')
+      .digest('hex');
+    // With music, every slide is put together anew and in order: how far the
+    // music is lowered at the start of a slide depends on the slide before it.
+    let sound = tracks ? undefined : encoded.get(key);
     if (!sound) {
-      sound = await encodeSceneSound(scene, samplesOf);
-      if (encoded.size >= ENCODED_LIMIT) encoded.delete(encoded.keys().next().value!);
-      encoded.set(key, sound);
+      sound = await encodeSceneSound(scene, samplesOf, secondsToSamples(start), mixes);
+      if (!tracks) {
+        if (encoded.size >= ENCODED_LIMIT) encoded.delete(encoded.keys().next().value!);
+        encoded.set(key, sound);
+      }
     }
     const id = `a_voice_${scene.id}`;
     const file = `media/stemme-${key.slice(0, 16)}.m4a`;
@@ -59,9 +78,30 @@ async function withEncodedSound(
       clips: [{ id: `c_voice_${scene.id}`, kind: 'sound', asset: id, from: 0, to: sound.seconds }],
     };
   }
-  // The recordings themselves are not part of an exported file.
+  // The recordings themselves are not part of an exported file, and the
+  // tracks are in the sound of the slides now. What is left of the tracks is
+  // only who is to be credited: clips whose sound file carries a credit stay
+  // as names in the list of sources, without their sound.
+  const credited = new Set<string>();
+  if (out.tracks) {
+    const keep = (clips: NonNullable<Project['tracks']>['music']): typeof clips =>
+      clips.filter((clip) => {
+        const credit = out.assets[clip.asset]?.credit;
+        const named = !!(
+          credit?.author?.trim() ||
+          credit?.license?.trim() ||
+          credit?.title?.trim()
+        );
+        if (named) credited.add(clip.asset);
+        return named;
+      });
+    out.tracks = { music: keep(out.tracks.music), sound: keep(out.tracks.sound) };
+    if (credited.size === 0) delete out.tracks;
+  }
   for (const [id, asset] of Object.entries(out.assets)) {
-    if (asset.kind === 'audio' && !generated.has(asset.file)) delete out.assets[id];
+    if (asset.kind === 'audio' && !generated.has(asset.file) && !credited.has(id)) {
+      delete out.assets[id];
+    }
   }
   return { project: out, generated };
 }

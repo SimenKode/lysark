@@ -38,6 +38,11 @@ const PATHS = {
   slides: 'M3 5h18v11H3zM12 16v4M8 20h8',
   grid: 'M4 4h16v16H4zM4 12h16M12 4v16',
   pencil: 'M4 20l1-5L16 4l4 4L9 19zM14 6l4 4',
+  music: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
+  speaker: 'M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11',
+  zoomIn: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20M10.5 8v5M8 10.5h5',
+  zoomOut: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20M8 10.5h5',
+  split: 'M12 3v18M5 8l4 4-4 4M19 8l-4 4 4 4',
 } as const;
 
 export type IconName = keyof typeof PATHS;

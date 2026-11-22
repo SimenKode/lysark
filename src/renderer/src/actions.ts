@@ -9,9 +9,10 @@ import {
   type VideoRequest,
 } from '../../shared/api';
 import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
+import { addTrackClip } from '../../shared/audio/tracks';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
-import type { Element, Project, SceneEvent } from '../../shared/format/schema';
+import type { Element, Project, SceneEvent, TrackName } from '../../shared/format/schema';
 import { formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
@@ -236,6 +237,23 @@ export async function importSoundFile(): Promise<void> {
     draft.assets[added.id] = added.asset;
     appendSound(target, added.id, added.seconds, () => newId('c'));
   });
+}
+
+/**
+ * Lets the owner pick a sound file and puts it on one of the lecture's own
+ * tracks, starting `time` seconds into the lecture. Returns the new clip's id.
+ */
+export async function addTrackSound(track: TrackName, time: number): Promise<string | undefined> {
+  const state = useStore.getState();
+  if (!state.dir) return undefined;
+  const added = await guard(() => api().importSound(state.dir!));
+  if (!added) return undefined;
+  let made: string | undefined;
+  useStore.getState().update((draft) => {
+    draft.assets[added.id] = added.asset;
+    made = addTrackClip(draft, track, added.id, added.seconds, time, () => newId('k'));
+  });
+  return made;
 }
 
 export async function packProject(): Promise<void> {

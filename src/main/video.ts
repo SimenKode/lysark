@@ -26,7 +26,7 @@ import {
   videoOptions,
 } from '../shared/render/clock';
 import { SCENE_STRINGS } from '../shared/render/scene';
-import { filmSound, sampleReader, writeLectureSound } from './audio';
+import { filmSound, hasTracks, sampleReader, trackSound, writeLectureSound } from './audio';
 import { abortFfmpeg, requireFfmpeg, runFfmpeg, writeTo } from './ffmpeg';
 
 const CREDIT_TEXTS = {
@@ -136,8 +136,14 @@ export function exportVideo(options: Options): VideoJob {
   const run = async (): Promise<VideoSummary | null> => {
     options.onProgress({ phase: 'sound', frame: 0, frames: totalFrames });
     if (!gif) {
-      await writeLectureSound(soundFile, scenes, plan, sampleReader(options.dir, project), [
+      const samplesOf = sampleReader(options.dir, project);
+      // Where the first slide of this video begins in the whole lecture: music
+      // that started earlier goes on from where it had come.
+      const first = Math.max(0, Math.min(project.scenes.length - 1, Math.floor(request.from)));
+      const offset = schedule(project.scenes).entries[first]?.start ?? 0;
+      await writeLectureSound(soundFile, scenes, plan, samplesOf, [
         filmSound(options.dir, project),
+        ...(hasTracks(project) ? [trackSound(project, samplesOf, offset)] : []),
       ]);
     }
 

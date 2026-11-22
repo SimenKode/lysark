@@ -54,7 +54,7 @@ interface State {
   builder: string | null;
   mediaRequest: MediaRequest | null;
   /** Which panel is open under the slide: the manuscript or the sound. */
-  bottomTab: 'script' | 'sound';
+  bottomTab: 'script' | 'sound' | 'timeline';
   /**
    * The recording window is open, starting on the current slide. With
    * `keepBefore`, the slide's sound before that time is kept and the rest
@@ -90,7 +90,7 @@ interface State {
   setNotice(notice: Notice | null): void;
   openBuilder(elementId: string | null): void;
   setMediaRequest(request: MediaRequest | null): void;
-  setBottomTab(tab: 'script' | 'sound'): void;
+  setBottomTab(tab: 'script' | 'sound' | 'timeline'): void;
   openRecorder(recorder: State['recorder']): void;
   setVideoDialog(open: boolean): void;
   setVideoProgress(progress: VideoProgress | null): void;

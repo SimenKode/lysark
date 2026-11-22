@@ -78,7 +78,16 @@ const HIDDEN = process.env.LYSARK_HIDDEN === '1';
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'lysark-media',
-    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+    // The interface reads recordings with fetch (to draw and play them). Its own
+    // page has another origin than this scheme, so the scheme must take part in
+    // CORS, and the answers must say that the interface may read them.
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
+    },
   },
   // Gallery pictures from Wikimedia Commons, fetched by the main process.
   { scheme: 'lysark-web', privileges: { standard: true, secure: true } },
@@ -120,6 +129,8 @@ function serveFile(file: string, mime: string, request: Request): Response {
     'Content-Type': mime,
     'Accept-Ranges': 'bytes',
     'Cache-Control': 'no-cache',
+    // Only the program's own interface can ask at all; it may read what it gets.
+    'Access-Control-Allow-Origin': '*',
   };
   if (range && (range[1] || range[2])) {
     let start = range[1] ? parseInt(range[1], 10) : size - parseInt(range[2]!, 10);

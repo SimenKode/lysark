@@ -1,0 +1,312 @@
+/* The timeline: the slides in a row and the tracks under them. */
+.timeline {
+  padding: 8px 12px 12px;
+}
+.tl-bar,
+.tl-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tl-tools {
+  margin-top: 8px;
+  min-height: 38px;
+}
+.tl-time {
+  min-width: 8.5em;
+  font-variant-numeric: tabular-nums;
+}
+.tl-chosen {
+  max-width: 32ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-credit {
+  flex-basis: 100%;
+}
+.tl-credit summary {
+  cursor: pointer;
+  color: var(--lilla);
+}
+
+.tl-body {
+  display: flex;
+  margin-top: 8px;
+  border: 1.5px solid var(--indigo);
+  border-radius: 12px;
+  background: var(--lys-beige);
+  overflow: hidden;
+}
+.tl-names {
+  flex: none;
+  width: 76px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1.5px solid var(--line);
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.tl-name {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 8px;
+  border-top: 1px solid var(--line);
+}
+.tl-name-ruler {
+  height: 20px;
+  border-top: 0;
+}
+.tl-name-slides {
+  height: 32px;
+}
+.tl-area {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.tl-inner {
+  position: relative;
+  min-width: 100%;
+}
+.tl-row {
+  position: relative;
+  height: 44px;
+  border-top: 1px solid var(--line);
+}
+.tl-ruler {
+  height: 20px;
+  overflow: hidden;
+  border-top: 0;
+  background: #fff;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--indigo);
+}
+.tl-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding: 3px 0 0 4px;
+  border-left: 1px solid var(--indigo);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tl-slides {
+  height: 32px;
+}
+.tl-slide-box {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+}
+.tl-slide {
+  position: absolute;
+  inset: 0 1px;
+  min-height: 0;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 1.5px solid var(--indigo);
+  background: #fff;
+  color: var(--indigo);
+  font-size: 0.8rem;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-slide[aria-current='true'] {
+  background: var(--lilla);
+  border-color: var(--lilla);
+  color: #fff;
+}
+/* The edge of a slide: drawn to make the slide stand longer or shorter. */
+.tl-edge {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  right: -5px;
+  width: 10px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: ew-resize;
+  z-index: 2;
+}
+.tl-edge::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 4px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--indigo);
+  opacity: 0;
+}
+.tl-edge:hover::after,
+.tl-edge:focus-visible::after {
+  opacity: 1;
+}
+.tl-edge:hover:not(:disabled) {
+  background: transparent;
+}
+
+.tl-voice-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 6px;
+  background: var(--lys-indigo);
+  overflow: hidden;
+  pointer-events: none;
+}
+.tl-wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.tl-empty {
+  position: sticky;
+  left: 10px;
+  display: inline-block;
+  padding: 12px 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--indigo);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tl-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 6px;
+  border: 1.5px solid var(--indigo);
+  background: var(--lys-lilla);
+  color: #000;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.tl-sound .tl-clip {
+  border-color: #a34000;
+  background: var(--beige);
+}
+.tl-clip:hover:not(:disabled) {
+  background: var(--lys-lilla);
+  color: #000;
+}
+.tl-sound .tl-clip:hover:not(:disabled) {
+  background: var(--beige);
+}
+.tl-clip[aria-pressed='true'] {
+  outline: 3px solid var(--oransje);
+  outline-offset: -1px;
+  z-index: 1;
+}
+.tl-clip-name {
+  position: absolute;
+  left: 8px;
+  top: 2px;
+  max-width: calc(100% - 16px);
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.72rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.tl-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+.tl-grip-start {
+  left: 0;
+  border-left: 3px solid var(--indigo);
+}
+.tl-grip-end {
+  right: 0;
+  border-right: 3px solid var(--indigo);
+}
+.tl-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #000;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Past the end of the lecture: a clip that reaches here is not heard there. */
+.tl-after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  border-left: 2px solid var(--indigo);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(47, 11, 99, 0.16) 0 6px,
+    rgba(47, 11, 99, 0.05) 6px 12px
+  );
+  pointer-events: none;
+  overflow: hidden;
+}
+.tl-after span {
+  display: inline-block;
+  padding: 3px 6px;
+  font-size: 0.7rem;
+  color: var(--indigo);
+  white-space: nowrap;
+}
+
+/* The tools for the chosen clip stand on one line each, as short as they can be. */
+.tl-tools label.audio-group {
+  flex: none;
+  white-space: nowrap;
+}
+.tl-tools label.audio-group input.audio-number {
+  display: inline-block;
+  flex: none;
+  width: 4.2em;
+}
+.tl-tools .audio-gain-value {
+  min-width: 3.6em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Where a clip tones in and out: a corner of it is taken away. */
+.tl-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+.tl-fade-in {
+  left: 0;
+  background: linear-gradient(to bottom right, var(--lys-beige) 49.5%, transparent 50.5%);
+}
+.tl-fade-out {
+  right: 0;
+  background: linear-gradient(to bottom left, var(--lys-beige) 49.5%, transparent 50.5%);
+}

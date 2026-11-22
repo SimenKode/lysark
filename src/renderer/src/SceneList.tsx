@@ -1,6 +1,7 @@
 // The list of scenes with small live pictures of each.
 import { useEffect, useRef, useState } from 'react';
 import { newScene } from '../../shared/format/factory';
+import { releaseScene } from '../../shared/audio/tracks';
 import type { SceneKind } from '../../shared/format/schema';
 import { Icon } from './Icon';
 import { SceneView } from './SceneView';
@@ -69,6 +70,8 @@ export function SceneList() {
     if (!window.confirm(`Slette «${name}»? Du kan angre etterpå.`)) return;
     const next = project.scenes[index + 1] ?? project.scenes[index - 1];
     update((draft) => {
+      // Music fastened to the slide moves to its neighbour instead of going with it.
+      releaseScene(draft, source.id);
       draft.scenes.splice(index, 1);
     });
     if (next) setScene(next.id);

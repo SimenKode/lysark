@@ -5,6 +5,7 @@ import type { MenuCommand } from '../../shared/api';
 import type { ShapeElement, TextRole } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
 import { formatTime, sceneDuration } from '../../shared/render/clock';
+import { Timeline } from './Timeline';
 import { AudioPanel } from './AudioPanel';
 import { Icon } from './Icon';
 import { ImportReportDialog, PdfImportDialog, SettingsDialog } from './Dialogs';
@@ -350,7 +351,7 @@ function BottomPanel() {
   if (!scene) return null;
   return (
     <section className="bottom-panel">
-      <div className="bottom-tabs" role="tablist" aria-label="Manus og lyd">
+      <div className="bottom-tabs" role="tablist" aria-label="Manus, lyd og tidslinje">
         <button
           type="button"
           role="tab"
@@ -367,8 +368,16 @@ function BottomPanel() {
         >
           Lyd ({formatTime(sceneDuration(scene))})
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'timeline'}
+          onClick={() => setTab('timeline')}
+        >
+          Tidslinje
+        </button>
       </div>
-      {tab === 'script' ? <ScriptPanel /> : <AudioPanel />}
+      {tab === 'script' ? <ScriptPanel /> : tab === 'sound' ? <AudioPanel /> : <Timeline />}
     </section>
   );
 }
