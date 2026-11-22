@@ -14,7 +14,8 @@ eller senere (se [Lisens](#lisens)).
 
 ## Status
 
-Leveranse 2 («Lær mer»-byggeren) er under bygging; planen står i
+Leveranse 2 («Lær mer»-byggeren) er bygd og prøvd på Linux Mint. Den er
+ikke prøvd på Windows eller i Canvas ennå. Planen for resten står i
 [docs/plan.md](docs/plan.md).
 
 Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
@@ -37,9 +38,28 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
    dobbeltklikk for å skrive. «Tilpass til rutenett» (fanen Scene) rydder
    en scene inn i de åtte kolonnene.
 4. **Legg inn steg** (fanen Steg) for det som skal komme inn ett for ett.
-5. **Forhåndsvis** (F5) viser nøyaktig det en eksport vil inneholde.
-6. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
+5. **Legg til utdyping («Lær mer»).** Høyreklikk på et hvilket som helst
+   element og velg «Legg til utdyping …», eller bruk «+ Lær mer» for en
+   egen knapp i scenen. Byggeren åpnes over hele vinduet: byggesteiner
+   til venstre (tekst, overskrift, bilde, video, tabell, innbygging), og
+   panelet slik studenten ser det til høyre. Elementet får et «+»-merke
+   som åpner panelet.
+6. **Hent bilder.** «Bilde» åpner mediedialogen: søk i Wikimedia Commons,
+   last opp, eller bruk noe prosjektet allerede har. Bilder fra Commons
+   får opphavsperson, lisens og kilde med seg, og Lysark viser det under
+   bildet og under «Bildekilder» i HTML-fila.
+7. **Forhåndsvis** (F5) viser nøyaktig det en eksport vil inneholde.
+8. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
+
+**YouTube** vises med et stillbilde og en avspillingsknapp. Spilleren
+hentes fra YouTube først når studenten trykker, og «Åpne på YouTube» står
+alltid ved siden av. Åpnes HTML-fila rett fra disk, åpner knappen YouTube
+i nettleseren, fordi YouTube ikke spiller i en slik side.
+
+**Nett:** programmet kontakter nettet bare når du selv søker etter et
+bilde i Wikimedia Commons eller henter et forhåndsbilde fra YouTube. Da
+sendes bare søkeordene. Ellers ingenting, og ingenting i bakgrunnen.
 
 USNs logo hentes fra logopakka: under Innstillinger velger du mappa der
 pakka er pakket ut, og Lysark finner hovedlogoen i lilla og hvit, på norsk

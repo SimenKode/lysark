@@ -308,10 +308,13 @@ textarea {
   white-space: normal;
   color: #000;
 }
-.scene-item:hover:not(:disabled):not([aria-current='true']) {
+.scene-item:hover:not(:disabled) {
   background: var(--lys-indigo);
 }
-.scene-item[aria-current='true'] {
+/* The chosen scene keeps its colour under the pointer too: its title is
+   white, and the general hover colour for buttons is light. */
+.scene-item[aria-current='true'],
+.scene-item[aria-current='true']:hover:not(:disabled) {
   background: var(--lilla);
   color: #fff;
 }

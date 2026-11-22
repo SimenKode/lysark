@@ -11,6 +11,7 @@ import {
   isAllowedUrl,
   licenceKind,
   parseCommonsAnswer,
+  pictureAddress,
   plainFromHtml,
 } from '../src/main/commons';
 
@@ -181,6 +182,33 @@ describe('reading the answer', () => {
       },
     };
     expect(parseCommonsAnswer(answer).hits).toEqual([]);
+  });
+
+  it('uses the approved host for scaled pictures and sends no tracking parameters', () => {
+    // What Wikimedia answers today: scaled pictures on another host, with parameters added.
+    const answer = {
+      query: {
+        pages: [
+          page(
+            1,
+            'A.jpg',
+            { License: 'cc0', LicenseShortName: 'CC0' },
+            {
+              url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/A.jpg?utm_source=commons.wikimedia.org&utm_content=original',
+              thumburl:
+                'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/A.jpg/330px-A.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo',
+            },
+          ),
+        ],
+      },
+    };
+    const hit = parseCommonsAnswer(answer).hits[0]!;
+    expect(hit.thumbUrl).toBe(
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/A.jpg/330px-A.jpg',
+    );
+    expect(hit.originalUrl).toBe('https://upload.wikimedia.org/wikipedia/commons/a/ab/A.jpg');
+    expect(isAllowedUrl(hit.thumbUrl) && isAllowedUrl(hit.originalUrl)).toBe(true);
+    expect(pictureAddress('https://thumb.example.org/a.jpg')).toBeUndefined();
   });
 
   it('survives answers that are empty or not what was expected', () => {

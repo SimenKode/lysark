@@ -134,6 +134,27 @@ export function licenceKind(code: string, shortName: string): 'free' | 'attribut
   return undefined;
 }
 
+/**
+ * The address of a picture, on a host the program may contact. Wikimedia's
+ * answers now point at thumb.wikimedia.org for scaled pictures; the same
+ * pictures are served from upload.wikimedia.org, which is the host the
+ * owner has approved, so that is the one used. The tracking parameters
+ * Wikimedia adds to the addresses are dropped: nothing but the address of
+ * the picture itself is sent.
+ */
+export function pictureAddress(address: string): string | undefined {
+  try {
+    const url = new URL(address);
+    if (url.hostname.toLowerCase() === 'thumb.wikimedia.org') url.hostname = 'upload.wikimedia.org';
+    url.search = '';
+    url.hash = '';
+    const clean = url.toString();
+    return isAllowedUrl(clean) ? clean : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function metaValue(meta: unknown, key: string): string {
   if (typeof meta !== 'object' || meta === null) return '';
   const entry = (meta as Record<string, unknown>)[key];
@@ -164,9 +185,9 @@ export function parseCommonsAnswer(data: unknown): { hits: CommonsHit[]; next?: 
       : undefined;
     const title = typeof page.title === 'string' ? page.title : '';
     if (!info || !title) continue;
-    const original = typeof info.url === 'string' ? info.url : '';
-    const thumb = typeof info.thumburl === 'string' ? info.thumburl : original;
-    if (!isAllowedUrl(original) || !isAllowedUrl(thumb)) continue;
+    const original = typeof info.url === 'string' ? pictureAddress(info.url) : undefined;
+    const thumb = typeof info.thumburl === 'string' ? pictureAddress(info.thumburl) : original;
+    if (!original || !thumb) continue;
     const meta = info.extmetadata;
     const shortName = plainFromHtml(metaValue(meta, 'LicenseShortName'));
     const kind = licenceKind(metaValue(meta, 'License'), shortName);

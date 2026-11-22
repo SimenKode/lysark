@@ -4,6 +4,13 @@
 dermed valgt. Planen er skrevet om etter dem ([plan.md](plan.md)), og
 unntaket for nettilgang (spørsmål 8) står i [AGENTS.md](../AGENTS.md).
 
+Leveranse 2 er bygd etter svarene. Tre steder ble det litt annerledes
+enn anbefalingen, se «Avvik» under leveranse 2 i [plan.md](plan.md):
+bilder hentes i høyst 1920 px (ikke 2560), småbildene hentes fra
+`upload.wikimedia.org`, og bare YouTube spilles i to trinn. Spørsmål 10
+er nå prøvd på ekte: YouTube spiller fra forhåndsvisningen, og svarer
+«Error 153» når fila åpnes rett fra disk.
+
 Tre ting er fortsatt åpne, fordi de er spørsmål til deg og ikke
 anbefalinger:
 

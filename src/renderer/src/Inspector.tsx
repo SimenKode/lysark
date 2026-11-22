@@ -16,13 +16,14 @@ import {
   type TextRole,
 } from '../../shared/format/schema';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
+import { youtubeRef } from '../../shared/render/web';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../../shared/limits';
 import { allowedTextColors, isLargeText } from '../../shared/theme/contrast';
 import { COLOR_NAMES, PALETTE, SERIES_ORDER } from '../../shared/theme/palette';
 import { SHAPE_PAIRS } from '../../shared/theme/shapes';
 import { getTheme, roleFontSize, sceneSurface } from '../../shared/theme/theme';
 import { CreditFields } from './MediaDialog';
-import { addAsset, megabytes, replaceImage } from './actions';
+import { addAsset, fetchYouTubeStill, megabytes, replaceImage } from './actions';
 import {
   GEOMETRY_NAMES,
   KIND_NAMES,
@@ -513,6 +514,44 @@ function TableFields({ el }: { el: Extract<Element, { type: 'table' }> }) {
   );
 }
 
+/** Fetches YouTube's still picture of a video, on the owner's click and not before. */
+function YouTubeStill(props: {
+  url: string;
+  has: boolean;
+  onFetched: (assetId: string) => void;
+  onRemove: () => void;
+}) {
+  const [fetching, setFetching] = useState(false);
+  return (
+    <>
+      <div className="button-row">
+        <button
+          type="button"
+          disabled={fetching}
+          onClick={() => {
+            setFetching(true);
+            void fetchYouTubeStill(props.url).then((id) => {
+              setFetching(false);
+              if (id) props.onFetched(id);
+            });
+          }}
+        >
+          {fetching ? 'Henter …' : props.has ? 'Hent forhåndsbilde på nytt' : 'Hent forhåndsbilde'}
+        </button>
+        {props.has && (
+          <button type="button" onClick={props.onRemove}>
+            Fjern forhåndsbildet
+          </button>
+        )}
+      </div>
+      <p className="hint">
+        Forhåndsbildet hentes fra YouTube når du trykker på knappen, og lagres i prosjektet.
+        {props.has ? '' : ' Uten det viser kortet bare avspillingsknappen.'}
+      </p>
+    </>
+  );
+}
+
 function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
   const project = useStore((s) => s.project)!;
   const update = useElementUpdate(el.id);
@@ -554,21 +593,39 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
         }}
       />
       {el.source.kind === 'url' ? (
-        <Field
-          label="Adresse"
-          hint="En lenke til en videoside (for eksempel YouTube eller Panopto) åpnes i nettleseren og krever nett. En direkte lenke til en MP4- eller WebM-fil spilles i scenen."
-        >
-          <input
-            type="text"
-            placeholder="https://"
-            value={el.source.url}
-            onChange={(e) =>
-              update<typeof el>((v) => {
-                v.source = { kind: 'url', url: e.target.value };
-              }, 'url')
-            }
-          />
-        </Field>
+        <>
+          <Field
+            label="Adresse"
+            hint="En YouTube-video vises med stillbilde, og spilleren hentes fra YouTube først når studenten klikker. Andre videosider (for eksempel Panopto) åpnes i nettleseren. En direkte lenke til en MP4- eller WebM-fil spilles i scenen. Alt dette krever nett hos studenten."
+          >
+            <input
+              type="text"
+              placeholder="https://"
+              value={el.source.url}
+              onChange={(e) =>
+                update<typeof el>((v) => {
+                  v.source = { kind: 'url', url: e.target.value };
+                }, 'url')
+              }
+            />
+          </Field>
+          {youtubeRef(el.source.url) && (
+            <YouTubeStill
+              url={el.source.url}
+              has={!!el.poster && !!project.assets[el.poster]}
+              onFetched={(id) =>
+                update<typeof el>((v) => {
+                  v.poster = id;
+                })
+              }
+              onRemove={() =>
+                update<typeof el>((v) => {
+                  delete v.poster;
+                })
+              }
+            />
+          )}
+        </>
       ) : (
         <>
           <p className="hint">

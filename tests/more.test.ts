@@ -311,6 +311,32 @@ describe('content from the web', () => {
     expect(page.getAttribute('sandbox')).toContain('allow-scripts');
   });
 
+  it('opens YouTube in the browser instead when the file was opened straight from disk', () => {
+    const view = window as unknown as {
+      happyDOM: { setURL(url: string): void };
+      open: typeof window.open;
+    };
+    const opened: string[] = [];
+    const realOpen = view.open;
+    view.open = ((url?: string | URL) => {
+      opened.push(String(url));
+      return null;
+    }) as typeof window.open;
+    view.happyDOM.setURL('file:///C:/forelesning.html');
+    try {
+      const body = renderMore(context(project), image.more!);
+      body.querySelector<HTMLButtonElement>('[data-block="m4"] button.ls-webvideo-play')!.click();
+      expect(opened).toEqual(['https://www.youtube.com/watch?v=AAAAAAAAAAA']);
+      expect(body.querySelector('iframe')).toBeNull();
+      // Other embedded pages have no such demand and are framed as usual.
+      body.querySelector<HTMLButtonElement>('[data-block="m5"] button.ls-webvideo-play')!.click();
+      expect(body.querySelector('iframe')!.getAttribute('src')).toBe('https://example.org/side');
+    } finally {
+      view.open = realOpen;
+      view.happyDOM.setURL('about:blank');
+    }
+  });
+
   it('cannot be activated while editing, and never fetches a video file from the web there', () => {
     const body = renderMore(context(project, 'edit'), image.more!);
     expect(body.querySelector('button')).toBeNull();

@@ -91,6 +91,17 @@ describe.skipIf(!built)('the program, end to end', () => {
     await expect.poll(async () => (await measure())[0]!.width).toBe(wide[0]!.width);
   });
 
+  it('keeps the chosen scene readable when the pointer is over it', async () => {
+    const chosen = page.locator('.scene-item[aria-current="true"]');
+    await chosen.hover();
+    const colours = await chosen.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return { background: style.backgroundColor, text: style.color };
+    });
+    expect(colours).toEqual({ background: 'rgb(120, 0, 240)', text: 'rgb(255, 255, 255)' });
+    await page.mouse.move(700, 500);
+  });
+
   it('draws the title scene with the brand shapes and the serif title', async () => {
     const scene = page.locator('.stage-inner .ls-scene');
     expect(await scene.locator('.ls-decoration path').count()).toBe(4);

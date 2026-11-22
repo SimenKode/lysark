@@ -4,8 +4,8 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 1), slik at eldre prosjekter kan løftes automatisk
-når det endres.
+versjonsnummer (nå 2), og eldre prosjekter løftes automatisk når de
+åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
 
@@ -49,10 +49,64 @@ cellemarger, og bilder kan blandes med det som ligger under (`blend`,
 brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
-Diagrammaler og lyd er ikke i formatet ennå. Formatet er ikke endret
-siden leveranse 1 (versjon 1); endringene som trengs for utdyping på alle
-elementer, figurer og lyd, står som spørsmål i
-[sporsmal-videre.md](sporsmal-videre.md).
+Diagrammaler og lyd er ikke i formatet ennå (leveranse 3 og 4).
+
+## Format 2: utdyping («Lær mer») og kreditering
+
+Fra leveranse 2 kan **alle elementer** ha utdyping. Skissen lenger ned
+viser fordypningsboksen slik den var i format 1 (`body` og `media`);
+slik er det nå:
+
+```ts
+interface ElementBase {
+  id: ElementId;
+  box: Box;
+  name?: string;
+  more?: More;                       // utdyping; alle elementtyper kan ha det
+}
+
+interface More {
+  title: string;                     // overskrift i panelet, og navnet på «+»-merket
+  blocks: MoreBlock[];               // byggesteinene, i rekkefølge
+  corner?: 'tr' | 'tl' | 'br' | 'bl'; // hjørnet merket står i
+}
+
+type MoreBlock =
+  | { id; kind: 'heading'; text: string }
+  | { id; kind: 'text'; content: RichText }
+  | { id; kind: 'image'; asset: AssetId; alt: string; caption?: string }
+  | { id; kind: 'video'; source: VideoSource; title: string; poster?: AssetId }
+  | { id; kind: 'table'; columns: number[]; headerRow: boolean; rows: TableCell[][] }
+  | { id; kind: 'embed'; url: string; title: string };
+
+interface DeepDiveElement extends ElementBase {
+  type: 'deepdive';                  // knappen «+ Lær mer»
+  label: string;                     // teksten på knappen
+}                                    // innholdet ligger i `more`, som for alle andre
+
+interface Asset {
+  // ... som før
+  credit?: {                         // hvem som har laget bildet, og vilkårene
+    title?: string; author?: string;
+    license?: string; licenseUrl?: string;
+    sourceUrl?: string;
+    required?: boolean;              // lisensen krever at dette vises
+  };
+}
+```
+
+- Et element uten byggesteiner har ingen utdyping og får ikke merke.
+  Knappen «+ Lær mer» har alltid et panel.
+- Uten valgt hjørne står merket oppe til høyre. På tekst følger det
+  teksten: til den siden og kanten teksten er justert mot.
+- «Beskåret» lagres ikke i krediteringen; det leses av at bildeelementet
+  har beskjæring.
+- En video med YouTube-adresse tegnes i to trinn: stillbilde og knapp
+  først, spilleren først når seeren trykker. Det er tegnekoden som
+  kjenner igjen adressen; formatet lagrer bare adressen.
+- **Løft fra format 1:** fordypningsboksens tekst blir en tekstblokk,
+  bildene bildeblokker, videoene videoblokker, og lenkene tekstblokker
+  med lenke. Knappeteksten beholdes og blir også overskrift i panelet.
 
 ```ts
 interface Project {
@@ -176,7 +230,7 @@ Et tema er data og tegneregler, ikke innhold:
 | --- | --- | --- | --- |
 | Steg | Ordnes i en liste | Tastetrykk går til neste | Går på tidspunktet `at` |
 | Tid | Kan dras fram og tilbake | Løper mens et steg spilles | Regnes ut per bilde |
-| Fordypningsboks | Redigeres | Åpnes av seeren | Vises ikke |
+| Utdyping («Lær mer») | Bygges i byggeren | Åpnes av seeren fra merket | Vises ikke |
 | Manus | Redigeres | Kan vises som tekst | Grunnlag for innlest stemme og teksting |
 | Lyd | Spilles inn | Kan følge med | Lydspor |
 

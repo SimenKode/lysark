@@ -146,13 +146,50 @@ lydbehandling), uten bibliotek.
 
 ## Sikkerhet og personvern
 
-- Programmet kontakter ikke nettet og samler ingenting.
+- Programmet samler ingenting.
+- **Nett bare når du ber om det** (valgt 22.11.2026, se
+  [AGENTS.md](../AGENTS.md)): et søk du sender til Wikimedia Commons,
+  nedlasting av bildet du velger, og forhåndsbildet til en YouTube-lenke
+  når du trykker «Hent forhåndsbilde». Vertene er
+  `commons.wikimedia.org`, `upload.wikimedia.org` og `i.ytimg.com`.
+- **Slik håndheves det** (`src/main/web.ts`, `src/main/commons.ts`):
+  - Grensesnittet når ikke nettet i det hele tatt. Alt det ber om over
+    http(s), avvises i hovedprosessen.
+  - Hovedprosessen bruker én egen økt til nettkallene. Hver forespørsel i
+    den økten, også omdirigeringer, sjekkes mot lista; alt annet stoppes
+    før det forlater maskinen.
+  - Økta lever bare i minnet (ingen informasjonskapsler lagres), og
+    oppgir bare «Lysark/versjon» og et fast språk. Søkeordene er det
+    eneste som sendes med.
+  - Galleribildene vises i grensesnittet gjennom hovedprosessen
+    (`lysark-web:`), ikke ved at grensesnittet henter dem selv.
+- **Forhåndsvisningen** vises fra en adresse på din egen maskin
+  (`http://127.0.0.1:<port>/<hemmelig sti>/`), fordi YouTube nekter å
+  spille i en side som er åpnet rett fra disk. Tjeneren svarer bare
+  denne maskinen, bare på forespørsler med den hemmelige stien, og bare
+  med forhåndsvisningen og mediene i det åpne prosjektet. Vinduet har sin
+  egen økt i minnet. Det er det eneste stedet innhold du har bygget inn
+  fra nettet, kan hentes, og bare når du trykker på avspillingsknappen.
 - Grensesnittet kjører isolert fra filsystemet; all filtilgang går gjennom
   et smalt, navngitt sett med kall.
-- Eksportert HTML gjør ingen nettkall utover lenker eieren selv har lagt
-  inn.
+- Eksportert HTML gjør ingen nettkall av seg selv. Innhold du har lagt
+  inn fra nettet (lenker, YouTube, innbygging), hentes først når seeren
+  trykker. Fila tillater rammer bare over https, og ingen skript utenfra.
+- Testene kontakter aldri nettet. Wikimedia besvares av testen selv.
+
+Leveranse 2 («Lær mer»-byggeren) tok ikke inn noen nye avhengigheter.
 
 ## Kjente vanskelige punkter
+
+- **Småbildene fra Wikimedia** leveres nå fra `thumb.wikimedia.org`, som
+  ikke står på lista. De samme bildene finnes på `upload.wikimedia.org`,
+  og programmet bruker den adressen. Det virket 22.11.2026, men er ikke
+  noe Wikimedia lover. Slutter det å virke, må verten legges til på
+  lista (eierens avgjørelse).
+- **YouTube fra disk:** åpnes den eksporterte fila rett fra disk, svarer
+  YouTube «Error 153» i rammen. Der åpner avspillingsknappen derfor
+  YouTube i nettleseren i stedet. Fra en http(s)-adresse spiller videoen
+  i siden (prøvd fra forhåndsvisningen; Canvas er ikke prøvd).
 
 - **EMF- og WMF-bilder** i eldre PPTX-filer kan ikke vises av
   nettlesermotoren. Importen melder dem i rapporten, så de kan byttes ut.

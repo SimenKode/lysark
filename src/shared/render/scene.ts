@@ -447,6 +447,14 @@ function renderWebFrame(
     button.setAttribute('type', 'button');
     if (o.title) button.setAttribute('aria-label', `${o.cta}: ${o.title}`);
     button.addEventListener('click', () => {
+      // YouTube refuses to play inside a page that was opened straight from
+      // disk (it answers "Error 153"), so there the button opens YouTube
+      // instead. Tried 22.11.2026: plays from an http(s) address, fails from file:.
+      const view = doc.defaultView;
+      if (o.kind === 'youtube' && view?.location.protocol === 'file:') {
+        view.open(o.linkUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
       const frame = doc.createElement('iframe');
       frame.className = 'ls-webvideo-frame';
       frame.title = o.title || o.cta;

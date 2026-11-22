@@ -1,4 +1,4 @@
-# Handoff: Lysark etter leveranse 1
+# Handoff: Lysark etter leveranse 2
 
 Skrevet 22.11.2026 for neste chat, og oppdatert samme dag etter økt 2 og
 økt 3. Eieren fyller inn tilbakemeldingene sine i
@@ -11,10 +11,12 @@ undersøkt og to feil rundt videolenker er rettet (se
 designspørsmålene for alt som gjenstår, er stilt samlet i
 [docs/sporsmal-videre.md](docs/sporsmal-videre.md) med forslag til ny
 inndeling av planen. Eieren svarte **«Alt som anbefalt»**, så planen er skrevet om til fem
-leveranser og leveranse 2 er startet (se
-[6.12](#612-eierens-svar-og-åpen-kildekode-22112026)). Samme dag bestemte
-eieren at prosjektet skal bli åpen kildekode på GitHub, med lisensen
-GPL-3.0.
+leveranser (se [6.12](#612-eierens-svar-og-åpen-kildekode-22112026)).
+Samme dag bestemte eieren at prosjektet skal bli åpen kildekode på
+GitHub, med lisensen GPL-3.0. **Leveranse 2 («Lær mer»-byggeren) er
+bygget** og prøvd på Linux Mint, se
+[6.13](#613-leveranse-2-er-bygget-22112026). Den er ikke prøvd på
+Windows eller i Canvas.
 
 **Økt 2 i korte trekk:** del 6 var ikke fylt ut, så ingenting i
 uttrykket (6.1) er endret, og leveranse 2 er ikke påbegynt. Økten
@@ -51,7 +53,7 @@ Kommandoer: `npm run dev` (start), `npm test` (bygger og kjører alt),
 
 ## 2. Hva som er laget
 
-Leveranse 1 av 3: PPTX inn, interaktiv HTML ut.
+Leveranse 1 og 2 av 5. Leveranse 1: PPTX inn, interaktiv HTML ut.
 
 - **Import** av PPTX til en prosjektmappe, med rapport over det som må
   lages på nytt.
@@ -66,18 +68,37 @@ Leveranse 1 av 3: PPTX inn, interaktiv HTML ut.
   hjelp, fullskjerm, utskrift.
 - **Lagring** som mappe, pluss pakking til én fil og tilbake.
 
-Ikke påbegynt: leveranse 2 (animasjonsmaler og håndlaget stil) og
-leveranse 3 (innspilling og MP4).
+Leveranse 2, «Lær mer»-byggeren:
+
+- **Utdyping på alle elementer:** tekst, bilde, form, tabell og video kan
+  få et «+»-merke som åpner et panel. «+ Lær mer» er fortsatt en egen
+  knapp i scenen.
+- **Byggeren:** et vindu over hele arbeidsflaten med byggesteiner (tekst,
+  overskrift, bilde, video, tabell, innbygging) til venstre og panelet
+  slik studenten ser det til høyre. Veier inn: «+ Lær mer», Element-fanen
+  og høyreklikk i scenen.
+- **Mediedialogen:** søk i Wikimedia Commons, opplasting, og «I
+  prosjektet». Bilder fra Commons får kreditering med seg.
+- **Spilleren:** merket er en knapp med navn for skjermleser, hele
+  elementet kan klikkes, panelet kan utvides, og «Bildekilder» lister
+  alle krediterte bilder.
+- **YouTube og innbygging i to trinn:** stillbilde og knapp først;
+  ingenting hentes før seeren trykker.
+- **Format 2**, med automatisk løft av eldre prosjekter.
+
+Ikke påbegynt: leveranse 3 (lyd og video), 4 (figurer og bevegelser) og
+5 (håndlaget stil).
 
 ## 3. Hva som er prøvd, og hvordan
 
 | Hva | Resultat |
 | --- | --- |
-| Automatiske tester på Linux Mint | Økt 3: 161 består (157 etter økt 2, 129 etter økt 1). To av dem starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere og spille av. |
-| Det pakkede Linux-programmet | Bygget på nytt i økt 3 (AppImage og Windows-zip, 22.11.2026). De to gjennomkjøringene (14 tester) besto mot `release/linux-unpacked/lysark`. AppImage-fila selv er ikke startet. |
+| Automatiske tester på Linux Mint | Etter leveranse 2: 206 består (161 etter økt 3, 157 etter økt 2, 129 etter økt 1). Tre testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer» og hente medier. |
+| Det pakkede Linux-programmet | Bygget på nytt etter leveranse 2 (AppImage og Windows-zip, 22.11.2026). De tre gjennomkjøringene (27 tester) besto mot `release/linux-unpacked/lysark`. AppImage-fila selv er ikke startet, og Windows-zip-en er ikke prøvd. |
+| Leveranse 2 mot ekte nett | Én gang på Linux Mint: Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen (spilte) og fra en fil åpnet fra disk («Error 153»). Se 6.13. |
 | Rettingene i økt 3, sett på skjermbilder | Programmet ble kjørt uten vindu på Linux Mint med Stål importert: scenelista, lenkekortet med stillbilde og meldingene for video som ikke kan vises. Ikke prøvd på Windows. |
 | Import av de ekte forelesningene | Alle åtte (315 lysark) og malfila importeres uten feil. Økt 2: alle 315 er sammenlignet side om side med PDF-utgavene, før og etter rettingene (se del 4). Gjennomgangen ble gjort av hjelpeagenter som så på bildene, og jeg sjekket funnene og de viktigste rettingene selv. |
-| Windows 11 (eierens VM) | Prøvd for hånd 22.11.2026 med zip-utgaven (økt 1), se under. Endringene fra økt 2 og økt 3 er ikke prøvd på Windows. |
+| Windows 11 (eierens VM) | Prøvd for hånd 22.11.2026 med zip-utgaven (økt 1), se under. Endringene fra økt 2 og økt 3, og hele leveranse 2, er ikke prøvd på Windows. |
 | Canvas | Ikke prøvd. |
 
 ### Windows 11, det som ble prøvd i VM-en
@@ -203,13 +224,15 @@ Mindre:
 
 - Videolenker fra PowerPoint heter «Media på Internett 4» og lignende,
   fordi det er navnet PowerPoint ga dem. Tittelen må skrives for hånd.
-- I «Lær mer» kan en video bare være en fil. En YouTube-lenke kan bare
-  legges inn som vanlig lenke (inngår i spørsmålene om byggeren).
 - Edge tilbyr å oversette siden fordi den er merket som norsk.
 - Formelbildene har PowerPoints skrift og størrelse, så de ser større ut
   enn teksten ved siden av.
 - Tittelskriften er litt bredere enn Calibri, så en tittel som går helt
   inntil et bilde, kan få siste bokstav dekket (Betong 33 og 42).
+
+Rettet under leveranse 2: den valgte scenen i scenelista ble lys med hvit
+tittel når musa sto over den. Rettingen fra økt 3 holdt ikke (en generell
+knappregel vant); nå er den rettet og har en test.
 
 Rettet i økt 3: miniatyrene i scenelista holder seg i boksen sin,
 videolenker viser stillbildet sitt, lenkekortet er lesbart i «Lær
@@ -626,21 +649,74 @@ Til leveranse 2: Wikimedia ber programmer oppgi kontaktinformasjon i
 forespørslene. Når repoet er offentlig, kan adressen til repoet brukes
 til det, uten e-post.
 
+### 6.13 Leveranse 2 er bygget (22.11.2026)
+
+Bygget i samme økt som svarene kom. Hva som er laget, står i del 2; hva
+som er valgt, i [docs/sporsmal-videre.md](docs/sporsmal-videre.md).
+
+**Slik er det prøvd, alt på Linux Mint:**
+
+- Automatiske tester (tallet står i del 3). Nye testfiler:
+  `tests/more.test.ts` (formatet, løftet fra format 1, panelet, merket,
+  YouTube i to trinn, kreditering), `tests/commons.test.ts`
+  (tillatelseslista, søket, lisensfilteret, lesing av svaret) og
+  `tests/e2e-more.test.ts`, som starter hele programmet uten vindu og går
+  gjennom byggeren, mediedialogen, et Commons-søk der testen selv svarer
+  for Wikimedia, nettsperren, lagring, og panelet i spilleren med
+  tastatur og mus.
+- Skjermbilder av byggeren, mediedialogen, høyreklikkmenyen, panelet og
+  «Bildekilder» er sett på.
+- **Én gang mot ekte nett** (fire forespørselsrunder, med Stål importert):
+  søk i Commons etter «bro» ga 24 treff med bilder; ett bilde ble satt
+  inn med tittel, opphavsperson, lisens og kilde; forhåndsbildet til en
+  YouTube-video ble hentet (1280 × 720); videoen spilte i
+  forhåndsvisningen; og samme video i en eksportert fil åpnet rett fra
+  disk ga «Error 153» fra YouTube.
+
+**Det ekte nettet lærte meg to ting, og begge er rettet:**
+
+- Wikimedia leverer nå småbilder fra `thumb.wikimedia.org`. Den verten
+  står ikke på lista eieren godkjente, så første ekte søk ga null treff.
+  Programmet bruker nå de samme bildene fra `upload.wikimedia.org`, som
+  står på lista, og fjerner sporingsparametrene Wikimedia legger på
+  adressene. Det virker i dag, men er ikke noe Wikimedia lover.
+  **Eieren bør avgjøre om `thumb.wikimedia.org` skal legges til.**
+- YouTube spiller ikke i en fil åpnet fra disk. Avspillingsknappen åpner
+  derfor YouTube i nettleseren der, i stedet for å vise en feilmelding.
+
+**Ikke prøvd:** Windows 11, Canvas, andre nettlesere enn den innebygde
+(Chromium), skjermleser i praksis (rollene og navnene er testet, ikke
+opplevelsen), og dra-og-slipp av byggesteiner i automatiske tester.
+
+**Mangler og ting å vite:**
+
+- Bare YouTube kjennes igjen som video i to trinn. Vimeo, Panopto og
+  andre er fortsatt et kort som åpner nettleseren når de står som video;
+  de kan bygges inn med byggesteinen «Innbygging».
+- Tabeller i byggeren har ren tekst i cellene (ingen fet, lenker eller
+  sammenslåtte celler).
+- Bilder fra Commons hentes i høyst 1920 px bredde. SVG hentes som PNG.
+- Bildene som fulgte med fra PowerPoint, har ingen kreditering.
+  «Bildekilder» viser bare det som er fylt inn (Element-fanen,
+  «Kreditering», eller mediedialogen).
+- Merket på et dreid element holdes ikke innenfor scenekanten.
+- Noen nettsteder nekter å bli bygget inn; da er rammen tom, og lenka
+  «Åpne i nettleseren» er veien.
+
 ## 7. Det neste økt bør gjøre først
 
-1. Les [docs/plan.md](docs/plan.md), leveranse 2, og se i `git log` hvor
-   langt byggingen er kommet. Bygg videre trinn for trinn, med tester, og
-   commit hvert ferdige trinn.
-2. Prøv HTML-fila i Canvas sammen med eieren tidlig; det avgjør
-   YouTube-innbyggingen (spørsmål 10 i
-   [docs/sporsmal-videre.md](docs/sporsmal-videre.md)).
-3. Minn eieren på de tre punktene i 6.12 før repoet gjøres offentlig.
-   Ikke push og ikke endre synligheten uten at han ber om det.
-4. Hold [docs/prosjektformat.md](docs/prosjektformat.md) og
-   [docs/stakk.md](docs/stakk.md) sanne når formatet og avhengighetene
-   endres.
-5. Senere: tabeller i importen (del 5, punkt 5) og endringene fra økt 2
-   og 3 i Windows-VM-en.
+1. **Canvas sammen med eieren:** last opp en eksportert fil, og se om
+   skript kjører, om YouTube spiller i to trinn, om innbygging virker, og
+   hvor stor fil emnet godtar. Leveranse 2 er ikke ferdig før det er
+   gjort.
+2. **Windows 11:** prøv leveranse 2 i eierens VM (se
+   [tools/windows-vm.py](tools/windows-vm.py)).
+3. Spør eieren om `thumb.wikimedia.org` skal på lista (6.13), og minn om
+   de tre punktene i 6.12 før repoet gjøres offentlig. Ikke push og ikke
+   endre synligheten uten at han ber om det.
+4. Deretter leveranse 3 (lyd og video), se [docs/plan.md](docs/plan.md).
+   Spør først om Windows-VM-en kan få mikrofon (spørsmål 23).
+5. Senere: tabeller i importen (del 5, punkt 5).
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
 tar bilder av scenene (se toppen av fila), og `pdftoppm` gir bilder av

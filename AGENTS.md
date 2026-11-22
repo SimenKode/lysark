@@ -116,6 +116,12 @@ the manual, raise it with the owner instead of choosing silently.
   version. Render code and the export are unchanged by this: no network.
   The preview window is the one place that can load what the owner has
   embedded, exactly as a student's browser would, and only on a click.
+  Wikimedia now hands out scaled pictures from `thumb.wikimedia.org`,
+  which is not on the list; the program rewrites those addresses to
+  `upload.wikimedia.org` (`src/main/commons.ts`). Adding a host is the
+  owner's decision.
+- Tests never contact the network. Where a test needs Wikimedia, the test
+  answers for it.
 
 ## Commands
 

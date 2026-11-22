@@ -9,7 +9,7 @@ prøvd på både Linux Mint og Windows 11.
 | Nr. | Leveranse | Status |
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
-| 2 | «Lær mer»-byggeren | Under bygging |
+| 2 | «Lær mer»-byggeren | Bygget og prøvd på Linux Mint. Gjenstår: Canvas, Windows |
 | 3 | Lyd og video | Ikke påbegynt |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
@@ -104,6 +104,42 @@ innbygging, filstørrelse, fullskjerm.
 
 **Ikke med:** byggesteinen «figur/animasjon» (kommer med leveranse 4),
 lyd, video-eksport.
+
+### Status for leveranse 2 (22.11.2026)
+
+Alt over er bygget. Prøvd automatisk på Linux Mint, også med hele
+programmet uten vindu: byggeren, mediedialogen, søk og innsetting fra
+Commons (med Wikimedia besvart av testen), nettsperren, lagring, og
+panelet i spilleren med tastatur og mus.
+
+Prøvd én gang mot ekte nett, på Linux Mint:
+
+- søk i Wikimedia Commons («bro»): 24 treff med bilder, og et innsatt
+  bilde fikk tittel, opphavsperson, lisens og kilde
+- forhåndsbilde fra YouTube: hentet i 1280 × 720
+- YouTube i forhåndsvisningen: videoen spilte
+- YouTube i en eksportert fil åpnet rett fra disk: YouTube svarte
+  «Error 153». Derfor åpner knappen YouTube i nettleseren når fila er
+  åpnet fra disk
+
+Avvik fra det som ble valgt, og hvorfor:
+
+- **Bilder hentes i høyst 1920 px bredde**, ikke 2560. Wikimedia leverer
+  bilder i faste bredder, og 1920 er scenens bredde.
+- **Småbildene hentes fra `upload.wikimedia.org`**, selv om Wikimedia nå
+  oppgir `thumb.wikimedia.org`, fordi bare den første står på lista over
+  verter programmet får kontakte.
+- **Bare YouTube kjennes igjen som video i to trinn.** Vimeo, Panopto og
+  andre videosider er fortsatt et kort som åpner nettleseren når de står
+  som video. De kan bygges inn med byggesteinen «Innbygging».
+
+Gjenstår før leveransen er ferdig:
+
+1. **Canvas** sammen med eieren: skript, innbygging, filstørrelse,
+   fullskjerm.
+2. **Windows 11:** ingenting av leveranse 2 er prøvd der.
+3. Dra-og-slipp av byggesteiner er ikke dekket av automatiske tester
+   (knappene «flytt opp» og «flytt ned» er det).
 
 ## Leveranse 3: Lyd og video
 
