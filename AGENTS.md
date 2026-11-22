@@ -149,6 +149,14 @@ the manual, raise it with the owner instead of choosing silently.
   `vendor/ffmpeg/`, and shipped next to the program with its licence text
   and a link to its source. To change the build, change it there and in
   `docs/stakk.md`, and tell the owner.
+- Files the owner opens are untrusted input. An exported HTML file that
+  is opened as a project is read as text and never run; its project is
+  validated like any project file, and media land only in the new
+  project's `media/` folder under names made from their own content
+  (`src/importer/html.ts`).
+- pdf.js is built in for PDF import, but the font and character-map
+  folders of its package are never shipped (their licences have not been
+  taken in; see `docs/stakk.md`). A test checks the build for them.
 - All sound in a project is mono WAV, 48 kHz, 16 bit. A recording is never
   changed: editing changes the list of clips that point into it
   (`src/shared/audio/edit.ts`). Time is computed by one clock

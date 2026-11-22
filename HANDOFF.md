@@ -26,7 +26,8 @@ de tre punktene i 6.12 må han ta stilling til først. Leveranse 4
 
 **Det viktigste som ikke er prøvd:** en ekte mikrofon (alt opptak er
 prøvd med prøvemikrofon eller stille inndata), Canvas (eieren prøver
-selv), og en hel forelesning lest inn i ett strekk.
+selv), og en hel forelesning lest inn i ett strekk (bare eksporten av en
+lang forelesning med kunstig lyd er prøvd).
 
 ## 1. Hvor ting er
 
@@ -109,9 +110,10 @@ stil).
 
 | Hva | Resultat |
 | --- | --- |
-| Automatiske tester på Linux Mint | Etter leveranse 3: 282 består, 1 hoppes over (206 etter leveranse 2). Seks testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer», hente medier, importere PowerPoint, PDF og HTML, lese inn med prøvemikrofon, klippe, og eksportere video. |
-| Det pakkede Linux-programmet | Bygget i slutten av økt 5 (AppImage 202 MB). De seks gjennomkjøringene (49 tester) besto mot `release/linux-unpacked/lysark`, også videoeksporten med FFmpeg fra pakka. AppImage-fila selv er ikke startet. |
-| Video av en ekte forelesning | Stål (26 lysark, uten lyd) ble til en MP4 på 2:10 og 14 MB på 40 sekunder, på Linux Mint uten vindu. Fire bilder fra videoen er sett på; de er skarpe og riktige. |
+| Automatiske tester på Linux Mint | Etter leveranse 3: 283 består, 1 hoppes over (206 etter leveranse 2). Seks testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer», hente medier, importere PowerPoint, PDF og HTML, lese inn med prøvemikrofon, klippe, og eksportere video. |
+| Det pakkede Linux-programmet | Bygget i slutten av økt 5 (AppImage 202 MB). De seks gjennomkjøringene (50 tester) besto mot `release/linux-unpacked/lysark`, også videoeksporten med FFmpeg fra pakka. AppImage-fila selv er ikke startet. |
+| Video av en ekte forelesning | Stål (26 lysark, uten lyd) ble til en MP4 på 2:10 og 15 MB på 50 sekunder, på Linux Mint uten vindu. Et ark med ett bilde fra hvert av de 26 lysarkene er sett på etter rettingen i 6.17: alle bildene er med. |
+| En lang forelesning | 41 lysark med ett minutt kunstig lyd hver: video på 9 min 15 s, HTML på 29 s (6.17). |
 | PDF-import av en ekte PDF | `PB1020 2025 - 04 - Stål.pdf`: 26 lysark på 17 sekunder, 8,4 MB bilder, riktige titler og tekst. Ett skjermbilde er sett på. De andre sju PDF-ene er ikke prøvd. |
 | Leveranse 2 mot ekte nett | Linux Mint (økt 4): Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen. Windows 11 (økt 5): Commons-søk og YouTubes spiller i lysarket, se 6.16. YouTubes spiller i lysarket er **ikke** prøvd mot ekte nett på Linux Mint etter ombyggingen (A6); der er bare testen som selv svarer for YouTube, kjørt. |
 | Import av de ekte forelesningene | Alle åtte (315 lysark) og malfila importeres uten feil. Økt 2: alle 315 er sammenlignet side om side med PDF-utgavene, før og etter rettingene (se del 4). Gjennomgangen ble gjort av hjelpeagenter som så på bildene, og jeg sjekket funnene og de viktigste rettingene selv. |
@@ -944,6 +946,77 @@ Skjermbildene fra utprøvingen ble ikke tatt vare på i repoet.
 hva som avviker og hva som er prøvd, står i
 [docs/plan.md](docs/plan.md) under «Status for leveranse 3», og
 formatet i [docs/prosjektformat.md](docs/prosjektformat.md) («Format 4»).
+
+### 6.17 Økt 5: leveranse 3 på Windows, og inndataene
+
+**Lyd og video på Windows 11 (eierens VM), prøvd for hånd av en
+hjelpeagent 22.11.2026** med zip-utgaven som har FFmpeg ved siden av.
+Alle 11 punkter virket:
+
+- prosjektet fra forrige utprøving (lagret i et eldre format) åpnet uten
+  spørsmål
+- fanen «Lyd» med stripa over 26 lysark og «Hele forelesningen: 2:10»
+- opptaksvinduet åpnet uten feilmelding. Mikrofonlista viste
+  «Systemets valg» og «Line In (High Definition Audio Device)»
+- innlesing over to lysark med pil høyre, «Ferdig», og meldingen
+  «Opptaket er lagt på 2 lysark. Husk å lagre prosjektet.»
+- pause satt inn, angret og gjort om; «Spill av» stoppet av seg selv
+- **video: 2:19 (4173 bilder) på 55–80 sekunder**, FFmpeg startet og
+  fila spilte i Windows' egen spiller
+- HTML-fila med «Spill av» i Edge gikk videre fra lysark til lysark av
+  seg selv, og det samme i forhåndsvisningen
+
+**Mikrofonen i VM-en er ikke rigget om.** VM-ens lydinngang (ich9 med
+SPICE) fins i Windows som «Line In», men gir stillhet når ingen
+SPICE-klient er koblet til. Opptaket ble derfor en rett strek. Det
+prøver hele veien (tillatelse, opptak, fil, klipping, video), men ikke
+lyden selv. For å få ekte lyd inn måtte VM-en kobles til lyden på
+vertsmaskinen, altså eierens egen mikrofon, og det gjorde jeg ikke uten
+å spørre. **Ekte lyd på Windows er derfor ikke prøvd.** Kobler eieren
+til VM-en med virt-viewer, sender SPICE mikrofonen hans inn.
+
+Funn fra denne utprøvingen, og hva som er gjort:
+
+| Funn | Tiltak |
+| --- | --- |
+| **Bilder manglet i videoen** på noen lysark (Stål 2, 4 og 24), ulikt fra gang til gang. Samme feil fantes på Linux (lysark 4 og 24), men var ikke oppdaget der | Rettet: bildet ble tatt før et stort fotografi var kommet på skjermen. Et lysark tegnes nå først helt, og eksporten venter til det skjulte vinduet har sluttet å tegne. Kontrollert på Linux med et ark over alle 26 lysark fra videoen. Etterkontroll på Windows: se under |
+| «Avbryt eksporten» hang (funnet av meg på Linux, ikke i VM-en) | Rettet: FFmpeg stoppes straks, også når programmet lukkes. Har fått en egen test |
+| Prosjektet ble «ulagret» av å eksportere video | Rettet: bare når et valg i dialogen er endret |
+| Framdriften vistes før filnavnet var valgt | Rettet |
+| Meldingene nederst dekket knappene i lydpanelet | Rettet: meldingene står nå over lysarket |
+| Klokka i opptaksvinduet begynner på null for hvert lysark | Slik er det ment: den viser lengden på lysarket som leses inn |
+| Lagre-dialogene starter i mappa over prosjektmappa | Slik er det laget |
+
+**Etterkontroll på Windows etter rettingene:** (fylles inn)
+
+**Lang forelesning (Linux Mint, uten vindu):** et prosjekt med 41
+lysark, ett minutt kunstig lyd på hvert (40 minutter), ble til video på
+9 minutter og 15 sekunder (59 MB), med teksting. Programmet brukte på
+det meste omtrent 900 MB minne. HTML-fila med stemmen ble 21 MB og tok
+29 sekunder. Maskinen kjørte andre tester samtidig, så tidene er øvre
+anslag. Ekte innlesing av en hel forelesning er ikke prøvd.
+
+**To eksporter er like for øyet, ikke bit for bit** (se
+[docs/stakk.md](docs/stakk.md)).
+
+**Inndataene** (bygget av en hjelpeagent i egen arbeidskopi og flettet
+inn):
+
+- «Åpne HTML-fil …» gjør en eksportert Lysark-fil til prosjekt igjen.
+  Fila kjøres aldri; den leses som tekst og kontrolleres som en vanlig
+  prosjektfil. En stor video som lå i mappa ved siden av, tas med hvis
+  mappa er der; ellers sier programmet hvilken som mangler. Mediefiler
+  som lå ubrukt i prosjektet, er ikke med i en eksport og kommer ikke
+  tilbake. Har fila stemme, gjøres lyden om til prosjektets format, med
+  klipp og pauser slått sammen til ett opptak per lysark.
+- «Importer PDF …» gjør hver side til et lysark med siden som bilde
+  (WebP, høyst 3840 × 2160) og teksten som alternativ tekst. Prøvd på
+  `PB1020 2025 - 04 - Stål.pdf`: 26 lysark på 17 sekunder, 8,4 MB.
+  Sider uten tekst merkes. Passordbeskyttede og skadde PDF-er avvises
+  før du blir spurt om mappe.
+- pdf.js (Apache-2.0) er bygd inn, med to bildedekodere (JPEG 2000 og
+  JBIG2). Skrift- og tegnkartmappene til pdf.js er **ikke** med; en test
+  kontrollerer det.
 
 ## 7. Arbeidsordre for neste økt
 

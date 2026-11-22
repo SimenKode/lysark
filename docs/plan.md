@@ -10,7 +10,7 @@ prøvd på både Linux Mint og Windows 11.
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
-| 3 | Lyd og video | Bygget og prøvd automatisk på Linux Mint (økt 5). Gjenstår: Windows 11 med mikrofon, og at eieren prøver det selv |
+| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gjenstår: en ekte mikrofon, og at eieren prøver det selv |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
@@ -221,11 +221,21 @@ Bygget:
   manuset.
 - **HTML-fila** får stemmen med og en «Spill av»-knapp: stemmen spilles,
   og steg og lysark følger på de samme tidspunktene.
+- **Inndata:** «Importer PDF …» (hver side blir et lysark med siden som
+  bilde og teksten som alternativ tekst) og «Åpne HTML-fil …» (en
+  eksportert Lysark-fil blir prosjekt igjen, også med stemmen).
 - **FFmpeg** 9.0.2 (GPL-bygget fra BtbN, utgaven fra 31.10.2026) hentes
   av `tools/fetch-ffmpeg.mjs` med kontroll av sjekksum, og legges ved
   programmet i mappa `ffmpeg` med lisenstekst og lenke til kildekoden.
 
 Slik ble det, der det avviker fra eller presiserer planen:
+
+- **PDF-sidene lagres som WebP**, ikke PNG: skarpe, og en femtedel så
+  store. En tittel som går over to linjer i PDF-en, blir bare første
+  linje, og må rettes for hånd.
+- **Åpnes en HTML-fil med stemme som prosjekt**, er klipp og pauser
+  slått sammen til ett opptak per lysark, og mediefiler som lå ubrukt i
+  prosjektet, er ikke med.
 
 - **Tekstingen er beregnet, ikke lyttet fram.** Manuset til et lysark
   deles i korte biter og fordeles over tiden det snakkes, etter
@@ -252,8 +262,16 @@ sekundet, AAC, riktig lengde, riktig første bilde), teksting, og
 HTML-fila som spiller seg selv. En video av Stål (26 lysark, 2:10, uten
 lyd) ble laget på 40 sekunder og sett på.
 
-Ikke prøvd ennå: en ekte mikrofon, Windows 11, lange opptak (en hel
-forelesning), og andre nettlesere enn den innebygde for «Spill av».
+Prøvd for hånd på Windows 11 (eierens VM): innlesing (med stille
+inndata), pause, angre, avspilling, video med FFmpeg, og HTML-fila med
+«Spill av» i Edge. Detaljer og funn står i HANDOFF.md 6.17.
+
+En lang forelesning (41 lysark med ett minutt kunstig lyd hver) ble til
+video på 9 minutter og HTML på et halvt minutt.
+
+Ikke prøvd ennå: en ekte mikrofon (verken på Linux eller Windows), en
+hel forelesning lest inn i ett strekk, og «Spill av» i andre nettlesere
+enn den innebygde og Edge.
 
 ## Leveranse 4: Figurer og bevegelser
 
