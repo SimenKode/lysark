@@ -267,7 +267,7 @@ describe.skipIf(!built)('the program, end to end', () => {
     await player.locator('.lp-stage .ls-deepdive').click();
     await player.waitForSelector('.lp-panel:not([hidden])');
     expect(await player.locator('#lp-panel-title').textContent()).toBe('Mer om A');
-    expect(await player.locator('.lp-panel .lp-media img').count()).toBe(1);
+    expect(await player.locator('.lp-panel .lm-body img').count()).toBe(1);
     await shot(player, '06-spiller-laer-mer');
     await player.keyboard.press('Escape');
     await expect.poll(() => player.locator('.lp-panel').isHidden()).toBe(true);

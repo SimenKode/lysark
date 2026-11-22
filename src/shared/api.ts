@@ -1,6 +1,6 @@
 // The narrow, named set of calls the user interface can make to the main
 // process. The interface itself has no access to files or to Node.
-import type { Asset, Project } from './format/schema';
+import type { Asset, Credit, Project } from './format/schema';
 import type { ImportReport } from '../importer/pptx';
 
 export type { ImportReport };
@@ -19,6 +19,24 @@ export interface ImportedProject extends OpenedProject {
 export interface AddedMedia {
   id: string;
   asset: Asset;
+}
+
+/** A picture found in Wikimedia Commons. */
+export interface CommonsPicture {
+  /** The file's name on Commons. */
+  title: string;
+  /** Address of a picture the interface can show (handed out by the main process). */
+  thumbUrl: string;
+  /** Size of the original, in pixels. */
+  width: number;
+  height: number;
+  credit: Credit;
+}
+
+export interface CommonsResult {
+  hits: CommonsPicture[];
+  /** Offset of the next page, when there is one. */
+  next?: number;
 }
 
 export interface ExportSummary {
@@ -70,6 +88,14 @@ export interface LysarkApi {
   importPptx(): Promise<ImportedProject | null>;
   saveProject(dir: string, project: Project): Promise<void>;
   addMedia(dir: string, kind: 'image' | 'video'): Promise<AddedMedia | null>;
+  /** Sends the owner's search words to Wikimedia Commons. Contacts the network. */
+  searchCommons(query: string, offset: number): Promise<CommonsResult>;
+  /** A larger picture of one search hit. Contacts the network. */
+  commonsPreview(title: string): Promise<CommonsPicture>;
+  /** Downloads the chosen picture into the project, with its credit. Contacts the network. */
+  addCommonsPicture(dir: string, title: string): Promise<AddedMedia>;
+  /** Fetches YouTube's still picture of a video into the project. Contacts the network. */
+  addYouTubeStill(dir: string, url: string): Promise<AddedMedia>;
   exportHtml(dir: string, project: Project): Promise<ExportSummary | null>;
   /** Packs the saved project folder into one zip file. */
   packProject(dir: string): Promise<{ path: string; bytes: number } | null>;
@@ -99,4 +125,9 @@ export function mediaUrl(file: string): string {
 /** URL of one of the owner's logo files. */
 export function logoUrl(language: LogoLanguage, variant: LogoVariant, version: number): string {
   return `lysark-media://brand/${language}-${variant}?v=${version}`;
+}
+
+/** Address the interface uses to show a gallery picture; the main process fetches it. */
+export function webPictureUrl(address: string): string {
+  return `lysark-web://picture/${encodeURIComponent(address)}`;
 }

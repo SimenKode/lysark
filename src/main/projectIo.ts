@@ -139,6 +139,23 @@ export function addMediaFile(
   };
 }
 
+/** Stores bytes fetched from the web (a picture from Commons, a still picture) as an asset. */
+export function addMediaBytes(
+  dir: string,
+  data: Uint8Array,
+  extension: string,
+  asset: Pick<Asset, 'name' | 'credit'>,
+): { id: string; asset: Asset } {
+  const mime = IMAGE_MIME[extension];
+  if (!mime) throw new Error('Bildet er i et format som ikke kan vises.');
+  const hash = createHash('sha256').update(data).digest('hex').slice(0, 16);
+  const file = `media/${hash}${extension}`;
+  mkdirSync(join(dir, 'media'), { recursive: true });
+  const target = mediaPath(dir, file);
+  if (!existsSync(target)) writeFileSync(target, data);
+  return { id: newId('a'), asset: { kind: 'image', file, mime, bytes: data.byteLength, ...asset } };
+}
+
 // ---------- One-file packages ----------
 
 const SAFE_MEDIA_NAME = /^media\/[A-Za-z0-9._-]+$/;

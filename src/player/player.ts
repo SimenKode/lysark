@@ -1,14 +1,15 @@
 // The HTML player: shows one scene at a time, steps through its timeline,
 // and offers contents, script, "Lær mer" panels, help, full screen and
 // print. It has no dependencies beyond the shared render code.
-import type { DeepDiveElement, Project, Scene } from '../shared/format/schema';
+import type { Element as SceneElement, Project, Scene } from '../shared/format/schema';
 import { PALETTE } from '../shared/theme/palette';
 import { getTheme, sceneSurface } from '../shared/theme/theme';
-import { renderRichText } from '../shared/render/richtext';
+import { collectCredits, renderCredit, renderMore } from '../shared/render/more';
 import {
   SCENE_STRINGS,
+  moreOf,
+  moreTitle,
   renderScene,
-  renderVideo,
   type RenderContext,
 } from '../shared/render/scene';
 import { applySceneState, sceneState, stepDuration } from '../shared/render/timeline';
@@ -103,7 +104,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   let index = 0;
   let stepsShown = 0;
   let frame = 0;
-  let deepDiveOpener: HTMLElement | null = null;
+  let moreOpener: HTMLElement | null = null;
   const rendered = new Map<string, HTMLElement>();
 
   // ---------- Structure ----------
@@ -147,6 +148,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
 
   const panelTitle = h('h2', { id: 'lp-panel-title', tabindex: '-1' });
   const panelClose = h('button', { class: 'lp-btn lp-btn-light', type: 'button' }, t.close);
+  const panelWiden = h(
+    'button',
+    { class: 'lp-btn lp-btn-light', type: 'button', 'aria-pressed': 'false' },
+    t.widen,
+  );
   const panelBody = h('div', { class: 'lp-panel-body' });
   const panel = h(
     'aside',
@@ -157,7 +163,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       'aria-modal': 'false',
       'aria-labelledby': 'lp-panel-title',
     },
-    h('div', { class: 'lp-panel-head' }, panelTitle, panelClose),
+    h(
+      'div',
+      { class: 'lp-panel-head' },
+      panelTitle,
+      h('div', { class: 'lp-panel-tools' }, panelWiden, panelClose),
+    ),
     panelBody,
   );
 
@@ -194,6 +205,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     { class: 'lp-btn', type: 'button', 'aria-pressed': 'false', hidden: !hasScript },
     t.script,
   );
+  const credits = collectCredits(project);
+  const creditsButton = h(
+    'button',
+    { class: 'lp-btn', type: 'button', hidden: credits.length === 0 },
+    t.credits,
+  );
   const helpButton = h('button', { class: 'lp-btn', type: 'button' }, t.help);
   const fullscreenButton = h(
     'button',
@@ -209,6 +226,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     nextButton,
     progress,
     scriptButton,
+    creditsButton,
     helpButton,
     fullscreenButton,
   );
@@ -226,6 +244,36 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   );
   const help = h('div', { class: 'lp-help-back', hidden: true }, helpBox);
 
+  // "Bildekilder": who made each picture, and on what terms it is used.
+  const creditsClose = h('button', { class: 'lp-btn lp-btn-light', type: 'button' }, t.close);
+  const creditsList = h('ul', { class: 'lp-credits-list' });
+  for (const entry of credits) {
+    creditsList.append(
+      h(
+        'li',
+        {},
+        renderCredit(document, entry.credit, ctx.strings, {
+          cropped: entry.cropped,
+          interactive: true,
+        }),
+        h('span', { class: 'lp-credits-where' }, t.usedOn(entry.scenes)),
+      ),
+    );
+  }
+  const creditsBox = h(
+    'div',
+    {
+      class: 'lp-help lp-credits',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'lp-credits-title',
+    },
+    h('h2', { id: 'lp-credits-title', tabindex: '-1' }, t.credits),
+    creditsList,
+    creditsClose,
+  );
+  const creditsBack = h('div', { class: 'lp-help-back', hidden: true }, creditsBox);
+
   const live = h('div', { class: 'lp-sr', 'aria-live': 'polite' });
   const printArea = h('div', { class: 'lp-print' });
 
@@ -238,6 +286,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       h('div', { class: 'lp-center' }, viewport, scriptPanel),
       panel,
       help,
+      creditsBack,
     ),
     bar,
     live,
@@ -262,6 +311,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     stageBox.style.width = `${1920 * scale}px`;
     stageBox.style.height = `${1080 * scale}px`;
     stage.style.transform = `scale(${scale})`;
+    // The "+" mark is 56 px on the stage; on screen it never gets smaller than 28 px.
+    stage.style.setProperty('--ls-badge-scale', String(Math.max(1, 28 / (56 * scale))));
   }
 
   function animateStep(scene: Scene, el: HTMLElement): void {
@@ -294,8 +345,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     if (changed) {
       if (previous) {
         for (const video of Array.from(stage.querySelectorAll('video'))) video.pause();
+        // A scene where web content was fetched is drawn afresh next time,
+        // so nothing plays on, or starts by itself, when the viewer returns.
+        if (stage.querySelector('iframe')) rendered.delete(previous.id);
       }
-      closeDeepDive(false);
+      closeMore(false);
       stage.replaceChildren(el);
       viewport.style.background = PALETTE[sceneSurface(theme, scene)];
       viewport.setAttribute(
@@ -371,41 +425,28 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     else helpButton.focus();
   }
 
-  function openDeepDive(element: DeepDiveElement, opener: HTMLElement): void {
-    deepDiveOpener = opener;
-    panelTitle.textContent = element.label.trim() || ctx.strings.deepDive;
-    const body = h('div', { class: 'lp-rich' });
-    body.appendChild(
-      renderRichText(element.body, {
-        doc: document,
-        levelScale: [1, 1, 1, 1, 1],
-        interactive: true,
-      }),
-    );
-    const media = h('div', { class: 'lp-media' });
-    for (const item of element.media) {
-      if (item.kind === 'image') {
-        const url = assetUrl(item.asset);
-        if (url) media.append(h('figure', {}, h('img', { src: url, alt: item.alt })));
-      } else if (item.kind === 'video') {
-        const video = renderVideo(ctx, 'hvit', item.source, item.title, undefined);
-        const figure = h('figure', {}, video);
-        if (item.title) figure.append(h('figcaption', {}, item.title));
-        media.append(figure);
-      } else {
-        const safe = /^(https?:|mailto:)/i.test(item.url.trim());
-        if (safe) {
-          media.append(
-            h(
-              'a',
-              { href: item.url.trim(), target: '_blank', rel: 'noopener noreferrer' },
-              `${item.label.trim() || item.url} (${t.needsInternet})`,
-            ),
-          );
-        }
-      }
-    }
-    panelBody.replaceChildren(body, media);
+  function toggleCredits(open?: boolean): void {
+    const willOpen = open ?? creditsBack.hidden;
+    creditsBack.hidden = !willOpen;
+    if (willOpen) creditsBox.querySelector<HTMLElement>('h2')?.focus();
+    else creditsButton.focus();
+  }
+
+  function setPanelWide(wide: boolean): void {
+    panel.classList.toggle('lp-panel-wide', wide);
+    panelWiden.setAttribute('aria-pressed', String(wide));
+    panelWiden.textContent = wide ? t.narrow : t.widen;
+    fit();
+  }
+
+  /** Opens the "Lær mer" panel of an element. `opener` gets the focus back when it closes. */
+  function openMore(element: SceneElement, opener: HTMLElement): void {
+    const more = moreOf(element);
+    if (!more) return;
+    if (moreOpener && moreOpener !== opener) moreOpener.setAttribute('aria-expanded', 'false');
+    moreOpener = opener;
+    panelTitle.textContent = moreTitle(ctx, element);
+    panelBody.replaceChildren(renderMore(ctx, more));
     panel.hidden = false;
     panel.scrollTop = 0;
     opener.setAttribute('aria-expanded', 'true');
@@ -413,14 +454,16 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     panelTitle.focus();
   }
 
-  function closeDeepDive(restoreFocus: boolean): void {
+  function closeMore(restoreFocus: boolean): void {
     if (panel.hidden) return;
     for (const video of Array.from(panel.querySelectorAll('video'))) video.pause();
     panel.hidden = true;
+    // Removing the content also stops anything fetched from the web.
     panelBody.replaceChildren();
-    deepDiveOpener?.setAttribute('aria-expanded', 'false');
-    if (restoreFocus) deepDiveOpener?.focus();
-    deepDiveOpener = null;
+    setPanelWide(false);
+    moreOpener?.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) moreOpener?.focus();
+    moreOpener = null;
     fit();
   }
 
@@ -439,19 +482,29 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       if (to >= 0) show(to, 0, false);
       return;
     }
-    const opener = target.closest<HTMLElement>('[data-deepdive]');
+    // The "+" mark and the "Lær mer" button open the panel; so does a click
+    // anywhere else on an element that has a mark, unless the click was on
+    // something that does a job of its own (a link, a player).
+    let opener = target.closest<HTMLElement>('[data-more]');
+    if (!opener && stage.contains(target) && !target.closest('a, button, video, audio, iframe')) {
+      if (!window.getSelection()?.toString()) {
+        opener =
+          target.closest<HTMLElement>('.ls-has-more')?.querySelector<HTMLElement>('[data-more]') ??
+          null;
+      }
+    }
     if (opener) {
-      const element = scenes[index]?.elements.find((e) => e.id === opener.dataset.deepdive);
-      if (element?.type === 'deepdive') {
-        if (!panel.hidden && deepDiveOpener === opener) closeDeepDive(true);
-        else openDeepDive(element, opener);
+      const element = scenes[index]?.elements.find((e) => e.id === opener.dataset.more);
+      if (element) {
+        if (!panel.hidden && moreOpener === opener) closeMore(true);
+        else openMore(element, opener);
       }
       return;
     }
     // A click on the scene itself goes on, unless it was on something
     // interactive or the reader is selecting text.
     if (stage.contains(target)) {
-      if (target.closest('a, button, video, audio')) return;
+      if (target.closest('a, button, video, audio, iframe')) return;
       if (window.getSelection()?.toString()) return;
       next();
     }
@@ -466,7 +519,15 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   help.addEventListener('click', (event) => {
     if (event.target === help) toggleHelp(false);
   });
-  panelClose.addEventListener('click', () => closeDeepDive(true));
+  panelClose.addEventListener('click', () => closeMore(true));
+  panelWiden.addEventListener('click', () =>
+    setPanelWide(!panel.classList.contains('lp-panel-wide')),
+  );
+  creditsButton.addEventListener('click', () => toggleCredits());
+  creditsClose.addEventListener('click', () => toggleCredits(false));
+  creditsBack.addEventListener('click', (event) => {
+    if (event.target === creditsBack) toggleCredits(false);
+  });
   fullscreenButton.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', () => {
     fullscreenButton.textContent = document.fullscreenElement ? t.exitFullscreen : t.fullscreen;
@@ -478,14 +539,15 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const tag = target.tagName;
     if (event.key === 'Escape') {
       if (!help.hidden) toggleHelp(false);
-      else if (!panel.hidden) closeDeepDive(true);
+      else if (!creditsBack.hidden) toggleCredits(false);
+      else if (!panel.hidden) closeMore(true);
       else if (!toc.hidden) {
         toggleToc(false);
         tocButton.focus();
       } else if (!scriptPanel.hidden) toggleScript(false);
       return;
     }
-    if (!help.hidden) return;
+    if (!help.hidden || !creditsBack.hidden) return;
     if (
       tag === 'INPUT' ||
       tag === 'TEXTAREA' ||

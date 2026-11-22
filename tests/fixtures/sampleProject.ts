@@ -63,6 +63,14 @@ export function sampleProject(): {
     mime: 'image/png',
     bytes: png.length,
     name: 'testbilde.png',
+    credit: {
+      title: 'Testbilde',
+      author: 'Person A',
+      license: 'CC BY 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Testbilde.png',
+      required: true,
+    },
   };
 
   const front = newScene('title', 'Tittel');
@@ -132,6 +140,32 @@ export function sampleProject(): {
       type: 'image',
       asset: imageId,
       alt: 'Testbilde med to fargefelt',
+      // Any element can carry "Lær mer" content. Nothing here is fetched
+      // unless a viewer presses play, which no test does.
+      more: {
+        title: 'Om bildet',
+        blocks: [
+          { id: 'm1', kind: 'heading', text: 'Overskrift B' },
+          { id: 'm2', kind: 'text', content: richText('Utdyping A.') },
+          {
+            id: 'm3',
+            kind: 'table',
+            columns: [1, 1],
+            headerRow: true,
+            rows: [
+              [{ content: richText('A') }, { content: richText('B') }],
+              [{ content: richText('1') }, { content: richText('2') }],
+            ],
+          },
+          {
+            id: 'm4',
+            kind: 'video',
+            source: { kind: 'url', url: 'https://www.youtube.com/watch?v=AAAAAAAAAAA' },
+            title: 'Video A',
+          },
+          { id: 'm5', kind: 'embed', url: 'https://example.org/side', title: 'Side A' },
+        ],
+      },
       box: { x: 1000, y: 222, w: 400, h: 240, rotation: 0 },
     },
     {
@@ -163,11 +197,26 @@ export function sampleProject(): {
       id: deepId,
       type: 'deepdive',
       label: 'Mer om A',
-      body: richText('Fordypning A.', 'Fordypning B.'),
-      media: [
-        { kind: 'image', asset: imageId, alt: 'Testbilde' },
-        { kind: 'link', url: 'https://example.org/', label: 'Lenke A' },
-      ],
+      more: {
+        title: 'Mer om A',
+        blocks: [
+          { id: 'b1', kind: 'text', content: richText('Fordypning A.', 'Fordypning B.') },
+          { id: 'b2', kind: 'image', asset: imageId, alt: 'Testbilde', caption: 'Bildetekst A' },
+          {
+            id: 'b3',
+            kind: 'text',
+            content: {
+              paragraphs: [
+                {
+                  level: 0,
+                  list: 'none',
+                  runs: [{ text: 'Lenke A', link: 'https://example.org/' }],
+                },
+              ],
+            },
+          },
+        ],
+      },
       box: { x: 120, y: 780, w: 320, h: 76, rotation: 0 },
     },
   );

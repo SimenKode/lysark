@@ -18,6 +18,13 @@ export interface Editing {
   cell?: string;
 }
 
+/** The media dialog is open, and something waits for what the owner picks. */
+export interface MediaRequest {
+  kind: 'image' | 'video';
+  /** Called with the chosen asset's id, or undefined when the dialog is closed. */
+  resolve: (assetId: string | undefined) => void;
+}
+
 interface State {
   dir: string | null;
   project: Project | null;
@@ -36,6 +43,9 @@ interface State {
   logo: LogoStatus;
   report: { report: ImportReport; sourceName: string } | null;
   notice: Notice | null;
+  /** Id of the element whose "Lær mer" content is open in the builder. */
+  builder: string | null;
+  mediaRequest: MediaRequest | null;
 
   load(dir: string, project: Project): void;
   close(): void;
@@ -57,6 +67,8 @@ interface State {
   setLogo(logo: LogoStatus): void;
   setReport(report: State['report']): void;
   setNotice(notice: Notice | null): void;
+  openBuilder(elementId: string | null): void;
+  setMediaRequest(request: MediaRequest | null): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -78,9 +90,12 @@ export const useStore = create<State>((set, get) => ({
   logo: { nb: { light: false, dark: false }, en: { light: false, dark: false }, version: 0 },
   report: null,
   notice: null,
+  builder: null,
+  mediaRequest: null,
 
   load(dir, project) {
     set({
+      builder: null,
       dir,
       project,
       saved: project,
@@ -96,6 +111,7 @@ export const useStore = create<State>((set, get) => ({
 
   close() {
     set({
+      builder: null,
       dir: null,
       project: null,
       saved: null,
@@ -160,7 +176,14 @@ export const useStore = create<State>((set, get) => ({
 
   setScene(id) {
     if (get().sceneId === id) return;
-    set({ sceneId: id, selection: [], editing: null, previewSteps: null, coalesce: null });
+    set({
+      sceneId: id,
+      selection: [],
+      editing: null,
+      previewSteps: null,
+      coalesce: null,
+      builder: null,
+    });
   },
 
   select(ids) {
@@ -195,6 +218,14 @@ export const useStore = create<State>((set, get) => ({
 
   setNotice(notice) {
     set({ notice });
+  },
+
+  openBuilder(elementId) {
+    set({ builder: elementId, editing: null, coalesce: null });
+  },
+
+  setMediaRequest(request) {
+    set({ mediaRequest: request });
   },
 }));
 

@@ -21,7 +21,7 @@ import { allowedTextColors, isLargeText } from '../../shared/theme/contrast';
 import { COLOR_NAMES, PALETTE, SERIES_ORDER } from '../../shared/theme/palette';
 import { SHAPE_PAIRS } from '../../shared/theme/shapes';
 import { getTheme, roleFontSize, sceneSurface } from '../../shared/theme/theme';
-import { RichTextField } from './RichTextField';
+import { CreditFields } from './MediaDialog';
 import { addAsset, megabytes, replaceImage } from './actions';
 import {
   GEOMETRY_NAMES,
@@ -32,6 +32,7 @@ import {
   cloneElements,
   deleteElements,
   describeElement,
+  describeMore,
   removeFromSteps,
   reorderElement,
   stepOf,
@@ -602,159 +603,96 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
   );
 }
 
-function DeepDiveFields({ el }: { el: Extract<Element, { type: 'deepdive' }> }) {
-  const project = useStore((s) => s.project)!;
+/** "Lær mer" content of the selected element: what it holds, and the way into the builder. */
+function MoreFields({ el }: { el: Element }) {
+  const openBuilder = useStore((s) => s.openBuilder);
   const update = useElementUpdate(el.id);
+  if (el.type === 'deepdive') {
+    return (
+      <>
+        <Field label="Tekst på knappen" hint="Står det ingenting her, står det «Lær mer».">
+          <input
+            type="text"
+            value={el.label}
+            onChange={(e) =>
+              update<typeof el>((d) => {
+                d.label = e.target.value;
+              }, 'label')
+            }
+          />
+        </Field>
+        <p className="hint">{describeMore(el.more)}</p>
+        <div className="button-row">
+          <button type="button" className="strong" onClick={() => openBuilder(el.id)}>
+            Bygg innholdet …
+          </button>
+        </div>
+      </>
+    );
+  }
+  const has = !!el.more && el.more.blocks.length > 0;
   return (
-    <>
-      <Field label="Tekst på knappen" hint="Står det ingenting her, står det «Lær mer».">
-        <input
-          type="text"
-          value={el.label}
-          onChange={(e) =>
-            update<typeof el>((d) => {
-              d.label = e.target.value;
-            }, 'label')
-          }
-        />
-      </Field>
-      <div className="field">
-        <span className="field-label">Innhold i panelet</span>
-        <RichTextField
-          key={el.id}
-          label="Innhold i panelet"
-          value={el.body}
-          onChange={(value) =>
-            update<typeof el>((d) => {
-              d.body = value;
-            }, 'body')
-          }
-        />
-      </div>
-      <div className="field">
-        <span className="field-label">Bilder, video og lenker i panelet</span>
-        {el.media.length === 0 && <p className="hint">Ingen ennå.</p>}
-        {el.media.map((item, i) => (
-          <div key={i} className="media-item">
-            {item.kind === 'image' && (
-              <Field label={`Bilde: ${project.assets[item.asset]?.name ?? ''}`}>
-                <input
-                  type="text"
-                  placeholder="Alternativ tekst"
-                  value={item.alt}
-                  onChange={(e) =>
-                    update<typeof el>((d) => {
-                      const m = d.media[i];
-                      if (m?.kind === 'image') m.alt = e.target.value;
-                    }, `media-${i}`)
-                  }
-                />
-              </Field>
-            )}
-            {item.kind === 'video' && (
-              <Field
-                label={`Video: ${item.source.kind === 'asset' ? (project.assets[item.source.asset]?.name ?? '') : 'lenke'}`}
-              >
-                <input
-                  type="text"
-                  placeholder="Tittel"
-                  value={item.title}
-                  onChange={(e) =>
-                    update<typeof el>((d) => {
-                      const m = d.media[i];
-                      if (m?.kind === 'video') m.title = e.target.value;
-                    }, `media-${i}`)
-                  }
-                />
-              </Field>
-            )}
-            {item.kind === 'link' && (
-              <>
-                <Field label="Lenketekst">
-                  <input
-                    type="text"
-                    value={item.label}
-                    onChange={(e) =>
-                      update<typeof el>((d) => {
-                        const m = d.media[i];
-                        if (m?.kind === 'link') m.label = e.target.value;
-                      }, `media-${i}-label`)
-                    }
-                  />
-                </Field>
-                <Field label="Adresse">
-                  <input
-                    type="text"
-                    placeholder="https://"
-                    value={item.url}
-                    onChange={(e) =>
-                      update<typeof el>((d) => {
-                        const m = d.media[i];
-                        if (m?.kind === 'link') m.url = e.target.value;
-                      }, `media-${i}-url`)
-                    }
-                  />
-                </Field>
-              </>
-            )}
+    <div className="group">
+      <span className="field-label">Utdyping («Lær mer»)</span>
+      {has ? (
+        <>
+          <p className="hint">
+            Elementet har et «+»-merke som åpner et panel. {describeMore(el.more)}
+          </p>
+          <div className="button-row">
+            <button type="button" onClick={() => openBuilder(el.id)}>
+              Rediger utdyping …
+            </button>
             <button
               type="button"
-              className="link-button"
+              className="danger"
               onClick={() =>
-                update<typeof el>((d) => {
-                  d.media.splice(i, 1);
+                update<Element>((d) => {
+                  delete d.more;
                 })
               }
             >
               Fjern
             </button>
           </div>
-        ))}
-        <div className="button-row">
-          <button
-            type="button"
-            onClick={() =>
-              void addAsset('image').then((id) => {
-                if (id)
-                  update<typeof el>((d) => {
-                    d.media.push({ kind: 'image', asset: id, alt: '' });
-                  });
-              })
-            }
-          >
-            Bilde …
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              void addAsset('video').then((id) => {
-                if (id) {
-                  update<typeof el>((d) => {
-                    d.media.push({
-                      kind: 'video',
-                      source: { kind: 'asset', asset: id },
-                      title: '',
-                    });
-                  });
-                }
-              })
-            }
-          >
-            Video …
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              update<typeof el>((d) => {
-                d.media.push({ kind: 'link', url: '', label: '' });
-              })
-            }
-          >
-            Lenke
-          </button>
-        </div>
-      </div>
-    </>
+        </>
+      ) : (
+        <>
+          <p className="hint">
+            Knytt mer stoff til dette elementet: tekst, bilder, video, tabeller og innbygging.
+            Studenten åpner det fra et «+»-merke.
+          </p>
+          <div className="button-row">
+            <button type="button" onClick={() => openBuilder(el.id)}>
+              Legg til utdyping …
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Credit of the picture an image element shows. */
+function ImageCredit({ assetId }: { assetId: string }) {
+  const asset = useStore((s) => s.project?.assets[assetId]);
+  const update = useStore((s) => s.update);
+  if (!asset) return null;
+  return (
+    <details className="group" open={!!asset.credit?.required}>
+      <summary>Kreditering</summary>
+      <CreditFields
+        credit={asset.credit}
+        onChange={(credit) =>
+          update((draft) => {
+            const target = draft.assets[assetId];
+            if (!target) return;
+            if (credit) target.credit = credit;
+            else delete target.credit;
+          }, `credit-${assetId}`)
+        }
+      />
+    </details>
   );
 }
 
@@ -798,10 +736,11 @@ function ElementPanel({ scene }: { scene: Scene }) {
       <h3>{describeElement(el)}</h3>
       {el.type === 'text' && <TextFields el={el} scene={scene} />}
       {el.type === 'image' && <ImageFields el={el} />}
+      {el.type === 'image' && <ImageCredit assetId={el.asset} />}
       {el.type === 'shape' && <ShapeFields el={el} />}
       {el.type === 'table' && <TableFields el={el} />}
       {el.type === 'video' && <VideoFields el={el} />}
-      {el.type === 'deepdive' && <DeepDiveFields el={el} />}
+      <MoreFields el={el} />
       <BoxFields el={el} />
       <div className="button-row">
         <button type="button" onClick={duplicate}>

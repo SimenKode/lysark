@@ -920,3 +920,327 @@ legend {
 .notice button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ---------- Right-click menu on the stage ---------- */
+.context-menu {
+  position: fixed;
+  top: auto;
+  z-index: 60;
+  min-width: 220px;
+}
+.menu.menu-up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+/* ---------- The builder for "Lær mer" content ---------- */
+.builder {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--lys-beige);
+}
+.builder-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--indigo);
+  color: #fff;
+}
+.builder-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.builder-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+.builder-blocks {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px 40px;
+  background: #fff;
+  border-right: 1.5px solid var(--line);
+}
+.builder-blocks input[type='text'] {
+  width: 100%;
+}
+.segmented-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.block-list {
+  list-style: none;
+  margin: 18px 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.block-card {
+  padding: 10px 14px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+}
+.block-card.drop-before {
+  box-shadow: 0 -4px 0 var(--oransje);
+}
+.block-card.drop-after {
+  box-shadow: 0 4px 0 var(--oransje);
+}
+.block-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.block-head button {
+  padding: 2px 10px;
+}
+.block-grip {
+  cursor: grab;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--indigo);
+  padding: 2px 4px;
+  user-select: none;
+}
+.block-kind {
+  font-weight: 700;
+  color: var(--indigo);
+}
+.block-media {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.block-thumb {
+  flex: none;
+  width: 150px;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lys-indigo);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.9em;
+  text-align: center;
+}
+.block-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.block-fields {
+  flex: 1;
+  min-width: 0;
+}
+.block-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.block-table-row {
+  display: flex;
+  gap: 4px;
+}
+.block-table-row input {
+  flex: 1;
+  min-width: 0;
+  border-radius: 8px;
+}
+.block-table-row input.is-header {
+  font-weight: 700;
+  background: var(--lys-indigo);
+}
+.block-add {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 0;
+  border-top: 1.5px solid var(--line);
+}
+.builder-remove {
+  margin-top: 18px;
+}
+.builder-preview {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px 40px;
+}
+.builder-caption {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: var(--indigo);
+}
+/* The panel as the player draws it: white, with the purple edge. */
+.builder-panel {
+  max-width: 560px;
+  padding: 20px 24px 32px;
+  background: #fff;
+  border-left: 4px solid var(--lilla);
+  font-family: 'Liberation Sans', Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #000;
+}
+.builder-panel > h2 {
+  margin: 0 0 12px;
+  font-family: 'Liberation Serif', 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1.15;
+  color: var(--lilla);
+}
+
+/* ---------- The media dialog ---------- */
+.media-dialog {
+  width: min(1100px, 94vw);
+  height: min(780px, 90vh);
+  max-height: 90vh;
+  padding: 22px 26px;
+}
+.media-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.media-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.media-head h2 {
+  margin: 0;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0;
+}
+.media-tab {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.media-search {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.media-search input {
+  flex: 1;
+}
+.media-split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 18px;
+}
+.media-results {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 2px;
+}
+.media-grid {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.media-tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--lys-indigo);
+}
+.media-tile[aria-pressed='true'] {
+  border-color: var(--oransje);
+  outline: 3px solid var(--oransje);
+  background: var(--lys-indigo);
+}
+.media-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.media-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 8px;
+  color: var(--indigo);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.media-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 0.8rem;
+}
+.media-detail {
+  flex: none;
+  width: 320px;
+  overflow-y: auto;
+}
+.media-detail img,
+.media-upload-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 300px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+.media-detail h3 {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.media-detail dl {
+  margin: 0 0 12px;
+}
+.media-detail dt {
+  font-weight: 700;
+  color: var(--indigo);
+}
+.media-detail dd {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.media-detail input {
+  width: 100%;
+}
+.credit-fixed p {
+  margin: 0 0 6px;
+}

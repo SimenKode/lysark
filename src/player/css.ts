@@ -22,8 +22,14 @@ body { background: ${C.indigo}; }
 }
 .lp-stagebox { position: relative; flex: none; overflow: hidden; }
 .lp-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
-.lp-stage .ls-deepdive:focus-visible, .lp-stage a:focus-visible, .lp-stage video:focus-visible {
+.lp-stage .ls-deepdive:focus-visible, .lp-stage a:focus-visible, .lp-stage video:focus-visible,
+.lp-stage .ls-more-badge:focus-visible, .lp-stage button.ls-webvideo-play:focus-visible {
   outline: 6px solid ${C.oransje}; outline-offset: 6px;
+}
+/* An element with a "+" mark opens its panel wherever it is clicked. */
+.lp-stage .ls-has-more { cursor: pointer; }
+.lp-stage .ls-has-more:hover > .ls-more-badge, .lp-stage .ls-more-badge[aria-expanded='true'] {
+  background: var(--ls-badge-text); color: var(--ls-badge-bg); border-color: var(--ls-badge-bg);
 }
 
 .lp-toc, .lp-panel { background: ${C.hvit}; color: ${C.sort}; overflow: auto; flex: none; }
@@ -45,29 +51,11 @@ body { background: ${C.indigo}; }
 
 .lp-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .lp-panel-head h2 { outline: none; }
-.lp-rich { font-size: 1.1rem; line-height: 1.5; --ls-mark-field: ${C.mediumSyregronn}; --ls-mark-text: ${C.sort}; }
-.lp-rich .ls-p { margin: 0; }
-.lp-rich .ls-p + .ls-p, .lp-rich .ls-p + .ls-list, .lp-rich .ls-list + .ls-p { margin-top: 0.7em; }
-.lp-rich .ls-list { list-style: none; margin: 0; padding: 0; }
-.lp-rich .ls-li { display: flex; align-items: baseline; gap: 0.55em; }
-.lp-rich .ls-li + .ls-li { margin-top: 0.35em; }
-.lp-rich .ls-bullet::before {
-  content: ''; display: inline-block; width: 0.36em; height: 0.36em;
-  background: ${C.lilla}; transform: translateY(-0.16em);
-}
-.lp-rich .ls-mark { background: var(--ls-mark-field); color: var(--ls-mark-text); padding: 0.04em 0.16em; }
-.lp-rich a, .lp-media a:not(.ls-videocard) { color: ${C.lilla}; text-underline-offset: 0.14em; }
-/* The link card is drawn for the stage (1920 px wide); in the panel it follows the panel's text. */
-.lp-media .ls-videocard { font-size: 1.15rem; border-radius: 16px; padding: 18px; gap: 10px; }
-.lp-media .ls-videocard-info { gap: 10px; }
-.lp-media .ls-videocard svg { width: 56px; height: 56px; }
-.lp-media .ls-videocard small { font-size: 0.95rem; }
-.lp-media .ls-video-note { font-size: 1rem; padding: 10px 14px; }
-.lp-media { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
-.lp-media figure { margin: 0; }
-.lp-media img, .lp-media video { display: block; max-width: 100%; height: auto; }
-.lp-media video { width: 100%; background: #000; }
-.lp-media figcaption { font-size: 0.95rem; margin-top: 4px; }
+.lp-panel-tools { display: flex; gap: 8px; flex: none; }
+/* Rich content (tables, video, embedded pages) can take the whole width. */
+.lp-panel.lp-panel-wide { position: absolute; inset: 0; z-index: 30; width: auto; border-left: 0; }
+.lp-panel.lp-panel-wide .lp-panel-body { max-width: 1100px; margin: 0 auto; }
+.lp-panel-body { margin-top: 8px; }
 
 .lp-script {
   flex: none; max-height: 34vh; overflow: auto; padding: 14px 24px 18px;
@@ -112,6 +100,11 @@ body { background: ${C.indigo}; }
 .lp-help dt { font-weight: 700; white-space: nowrap; }
 .lp-help dd { margin: 0; }
 .lp-help p { margin: 0 0 16px; }
+.lp-credits { width: min(720px, 100%); }
+.lp-credits-list { list-style: none; margin: 0 0 16px; padding: 0; }
+.lp-credits-list li { padding: 8px 0; border-bottom: 1px solid ${C.mediumIndigo}; display: flex; flex-direction: column; gap: 2px; }
+.lp-credits-list a { color: ${C.lilla}; }
+.lp-credits-where { font-size: 0.9em; }
 
 .lp-print { display: none; }
 
@@ -137,6 +130,8 @@ body { background: ${C.indigo}; }
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   .lp-print-scene > .ls-scene { transform: scale(0.5); transform-origin: 0 0; }
+  /* Paper cannot open a panel. */
+  .lp-print .ls-more-badge { display: none; }
   .lp-print-script { margin-top: 10px; font-size: 11pt; line-height: 1.4; max-width: 960px; }
   .lp-print-script p { margin: 0 0 0.5em; }
 }

@@ -3,7 +3,6 @@
 import { app } from 'electron';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { buildHtml, type ExportSources, type FontFace } from '../exporter/html';
 import type { Project } from '../shared/format/schema';
 import type { ExportSummary, LogoVariant } from '../shared/api';
@@ -63,15 +62,13 @@ export function exportHtml(dir: string, project: Project, outFile: string): Expo
   };
 }
 
-/** Writes a preview to the temp folder; large videos are linked, not copied. */
-export function writePreview(dir: string, project: Project): string {
-  const result = buildHtml(
+/**
+ * Builds the preview: exactly what an export would contain. Large videos are
+ * not copied; the preview server hands them out from the project's folder.
+ */
+export function buildPreview(dir: string, project: Project): string {
+  return buildHtml(
     project,
-    sources(dir, project, (_id, file) => pathToFileURL(mediaPath(dir, file)).toString()),
-  );
-  const folder = join(app.getPath('temp'), 'lysark-forhandsvisning');
-  mkdirSync(folder, { recursive: true });
-  const file = join(folder, 'index.html');
-  writeFileSync(file, result.html, 'utf8');
-  return file;
+    sources(dir, project, (_id, file) => `media/${basename(file)}`),
+  ).html;
 }

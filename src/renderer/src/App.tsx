@@ -6,6 +6,8 @@ import type { ShapeElement, TextRole } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
 import { ImportReportDialog, SettingsDialog } from './Dialogs';
 import { Inspector } from './Inspector';
+import { MediaDialog } from './MediaDialog';
+import { MoreBuilder } from './MoreBuilder';
 import { SceneList } from './SceneList';
 import { Stage } from './Stage';
 import {
@@ -247,10 +249,15 @@ function InsertBar() {
       </div>
       <button
         type="button"
-        onClick={() => add(() => newDeepDiveElement(scene, theme), false)}
-        title="Fordypningsboks"
+        onClick={() => {
+          // The simple way in: a button in the scene, and straight into the builder.
+          const element = newDeepDiveElement(scene, theme);
+          add(() => element, false);
+          useStore.getState().openBuilder(element.id);
+        }}
+        title="Knapp som åpner et panel med mer stoff. Du kan også høyreklikke på et element i scenen."
       >
-        Lær mer
+        + Lær mer
       </button>
       <span className="gap" />
       <button
@@ -316,6 +323,8 @@ export function App() {
   const dirty = useStore(isDirty);
   const title = project?.meta.title ?? '';
   const report = useStore((s) => s.report);
+  const builder = useStore((s) => s.builder);
+  const mediaRequest = useStore((s) => s.mediaRequest);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -366,13 +375,15 @@ export function App() {
           else state.redo();
           return;
         case 'delete':
-          if (!isTextInput(active) && state.selection.length) {
+          if (!isTextInput(active) && state.selection.length && !state.builder) {
             state.updateScene((s) => deleteElements(s, state.selection));
           }
           return;
         case 'duplicate': {
           const scene = currentScene(state);
-          if (!scene || isTextInput(active) || state.selection.length === 0) return;
+          if (!scene || isTextInput(active) || state.selection.length === 0 || state.builder) {
+            return;
+          }
           const copies = cloneElements(
             scene.elements.filter((e) => state.selection.includes(e.id)),
             24,
@@ -399,7 +410,8 @@ export function App() {
   return (
     <>
       {project ? (
-        <div className="app">
+        // While the builder is open, nothing behind it can be reached by keyboard or screen reader.
+        <div className="app" inert={!!builder}>
           <TopBar onSettings={() => setSettingsOpen(true)} />
           <div className="workspace">
             <SceneList />
@@ -422,6 +434,8 @@ export function App() {
           onClose={() => useStore.getState().setReport(null)}
         />
       )}
+      {project && builder && <MoreBuilder elementId={builder} />}
+      {project && mediaRequest && <MediaDialog request={mediaRequest} />}
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </>
   );

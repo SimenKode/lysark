@@ -1,8 +1,14 @@
 // Things the owner can do that involve files: open, save, import, export,
 // preview and inserting media. Errors end up as a notice, never silently.
-import { mediaUrl, type LysarkApi } from '../../shared/api';
+import {
+  mediaUrl,
+  type AddedMedia,
+  type CommonsPicture,
+  type CommonsResult,
+  type LysarkApi,
+} from '../../shared/api';
 import { newId } from '../../shared/format/factory';
-import type { Asset, Element } from '../../shared/format/schema';
+import type { Element } from '../../shared/format/schema';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
 import { currentScene, isDirty, useStore } from './store';
@@ -178,75 +184,85 @@ function fitInside(
   return { w: Math.max(8, Math.round(size.w * k)), h: Math.max(8, Math.round(size.h * k)) };
 }
 
-function addElement(element: Element, assetId?: string, asset?: Asset): void {
+function addElement(element: Element): void {
   const state = useStore.getState();
-  state.updateScene((scene, draft) => {
-    if (assetId && asset) draft.assets[assetId] = asset;
+  state.updateScene((scene) => {
     scene.elements.push(element);
   });
   state.select([element.id]);
 }
 
+/**
+ * Opens the media dialog (search in Wikimedia Commons, upload, or what the
+ * project already has) and resolves with the asset the owner chose.
+ */
+export function pickMedia(kind: 'image' | 'video'): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const state = useStore.getState();
+    state.mediaRequest?.resolve(undefined);
+    state.setMediaRequest({
+      kind,
+      resolve: (assetId) => {
+        useStore.getState().setMediaRequest(null);
+        resolve(assetId);
+      },
+    });
+  });
+}
+
+function assetFile(assetId: string): string | undefined {
+  return useStore.getState().project?.assets[assetId]?.file;
+}
+
 export async function insertImage(): Promise<void> {
+  const assetId = await pickMedia('image');
+  const file = assetId ? assetFile(assetId) : undefined;
+  if (!assetId || !file) return;
+  const size = await guard(() => imageSize(mediaUrl(file)));
   const state = useStore.getState();
   const scene = currentScene(state);
-  if (!state.dir || !state.project || !scene) return;
-  const added = await guard(() => api().addMedia(state.dir!, 'image'));
-  if (!added) return;
-  const size = await guard(() => imageSize(mediaUrl(added.asset.file)));
-  if (!size) return;
-  const theme = getTheme(state.project);
+  if (!size || !state.project || !scene) return;
   const fitted = fitInside(size, 900, 620);
-  addElement(
-    {
-      id: newId('e'),
-      type: 'image',
-      asset: added.id,
-      alt: '',
-      box: placeNew(scene, theme, fitted.w, fitted.h),
-    },
-    added.id,
-    added.asset,
-  );
+  addElement({
+    id: newId('e'),
+    type: 'image',
+    asset: assetId,
+    alt: '',
+    box: placeNew(scene, getTheme(state.project), fitted.w, fitted.h),
+  });
 }
 
 export async function replaceImage(elementId: string): Promise<void> {
-  const state = useStore.getState();
-  if (!state.dir) return;
-  const added = await guard(() => api().addMedia(state.dir!, 'image'));
-  if (!added) return;
-  const size = await guard(() => imageSize(mediaUrl(added.asset.file)));
+  const assetId = await pickMedia('image');
+  const file = assetId ? assetFile(assetId) : undefined;
+  if (!assetId || !file) return;
+  const size = await guard(() => imageSize(mediaUrl(file)));
   if (!size) return;
-  state.updateScene((scene, draft) => {
+  useStore.getState().updateScene((scene) => {
     const el = scene.elements.find((e) => e.id === elementId);
     if (!el || el.type !== 'image') return;
-    draft.assets[added.id] = added.asset;
-    el.asset = added.id;
+    el.asset = assetId;
     delete el.crop;
     el.box.h = Math.round(el.box.w * (size.h / size.w));
   });
 }
 
 export async function insertVideoFile(): Promise<void> {
+  const assetId = await pickMedia('video');
+  const file = assetId ? assetFile(assetId) : undefined;
+  if (!assetId || !file) return;
+  const size = await videoSize(mediaUrl(file));
   const state = useStore.getState();
   const scene = currentScene(state);
-  if (!state.dir || !state.project || !scene) return;
-  const added = await guard(() => api().addMedia(state.dir!, 'video'));
-  if (!added) return;
-  const size = await videoSize(mediaUrl(added.asset.file));
-  warnIfUnplayable(size.playable);
+  if (!state.project || !scene) return;
   const fitted = fitInside({ w: size.w * 100, h: size.h * 100 }, 960, 540);
-  addElement(
-    {
-      id: newId('e'),
-      type: 'video',
-      source: { kind: 'asset', asset: added.id },
-      title: '',
-      box: placeNew(scene, getTheme(state.project), fitted.w, fitted.h),
-    },
-    added.id,
-    added.asset,
-  );
+  addElement({
+    id: newId('e'),
+    type: 'video',
+    source: { kind: 'asset', asset: assetId },
+    title: '',
+    box: placeNew(scene, getTheme(state.project), fitted.w, fitted.h),
+  });
 }
 
 export function insertVideoLink(): void {
@@ -262,16 +278,48 @@ export function insertVideoLink(): void {
   });
 }
 
-/** Adds a media file to the project and returns its asset id. */
-export async function addAsset(kind: 'image' | 'video'): Promise<string | undefined> {
+/** Lets the owner choose a media file through the media dialog; returns its asset id. */
+export function addAsset(kind: 'image' | 'video'): Promise<string | undefined> {
+  return pickMedia(kind);
+}
+
+/** Opens the system's file dialog and copies the chosen file into the project folder. */
+export async function uploadMedia(kind: 'image' | 'video'): Promise<AddedMedia | undefined> {
   const state = useStore.getState();
   if (!state.dir) return undefined;
   const added = await guard(() => api().addMedia(state.dir!, kind));
   if (!added) return undefined;
-  state.update((draft) => {
+  if (kind === 'video') {
+    warnIfUnplayable((await videoSize(mediaUrl(added.asset.file))).playable);
+  }
+  return added;
+}
+
+/** Sends the owner's search words to Wikimedia Commons. */
+export function searchCommons(query: string, offset: number): Promise<CommonsResult> {
+  return api().searchCommons(query, offset);
+}
+
+export function commonsPreview(title: string): Promise<CommonsPicture> {
+  return api().commonsPreview(title);
+}
+
+/** Downloads a picture from Commons into the project folder, with its credit. */
+export async function downloadCommonsPicture(title: string): Promise<AddedMedia> {
+  const { dir } = useStore.getState();
+  if (!dir) throw new Error('Ingen prosjekt er åpent.');
+  return api().addCommonsPicture(dir, title);
+}
+
+/** Fetches YouTube's still picture of a video and adds it to the project. Returns its asset id. */
+export async function fetchYouTubeStill(url: string): Promise<string | undefined> {
+  const state = useStore.getState();
+  if (!state.dir) return undefined;
+  const added = await guard(() => api().addYouTubeStill(state.dir!, url));
+  if (!added) return undefined;
+  useStore.getState().update((draft) => {
     draft.assets[added.id] = added.asset;
   });
-  if (kind === 'video') warnIfUnplayable((await videoSize(mediaUrl(added.asset.file))).playable);
   return added.id;
 }
 

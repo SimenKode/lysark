@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 // The policy is added at build time; the development server needs inline
 // scripts for live reloading, which the policy forbids.
 const CSP =
-  "default-src 'self'; img-src 'self' lysark-media: data:; media-src lysark-media: https: http:; " +
+  "default-src 'self'; img-src 'self' lysark-media: lysark-web: data:; media-src lysark-media:; " +
   "style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'";
 
 function contentSecurityPolicy(): Plugin {

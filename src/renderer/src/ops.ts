@@ -3,6 +3,9 @@ import { newId, plainText, richText } from '../../shared/format/factory';
 import type {
   Box,
   Element,
+  More,
+  MoreBlock,
+  MoreBlockKind,
   Scene,
   SceneKind,
   ShapeElement,
@@ -130,10 +133,71 @@ export function newDeepDiveElement(scene: Scene, theme: Theme): Element {
     id: newId('e'),
     type: 'deepdive',
     label: '',
-    body: richText(),
-    media: [],
+    more: { title: '', blocks: [] },
     box: placeNew(scene, theme, 320, 76),
   };
+}
+
+// ---------- "Lær mer" content ----------
+
+export const BLOCK_NAMES: Record<MoreBlockKind, string> = {
+  heading: 'Overskrift',
+  text: 'Tekst',
+  image: 'Bilde',
+  video: 'Video',
+  table: 'Tabell',
+  embed: 'Innbygging',
+};
+
+export const CORNER_NAMES: Record<NonNullable<More['corner']>, string> = {
+  tr: 'Oppe til høyre',
+  tl: 'Oppe til venstre',
+  br: 'Nede til høyre',
+  bl: 'Nede til venstre',
+};
+
+/** A new, empty block. Pictures and video files are made where the file is chosen. */
+export function newBlock(kind: 'heading' | 'text' | 'table' | 'embed' | 'video-link'): MoreBlock {
+  const id = newId('b');
+  switch (kind) {
+    case 'heading':
+      return { id, kind: 'heading', text: '' };
+    case 'text':
+      return { id, kind: 'text', content: richText() };
+    case 'table': {
+      const cell = () => ({ content: richText() });
+      return {
+        id,
+        kind: 'table',
+        columns: [1, 1],
+        headerRow: true,
+        rows: [
+          [cell(), cell()],
+          [cell(), cell()],
+        ],
+      };
+    }
+    case 'embed':
+      return { id, kind: 'embed', url: '', title: '' };
+    case 'video-link':
+      return { id, kind: 'video', source: { kind: 'url', url: '' }, title: '' };
+  }
+}
+
+/** A short description of what a panel holds, for the side panel. */
+export function describeMore(more: More | undefined): string {
+  const count = more?.blocks.length ?? 0;
+  if (count === 0) return 'Panelet er tomt.';
+  const kinds = [...new Set(more!.blocks.map((b) => BLOCK_NAMES[b.kind].toLowerCase()))];
+  return `${count} ${count === 1 ? 'byggestein' : 'byggesteiner'}: ${kinds.join(', ')}.`;
+}
+
+/** Moves a block to a new place in the list. */
+export function moveBlock(more: More, from: number, to: number): void {
+  if (from === to || from < 0 || from >= more.blocks.length) return;
+  const clamped = Math.max(0, Math.min(more.blocks.length - 1, to));
+  const [block] = more.blocks.splice(from, 1);
+  more.blocks.splice(clamped, 0, block!);
 }
 
 /** A copy with new ids, nudged so it does not hide the original. */

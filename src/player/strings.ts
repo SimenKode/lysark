@@ -18,6 +18,11 @@ export interface PlayerStrings {
   stage: string;
   untitled: (n: number) => string;
   needsInternet: string;
+  /** Makes the "Lær mer" panel as wide as the window, and back. */
+  widen: string;
+  narrow: string;
+  credits: string;
+  usedOn: (scenes: number[]) => string;
   helpTitle: string;
   keys: Array<[string, string]>;
   printNote: string;
@@ -40,6 +45,10 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
     stage: 'Lysark',
     untitled: (n) => `Lysark ${n}`,
     needsInternet: 'krever nett',
+    widen: 'Utvid',
+    narrow: 'Gjør smalere',
+    credits: 'Bildekilder',
+    usedOn: (scenes) => `Lysark ${scenes.join(', ')}`,
     helpTitle: 'Tastatur',
     keys: [
       ['→  Mellomrom  Page Down', 'Neste steg eller lysark'],
@@ -48,6 +57,7 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
       ['I', 'Innhold'],
       ['M', 'Manus'],
       ['F', 'Fullskjerm'],
+      ['Tab, så Enter', 'Gå til et «+»-merke og åpne «Lær mer»'],
       ['Esc', 'Lukk panel'],
       ['?', 'Denne hjelpen'],
     ],
@@ -69,6 +79,10 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
     stage: 'Slide',
     untitled: (n) => `Slide ${n}`,
     needsInternet: 'needs internet',
+    widen: 'Widen',
+    narrow: 'Make narrower',
+    credits: 'Picture credits',
+    usedOn: (scenes) => `Slide ${scenes.join(', ')}`,
     helpTitle: 'Keyboard',
     keys: [
       ['→  Space  Page Down', 'Next step or slide'],
@@ -77,6 +91,7 @@ export const PLAYER_STRINGS: Record<Project['meta']['language'], PlayerStrings> 
       ['I', 'Contents'],
       ['M', 'Script'],
       ['F', 'Full screen'],
+      ['Tab, then Enter', 'Go to a "+" mark and open "Learn more"'],
       ['Esc', 'Close panel'],
       ['?', 'This help'],
     ],

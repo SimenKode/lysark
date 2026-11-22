@@ -101,6 +101,25 @@ export function Stage() {
   const dragSeq = useRef(0);
   const editor = useRef<TextEditor | null>(null);
   const [editorState, setEditorState] = useState<EditorState | null>(null);
+  /** The right-click menu: where it is, and for which element. */
+  const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null);
+
+  // The menu closes on any click elsewhere, on Escape, and when the scene changes.
+  useEffect(() => {
+    if (!menu) return;
+    const close = (): void => setMenu(null);
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') close();
+    };
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('blur', close);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('blur', close);
+    };
+  }, [menu]);
 
   // Fit the stage to the space available.
   useLayoutEffect(() => {
@@ -447,6 +466,28 @@ export function Stage() {
     });
   }
 
+  /** Right-click: a short menu for the element under the pointer. */
+  function onContextMenu(event: React.MouseEvent<HTMLDivElement>): void {
+    if (!scene) return;
+    const state = useStore.getState();
+    if (state.editing) return; // the text being edited keeps the system's own menu
+    event.preventDefault();
+    const p = toStage(event);
+    let hit: Element | undefined;
+    for (let i = scene.elements.length - 1; i >= 0; i--) {
+      if (hits(scene.elements[i]!, p, 10 / scale)) {
+        hit = scene.elements[i];
+        break;
+      }
+    }
+    if (!hit) {
+      setMenu(null);
+      return;
+    }
+    if (!state.selection.includes(hit.id)) state.select([hit.id]);
+    setMenu({ x: event.clientX, y: event.clientY, id: hit.id });
+  }
+
   function onDoubleClick(event: React.MouseEvent<HTMLDivElement>): void {
     if (!scene) return;
     const state = useStore.getState();
@@ -586,8 +627,64 @@ export function Stage() {
   const single =
     selection.length === 1 ? scene.elements.find((e) => e.id === selection[0]) : undefined;
 
+  const menuElement = menu ? scene.elements.find((e) => e.id === menu.id) : undefined;
+
   return (
     <div className="stage-column">
+      {menu && menuElement && (
+        <div
+          className="menu context-menu"
+          role="menu"
+          aria-label="Valg for elementet"
+          style={{ left: menu.x, top: menu.y }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            autoFocus
+            onClick={() => {
+              setMenu(null);
+              useStore.getState().openBuilder(menuElement.id);
+            }}
+          >
+            {menuElement.type === 'deepdive'
+              ? 'Bygg innholdet …'
+              : menuElement.more && menuElement.more.blocks.length > 0
+                ? 'Rediger utdyping …'
+                : 'Legg til utdyping …'}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(null);
+              const state = useStore.getState();
+              const copies = cloneElements(
+                scene.elements.filter((e) => state.selection.includes(e.id)),
+                24,
+              );
+              state.updateScene((sc) => {
+                sc.elements.push(...copies);
+              });
+              state.select(copies.map((c) => c.id));
+            }}
+          >
+            Lag kopi
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(null);
+              const state = useStore.getState();
+              state.updateScene((sc) => deleteElements(sc, state.selection));
+            }}
+          >
+            Slett
+          </button>
+        </div>
+      )}
       <TextToolbar
         editor={editor}
         state={editorState}
@@ -617,6 +714,7 @@ export function Stage() {
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
             onDoubleClick={onDoubleClick}
+            onContextMenu={onContextMenu}
           >
             <SceneView
               scene={scene}

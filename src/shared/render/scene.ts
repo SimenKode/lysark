@@ -6,6 +6,7 @@ import {
   type DeepDiveElement,
   type Element as SceneElement,
   type ImageElement,
+  type More,
   type PaletteColor,
   type Project,
   type RichText,
@@ -30,6 +31,7 @@ import {
   type Theme,
 } from '../theme/theme';
 import { classifyLink, renderRichText } from './richtext';
+import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -43,6 +45,21 @@ export interface SceneStrings {
   videoNoPicture: string;
   /** The file or address cannot be played at all. */
   videoUnplayable: string;
+  /** A video file on the web: not fetched while editing. */
+  playsFromWeb: string;
+  playFromYouTube: string;
+  openOnYouTube: string;
+  /** Under a YouTube video that has not been fetched yet. */
+  fetchedOnClick: string;
+  /** On the button that fetches an embedded page. */
+  embedLoad: (host: string) => string;
+  openInBrowser: string;
+  needsInternet: string;
+  /** Name of the "+" mark for screen readers. */
+  moreAbout: (title: string) => string;
+  creditBy: string;
+  creditSource: string;
+  creditCropped: string;
   logoAlt: string;
 }
 
@@ -321,20 +338,24 @@ function playIcon(doc: Document): SVGElement {
   return icon;
 }
 
-/** Resolves a video source to something a <video> can play, or a link. */
+/** Resolves a video source to something a <video> can play, a YouTube video, or a link. */
 export function resolveVideo(
   source: VideoSource,
   assetUrl: (id: string) => string | undefined,
-): { kind: 'file'; url: string } | { kind: 'link'; href: string } | { kind: 'missing' } {
+):
+  | { kind: 'file'; url: string; remote: boolean }
+  | { kind: 'youtube'; ref: YouTubeRef }
+  | { kind: 'link'; href: string }
+  | { kind: 'missing' } {
   if (source.kind === 'asset') {
     const url = assetUrl(source.asset);
-    return url ? { kind: 'file', url } : { kind: 'missing' };
+    return url ? { kind: 'file', url, remote: false } : { kind: 'missing' };
   }
   const link = classifyLink(source.url);
   if (!link || link.kind !== 'external' || !/^https?:/i.test(link.href)) return { kind: 'missing' };
-  return DIRECT_VIDEO.test(link.href)
-    ? { kind: 'file', url: link.href }
-    : { kind: 'link', href: link.href };
+  if (DIRECT_VIDEO.test(link.href)) return { kind: 'file', url: link.href, remote: true };
+  const ref = youtubeRef(link.href);
+  return ref ? { kind: 'youtube', ref } : { kind: 'link', href: link.href };
 }
 
 /**
@@ -359,7 +380,134 @@ function watchVideo(ctx: RenderContext, figure: HTMLElement, video: HTMLVideoEle
   video.addEventListener('error', () => note(ctx.strings.videoUnplayable, true));
 }
 
-/** A video player, or a card that links out when the video cannot be embedded. */
+function cardColors(card: HTMLElement, surface: PaletteColor): void {
+  const dark = surface === 'lilla' || surface === 'indigo' || surface === 'sort';
+  card.style.setProperty('--ls-card-bg', PALETTE[dark ? 'hvit' : 'indigo']);
+  card.style.setProperty('--ls-card-text', PALETTE[dark ? 'indigo' : 'hvit']);
+}
+
+function cardText(doc: Document, title: string, note: string): HTMLElement {
+  const text = doc.createElement('span');
+  text.className = 'ls-videocard-text';
+  const label = doc.createElement('span');
+  label.textContent = title;
+  const small = doc.createElement('small');
+  small.textContent = note;
+  text.append(label, small);
+  return text;
+}
+
+function posterImage(doc: Document, url: string): HTMLImageElement {
+  const picture = doc.createElement('img');
+  picture.className = 'ls-videocard-img';
+  picture.src = url;
+  picture.alt = '';
+  picture.draggable = false;
+  return picture;
+}
+
+/**
+ * Content from the web in two stages. The card shows only what lies in the
+ * file: a still picture and a button. Nothing is fetched until the viewer
+ * presses the button; then the frame takes the button's place. The link
+ * beside it always works, also where frames do not (a file opened from disk).
+ */
+function renderWebFrame(
+  ctx: RenderContext,
+  surface: PaletteColor,
+  o: {
+    kind: 'youtube' | 'embed';
+    frameUrl: string;
+    linkUrl: string;
+    title: string;
+    cta: string;
+    note: string;
+    linkText: string;
+    posterUrl?: string;
+  },
+): HTMLElement {
+  const { doc } = ctx;
+  const play = ctx.mode === 'play';
+  const card = doc.createElement('div');
+  card.className = `ls-videocard ls-webvideo ls-webvideo-${o.kind}`;
+  cardColors(card, surface);
+
+  const button = doc.createElement(play ? 'button' : 'div');
+  button.className = 'ls-webvideo-play';
+  if (o.posterUrl) button.appendChild(posterImage(doc, o.posterUrl));
+  const cta = doc.createElement('span');
+  cta.className = 'ls-webvideo-cta';
+  if (o.kind === 'youtube') cta.appendChild(playIcon(doc));
+  const ctaText = doc.createElement('span');
+  ctaText.textContent = o.cta;
+  cta.appendChild(ctaText);
+  button.appendChild(cta);
+
+  if (play) {
+    button.setAttribute('type', 'button');
+    if (o.title) button.setAttribute('aria-label', `${o.cta}: ${o.title}`);
+    button.addEventListener('click', () => {
+      const frame = doc.createElement('iframe');
+      frame.className = 'ls-webvideo-frame';
+      frame.title = o.title || o.cta;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      frame.allowFullscreen = true;
+      if (o.kind === 'embed') {
+        frame.setAttribute(
+          'sandbox',
+          'allow-scripts allow-same-origin allow-popups allow-forms allow-presentation',
+        );
+      }
+      frame.src = o.frameUrl;
+      button.replaceWith(frame);
+      frame.focus();
+    });
+  }
+
+  const info = doc.createElement('span');
+  info.className = 'ls-videocard-info';
+  info.appendChild(cardText(doc, o.title || o.linkUrl, o.note));
+  const link = doc.createElement(play ? 'a' : 'span');
+  link.className = 'ls-webvideo-open';
+  link.textContent = o.linkText;
+  if (play) {
+    const anchor = link as HTMLAnchorElement;
+    anchor.href = o.linkUrl;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+  }
+  info.appendChild(link);
+  card.append(button, info);
+  return card;
+}
+
+/** A page from the web shown in a frame, fetched only when the viewer asks for it. */
+export function renderEmbed(
+  ctx: RenderContext,
+  surface: PaletteColor,
+  address: string,
+  title: string,
+): HTMLElement | undefined {
+  const ref = youtubeRef(address);
+  if (ref) return renderVideo(ctx, surface, { kind: 'url', url: address }, title, undefined);
+  const target = embedTarget(address);
+  if (!target) return undefined;
+  return renderWebFrame(ctx, surface, {
+    kind: 'embed',
+    frameUrl: target.href,
+    linkUrl: target.href,
+    title,
+    cta: ctx.strings.embedLoad(target.host),
+    note: ctx.strings.needsInternet,
+    linkText: ctx.strings.openInBrowser,
+  });
+}
+
+/**
+ * A video player; a YouTube video that is fetched when the viewer asks for
+ * it; or a card that links out when the video cannot be shown in place.
+ */
 export function renderVideo(
   ctx: RenderContext,
   surface: PaletteColor,
@@ -370,7 +518,9 @@ export function renderVideo(
   const { doc } = ctx;
   const resolved = resolveVideo(source, ctx.assetUrl);
   const posterUrl = poster ? ctx.assetUrl(poster) : undefined;
-  if (resolved.kind === 'file') {
+  // While editing nothing is fetched from the web: a video file that lies
+  // on a server is drawn as a card, and plays only in the presentation.
+  if (resolved.kind === 'file' && !(resolved.remote && ctx.mode === 'edit')) {
     const figure = doc.createElement('figure');
     figure.className = 'ls-video';
     const video = doc.createElement('video');
@@ -384,18 +534,30 @@ export function renderVideo(
     figure.appendChild(video);
     return figure;
   }
-  const dark = surface === 'lilla' || surface === 'indigo' || surface === 'sort';
-  const card = doc.createElement(resolved.kind === 'link' && ctx.mode === 'play' ? 'a' : 'div');
+  if (resolved.kind === 'youtube') {
+    return renderWebFrame(ctx, surface, {
+      kind: 'youtube',
+      frameUrl: youtubeEmbedUrl(resolved.ref),
+      linkUrl: youtubeWatchUrl(resolved.ref),
+      title,
+      cta: ctx.strings.playFromYouTube,
+      note: ctx.strings.fetchedOnClick,
+      linkText: ctx.strings.openOnYouTube,
+      posterUrl,
+    });
+  }
+  const linked = resolved.kind === 'link';
+  const card = doc.createElement(linked && ctx.mode === 'play' ? 'a' : 'div');
   card.className = 'ls-videocard';
-  card.style.setProperty('--ls-card-bg', PALETTE[dark ? 'hvit' : 'indigo']);
-  card.style.setProperty('--ls-card-text', PALETTE[dark ? 'indigo' : 'hvit']);
+  cardColors(card, surface);
   if (resolved.kind === 'missing') {
     card.textContent = ctx.strings.missingVideo;
     return card;
   }
+  const href = resolved.kind === 'link' ? resolved.href : resolved.url;
   if (card.tagName === 'A') {
     const anchor = card as HTMLAnchorElement;
-    anchor.href = resolved.href;
+    anchor.href = href;
     anchor.target = '_blank';
     anchor.rel = 'noopener noreferrer';
   }
@@ -403,26 +565,89 @@ export function renderVideo(
   // web videos) shows what the link leads to; it is a file in the project.
   if (posterUrl) {
     card.classList.add('ls-videocard-poster');
-    const picture = doc.createElement('img');
-    picture.className = 'ls-videocard-img';
-    picture.src = posterUrl;
-    picture.alt = '';
-    picture.draggable = false;
-    card.appendChild(picture);
+    card.appendChild(posterImage(doc, posterUrl));
   }
   const info = doc.createElement('span');
   info.className = 'ls-videocard-info';
   info.appendChild(playIcon(doc));
-  const text = doc.createElement('span');
-  text.className = 'ls-videocard-text';
-  const label = doc.createElement('span');
-  label.textContent = title || resolved.href;
-  const note = doc.createElement('small');
-  note.textContent = ctx.strings.opensInBrowser;
-  text.append(label, note);
-  info.appendChild(text);
+  info.appendChild(
+    cardText(doc, title || href, linked ? ctx.strings.opensInBrowser : ctx.strings.playsFromWeb),
+  );
   card.appendChild(info);
   return card;
+}
+
+/**
+ * The "Lær mer" content of an element, when there is something to open. The
+ * "+ Lær mer" button always has a panel; other elements only when the owner
+ * has put something in it.
+ */
+export function moreOf(el: SceneElement): More | undefined {
+  if (el.type === 'deepdive') return el.more ?? { title: el.label, blocks: [] };
+  return el.more && el.more.blocks.length > 0 ? el.more : undefined;
+}
+
+/** Heading of an element's panel. */
+export function moreTitle(ctx: RenderContext, el: SceneElement): string {
+  const own = el.more?.title.trim();
+  if (own) return own;
+  return el.type === 'deepdive' ? el.label.trim() || ctx.strings.deepDive : ctx.strings.deepDive;
+}
+
+/**
+ * Where the mark sits when the owner has not chosen a corner. For text it
+ * follows the text: a text box is often much wider than the words in it, so
+ * the mark goes to the side and edge the text is aligned to. Everything
+ * else gets it top right.
+ */
+export function moreCorner(el: SceneElement): NonNullable<More['corner']> {
+  if (el.more?.corner) return el.more.corner;
+  if (el.type !== 'text') return 'tr';
+  const vertical = el.valign === 'bottom' ? 'b' : 't';
+  const horizontal = el.align === 'left' ? 'l' : 'r';
+  return `${vertical}${horizontal}` as NonNullable<More['corner']>;
+}
+
+const BADGE_SIZE = 56;
+/** How far the mark reaches outside the corner of its element. */
+const BADGE_OUT = 16;
+const BADGE_EDGE = 6;
+
+/** The round "+" mark on an element that has "Lær mer" content. Always visible, never hover-only. */
+function renderMoreBadge(
+  ctx: RenderContext,
+  surface: Surface,
+  el: SceneElement,
+  more: More,
+): HTMLElement {
+  const { doc } = ctx;
+  const play = ctx.mode === 'play';
+  const badge = doc.createElement(play ? 'button' : 'span');
+  badge.className = 'ls-more-badge';
+  badge.textContent = '+';
+  const corner = moreCorner(el);
+  // Just outside the chosen corner, but never outside the scene.
+  const clamp = (value: number, max: number): number =>
+    Math.max(BADGE_EDGE, Math.min(max - BADGE_SIZE - BADGE_EDGE, value));
+  const x = corner.endsWith('r') ? el.box.w - BADGE_SIZE + BADGE_OUT : -BADGE_OUT;
+  const y = corner.startsWith('t') ? -BADGE_OUT : el.box.h - BADGE_SIZE + BADGE_OUT;
+  const rotated = el.box.rotation !== 0;
+  badge.style.left = `${rotated ? x : clamp(el.box.x + x, STAGE.width) - el.box.x}px`;
+  badge.style.top = `${rotated ? y : clamp(el.box.y + y, STAGE.height) - el.box.y}px`;
+  const dark = isDarkSurface(surface);
+  badge.style.setProperty('--ls-badge-bg', PALETTE[dark ? 'hvit' : 'lilla']);
+  badge.style.setProperty('--ls-badge-text', PALETTE[dark ? 'lilla' : 'hvit']);
+  badge.style.setProperty('--ls-badge-ring', PALETTE[dark ? 'lilla' : 'hvit']);
+  if (play) {
+    badge.setAttribute('type', 'button');
+    badge.dataset.more = el.id;
+    badge.setAttribute('aria-haspopup', 'dialog');
+    badge.setAttribute('aria-expanded', 'false');
+    badge.setAttribute('aria-label', ctx.strings.moreAbout(more.title.trim()));
+  } else {
+    badge.setAttribute('aria-hidden', 'true');
+  }
+  return badge;
 }
 
 function renderDeepDive(ctx: RenderContext, surface: Surface, el: DeepDiveElement): Node {
@@ -431,8 +656,9 @@ function renderDeepDive(ctx: RenderContext, surface: Surface, el: DeepDiveElemen
   button.className = 'ls-deepdive';
   if (ctx.mode === 'play') {
     button.setAttribute('type', 'button');
-    button.dataset.deepdive = el.id;
+    button.dataset.more = el.id;
     button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-expanded', 'false');
   }
   const dark = isDarkSurface(surface);
   button.style.setProperty('--ls-button-bg', PALETTE[dark ? 'hvit' : 'lilla']);
@@ -526,6 +752,12 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     if (el.type === 'image' && el.blend) wrap.style.mixBlendMode = el.blend;
     if (el.box.rotation) wrap.style.transform = `rotate(${el.box.rotation}deg)`;
     wrap.appendChild(renderElement(ctx, scene, surface, el));
+    const more = el.type === 'deepdive' ? undefined : moreOf(el);
+    if (more) {
+      // The mark comes right after the element, also in reading and tab order.
+      wrap.classList.add('ls-has-more');
+      wrap.appendChild(renderMoreBadge(ctx, surface, el, more));
+    }
     root.appendChild(wrap);
   }
 
@@ -555,6 +787,17 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
       'Bildet i videoen kan ikke vises her, bare lyden. Lagre videoen som MP4 med H.264 eller som WebM.',
     videoUnplayable:
       'Videoen kan ikke spilles av her. Fila mangler, kan ikke hentes, eller er kodet på en måte som ikke støttes.',
+    playsFromWeb: 'Spilles fra nettet (krever nett)',
+    playFromYouTube: 'Spill av fra YouTube',
+    openOnYouTube: 'Åpne på YouTube',
+    fetchedOnClick: 'Hentes fra YouTube først når du klikker (krever nett)',
+    embedLoad: (host) => `Innhold fra ${host} – klikk for å laste`,
+    openInBrowser: 'Åpne i nettleseren',
+    needsInternet: 'Krever nett',
+    moreAbout: (title) => (title ? `Lær mer om: ${title}` : 'Lær mer'),
+    creditBy: 'av',
+    creditSource: 'Kilde',
+    creditCropped: 'beskåret',
     logoAlt: 'Universitetet i Sørøst-Norge',
   },
   en: {
@@ -566,6 +809,17 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
       'The picture in this video cannot be shown here, only the sound. Save the video as MP4 with H.264 or as WebM.',
     videoUnplayable:
       'The video cannot be played here. The file is missing, cannot be fetched, or is coded in an unsupported way.',
+    playsFromWeb: 'Plays from the web (needs internet)',
+    playFromYouTube: 'Play from YouTube',
+    openOnYouTube: 'Open on YouTube',
+    fetchedOnClick: 'Fetched from YouTube only when you click (needs internet)',
+    embedLoad: (host) => `Content from ${host} – click to load`,
+    openInBrowser: 'Open in the browser',
+    needsInternet: 'Needs internet',
+    moreAbout: (title) => (title ? `Learn more about: ${title}` : 'Learn more'),
+    creditBy: 'by',
+    creditSource: 'Source',
+    creditCropped: 'cropped',
     logoAlt: 'University of South-Eastern Norway',
   },
 };

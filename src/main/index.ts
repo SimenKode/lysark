@@ -1,13 +1,15 @@
 // Electron main process: the window, the Norwegian menu, file dialogs and
 // the calls the interface is allowed to make. The interface runs sandboxed
 // and reaches files only through these calls.
-import { BrowserWindow, Menu, app, dialog, ipcMain, protocol, shell } from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, protocol, session, shell } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import type {
   AddedMedia,
+  CommonsPicture,
+  CommonsResult,
   ExportSummary,
   ImportedProject,
   LogoLanguage,
@@ -17,10 +19,15 @@ import type {
   OpenedProject,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
-import { exportHtml, writePreview } from './exportHtml';
+import { webPictureUrl } from '../shared/api';
+import type { CommonsHit } from './commons';
+import { buildPreview, exportHtml } from './exportHtml';
+import { isPreviewUrl, servePreview, stopPreviewServer } from './previewServer';
+import { commonsPreview, downloadCommons, proxyPicture, searchCommons, youtubeStill } from './web';
 import {
   MEDIA_EXTENSIONS,
   PROJECT_FILE,
+  addMediaBytes,
   addMediaFile,
   createProject,
   importPptxToFolder,
@@ -51,6 +58,8 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'lysark-media',
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
+  // Gallery pictures from Wikimedia Commons, fetched by the main process.
+  { scheme: 'lysark-web', privileges: { standard: true, secure: true } },
 ]);
 
 let mainWindow: BrowserWindow | null = null;
@@ -133,6 +142,54 @@ function registerMediaProtocol(): void {
   });
 }
 
+/**
+ * The interface itself never reaches the network. Whatever it asks for over
+ * http(s) is refused here, except its own development server. What the owner
+ * asks for in the media dialog goes through the main process (web.ts).
+ */
+function blockNetworkInInterface(): void {
+  const dev = process.env.ELECTRON_RENDERER_URL;
+  const devOrigin = dev ? new URL(dev).origin : null;
+  session.defaultSession.webRequest.onBeforeRequest(
+    { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] },
+    (details, callback) => {
+      let allowed = false;
+      try {
+        const url = new URL(details.url);
+        const asHttp = url.origin.replace(/^ws/, 'http');
+        allowed = devOrigin !== null && asHttp === devOrigin;
+      } catch {
+        allowed = false;
+      }
+      callback({ cancel: !allowed });
+    },
+  );
+}
+
+function registerWebPictureProtocol(): void {
+  protocol.handle('lysark-web', (request) => {
+    try {
+      const url = new URL(request.url);
+      if (url.hostname === 'picture') {
+        return proxyPicture(decodeURIComponent(url.pathname.slice(1)));
+      }
+    } catch {
+      // Fall through to "not found".
+    }
+    return new Response(null, { status: 404 });
+  });
+}
+
+function toPicture(hit: CommonsHit): CommonsPicture {
+  return {
+    title: hit.title,
+    thumbUrl: webPictureUrl(hit.thumbUrl),
+    width: hit.width,
+    height: hit.height,
+    credit: hit.credit,
+  };
+}
+
 // ---------- Window and menu ----------
 
 function showAbout(): void {
@@ -147,7 +204,8 @@ function showAbout(): void {
       'og kommer uten noen garanti. Forelesningene du eksporterer, er dine egne.\n\n' +
       'Bygd med fri programvare (Electron, React, ProseMirror, Zod, fflate, fast-xml-parser). ' +
       'Skriftene Liberation Sans og Liberation Serif følger med under SIL Open Font License 1.1.\n\n' +
-      'Programmet kontakter ikke nettet og samler ingenting.',
+      'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
+      'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene.',
     buttons: ['Lukk'],
   });
 }
@@ -385,6 +443,28 @@ function registerHandlers(): void {
     },
   );
 
+  handle('lysark:commons-search', async (query: string, offset: number): Promise<CommonsResult> => {
+    const result = await searchCommons(String(query ?? ''), Number(offset) || 0);
+    return { hits: result.hits.map(toPicture), ...(result.next ? { next: result.next } : {}) };
+  });
+
+  handle('lysark:commons-preview', async (title: string): Promise<CommonsPicture> => {
+    return toPicture(await commonsPreview(String(title)));
+  });
+
+  handle('lysark:commons-add', async (dir: string, title: string): Promise<AddedMedia> => {
+    const picture = await downloadCommons(String(title));
+    return addMediaBytes(dir, picture.data, picture.extension, {
+      name: picture.hit.title.replace(/^[^:]+:/, ''),
+      credit: picture.hit.credit,
+    });
+  });
+
+  handle('lysark:youtube-still', async (dir: string, url: string): Promise<AddedMedia> => {
+    const still = await youtubeStill(String(url));
+    return addMediaBytes(dir, still.data, '.jpg', { name: `youtube-${still.id}.jpg` });
+  });
+
   handle('lysark:export', async (dir: string, project: Project): Promise<ExportSummary | null> => {
     if (!mainWindow) return null;
     const safeName = (project.meta.title || 'forelesning').replace(/[\\/:*?"<>|]+/g, ' ').trim();
@@ -428,7 +508,13 @@ function registerHandlers(): void {
   handle(
     'lysark:preview',
     async (dir: string, project: Project, sceneIndex: number): Promise<void> => {
-      const file = writePreview(dir, project);
+      const address = await servePreview({
+        html: buildPreview(dir, project),
+        mediaFile: (name) => {
+          const file = mediaPath(dir, `media/${name}`);
+          return { file, mime: mimeOf(file) ?? 'application/octet-stream' };
+        },
+      });
       if (!previewWindow || previewWindow.isDestroyed()) {
         previewWindow = new BrowserWindow({
           width: 1280,
@@ -437,12 +523,24 @@ function registerHandlers(): void {
           title: `Forhåndsvisning – ${APP_NAME}`,
           autoHideMenuBar: true,
           backgroundColor: '#2f0b63',
-          webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
+          webPreferences: {
+            contextIsolation: true,
+            sandbox: true,
+            nodeIntegration: false,
+            // Its own session, kept in memory only. Here, and only here, web
+            // content the owner has put in can be fetched when he presses
+            // play, just as it will be for a student.
+            partition: 'lysark-preview',
+          },
         });
         previewWindow.setMenu(null);
         previewWindow.webContents.setWindowOpenHandler(({ url }) => {
           if (/^https?:/i.test(url)) void shell.openExternal(url);
           return { action: 'deny' };
+        });
+        // The window shows the preview and nothing else.
+        previewWindow.webContents.on('will-navigate', (event, url) => {
+          if (!isPreviewUrl(url)) event.preventDefault();
         });
         previewWindow.on('closed', () => {
           previewWindow = null;
@@ -455,7 +553,7 @@ function registerHandlers(): void {
           ? `Forhåndsvisning – ${project.meta.title}`
           : `Forhåndsvisning – ${APP_NAME}`,
       );
-      await previewWindow.loadFile(file, { hash: String(sceneIndex + 1) });
+      await previewWindow.loadURL(`${address}#${sceneIndex + 1}`);
       if (!HIDDEN) previewWindow.focus();
     },
   );
@@ -508,11 +606,16 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   void app.whenReady().then(() => {
+    blockNetworkInInterface();
     registerMediaProtocol();
+    registerWebPictureProtocol();
     registerHandlers();
     buildMenu();
     createWindow();
   });
 
-  app.on('window-all-closed', () => app.quit());
+  app.on('window-all-closed', () => {
+    stopPreviewServer();
+    app.quit();
+  });
 }

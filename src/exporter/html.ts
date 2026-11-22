@@ -3,7 +3,8 @@
 // one exception; they are placed in a folder next to the file.
 import type { Project } from '../shared/format/schema';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../shared/limits';
-import { STAGE_CSS } from '../shared/render/css';
+import { MORE_CSS, STAGE_CSS } from '../shared/render/css';
+import { moreAssets } from '../shared/render/more';
 import { PLAYER_CSS } from '../player/css';
 import type { PlayerAssetRef, PlayerData } from '../player/player';
 
@@ -71,7 +72,7 @@ function scriptJson(value: unknown): string {
     .join('\\u2029');
 }
 
-/** Ids of the assets the scenes actually use. */
+/** Ids of the assets the scenes actually use, also inside "Lær mer" content. */
 export function usedAssets(project: Project): Set<string> {
   const used = new Set<string>();
   for (const scene of project.scenes) {
@@ -80,13 +81,8 @@ export function usedAssets(project: Project): Set<string> {
       else if (el.type === 'video') {
         if (el.source.kind === 'asset') used.add(el.source.asset);
         if (el.poster) used.add(el.poster);
-      } else if (el.type === 'deepdive') {
-        for (const item of el.media) {
-          if (item.kind === 'image') used.add(item.asset);
-          else if (item.kind === 'video' && item.source.kind === 'asset')
-            used.add(item.source.asset);
-        }
       }
+      for (const id of moreAssets(el.more)) used.add(id);
     }
   }
   return used;
@@ -121,7 +117,15 @@ export function usedFonts(project: Project): FontFace[] {
         el.rows.forEach((row, i) =>
           row.forEach((cell) => visit(cell.content, false, el.headerRow && i === 0)),
         );
-      } else if (el.type === 'deepdive') visit(el.body, false, false);
+      }
+      for (const block of el.more?.blocks ?? []) {
+        if (block.kind === 'text') visit(block.content, false, false);
+        else if (block.kind === 'table') {
+          block.rows.forEach((row, i) =>
+            row.forEach((cell) => visit(cell.content, false, block.headerRow && i === 0)),
+          );
+        }
+      }
     }
   }
   // The player's own interface uses regular and bold sans, and serif headings.
@@ -172,9 +176,11 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
     .join('\n');
 
   const data: PlayerData = { project, assets, logo };
-  // No script may load from elsewhere and nothing may phone home.
+  // No script may load from elsewhere and nothing may phone home. A frame
+  // is only ever created when the viewer presses "play" on web content the
+  // author has put in, and then only over https.
   const csp =
-    "script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'";
+    "script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; connect-src 'none'; form-action 'none'; frame-src https:";
 
   const html = `<!doctype html>
 <html lang="${project.meta.language}">
@@ -187,6 +193,7 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
 <style>
 ${fontCss}
 ${STAGE_CSS}
+${MORE_CSS}
 ${PLAYER_CSS}
 </style>
 </head>

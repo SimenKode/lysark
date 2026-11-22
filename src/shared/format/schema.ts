@@ -2,9 +2,11 @@
 // (later) the video export. Content refers to palette tokens and text roles,
 // never to raw colours or fonts, so a theme change never touches content.
 import { z } from 'zod';
+import { migrateProject } from './migrate';
 
 export const FORMAT_NAME = 'lysark';
-export const FORMAT_VERSION = 1;
+/** 2: every element can carry "Lær mer" content (`more`); assets can carry a credit. */
+export const FORMAT_VERSION = 2;
 
 export { STAGE } from './constants';
 
@@ -88,11 +90,73 @@ export const Box = z.object({
 });
 export type Box = z.infer<typeof Box>;
 
+export const VideoSource = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('asset'), asset: z.string() }),
+  z.object({ kind: z.literal('url'), url: z.string() }),
+]);
+export type VideoSource = z.infer<typeof VideoSource>;
+
+export const TableCell = z.object({
+  content: RichText,
+  colSpan: z.number().int().min(1).optional(),
+  rowSpan: z.number().int().min(1).optional(),
+});
+export type TableCell = z.infer<typeof TableCell>;
+
+// ---------- "Lær mer": content that elaborates on an element ----------
+
+const blockId = z.string().min(1);
+
+/** One building block of the panel that opens when a student asks for more. */
+export const MoreBlock = z.discriminatedUnion('kind', [
+  z.object({ id: blockId, kind: z.literal('heading'), text: z.string() }),
+  z.object({ id: blockId, kind: z.literal('text'), content: RichText }),
+  z.object({
+    id: blockId,
+    kind: z.literal('image'),
+    asset: z.string(),
+    alt: z.string(),
+    caption: z.string().optional(),
+  }),
+  z.object({
+    id: blockId,
+    kind: z.literal('video'),
+    source: VideoSource,
+    title: z.string(),
+    /** Still picture shown before a web video is fetched. */
+    poster: z.string().optional(),
+  }),
+  z.object({
+    id: blockId,
+    kind: z.literal('table'),
+    columns: z.array(z.number().positive()).min(1),
+    headerRow: z.boolean(),
+    rows: z.array(z.array(TableCell)).min(1),
+  }),
+  /** A web page shown inside the panel, fetched only when the student asks for it. */
+  z.object({ id: blockId, kind: z.literal('embed'), url: z.string(), title: z.string() }),
+]);
+export type MoreBlock = z.infer<typeof MoreBlock>;
+export type MoreBlockKind = MoreBlock['kind'];
+
+export const MORE_CORNERS = ['tr', 'tl', 'br', 'bl'] as const;
+
+export const More = z.object({
+  /** Heading of the panel, and the name of the mark for screen readers. */
+  title: z.string(),
+  blocks: z.array(MoreBlock),
+  /** Which corner of the element carries the "+" mark. Top right when absent. */
+  corner: z.enum(MORE_CORNERS).optional(),
+});
+export type More = z.infer<typeof More>;
+
 const elementBase = {
   id: z.string().min(1),
   box: Box,
   /** Optional label shown in the element and step lists. */
   name: z.string().optional(),
+  /** "Lær mer" content attached to this element. Any element can have it. */
+  more: More.optional(),
 };
 
 /**
@@ -199,13 +263,6 @@ export const ShapeElement = z.object({
 });
 export type ShapeElement = z.infer<typeof ShapeElement>;
 
-export const TableCell = z.object({
-  content: RichText,
-  colSpan: z.number().int().min(1).optional(),
-  rowSpan: z.number().int().min(1).optional(),
-});
-export type TableCell = z.infer<typeof TableCell>;
-
 export const TableElement = z.object({
   ...elementBase,
   type: z.literal('table'),
@@ -220,12 +277,6 @@ export const TableElement = z.object({
 });
 export type TableElement = z.infer<typeof TableElement>;
 
-export const VideoSource = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('asset'), asset: z.string() }),
-  z.object({ kind: z.literal('url'), url: z.string() }),
-]);
-export type VideoSource = z.infer<typeof VideoSource>;
-
 export const VideoElement = z.object({
   ...elementBase,
   type: z.literal('video'),
@@ -236,20 +287,15 @@ export const VideoElement = z.object({
 });
 export type VideoElement = z.infer<typeof VideoElement>;
 
-export const DeepDiveMedia = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('image'), asset: z.string(), alt: z.string() }),
-  z.object({ kind: z.literal('video'), source: VideoSource, title: z.string() }),
-  z.object({ kind: z.literal('link'), url: z.string(), label: z.string() }),
-]);
-export type DeepDiveMedia = z.infer<typeof DeepDiveMedia>;
-
-/** The "Lær mer" box: a button in the scene that opens a panel. */
+/**
+ * The "+ Lær mer" button: an element whose only job is to open its `more`
+ * content. The simple way in; any other element can carry `more` too.
+ */
 export const DeepDiveElement = z.object({
   ...elementBase,
   type: z.literal('deepdive'),
+  /** Text on the button. The theme's "Lær mer" when empty. */
   label: z.string(),
-  body: RichText,
-  media: z.array(DeepDiveMedia),
 });
 export type DeepDiveElement = z.infer<typeof DeepDiveElement>;
 
@@ -340,6 +386,21 @@ export type Scene = z.infer<typeof Scene>;
 
 // ---------- Project ----------
 
+/** Who made a picture or video, and on what terms it may be used. */
+export const Credit = z.object({
+  /** Title of the work. */
+  title: z.string().optional(),
+  author: z.string().optional(),
+  /** Short name of the licence, such as "CC BY-SA 4.0". */
+  license: z.string().optional(),
+  licenseUrl: z.string().optional(),
+  /** The page that describes the work (for Wikimedia Commons, its file page). */
+  sourceUrl: z.string().optional(),
+  /** The licence demands that author and licence are shown; the credit cannot be removed. */
+  required: z.boolean().optional(),
+});
+export type Credit = z.infer<typeof Credit>;
+
 export const Asset = z.object({
   kind: z.enum(['image', 'video']),
   /** Path relative to the project folder, always inside media/. */
@@ -348,6 +409,7 @@ export const Asset = z.object({
   bytes: z.number().int().min(0),
   /** Original file name, for the owner's reference. */
   name: z.string().optional(),
+  credit: Credit.optional(),
 });
 export type Asset = z.infer<typeof Asset>;
 
@@ -382,7 +444,7 @@ export function parseProject(data: unknown): Project {
       `Prosjektet er laget med en nyere utgave av Lysark (format ${head.data.version}).`,
     );
   }
-  const result = Project.safeParse(data);
+  const result = Project.safeParse(migrateProject(data, FORMAT_VERSION));
   if (!result.success) {
     const first = result.error.issues[0];
     const where = first ? first.path.join('.') : '';

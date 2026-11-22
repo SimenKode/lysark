@@ -15,7 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\"",
     "dist:linux": "npm run build && electron-builder --linux",
     "dist:win": "npm run build && electron-builder --win zip",
-    "test:unit": "vitest run tests/shared.test.ts tests/importer.test.ts tests/projectIo.test.ts",
+    "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/commons.test.ts tests/importer.test.ts tests/projectIo.test.ts",
     "dist:win-installer": "npm run build && electron-builder --win nsis"
   },
   "dependencies": {
