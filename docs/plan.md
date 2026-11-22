@@ -68,14 +68,46 @@ eksporterer én HTML-fil studentene kan bruke uten nett.
 - Teksting laget av manuset følger med videoen.
 - Innlest lyd kan også følge med HTML-fila.
 
-## Rekkefølgen i leveranse 1
+## Status for leveranse 1 (22.11.2026)
 
-1. Svar på spørsmålene i
-   [sporsmal-leveranse-1.md](sporsmal-leveranse-1.md).
-2. Logopakke og to–tre ekte forelesninger på plass (utenfor git).
-3. Importen prøves mot de ekte filene. Det avgjør hva importrapporten må
-   dekke.
-4. Temaet vises fram på dine egne scener, så uttrykket kan godkjennes
-   før resten bygges rundt det.
-5. Redigering, så HTML-eksport.
-6. Utprøving på Linux Mint og Windows 11, og i læringsplattformen.
+Bygd og prøvd automatisk på Linux Mint:
+
+- import av PPTX til prosjektmappe, med rapport
+- ren stil med palett, kontrasttabell, skriftskala, 8 kolonner og
+  profilformer
+- redigering: scener, elementer, tekst i scenen, tabeller, video,
+  fordypningsbokser, steg, manus, angre og gjør om
+- forhåndsvisning og eksport til én HTML-fil
+- spilleren: tastatur, klikk, sveip, innhold, manus, fordypningspanel,
+  hjelp, fullskjerm og utskrift
+
+Gjenstår før leveransen er ferdig:
+
+1. **Ekte forelesninger.** Importen er bare prøvd mot testfiler laget for
+   formålet, og mot en av dem lagret på nytt av LibreOffice. Ingen fil
+   skrevet av PowerPoint selv er prøvd.
+2. **Windows 11.** Programmet er ikke startet på Windows.
+3. **Læringsplattformen.** HTML-fila er ikke prøvd der.
+4. **Logo.** Ingen logofiler er valgt, så logoen er ikke sett i bruk.
+5. **Godkjenning av uttrykket** på dine egne scener.
+
+Kjente begrensninger i importen (kommer i rapporten der det er relevant):
+
+- SmartArt, diagrammer og innebygde objekter følger ikke med.
+- Bilder i EMF, WMF og TIFF følger ikke med.
+- Farger blir nærmeste profilfarge; lyse og mørke varianter av samme
+  farge kan bli like.
+- Former utover rektangel, ellipse, linje og pil forenkles til
+  rektangler. Buede koblinger blir rette.
+- Tekst og bilder som ligger i PowerPoint-malen (ikke på lysarket)
+  følger ikke med; temaet bestemmer bakgrunn og logo.
+- Tabeller mister fyllfarger, kantlinjer og justering per celle.
+- Lenker på hele former og bilder følger ikke med, bare lenker i tekst.
+
+## Rekkefølgen videre
+
+1. Logopakke og to–tre ekte forelesninger på plass (utenfor git).
+2. Importen prøves mot de ekte filene, og rettes der den bommer.
+3. Uttrykket godkjennes på dine egne scener.
+4. Utprøving på Windows 11 og i læringsplattformen.
+5. Leveranse 2.

@@ -94,6 +94,16 @@ the manual, raise it with the owner instead of choosing silently.
   any server unless the owner has inserted an external link himself.
 - The program collects nothing and sends nothing anywhere.
 
+## Commands
+
+- `npm run dev` starts the program for development.
+- `npm run typecheck` must be clean.
+- `npm test` builds and runs every test, including two that start the
+  whole program without showing a window (`LYSARK_HIDDEN=1`). Never show
+  windows on the owner's screen from tests.
+- `npm run dist:linux` and `npm run dist:win` package the program into
+  `release/`.
+
 ## Working with the owner
 
 - Ask design questions together and early, each with one recommendation.

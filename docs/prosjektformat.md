@@ -1,9 +1,11 @@
-# Prosjektformatet (skisse)
+# Prosjektformatet
 
 Ett format leses av redigeringsprogrammet, HTML-spilleren og
-videoeksporten. Skissen viser hovedtrekkene; detaljene låses når
-leveranse 1 bygges, og formatet får versjonsnummer fra første dag slik at
-eldre prosjekter kan løftes automatisk.
+videoeksporten. Den bindende beskrivelsen er koden i
+`src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
+den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
+versjonsnummer (nå 1), slik at eldre prosjekter kan løftes automatisk
+når det endres.
 
 ## Tre prinsipper
 
@@ -26,9 +28,17 @@ MinForelesning/
   media/               bilder, lyd, video; filnavn etter innholdets sjekksum
 ```
 
-Mappe eller én fil er et åpent spørsmål (spørsmål 15).
+Et prosjekt er en mappe (valgt i spørsmål 15). «Pakk prosjektet til én
+fil» i Fil-menyen lager en zip av mappa for flytting og arkivering, og
+«Åpne pakket prosjekt» pakker den ut igjen.
 
 ## Oppbygging
+
+Skissen under viser hovedtrekkene slik de ble tegnet før byggingen.
+Noen detaljer ble enklere i den ferdige koden: formatet heter `lysark`,
+tekst er avsnitt med nivå og listetype, farger på elementer er navn fra
+profilpaletten, og hver scene har egne valg for profilformer og logo.
+Diagrammaler og lyd legges til i leveranse 2 og 3.
 
 ```ts
 interface Project {

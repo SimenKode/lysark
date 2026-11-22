@@ -69,8 +69,7 @@ og ville blitt bygd inn i programmet.
 | zod | 4.6.7 | MIT | Kontroll av prosjektfila ved åpning og import |
 | fflate | 0.8.3 | MIT | Pakke ut PPTX, pakke prosjekt |
 | fast-xml-parser | 5.12.1 | MIT | Lese XML i PPTX |
-| prosemirror-model, -state, -view, -commands, -history, -keymap, -schema-list | 1.x | MIT | Redigering av formatert tekst (fet, kursiv, markering, lenker, lister) |
-| dompurify | 3.4.18 | MPL-2.0 eller Apache-2.0 | Rensing av tekst som limes inn |
+| prosemirror-model, -state, -view, -commands, -history, -keymap | 1.x | MIT | Redigering av formatert tekst (fet, kursiv, markering, lenker, lister) |
 
 ### Leveranse 2 (tas inn da)
 
@@ -93,21 +92,22 @@ lydbehandling), uten bibliotek.
 
 | Pakke | Versjon | Lisens | Brukes til |
 | --- | --- | --- | --- |
-| typescript | 7.0.2 | Apache-2.0 | Språk og typekontroll |
+| typescript | 6.0.3 | Apache-2.0 | Språk og typekontroll |
 | vite | 8.3.8 | MIT | Bygging |
 | electron-vite | 6.0.0 | MIT | Vite-oppsett for Electron |
 | @vitejs/plugin-react | 6.3.0 | MIT | React i Vite |
 | electron-builder | 26.18.0 | MIT | Installasjonsfiler for Windows og Linux |
-| vitest | 5.1.1 | MIT | Enhetstester |
-| @playwright/test | 1.65.1 | Apache-2.0 | Tester som kjører hele programmet |
-| eslint, typescript-eslint | 10.15.0, 8.73.0 | MIT | Kodekontroll |
+| vitest | 5.1.1 | MIT | Tester |
+| happy-dom | 21.0.4 | MIT | Nettleser-etterligning for tester av tegnekoden |
+| @playwright/test | 1.65.1 | Apache-2.0 | Tester som starter hele programmet |
+| @types/node, @types/react, @types/react-dom | 22.x, 19.x | MIT | Typebeskrivelser |
 | prettier | 3.10.1 | MIT | Formatering |
 
 ### Skrifter
 
 | Skrift | Versjon | Lisens | Merknad |
 | --- | --- | --- | --- |
-| Liberation Serif, Liberation Sans | 2.1.5 | SIL OFL 1.1 | Legges ved uendret, med lisensfil. Ikke klippet ned til færre tegn: en nedklippet skrift regnes som endret og kan da ikke hete Liberation. Kontrolleres mot OFL-veiledningen når skriftene legges inn |
+| Liberation Serif, Liberation Sans | 2.1.5 | SIL OFL 1.1 | Hentet fra den offisielle utgivelsen og lagt ved helt uendret (TTF), med lisensfil. De er verken komprimert om eller klippet ned til færre tegn, så det er ingen tvil om at navnet Liberation kan beholdes. Prisen er at hver HTML-fil blir omtrent 1,6 MB større |
 
 ## Vurdert og avvist
 
@@ -119,14 +119,23 @@ lydbehandling), uten bibliotek.
 | anime.js, Motion | MIT | Fri lisens, men bygd rundt veggklokka; egen motor er enklere og eksakt |
 | pptxtojson | MIT | Fri lisens; for lite kontroll over plassholdere og roller. Kan revurderes |
 | Tiptap | MIT (kjernen) | Har betalte tillegg; ProseMirror, som Tiptap bygger på, er helt fri |
+| DOMPurify | MPL-2.0 eller Apache-2.0 | Trengs ikke: tegnekoden bygger aldri innhold fra HTML-tekst, så det er ingenting å rense |
+| ESLint | MIT | Utsatt: streng typekontroll og tester dekker behovet nå |
 | Clearface, Maison Neue | Kommersiell | Lisensierte skrifter |
 
 ## Pakking og installasjon
 
-- Linux: AppImage og .deb.
-- Windows: installasjonsfil og en utgave som kan kjøres uten installasjon.
+- Linux: AppImage (én fil som kjøres direkte).
+- Windows: en zip som pakkes ut, og der `Lysark.exe` kjøres uten
+  installasjon. Den kan lages på Linux. Installasjonsfila
+  (`npm run dist:win-installer`) må lages på en Windows-maskin, eller på
+  Linux med Wine installert; det er ikke gjort ennå.
 - Programmet signeres ikke. Sertifikat for signering koster penger, og
   det er utelukket. Windows vil derfor vise en advarsel første gang.
+- Windows-utgaven bygges på Linux. Da kan ikke ikonet skrives inn i
+  selve programfila, så den viser Electrons standardikon i Windows
+  (snarveien og installasjonsfila får Lysark-ikonet). Bygges programmet
+  på en Windows-maskin, blir ikonet riktig overalt.
 - Ingen automatisk oppdatering; det ville krevd en server.
 
 ## Sikkerhet og personvern

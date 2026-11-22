@@ -1,0 +1,44 @@
+/* Liberation fonts (SIL OFL 1.1), unmodified. Same widths as Arial and
+   Times New Roman, the brand manual's fallback fonts. */
+@font-face {
+  font-family: 'Liberation Sans';
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSans-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSans-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-weight: 400;
+  font-style: italic;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSans-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-weight: 700;
+  font-style: italic;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSans-BoldItalic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Serif';
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSerif-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Serif';
+  font-weight: 400;
+  font-style: italic;
+  font-display: block;
+  src: url('../../../resources/fonts/LiberationSerif-Italic.ttf') format('truetype');
+}

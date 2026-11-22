@@ -1,8 +1,32 @@
 # Spørsmål før leveranse 1
 
-Hvert spørsmål har én anbefaling. Svar gjerne bare «som anbefalt» der du
-er enig, og skriv noe der du vil ha det annerledes. Leveranse 1 bygges
-ikke før svarene er kommet.
+**Svar 22.11.2026: «Alt som anbefalt».** Alle anbefalingene under er
+dermed valgt, og programmet heter Lysark. Leveranse 1 er bygd etter dem.
+
+Disse tilleggsspørsmålene er fortsatt ubesvart, og trengs for å prøve
+leveransen ferdig:
+
+- Hvilken læringsplattform bruker du, og hvordan legger du ut filer der
+  i dag? (spørsmål 2)
+- Har du en Windows 11-maskin å prøve på, og styres den av USN?
+  (spørsmål 3)
+- To–tre ekte forelesninger i `eksempler/`. Er de bygd på USNs mal og i
+  16:9? (spørsmål 4)
+- Hvor ligger videoene dine vanligvis: som filer hos deg, eller som
+  lenker? (spørsmål 9)
+- USNs logopakke i `merkevare/` (spørsmål 14). I programmet velges
+  filene under Innstillinger.
+
+Ett valg ble justert under byggingen: rene tittel- og seksjonslysark
+(bare tittel og undertittel) får temaets oppsett ved import, med teksten
+i de fem venstre kolonnene og profilformene til høyre. PowerPoint
+midtstiller slike titler over hele bredden, og da er det ikke plass til
+formene. Alle andre lysark beholder plasseringen fra PowerPoint, som
+valgt i spørsmål 11.
+
+---
+
+Spørsmålene slik de ble stilt:
 
 ## A. Navn og rammer
 
