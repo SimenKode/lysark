@@ -36,7 +36,7 @@ mer»-byggeren) og [6.10](#610-mer-fra-eieren-samme-dag-figurer-animasjon-og-vid
 | Prosjektet | `~/Forelesningsverktoy/lysark/`, eget git-repo, gren `main` |
 | På GitHub | `SimenKode/lysark`, **privat** til eieren selv gjør det offentlig eller ber om det |
 | Lisens | GPL-3.0-or-later ([LICENSE](LICENSE)), med unntak for eksporterte forelesninger ([EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md)) |
-| Commits | se `git log`. Eieren har sagt ja til commits på `main` etter hvert ferdige, testede trinn. Push og publisering krever fortsatt at han ber om det. |
+| Commits | se `git log`. Eieren har sagt ja til commits på `main` etter hvert ferdige, testede trinn, og til at de pushes til det private repoet fortløpende. Synlighet og publisering avgjør han. |
 | Ferdige programfiler | `release/Lysark-0.1.0.AppImage` (Linux) og `release/Lysark-0.1.0-win.zip` (Windows), bygget på nytt etter økt 3 |
 | Spørsmål som venter på svar | [docs/sporsmal-videre.md](docs/sporsmal-videre.md) |
 | Eierens forelesninger | `eksempler/` (åtte PPTX med PDF-utgaver, ikke i git) |
@@ -829,8 +829,9 @@ Eieren vil at neste økt **bygger**, ikke bare planlegger. Rekkefølge:
 6. Gi eieren Canvas-sjekklista (6.5) når A1–A6 er bygget, og skriv inn
    det han melder.
 
-Ikke push uten at eieren ber om det. Spør gjerne om han vil at pushing
-til det private repoet skal skje fortløpende.
+Eieren har sagt ja til at `main` pushes til det private repoet
+fortløpende, uten å spørre hver gang (22.11.2026). Synligheten rører du
+ikke.
 
 Åpent fra før, som eieren ikke har svart på: uttrykket (6.1), importen
 (6.2), hvilken fil som ga den svarte videospilleren (6.11), og de tre
@@ -861,7 +862,8 @@ Rammer:
   utenfor den mappa.
 - Snakk med meg på norsk bokmål. Det jeg og studentene leser, er på
   bokmål; kode, kommentarer og commits på engelsk.
-- Commit hvert ferdige, testede trinn. Ikke push uten at jeg ber om det.
+- Commit hvert ferdige, testede trinn, og push main til det private
+  repoet fortløpende. Ikke endre synligheten.
 - Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), og
   aldri kontakte nettet.
 - Canvas prøver jeg selv, for hånd. Ingen KI der.

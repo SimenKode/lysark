@@ -170,11 +170,13 @@ the manual, raise it with the owner instead of choosing silently.
   Do not start building a delivery before its questions are answered.
   The answers so far are in `docs/sporsmal-leveranse-1.md` and
   `docs/sporsmal-videre.md`; the plan built on them is `docs/plan.md`.
-- The owner has allowed commits on `main` as each tested step is done
-  (22.11.2026). Pushing still needs his word.
+- The owner has allowed commits on `main` as each tested step is done,
+  and pushing them to the private repository as you go, without asking
+  each time (22.11.2026). Push `main` to `origin` only: no force push, no
+  other branches or remotes.
 - The repository is on GitHub as `SimenKode/lysark`. It stays private
   until there is a first usable version with both HTML and video
-  (the owner, 22.11.2026), and then he decides. Do not push, change its
+  (the owner, 22.11.2026), and then he decides. Do not change its
   visibility, create other remote repositories or publish anything
   (releases, packages) unless the owner asks.
 - Commits use the owner's GitHub no-reply address, set in this
