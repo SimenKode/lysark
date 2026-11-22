@@ -11,7 +11,7 @@ prøvd på både Linux Mint og Windows 11.
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
-| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gjenstår: en ekte mikrofon, og at eieren prøver det selv |
+| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Gjenstår: en ekte mikrofon, og en ny runde eieren har bedt om (tidslinje, flere lydspor, «Lær mer» og video under innlesing) |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
@@ -288,6 +288,34 @@ Ikke prøvd ennå: en ekte mikrofon (verken på Linux eller Windows), en
 hel forelesning lest inn i ett strekk, og «Spill av» i andre nettlesere
 enn den innebygde og Edge.
 
+### Runde 2 av leveranse 3 (22.11.2026)
+
+Etter at eieren hadde prøvd utgaven med lyd og video (historikk.md
+6.19). Bygget:
+
+- **Skiltformen** (rektangel med spiss), også i importen fra PowerPoint.
+- **«Lær mer» som en boks på selve lysarket:** den spretter ut ved
+  elementet og skyver ikke lysarket til siden. Byggeren viser lysarket
+  med boksen på plass. Bilder med «Lær mer» får lilla ramme.
+- **Knappene:** ingen «…», og egne ikoner der et tegn hjelper.
+- **Mer liv:** lysark glir inn, steg glir på plass (også i video),
+  merker og knapper svarer. Slås av for dem som vil ha lite bevegelse.
+- **USNs avslutningsanimasjon** som et lysark som spiller av seg selv,
+  også i video. Filmen tas vare på i innstillingene, aldri i git.
+- **Lisenstekstene** til alt som er bygd inn, følger med programmet.
+- **Versjon 0.2.0** er gitt ut.
+
+### Neste leveranse: tidslinje, flere lydspor, og «Lær mer» og video under innlesing
+
+Bedt om av eieren 22.11.2026. Ikke bygget, og ikke påbegynt:
+spørsmålene (fire, hvert med én anbefaling) står i HANDOFF.md og i
+historikk.md 6.19, og venter på svar.
+
+- «Lær mer»-bokser og videoer kan åpnes og spilles under innlesing, og
+  kommer med i videoen og i «Spill av» på de samme tidspunktene.
+- Flere lydspor: musikk og lyd over hele forelesningen, med klipping.
+- En tidslinje med alle lysarkene på rad og lydsporene under.
+
 ## Leveranse 4: Figurer og bevegelser
 
 - En figur er statisk til delene får steg; samme bygger for begge.
@@ -475,19 +503,15 @@ Rettet i økt 3:
 Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 2 og 3 er bygget. Det som står for tur:
 
-1. **Mer liv og lekenhet:** myk overgang mellom lysark, elementer som
-   glir inn per steg, knapper og «+»-merker som svarer når man peker og
-   trykker, og panel som glir inn. Ro i faginnholdet: ingen sprett eller
-   snurr der. Alt av for dem som har bedt systemet om lite bevegelse, og
-   alt som skal med i video, er en ren funksjon av tiden.
-2. **USNs avslutningsanimasjon** som eget avslutningslysark: Lysark tar
-   vare på fila slik det gjør med logoen (aldri i repoet), og lysarket
-   spiller den av seg selv én gang, uten knapper og uten lyd.
-3. **Det eieren melder** etter å ha prøvd mikrofon, video og Canvas.
-4. **Flere bildekilder**, Openverse først, når resten sitter.
-5. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
+1. **«Lær mer» og video under innlesing**, så **tidslinje og flere
+   lydspor** (ny leveranse, se over), når eieren har svart på de fire
+   spørsmålene. Mer liv og lekenhet og USNs avslutningsanimasjon, som
+   sto her, er bygget.
+2. **Det eieren melder** etter å ha prøvd mikrofon, video og Canvas.
+3. **Flere bildekilder**, Openverse først, når resten sitter.
+4. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
    stil).
-6. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;
+5. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;
    det er et tema og kan endres uten å røre innholdet.
-7. Tabeller i importen rettes når eieren har pekt på lysark som plager
+6. Tabeller i importen rettes når eieren har pekt på lysark som plager
    ham.

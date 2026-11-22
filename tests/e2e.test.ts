@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import { writeSampleProject } from './fixtures/sampleProject';
 
 const root = resolve(__dirname, '..');
@@ -35,7 +36,7 @@ describe.skipIf(!built)('the program, end to end', () => {
     work = mkdtempSync(join(tmpdir(), 'lysark-e2e-'));
     projectDir = join(work, 'prosjekt');
     writeSampleProject(projectDir);
-    const args = [`--user-data-dir=${join(work, 'userdata')}`, projectDir];
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`, projectDir];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },

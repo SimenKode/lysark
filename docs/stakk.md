@@ -222,6 +222,21 @@ lydbehandling), uten bibliotek.
 | ESLint | MIT | Utsatt: streng typekontroll og tester dekker behovet nå |
 | Clearface, Maison Neue | Kommersiell | Lisensierte skrifter |
 
+## Lisenstekster i utgivelsen
+
+`npm run licenses` (kjøres av `dist`-skriptene) samler Lysarks egen
+lisens, unntaket for eksporter, og lisensteksten til hver pakke som er
+bygd inn (26 pakker, lest fra `package-lock.json`), i mappa `licenses`
+blant programfilene. Én pakke (`@nodable/entities`, MIT) har ingen
+lisensfil; for den skrives MIT-teksten ut med forfatteren pakka oppgir.
+FFmpeg har sin egen mappe med lisens, Liberation-skriftene har sin ved
+siden av skriftfilene, pdf.js-dekoderne har sine i
+`resources/app.asar` (`out/renderer/licenses/`), og Electron leverer
+Chromiums.
+
+Ikonene i programmet er egne strektegninger (`src/renderer/src/Icon.tsx`).
+Det er ikke tatt inn noe ikonbibliotek.
+
 ## Pakking og installasjon
 
 - Linux: AppImage (én fil som kjøres direkte).

@@ -69,6 +69,10 @@ for this reason.
   is never redrawn, traced, recoloured, cropped, boxed or given effects.
   If the files are missing, the program says so; it does not substitute
   anything.
+- The same goes for USN's closing animation (the film where the logo is
+  drawn). It is kept, unchanged, in the program's settings folder, never
+  in a project folder, a test fixture or git, and never recreated in
+  code. Tests use a test pattern made by FFmpeg.
 
 ## Finished work only
 
@@ -142,7 +146,12 @@ the manual, raise it with the owner instead of choosing silently.
   its licences are filtered and credited as for Commons, and he is told
   which source was added.
 - Tests never contact the network. Where a test needs Wikimedia or
-  YouTube, the test answers for it.
+  YouTube, the test answers for it. Every test that starts the program
+  starts it with `OFFLINE` from `tests/fixtures/offline.ts`, which makes
+  every host name outside the machine impossible to look up. The same
+  goes for a throwaway script that starts the program to look at
+  something: on 22.11.2026 such a script opened a "Lær mer" box in the
+  preview, and the YouTube player in it was fetched for real.
 - The program uses the microphone only while the owner records in the
   recording window, and never the camera. The main process grants "media"
   for sound only, and only to the program's own window
@@ -209,6 +218,18 @@ the manual, raise it with the owner instead of choosing silently.
   22.11.2026): no logs, no test details, no long tables. What was built
   and tried in detail, and his feedback word for word, goes into
   `docs/historikk.md`, which is the log.
+- Buttons never end in "…" (the owner, 22.11.2026). A button that opens
+  a file dialog says what happens ("Velg fil og eksporter"). Icons are
+  the program's own line drawings in `src/renderer/src/Icon.tsx`; no icon
+  library is taken in. The header of that file says where an icon stands
+  alone, where it stands with text, and where there is only text; follow
+  it. The native menu bar keeps "…" where an entry opens a dialog.
+- "Lær mer" is a box that pops out beside its element, on top of the
+  slide. It never pushes the slide aside, in the player or in the
+  builder's preview (`placePopover` in `src/shared/render/more.ts`).
+- Motion is in how things answer, not in the subject matter, and all of
+  it is left out under `prefers-reduced-motion`. What is to be in the
+  video is a pure function of time.
 - In the interface, the same thing has one name. The owner chose these
   on 22.11.2026: "Lær mer" (never "utdyping"), "Innhold" for what a
   "Lær mer" panel holds (never "byggestein"), "Nettside" for an embedded
@@ -226,7 +247,10 @@ the manual, raise it with the owner instead of choosing silently.
   until there is a first usable version with both HTML and video
   (the owner, 22.11.2026), and then he decides. Do not change its
   visibility, create other remote repositories or publish anything
-  (releases, packages) unless the owner asks.
+  (releases, packages) unless the owner asks. He asked for a release on
+  22.11.2026: version 0.2.0 is a release in the private repository, with
+  the packaged program for Linux and Windows. Make a new release only
+  when he asks for one.
 - Commits use the owner's GitHub no-reply address, set in this
   repository's git configuration. Never put his private e-mail address in
   a commit, a file or a request.

@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import { readWavInfo } from '../src/shared/audio/wav';
 import type { Project } from '../src/shared/format/schema';
 import { writeSampleProject } from './fixtures/sampleProject';
@@ -57,6 +58,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     projectDir = join(work, 'prosjekt');
     writeSampleProject(projectDir);
     const args = [
+      OFFLINE,
       `--user-data-dir=${join(work, 'userdata')}`,
       // Chromium's own fake microphone (it beeps), and no question about using it.
       '--use-fake-device-for-media-stream',

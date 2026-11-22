@@ -3,6 +3,8 @@ node_modules/
 dist/
 out/
 release/
+# Licence texts gathered for a release (tools/collect-licenses.mjs)
+build/licenses/
 *.log
 
 # Material that must never be committed (see AGENTS.md)

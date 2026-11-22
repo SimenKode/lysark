@@ -1,6 +1,6 @@
 {
   "name": "lysark",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turns PPTX lectures into interactive HTML and video with voice-over in USN's visual identity",
   "private": true,
   "license": "GPL-3.0-or-later",
@@ -14,10 +14,11 @@
     "test": "npm run build && vitest run",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\"",
     "fetch:ffmpeg": "node tools/fetch-ffmpeg.mjs",
-    "dist:linux": "npm run fetch:ffmpeg -- linux-x64 && npm run build && electron-builder --linux",
-    "dist:win": "npm run fetch:ffmpeg -- win32-x64 && npm run build && electron-builder --win zip",
+    "licenses": "node tools/collect-licenses.mjs",
+    "dist:linux": "npm run fetch:ffmpeg -- linux-x64 && npm run licenses && npm run build && electron-builder --linux",
+    "dist:win": "npm run fetch:ffmpeg -- win32-x64 && npm run licenses && npm run build && electron-builder --win zip",
     "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/sound.test.ts tests/commons.test.ts tests/importer.test.ts tests/importer-html.test.ts tests/importer-pdf.test.ts tests/projectIo.test.ts",
-    "dist:win-installer": "npm run fetch:ffmpeg -- win32-x64 && npm run build && electron-builder --win nsis"
+    "dist:win-installer": "npm run fetch:ffmpeg -- win32-x64 && npm run licenses && npm run build && electron-builder --win nsis"
   },
   "dependencies": {
     "fast-xml-parser": "^5.12.1",
@@ -80,6 +81,10 @@
         {
           "from": "vendor/ffmpeg/linux-x64",
           "to": "ffmpeg"
+        },
+        {
+          "from": "build/licenses",
+          "to": "licenses"
         }
       ],
       "synopsis": "PowerPoint til interaktiv HTML i USNs profil"
@@ -94,6 +99,10 @@
         {
           "from": "vendor/ffmpeg/win32-x64",
           "to": "ffmpeg"
+        },
+        {
+          "from": "build/licenses",
+          "to": "licenses"
         }
       ]
     },

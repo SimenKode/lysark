@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron } from 'playwright';
 import { describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
 const shots = process.env.LYSARK_SHOTS;
@@ -20,7 +21,7 @@ describe.skipIf(!shots || !name || !existsSync(source))('pictures of a real lect
     const work = mkdtempSync(join(tmpdir(), 'lysark-screens-'));
     mkdirSync(shots!, { recursive: true });
     const app = await electron.launch({
-      args: [root, `--user-data-dir=${join(work, 'userdata')}`],
+      args: [root, OFFLINE, `--user-data-dir=${join(work, 'userdata')}`],
       env: { ...process.env, LYSARK_HIDDEN: '1' },
     });
     try {

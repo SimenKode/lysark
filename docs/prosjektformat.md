@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 4), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 5), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -50,6 +50,22 @@ brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
+
+## Format 5: skiltformen og avslutningsanimasjonen
+
+**Skilt** er en ny form (`geometry: 'sign'`): et rektangel med spiss,
+som et skilt som peker. Spissen står til høyre, eller til venstre når
+`flipH` er satt, og er halve den korte siden dyp. Formen kan ha fyll,
+omriss og tekst som andre former; teksten holder seg unna spissen.
+
+**Avslutningsanimasjonen** er et valg på et lysark:
+`closingAnimation: { seconds }`. Lysarket spiller da merkevarens
+avslutningsfilm av seg selv når det vises. Filmen ligger **ikke** i
+prosjektet: den er din egen fil, tatt vare på i programmets
+innstillinger slik som logoen. I prosjektet står bare lengden, fordi
+klokka må vite hvor lenge lysarket står (filmens lengde pluss to
+sekunder), og at hvert bilde av filmen er et nytt bilde i videoen. I en
+eksportert HTML-fil legges filmen ved én gang, slik logoen gjør.
 
 ## Format 4: lyd, tid og valg for video
 

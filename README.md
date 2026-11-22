@@ -40,11 +40,12 @@ zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
    et lysark inn i de åtte kolonnene.
 4. **Legg inn steg** (fanen Steg) for det som skal komme inn ett for ett.
 5. **Legg til «Lær mer».** Høyreklikk på et hvilket som helst element
-   og velg «Legg til «Lær mer» …», eller bruk «+ Lær mer» for en egen
-   knapp i lysarket. Byggeren åpnes over hele vinduet: innholdet til
-   venstre (tekst, overskrift, bilde, video, tabell, nettside), og
-   panelet slik studenten ser det til høyre. Elementet får et «+»-merke
-   som åpner panelet.
+   og velg «Legg til «Lær mer»», eller bruk «+ Lær mer» for en egen
+   knapp i lysarket. Byggeren har innholdet til venstre (tekst,
+   overskrift, bilde, video, tabell, nettside), og til høyre lysarket
+   selv med boksen slik studenten ser den. Elementet får et «+»-merke;
+   når studenten trykker det, spretter boksen ut ved elementet, oppå
+   lysarket.
 6. **Hent bilder.** «Bilde» åpner mediedialogen: søk i Wikimedia Commons,
    last opp, eller bruk noe prosjektet allerede har. Bilder fra Commons
    får opphavsperson, lisens og kilde med seg, og Lysark viser det under
@@ -65,7 +66,11 @@ zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
     og tekstingen som en egen fil ved siden av (`.vtt`), laget av
     manuset. Har lysarkene lyd, får også HTML-fila stemmen med, og
     studentene kan trykke «Spill av».
-12. **Lag en GIF** av et kort klipp: i samme dialog velger du «GIF» og
+12. **Avslutt med USNs logoanimasjon.** Importerer du en forelesning
+    som har den på siste lysark, tar Lysark vare på filmen og lar
+    lysarket spille den av seg selv, uten knapper og uten lyd. Den kan
+    også velges under Innstillinger.
+13. **Lag en GIF** av et kort klipp: i samme dialog velger du «GIF» og
     hvilke lysark (hele forelesningen, bare dette lysarket, eller fra og
     til). En GIF har ikke lyd, spiller i løkke, og kan være høyst to
     minutter.
@@ -166,8 +171,10 @@ en prøvemikrofon, klipping, eksport til HTML og video, og avspilling.
 | `tools/` | Hjelpeskript: hente FFmpeg, og styre Windows-VM-en under utprøving |
 
 Ikke i git: `merkevare/` (USNs logopakke), `eksempler/` (ekte
-forelesninger), `vendor/ffmpeg/` (FFmpeg), `release/` (ferdige
-installasjonsfiler).
+forelesninger), `vendor/ffmpeg/` (FFmpeg), `build/licenses/`
+(lisenstekster samlet for en utgivelse), `release/` (ferdige
+installasjonsfiler). USNs logo og avslutningsanimasjon ligger i
+programmets egne innstillinger på din maskin, aldri i repoet.
 
 ## Lisens
 

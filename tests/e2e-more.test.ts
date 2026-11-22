@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import { testPng, writeSampleProject } from './fixtures/sampleProject';
 
 const root = resolve(__dirname, '..');
@@ -55,7 +56,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     await new Promise<void>((done) => outside.listen(0, '127.0.0.1', done));
     outsideUrl = `http://127.0.0.1:${(outside.address() as AddressInfo).port}/`;
 
-    const args = [`--user-data-dir=${join(work, 'userdata')}`, projectDir];
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`, projectDir];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },
@@ -321,13 +322,24 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
           return String(error);
         }
       };
+      // The preview may fetch what the owner has embedded. In tests it cannot
+      // reach any host either: the program is started with no way to look one up.
+      let preview: string;
+      try {
+        await session.fromPartition('lysark-preview').fetch('https://www.youtube-nocookie.com/');
+        preview = 'fetched';
+      } catch (error) {
+        preview = String(error);
+      }
       return {
         ui: await attempt(session.defaultSession),
         web: await attempt(session.fromPartition('lysark-web')),
+        preview,
       };
     }, outsideUrl);
     expect(results.ui).toContain('ERR_BLOCKED_BY_CLIENT');
     expect(results.web).not.toBe('fetched');
+    expect(results.preview).toContain('ERR_NAME_NOT_RESOLVED');
     // From inside the page as well.
     const fromPage = await page.evaluate(async (url) => {
       try {

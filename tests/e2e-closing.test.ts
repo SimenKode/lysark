@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import type { Project } from '../src/shared/format/schema';
 import { writeSampleProject } from './fixtures/sampleProject';
 
@@ -53,7 +54,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the closing animation, end to en
       'yuv420p',
       film,
     ]);
-    const args = [`--user-data-dir=${join(work, 'userdata')}`, projectDir];
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`, projectDir];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },

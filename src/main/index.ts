@@ -268,7 +268,8 @@ function showAbout(): void {
       'Skriftene Liberation Sans og Liberation Serif følger med under SIL Open Font License 1.1.\n\n' +
       'Video og lyd lages med FFmpeg, et eget program som ligger ved siden av Lysark (mappa ' +
       '«ffmpeg» blant programfilene). FFmpeg har lisensen GNU GPL versjon 3; lisensteksten og ' +
-      'lenke til kildekoden ligger i den mappa.\n\n' +
+      'lenke til kildekoden ligger i den mappa. Lisenstekstene til alt som er bygd inn i ' +
+      'Lysark, ligger i mappa «licenses» samme sted.\n\n' +
       'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
       'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene. ' +
       'Mikrofonen brukes bare når du leser inn; opptakene lagres i prosjektmappa og sendes ingen steder.',

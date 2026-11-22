@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import type { Project } from '../src/shared/format/schema';
 import { buildPdf } from './fixtures/buildPdf';
 
@@ -144,7 +145,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
 
   beforeAll(async () => {
     work = mkdtempSync(join(tmpdir(), 'lysark-pdf-'));
-    const args = [`--user-data-dir=${join(work, 'userdata')}`];
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },

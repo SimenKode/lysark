@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { OFFLINE } from './fixtures/offline';
 import {
   LAYOUT_CONTENT,
   LAYOUT_TITLE,
@@ -79,7 +80,7 @@ describe.skipIf(!built)('importing a PowerPoint file, end to end', () => {
     const pptx = join(work, 'Testimport.pptx');
     writeFileSync(pptx, testDeck());
     projectDir = join(work, 'Importert');
-    const args = [`--user-data-dir=${join(work, 'userdata')}`];
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },
