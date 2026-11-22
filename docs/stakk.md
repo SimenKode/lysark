@@ -71,6 +71,19 @@ hentes bare fra mappa HTML-fila selv ligger i.
 lysarket for tidspunkt t, bildet hentes ut som rå piksler og sendes rett
 til FFmpeg, så t + 1/30 s, og så videre. Lyden legges på av FFmpeg.
 Resultatet er likt hver gang og uavhengig av hvor rask maskinen er.
+Der ingenting beveger seg (det meste av en forelesning), sendes det
+samme bildet på nytt uten å tegnes om, så en video av en forelesning på
+to minutter lages på under ett minutt.
+
+**Én klokke.** Hva som står på skjermen ved et tidspunkt, regnes ut av
+`src/shared/render/clock.ts`. Videoeksporten, «Spill av» i HTML-fila og
+lydpanelet i programmet bruker den samme, og den leser aldri veggklokka.
+
+**Lyd som ukomprimert WAV.** Opptakene lagres som WAV (mono, 48 kHz,
+16 bit), og klipp er pekere inn i dem. Da er klipping nøyaktig på
+enkeltpunktet, ingenting må dekodes, og et opptak endres aldri. Prisen
+er omtrent 6 MB per minutt i prosjektmappa. I HTML-fila og videoen er
+lyden komprimert (AAC).
 
 **FFmpeg som eget program.** Ferdigbygde, statiske FFmpeg-filer for
 Windows og Linux hentes av et skript og legges ved programmet. De ligger
@@ -146,11 +159,26 @@ med.
 | perfect-freehand | 1.2.3 | MIT | Strek med varierende tykkelse (kullpreg) |
 | d3-scale, d3-shape, d3-array | 4.0.3, 3.2.1, 3.2.5 | ISC | Akser, skalaer og linjer i søyle- og linjediagram |
 
-### Leveranse 3 (tas inn da)
+### Eget program som følger med: FFmpeg
 
-| Program | Lisens | Brukes til |
-| --- | --- | --- |
-| FFmpeg, statisk bygg fra BtbN/FFmpeg-Builds | GPL (med libx264) | Koding til MP4, lydbehandling. Eget program, ikke bygd inn. GPL-bygget er valgt (22.11.2026): en fast, navngitt utgave, hentet med kontroll av sjekksum og lagt ved programmet med lisenstekst og lenke til kildekoden |
+| Program | Utgave | Lisens | Brukes til |
+| --- | --- | --- | --- |
+| FFmpeg, statisk GPL-bygg med libx264 fra [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds) | n9.0.2-39-g7adfbe40dc, bygget 31.10.2026 (`autobuild-2026-10-31-12-59`) | GNU GPL versjon 3 eller senere | Koder video til MP4 (H.264 og AAC), gjør importerte lydfiler om til prosjektets format, og koder stemmen til HTML-fila |
+
+- FFmpeg er **et eget program som Lysark starter** (`src/main/ffmpeg.ts`).
+  Ingenting av det bygges inn, og det ligger aldri i git.
+- `tools/fetch-ffmpeg.mjs` henter nøyaktig denne utgaven for Linux og
+  Windows, kontrollerer SHA-256 før noe pakkes ut, og legger
+  programfila, `LICENSE.txt` og `BUILD.txt` i `vendor/ffmpeg/`.
+  `BUILD.txt` sier hvilken utgave det er og lenker til kildekoden
+  (FFmpeg ved `7adfbe40dc`) og byggeskriptene.
+- Ved pakking legges mappa ved siden av programmet som
+  `resources/ffmpeg/`. AppImage-fila ble 202 MB og Windows-zip-en 222 MB
+  (programfila til FFmpeg er omtrent 170 MB utpakket).
+- Sjekksummene står i skriptet. Skal utgaven byttes, endres den der og
+  her, og eieren får vite det.
+- FFmpeg startes bare for det du ber om (video, lyd), uten nett og uten
+  å lese noe annet enn filene det får oppgitt.
 
 Lydopptak bruker nettlesermotorens egne funksjoner (mikrofon og
 lydbehandling), uten bibliotek.
@@ -231,15 +259,31 @@ lydbehandling), uten bibliotek.
   denne maskinen, bare på forespørsler med den hemmelige stien, og bare
   med forhåndsvisningen og mediene i det åpne prosjektet. Vinduet har sin
   egen økt i minnet. Det er det eneste stedet innhold du har bygget inn
-  fra nettet, kan hentes, og bare når du trykker på avspillingsknappen.
+  fra nettet, kan hentes: YouTube når lysarket vises, annet når du
+  trykker.
 - Grensesnittet kjører isolert fra filsystemet; all filtilgang går gjennom
   et smalt, navngitt sett med kall.
-- Eksportert HTML gjør ingen nettkall av seg selv. Innhold du har lagt
-  inn fra nettet (lenker, YouTube, innbygging), hentes først når seeren
-  trykker. Fila tillater rammer bare over https, og ingen skript utenfra.
-- Testene kontakter aldri nettet. Wikimedia besvares av testen selv.
+- Eksportert HTML gjør ingen nettkall av seg selv, med ett unntak du har
+  bedt om: en YouTube-video du har lagt inn, hentes fra
+  `youtube-nocookie.com` når lysarket den står på, vises (eller «Lær
+  mer»-panelet den står i, åpnes). Annet innhold fra nettet (lenker,
+  innbygging) hentes først når seeren trykker. Fila tillater rammer bare
+  over https, og ingen skript utenfra.
+- **Mikrofonen** brukes bare i opptaksvinduet. Hovedprosessen gir
+  programmets eget vindu lov til lyd, aldri kamera, og ingen andre
+  vinduer får noe. Opptakene lagres i prosjektmappa og sendes ingen
+  steder.
+- Testene kontakter aldri nettet. Wikimedia og YouTube besvares av
+  testen selv, og innlesing prøves med nettlesermotorens innebygde
+  prøvemikrofon, aldri en ekte.
+
+Grensesnittets sikkerhetsregel (Content-Security-Policy) ble utvidet på
+ett punkt i leveranse 3: grensesnittet kan lese prosjektets egne
+mediefiler gjennom programmets egen protokoll (`lysark-media:`), for å
+tegne og spille av opptakene. Det er ikke nett.
 
 Leveranse 2 («Lær mer»-byggeren) tok ikke inn noen nye avhengigheter.
+Leveranse 3 tok inn pdf.js (bygd inn) og FFmpeg (eget program).
 
 ## Kjente vanskelige punkter
 
@@ -247,13 +291,19 @@ Leveranse 2 («Lær mer»-byggeren) tok ikke inn noen nye avhengigheter.
   verten kom på lista 22.11.2026 etter eierens ja. Sporingsparametrene
   Wikimedia legger på bildeadressene, sendes ikke med.
 - **YouTube fra disk:** åpnes den eksporterte fila rett fra disk, svarer
-  YouTube «Error 153» i rammen. Der åpner avspillingsknappen derfor
-  YouTube i nettleseren i stedet. Fra en http(s)-adresse spiller videoen
-  i siden (prøvd fra forhåndsvisningen; Canvas er ikke prøvd).
+  YouTube «Error 153» i rammen. Der blir stillbildet stående, og knappen
+  åpner YouTube i nettleseren. Fra en http(s)-adresse spiller videoen i
+  lysarket (prøvd fra forhåndsvisningen på Linux Mint og Windows 11;
+  Canvas er ikke prøvd).
+- **Et vindu som ikke vises, tegner bare omtrent én gang i sekundet.**
+  Det gjelder testene (som aldri viser vindu), ikke vanlig bruk.
+  Videoeksporten bruker et eget vindu som tegner i minnet og ikke
+  rammes av dette.
 
 - **EMF- og WMF-bilder** i eldre PPTX-filer kan ikke vises av
   nettlesermotoren. Importen melder dem i rapporten, så de kan byttes ut.
-- **Video inne i et lysark ved MP4-eksport** må hentes bilde for bilde.
-  Det løses i leveranse 3.
+- **Video inne i et lysark ved MP4-eksport** vises som stillbilde
+  (første bilde, eller forhåndsbildet). Å spille den av bilde for bilde
+  inne i videoen er ikke laget.
 - **Windows-bygg laget på Linux** må prøves på en ekte Windows 11-maskin
   før en leveranse kalles ferdig.

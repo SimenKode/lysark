@@ -3,8 +3,7 @@
 Skrivebordsprogram som gjør en PowerPoint-forelesning (PPTX) om til
 
 1. en interaktiv HTML-fil som virker uten nett, og
-2. en animasjonsvideo (MP4, 1080p) med innspilt voice-over (kommer i
-   leveranse 3),
+2. en video (MP4, 1080p) med stemmen din lest inn, og teksting,
 
 begge i USNs visuelle profil. Programmet skal virke på Windows 11 og
 Linux Mint / Ubuntu.
@@ -14,17 +13,16 @@ eller senere (se [Lisens](#lisens)).
 
 ## Status
 
-Leveranse 2 («Lær mer»-byggeren) er bygd og prøvd på Linux Mint. Den er
-ikke prøvd på Windows eller i Canvas ennå. Planen for resten står i
+Tre av fem leveranser er bygd: PPTX-import med redigering og
+HTML-eksport (1), «Lær mer»-byggeren (2), og lyd og video (3). Dermed
+finnes en første brukbar utgave med både HTML og video. Figurer og
+bevegelser (4) og håndlaget stil (5) gjenstår; planen står i
 [docs/plan.md](docs/plan.md).
 
-Leveranse 1 er bygd: PPTX-import, USN-tema (ren stil), redigering og
-eksport til én HTML-fil. Den er prøvd automatisk på Linux Mint, og
-importen er prøvd mot åtte ekte forelesninger, der alle 315 lysark er
-sammenlignet med PowerPoints egne PDF-utgaver. Det som gjenstår før
-leveransen kan kalles ferdig, står i [HANDOFF.md](HANDOFF.md):
-tilbakemeldinger fra eieren, godkjenning av uttrykket og utprøving i
-Canvas. Zip-utgaven er prøvd på Windows 11.
+Hva som er prøvd, på hvilket system, og hva som ikke er prøvd, står i
+[HANDOFF.md](HANDOFF.md). Kort: alt er prøvd automatisk på Linux Mint,
+importen er prøvd mot åtte ekte forelesninger (315 lysark), og
+zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
 
 ## Slik bruker du programmet
 
@@ -51,6 +49,19 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
 7. **Forhåndsvis** (F5) viser nøyaktig det en eksport vil inneholde.
 8. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
+9. **Les inn stemmen** (fanen «Lyd» under lysarket, «Les inn …», eller
+   Ctrl+R). Manuset og lysarket står på skjermen. Pil høyre går til neste
+   steg eller neste lysark; tidspunktet for hvert steg blir der du
+   trykket, og opptaket deles ved hvert lysark. Du kan lese inn hele
+   forelesningen i ett strekk og likevel rette ett lysark om gangen.
+10. **Rett på lyden** i fanen «Lyd»: merk et stykke og klipp det bort,
+    klipp bort starten eller slutten, legg inn en pause, dra stegene dit
+    de skal skje, juster lydstyrken, eller ta om fra spillehodet.
+    Opptakene endres aldri; alt kan angres.
+11. **Eksporter video** (Ctrl+Shift+E). Du får en MP4-fil (1920 × 1080)
+    og tekstingen som en egen fil ved siden av (`.vtt`), laget av
+    manuset. Har lysarkene lyd, får også HTML-fila stemmen med, og
+    studentene kan trykke «Spill av».
 
 **Andre inndata** (Fil-menyen):
 
@@ -76,6 +87,13 @@ slik side.
 bilde i Wikimedia Commons eller henter et forhåndsbilde fra YouTube. Da
 sendes bare søkeordene. Ellers ingenting, og ingenting i bakgrunnen.
 
+**Mikrofon:** brukes bare mens du leser inn. Bare lyd, aldri kamera.
+Opptakene lagres i prosjektmappa og sendes ingen steder.
+
+**FFmpeg** lager videoen og gjør om lyd. Det er et eget program som
+følger med Lysark (mappa `ffmpeg` blant programfilene), med sin egen
+lisens (GNU GPL versjon 3) og lenke til kildekoden.
+
 USNs logo hentes fra logopakka: under Innstillinger velger du mappa der
 pakka er pakket ut, og Lysark finner hovedlogoen i lilla og hvit, på norsk
 og engelsk.
@@ -84,6 +102,10 @@ og engelsk.
 
 ```bash
 npm install
+```
+
+```bash
+npm run fetch:ffmpeg
 ```
 
 ```bash
@@ -98,9 +120,14 @@ npm test
 npm run dist:linux
 ```
 
-`npm test` bygger programmet og kjører alle testene, også fem som starter
-hele programmet (uten å vise vindu) og går gjennom import av PowerPoint,
-PDF og eksportert HTML, redigering, lagring, eksport og avspilling.
+`npm run fetch:ffmpeg` henter FFmpeg (én fast utgave, med kontroll av
+sjekksum) til `vendor/ffmpeg/`. Uten det kan programmet ikke lage video,
+og testen for lyd og video hoppes over.
+
+`npm test` bygger programmet og kjører alle testene, også seks som
+starter hele programmet (uten å vise vindu) og går gjennom import av
+PowerPoint, PDF og eksportert HTML, redigering, lagring, innlesing med
+en prøvemikrofon, klipping, eksport til HTML og video, og avspilling.
 
 ## Dokumenter
 
@@ -124,13 +151,15 @@ PDF og eksportert HTML, redigering, lagring, eksport og avspilling.
 | `src/importer/` | Import av PPTX, PDF og eksportert HTML |
 | `src/player/` | Spilleren som skrives inn i HTML-fila |
 | `src/exporter/` | Bygger HTML-fila |
-| `src/main/`, `src/preload/` | Programmets hovedprosess og broen til grensesnittet |
+| `src/main/`, `src/preload/` | Programmets hovedprosess (filer, video, lyd, FFmpeg) og broen til grensesnittet |
 | `src/renderer/` | Redigeringsprogrammet |
 | `resources/fonts/` | Liberation Sans og Serif, uendret, med lisens |
 | `tests/` | Tester |
+| `tools/` | Hjelpeskript: hente FFmpeg, og styre Windows-VM-en under utprøving |
 
 Ikke i git: `merkevare/` (USNs logopakke), `eksempler/` (ekte
-forelesninger), `release/` (ferdige installasjonsfiler).
+forelesninger), `vendor/ffmpeg/` (FFmpeg), `release/` (ferdige
+installasjonsfiler).
 
 ## Lisens
 
