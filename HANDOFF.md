@@ -987,7 +987,11 @@ Funn fra denne utprøvingen, og hva som er gjort:
 | Klokka i opptaksvinduet begynner på null for hvert lysark | Slik er det ment: den viser lengden på lysarket som leses inn |
 | Lagre-dialogene starter i mappa over prosjektmappa | Slik er det laget |
 
-**Etterkontroll på Windows etter rettingene:** (fylles inn)
+**Etterkontroll på Windows etter rettingene:** startet 22.11.2026 med
+en ny zip (CD-bildet `release/lysark-test.iso`, mappa `v4` i VM-en).
+Resultatet var ikke kommet da dette ble skrevet. Til det er skrevet inn
+her, gjelder: rettingen av manglende bilder i videoen er kontrollert på
+Linux, **ikke** på Windows.
 
 **Lang forelesning (Linux Mint, uten vindu):** et prosjekt med 41
 lysark, ett minutt kunstig lyd på hvert (40 minutter), ble til video på
