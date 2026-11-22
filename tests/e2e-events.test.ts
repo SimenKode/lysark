@@ -143,6 +143,15 @@ describe.skipIf(!built || !existsSync(ffmpeg))('"Lær mer" and video while readi
         title: 'Film A',
         box: { x: 1300, y: 600, w: 480, h: 270, rotation: 0 },
       },
+      // A video that lies on the web. Nothing of it is fetched while editing or
+      // reading in, and the test's program cannot look any host up.
+      {
+        id: 'e_nett',
+        type: 'video',
+        source: { kind: 'url', url: 'https://www.youtube.com/watch?v=AAAAAAAAAAA' },
+        title: 'Video C',
+        box: { x: 120, y: 700, w: 400, h: 225, rotation: 0 },
+      },
     );
     scene.script = 'Manus A.';
     project.scenes.push(scene);
@@ -208,7 +217,13 @@ describe.skipIf(!built || !existsSync(ffmpeg))('"Lær mer" and video while readi
     await shot(page, 'h01-opptak-boks');
     await box.getByRole('button', { name: 'Lukk' }).click();
     await box.waitFor({ state: 'detached' });
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(400);
+    // A video from the web cannot be played here, and the lecturer is told why.
+    await stage.locator('[data-el="e_nett"] .ls-videocard').click();
+    await expect
+      .poll(() => recorder.locator('.recorder-note').textContent())
+      .toContain('kan ikke spilles mens du leser inn');
+    await page.waitForTimeout(400);
 
     // The film on the slide: a press starts it, another stops it.
     const film = stage.locator(`[data-el="${VIDEO}"] video`);

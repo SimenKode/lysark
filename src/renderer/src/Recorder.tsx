@@ -138,6 +138,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const [micLabel, setMicLabel] = useState('');
   const [seconds, setSeconds] = useState(0);
   const [recorded, setRecorded] = useState(0);
+  /** Said when something was pressed that cannot be played while reading in. */
+  const [pressNote, setPressNote] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLSpanElement>(null);
   const stage = useRef<HTMLDivElement | null>(null);
@@ -343,6 +345,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
 
   /** Stops what plays and puts the box away, when the slide is left or read again. */
   const clearSlide = useCallback((): void => {
+    setPressNote(null);
     for (const video of videos()) {
       video.pause();
       showPlaying(video, false);
@@ -368,6 +371,15 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     const inFigure = figure?.querySelector<HTMLVideoElement>('video');
     if (inFigure) {
       toggleVideo(inFigure);
+      return;
+    }
+    if (target.closest('.ls-videocard')) {
+      // A video that lies on the web. The interface has no way to the web, and
+      // such a video cannot be put into a video file either.
+      setPressNote(
+        'En video fra nettet (YouTube og lignende) kan ikke spilles mens du leser inn. ' +
+          'Studentene spiller den selv i HTML-fila; i videofila står den som stillbilde.',
+      );
       return;
     }
     if (target.closest('.ls-pop')) return;
@@ -717,14 +729,16 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
           {micError}
         </p>
       ) : (
-        <p className="recorder-note">
-          {phase === 'setup'
-            ? keepBefore !== undefined
-              ? `Lyden fram til ${formatTime(keepBefore)} beholdes. Det du leser inn nå, kommer etter. Si noe og se at nivået rører seg før du starter.`
-              : 'Si noe og se at nivået rører seg før du starter. Lysark som har lyd fra før, får den nye i stedet; det kan angres.'
-            : recorded > 0
-              ? `${recorded} lysark er lest inn så langt.`
-              : 'Opptaket deles automatisk når du går til neste lysark.'}
+        <p className="recorder-note" role={pressNote ? 'status' : undefined}>
+          {pressNote
+            ? pressNote
+            : phase === 'setup'
+              ? keepBefore !== undefined
+                ? `Lyden fram til ${formatTime(keepBefore)} beholdes. Det du leser inn nå, kommer etter. Si noe og se at nivået rører seg før du starter.`
+                : 'Si noe og se at nivået rører seg før du starter. Lysark som har lyd fra før, får den nye i stedet; det kan angres.'
+              : recorded > 0
+                ? `${recorded} lysark er lest inn så langt.`
+                : 'Opptaket deles automatisk når du går til neste lysark.'}
         </p>
       )}
     </div>
