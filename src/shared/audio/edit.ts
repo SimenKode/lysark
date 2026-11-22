@@ -166,6 +166,33 @@ export function replaceSound(
   tidy(scene);
 }
 
+/**
+ * Keeps the slide's sound up to `keepBefore` and lets a new recording
+ * follow it ("ta om herfra"). Steps that happen in the part that is kept
+ * keep their times; the others get theirs from the new recording, counted
+ * from where it starts.
+ */
+export function continueSound(
+  scene: AudioScene,
+  keepBefore: number,
+  asset: string,
+  seconds: number,
+  stepAts: ReadonlyArray<number | undefined>,
+  newId: NewId,
+): void {
+  const kept = Math.max(0, Math.min(keepBefore, trackDuration(scene.audio)));
+  const before = scene.timeline.map((step) => step.at);
+  cutRange(scene, kept, trackDuration(scene.audio), newId);
+  appendSound(scene, asset, seconds, newId);
+  scene.timeline.forEach((step, index) => {
+    const pressed = stepAts[index];
+    const old = before[index];
+    if (pressed !== undefined) step.at = kept + Math.min(seconds, Math.max(0, pressed));
+    else if (old !== undefined && old < kept) step.at = old;
+    else delete step.at;
+  });
+}
+
 /** Removes the slide's sound. Steps lose their times and are spread evenly again. */
 export function removeSound(scene: AudioScene): void {
   delete scene.audio;

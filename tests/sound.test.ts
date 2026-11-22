@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendSound,
   clipSpans,
+  continueSound,
   cutRange,
   insertPause,
   removeSound,
@@ -234,6 +235,27 @@ describe('editing the sound of a slide', () => {
     removeSound(scene);
     expect(scene.audio).toBeUndefined();
     expect(stepAts(scene)).toEqual([undefined, undefined]);
+  });
+
+  it('keeps the start and lets a new recording follow it ("ta om herfra")', () => {
+    const scene = slide();
+    scene.timeline[0]!.at = 2; // in the part that is kept
+    scene.timeline[1]!.at = 8; // in the part that is read again
+    continueSound(scene, 4, 'a_new', 5, [undefined, 1.5], id);
+    expect(shape(scene)).toEqual([
+      [0, 4],
+      [0, 5],
+    ]);
+    expect(scene.audio!.clips.map((c) => (c.kind === 'sound' ? c.asset : ''))).toEqual([
+      'a_rec',
+      'a_new',
+    ]);
+    expect(stepAts(scene)).toEqual([2, 5.5]);
+    // A step that was not reached in the new recording has no time any more.
+    const other = slide();
+    other.timeline[1]!.at = 8;
+    continueSound(other, 4, 'a_new', 5, [], id);
+    expect(stepAts(other)).toEqual([undefined, undefined]);
   });
 
   it('keeps a project with sound valid, and lifts format 3 files', () => {

@@ -7,7 +7,7 @@ import {
   type CommonsResult,
   type LysarkApi,
 } from '../../shared/api';
-import { appendSound, cutRange, replaceSound } from '../../shared/audio/edit';
+import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
 import type { Element, Project } from '../../shared/format/schema';
@@ -188,14 +188,7 @@ export async function saveRecording(
     draft.assets[added.id] = added.asset;
     const id = (): string => newId('c');
     if (keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0) {
-      const kept = Math.min(keepBefore, trackDuration(scene.audio));
-      cutRange(scene, kept, trackDuration(scene.audio), id);
-      appendSound(scene, added.id, added.seconds, id);
-      scene.timeline.forEach((step, i) => {
-        const at = stepAts[i];
-        if (at !== undefined) step.at = kept + at;
-        else if (step.at !== undefined && step.at >= kept) delete step.at;
-      });
+      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id);
     } else {
       replaceSound(scene, added.id, added.seconds, stepAts, id);
     }
