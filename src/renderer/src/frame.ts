@@ -8,12 +8,18 @@ import type { Project, Scene } from '../../shared/format/schema';
 import {
   VIDEO_SIZE,
   frameAt,
+  moreAt,
+  popProgress,
   sceneDuration,
+  sceneEvents,
   sceneStateAt,
   schedule,
+  videoKey,
+  videosAt,
   type Schedule,
 } from '../../shared/render/clock';
-import { STAGE_CSS } from '../../shared/render/css';
+import { MORE_CSS, POPOVER_CSS, STAGE_CSS } from '../../shared/render/css';
+import { createPopover, type SlidePopover } from '../../shared/render/popover';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
 import { applySceneState } from '../../shared/render/timeline';
 import { PALETTE } from '../../shared/theme/palette';
@@ -48,12 +54,17 @@ declare global {
 
 const style = document.createElement('style');
 style.textContent = `${STAGE_CSS}
+${MORE_CSS}
+${POPOVER_CSS}
 html, body { margin: 0; overflow: hidden; background: #000; }
 #frame { position: relative; width: ${VIDEO_SIZE.width}px; height: ${VIDEO_SIZE.height}px; overflow: hidden; }
 #frame > .layer { position: absolute; inset: 0; }
-/* A video cannot open a panel: no "+" marks, no rings and no "Lær mer" buttons. */
-.ls-more-badge, .ls-el-deepdive { display: none !important; }
-.ls-more-ring > .ls-image { outline: none !important; }
+/* Nobody can open a panel in a video: no "+" marks, no rings and no "Lær mer"
+   buttons, except on what the lecturer opened while reading the slide in. */
+[data-el]:not(.ls-more-live) > .ls-more-badge, .ls-el-deepdive:not(.ls-more-live) { display: none !important; }
+.ls-more-ring:not(.ls-more-live) > .ls-image { outline: none !important; }
+/* The box shows what fits; nothing in a video can be scrolled. */
+.ls-pop { overflow: hidden; }
 `;
 document.head.appendChild(style);
 
@@ -69,6 +80,8 @@ let plan: Schedule = { entries: [], total: 0 };
 let context: RenderContext | null = null;
 const rendered = new Map<number, HTMLElement>();
 const ready = new Set<number>();
+/** The "Lær mer" boxes that are opened on each slide, by the element they belong to. */
+const boxes = new Map<number, Map<string, SlidePopover>>();
 
 function nextPaint(): Promise<void> {
   return new Promise((resolve) =>
@@ -113,10 +126,70 @@ async function settle(el: HTMLElement): Promise<void> {
 async function sceneElement(index: number): Promise<HTMLElement> {
   let el = rendered.get(index);
   if (!el) {
-    el = renderScene(context!, job!.scenes[index]!);
+    const scene = job!.scenes[index]!;
+    el = renderScene(context!, scene);
     rendered.set(index, el);
+    // Every box the lecturer opened on this slide is built now, so its
+    // pictures are in place when it pops out.
+    const made = new Map<string, SlidePopover>();
+    for (const event of sceneEvents(scene)) {
+      if (event.kind !== 'more-open' || made.has(event.element)) continue;
+      const element = scene.elements.find((e) => e.id === event.element);
+      const box = element && createPopover(context!, element);
+      if (!box) continue;
+      el.appendChild(box.layer);
+      made.set(event.element, box);
+      el.querySelector(`[data-el="${event.element}"]`)?.classList.add('ls-more-live');
+    }
+    boxes.set(index, made);
   }
   return el;
+}
+
+/** Shows the box that is open at `t`, as far out as it has popped, and hides the others. */
+function showBoxes(index: number, t: number | null): void {
+  const open = t === null ? undefined : moreAt(job!.scenes[index]!, t);
+  for (const [element, box] of boxes.get(index) ?? []) {
+    const shown = t === null || open?.element === element;
+    box.layer.style.display = shown ? '' : 'none';
+    if (!shown) continue;
+    box.place();
+    box.setProgress(open ? popProgress(open.since) : 1);
+  }
+}
+
+/** The video of an element on the slide, or of a block in its box. */
+function videoOf(el: HTMLElement, key: string): HTMLVideoElement | null {
+  const [element, block] = key.split('/');
+  if (block === undefined) {
+    return el.querySelector<HTMLVideoElement>(`[data-el="${element}"] video:not(.ls-closing)`);
+  }
+  return el.querySelector<HTMLVideoElement>(
+    `.ls-pop[data-pop-for="${element}"] [data-block="${block}"] video`,
+  );
+}
+
+async function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
+  if (!Number.isFinite(video.duration)) return;
+  const target = Math.max(0, Math.min(video.duration - 0.001, time));
+  if (Math.abs(video.currentTime - target) < 0.001) return;
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      video.addEventListener('seeked', () => resolve(), { once: true });
+      video.currentTime = target;
+    }),
+    timeout(4000),
+  ]);
+}
+
+/** Shows every film that was played on the slide at the picture it had reached at `t`. */
+async function seekVideos(el: HTMLElement, index: number, t: number): Promise<void> {
+  const scene = job!.scenes[index]!;
+  if (!scene.events?.length) return;
+  for (const [key, state] of videosAt(scene, t)) {
+    const video = videoOf(el, key);
+    if (video) await seekVideo(video, state.time);
+  }
 }
 
 /** Puts a slide in a layer. Returns true when the slide was drawn for the first time. */
@@ -134,29 +207,23 @@ async function place(
     // would otherwise be missing from the first frames it should be in.
     applySceneState(el, new Map());
     layer.style.opacity = '1';
+    showBoxes(index, null);
     await settle(el);
     ready.add(index);
     return true;
   }
   applySceneState(el, sceneStateAt(job!.scenes[index]!, t));
   layer.style.opacity = String(opacity);
+  showBoxes(index, t);
   await seekFilm(el, t);
+  await seekVideos(el, index, t);
   return false;
 }
 
 /** Shows the picture of the closing animation that belongs to time `t` on its slide. */
 async function seekFilm(el: HTMLElement, t: number): Promise<void> {
   const film = el.querySelector<HTMLVideoElement>('video.ls-closing');
-  if (!film || !Number.isFinite(film.duration)) return;
-  const target = Math.max(0, Math.min(film.duration - 0.001, t));
-  if (Math.abs(film.currentTime - target) < 0.001) return;
-  await Promise.race([
-    new Promise<void>((resolve) => {
-      film.addEventListener('seeked', () => resolve(), { once: true });
-      film.currentTime = target;
-    }),
-    timeout(4000),
-  ]);
+  if (film) await seekVideo(film, t);
 }
 
 window.lysarkFrame = {
@@ -165,6 +232,7 @@ window.lysarkFrame = {
     plan = schedule(next.scenes);
     rendered.clear();
     ready.clear();
+    boxes.clear();
     below.replaceChildren();
     above.replaceChildren();
     const { project, logo } = next;

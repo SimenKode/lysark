@@ -12,8 +12,10 @@ export const FORMAT_NAME = 'lysark';
  *    sound files; the project carries its choices for video export.
  * 5: the "sign" shape (a rectangle with a point); a closing slide can play
  *    the brand's closing animation.
+ * 6: slides remember what was opened and played while they were read in
+ *    (events); the project has tracks for music and other sound.
  */
-export const FORMAT_VERSION = 5;
+export const FORMAT_VERSION = 6;
 
 export { STAGE } from './constants';
 
@@ -386,6 +388,75 @@ export const SceneAudio = z.object({
 });
 export type SceneAudio = z.infer<typeof SceneAudio>;
 
+/**
+ * Something the lecturer did on a slide while reading it in, other than
+ * going on to the next step: a "Lær mer" box that was opened or closed, a
+ * video that was started or stopped. `at` is seconds from the start of the
+ * slide, like the time of a step. The video export and "Spill av" do the
+ * same things at the same times.
+ */
+export const SceneEvent = z.discriminatedUnion('kind', [
+  /** The "Lær mer" box of an element pops out. */
+  z.object({
+    id: z.string().min(1),
+    at: z.number().min(0),
+    kind: z.literal('more-open'),
+    element: z.string(),
+  }),
+  /** The box that is open is put away. */
+  z.object({ id: z.string().min(1), at: z.number().min(0), kind: z.literal('more-close') }),
+  /**
+   * A video file starts playing: a video element on the slide, or (with
+   * `block`) a video inside the element's "Lær mer" box.
+   */
+  z.object({
+    id: z.string().min(1),
+    at: z.number().min(0),
+    kind: z.literal('video-play'),
+    element: z.string(),
+    block: z.string().optional(),
+    /** Where in the film it starts, in seconds. */
+    from: z.number().min(0),
+    /** The length of the film, so the clock knows when it has run out. */
+    duration: z.number().positive(),
+  }),
+  z.object({
+    id: z.string().min(1),
+    at: z.number().min(0),
+    kind: z.literal('video-pause'),
+    element: z.string(),
+    block: z.string().optional(),
+  }),
+]);
+export type SceneEvent = z.infer<typeof SceneEvent>;
+
+/**
+ * A piece of sound on one of the lecture's own tracks (music, other sound).
+ * Unlike a slide's voice it belongs to the whole lecture and may run on
+ * over several slides. It is fastened to a slide and a time on it, so it
+ * follows along when slides are moved or change length.
+ */
+export const TrackClip = z.object({
+  id: z.string().min(1),
+  /** A sound asset: mono WAV, 48 kHz, 16 bit. */
+  asset: z.string(),
+  /** The slide it starts on, and how many seconds into that slide. */
+  scene: z.string(),
+  offset: z.number().min(0),
+  /** The part of the file that is played, in seconds from its start. */
+  from: z.number().min(0),
+  to: z.number().positive(),
+  /** Loudness change in decibels. 0 when absent. */
+  gain: z.number().min(GAIN_DB.min).max(GAIN_DB.max).optional(),
+  /** Seconds over which it comes in from, and goes out to, silence. */
+  fadeIn: z.number().min(0).max(30).optional(),
+  fadeOut: z.number().min(0).max(30).optional(),
+});
+export type TrackClip = z.infer<typeof TrackClip>;
+
+export const TRACK_NAMES = ['music', 'sound'] as const;
+export type TrackName = (typeof TRACK_NAMES)[number];
+
 // ---------- Scenes ----------
 
 export const IMPORT_WARNING_CODES = [
@@ -441,6 +512,8 @@ export const Scene = z.object({
    * never in a project; only its length, in seconds, is stored here.
    */
   closingAnimation: z.object({ seconds: z.number().positive().max(120) }).optional(),
+  /** What was opened and played while the slide was read in, in order of time. */
+  events: z.array(SceneEvent).optional(),
   imported: z
     .object({ slide: z.number().int().min(1), warnings: z.array(ImportWarning) })
     .optional(),
@@ -500,8 +573,16 @@ export const Project = z.object({
       evenLoudness: z.boolean(),
       /** End the video with slides that list the picture credits. */
       credits: z.boolean(),
+      /** Lower the music while someone speaks. On when absent. */
+      duckMusic: z.boolean().optional(),
     })
     .optional(),
+  /**
+   * Sound that belongs to the whole lecture: music, which is lowered while
+   * someone speaks, and other sound. The voice is not here; it belongs to
+   * each slide.
+   */
+  tracks: z.object({ music: z.array(TrackClip), sound: z.array(TrackClip) }).optional(),
   assets: z.record(z.string(), Asset),
   scenes: z.array(Scene),
 });

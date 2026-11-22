@@ -163,6 +163,41 @@ button.ls-more-badge { cursor: pointer; }
 `;
 
 /**
+ * The "Lær mer" box drawn on the slide itself (video export, recording
+ * window): white, purple edge, on top of the slide, like the player's box.
+ * Its layer is the student's window of 1280 x 720, enlarged to the stage.
+ */
+export const POPOVER_CSS = `
+.ls-pop-layer {
+  position: absolute; left: 0; top: 0; width: 1280px; height: 720px;
+  transform-origin: 0 0; pointer-events: none; z-index: 10000;
+}
+.ls-pop {
+  position: absolute; box-sizing: border-box; max-height: 688px; overflow: hidden auto;
+  padding: 18px 22px 24px; background: #fff; color: #000;
+  border: 4px solid #7800f0; border-radius: 24px;
+  box-shadow: 0 18px 48px rgba(47, 11, 99, 0.38);
+  font-family: 'Liberation Sans', Arial, Helvetica, sans-serif;
+  font-size: 16px; line-height: 1.4; text-align: left; pointer-events: auto;
+}
+.ls-pop .lm-body { font-size: 17.6px; }
+.ls-pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ls-pop-head h2 {
+  margin: 0; font-family: 'Liberation Serif', 'Times New Roman', serif;
+  font-weight: 400; font-size: 27.2px; line-height: 1.15; color: #7800f0;
+}
+.ls-pop-close {
+  flex: none; padding: 8px 16px; border: 2px solid #7800f0; border-radius: 999px;
+  background: #fff; color: #7800f0; font: inherit; line-height: 1.2; cursor: pointer;
+}
+.ls-pop-close:hover { background: #7800f0; color: #fff; }
+@media (prefers-reduced-motion: no-preference) {
+  .ls-pop.ls-pop-in { animation: ls-pop 0.28s cubic-bezier(0.2, 1.35, 0.4, 1) both; }
+  @keyframes ls-pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+}
+`;
+
+/**
  * Styles for "Lær mer" content (the panel). Used by the player and by the
  * builder's preview. Sizes follow the panel's own text size, not the stage.
  */

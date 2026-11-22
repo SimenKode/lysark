@@ -26,7 +26,7 @@ import {
   videoOptions,
 } from '../shared/render/clock';
 import { SCENE_STRINGS } from '../shared/render/scene';
-import { sampleReader, writeLectureSound } from './audio';
+import { filmSound, sampleReader, writeLectureSound } from './audio';
 import { abortFfmpeg, requireFfmpeg, runFfmpeg, writeTo } from './ffmpeg';
 
 const CREDIT_TEXTS = {
@@ -135,7 +135,11 @@ export function exportVideo(options: Options): VideoJob {
 
   const run = async (): Promise<VideoSummary | null> => {
     options.onProgress({ phase: 'sound', frame: 0, frames: totalFrames });
-    if (!gif) writeLectureSound(soundFile, scenes, plan, sampleReader(options.dir, project));
+    if (!gif) {
+      await writeLectureSound(soundFile, scenes, plan, sampleReader(options.dir, project), [
+        filmSound(options.dir, project),
+      ]);
+    }
 
     window = new BrowserWindow({
       show: false,

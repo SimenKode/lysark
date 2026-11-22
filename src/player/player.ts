@@ -21,10 +21,12 @@ import {
 } from '../shared/render/scene';
 import {
   hasSound,
+  moreAt,
   sceneDuration,
   sceneStateAt,
   stepTimes,
   stepsShownAt,
+  videosAt,
 } from '../shared/render/clock';
 import { applySceneState, sceneState, stepDuration } from '../shared/render/timeline';
 import { PLAYER_STRINGS } from './strings';
@@ -136,6 +138,10 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   let stepsShown = 0;
   let frame = 0;
   let moreOpener: HTMLElement | null = null;
+  /** Videos the voice has started, so they can be stopped with it. */
+  const voiceVideos = new Set<HTMLVideoElement>();
+  /** When (on the slide) the box the student put away during "Spill av" was opened. */
+  let dismissedBox: number | null = null;
   /** The slide that is on screen, to know which way a change goes. */
   let shownIndex = 0;
   const rendered = new Map<string, HTMLElement>();
@@ -145,6 +151,10 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   /** For a slide without sound: when its time started, by the page's clock. */
   let silentStart = 0;
   const voice = new Audio();
+  // The voice itself also says when it has moved on. A window that is not in
+  // front draws seldom, and steps, boxes and videos must still follow.
+  voice.addEventListener('timeupdate', () => void catchUp());
+  voice.addEventListener('ended', () => void catchUp());
   voice.preload = 'auto';
 
   // ---------- Structure ----------
@@ -454,6 +464,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         if (stage.querySelector('iframe')) rendered.delete(previous.id);
       }
       closeMore(false);
+      dismissedBox = null;
+      voiceVideos.clear();
       stage.replaceChildren(el);
       // A YouTube video the owner has put on the slide is fetched now, when
       // the slide is shown, and never before.
@@ -545,8 +557,70 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     playFrame = requestAnimationFrame(followVoice);
   }
 
-  function followVoice(): void {
-    if (!playing) return;
+  /** The video of an element on the slide, or of a block in the open box. */
+  function videoOf(key: string): HTMLVideoElement | null {
+    const [element, block] = key.split('/');
+    if (block === undefined) {
+      return stage.querySelector<HTMLVideoElement>(`[data-el="${element}"] video:not(.ls-closing)`);
+    }
+    if (panel.hidden || moreOpener?.dataset.more !== element) return null;
+    return panelBody.querySelector<HTMLVideoElement>(`[data-block="${block}"] video`);
+  }
+
+  /**
+   * While the voice plays, the slide does what the lecturer did when it was
+   * read in: the "Lær mer" box is opened and put away, and videos start and
+   * stop, at the same times.
+   */
+  function followEvents(scene: Scene, now: number): void {
+    if (!scene.events?.length) return;
+    const open = moreAt(scene, now);
+    // A box the student has put away stays away until the lecturer opens the next one.
+    if (open && dismissedBox !== null && Math.abs(now - open.since - dismissedBox) < 0.01) {
+      // Nothing to do: it was opened at this time, and the student closed it.
+    } else if (open) {
+      dismissedBox = null;
+      if (panel.hidden || moreOpener?.dataset.more !== open.element) {
+        const element = scene.elements.find((e) => e.id === open.element);
+        const opener = stage.querySelector<HTMLElement>(`[data-more="${open.element}"]`);
+        if (element && opener) openMore(element, opener, true);
+      }
+    } else if (!panel.hidden) {
+      closeMore(false, true);
+    }
+    for (const [key, state] of videosAt(scene, now)) {
+      const video = videoOf(key);
+      if (!video || video.readyState < 1) continue;
+      if (state.playing) {
+        // A video that has come out of step with the voice is moved to where it should be.
+        if (video.paused || Math.abs(video.currentTime - state.time) > 0.4) {
+          video.currentTime = state.time;
+        }
+        if (video.paused) {
+          voiceVideos.add(video);
+          void video.play().catch(() => undefined);
+        }
+      } else if (voiceVideos.has(video)) {
+        if (!video.paused) video.pause();
+        if (Math.abs(video.currentTime - state.time) > 0.4) video.currentTime = state.time;
+        voiceVideos.delete(video);
+      }
+    }
+  }
+
+  /** Stops the videos the voice started. */
+  function stopVoiceVideos(): void {
+    for (const video of voiceVideos) video.pause();
+    voiceVideos.clear();
+  }
+
+  /**
+   * Brings the slide to where the voice is: steps, boxes and videos, and the
+   * next slide when the voice has finished. Returns false when the lecture
+   * went on to another slide or stopped.
+   */
+  function catchUp(): boolean {
+    if (!playing) return false;
     const scene = scenes[index]!;
     const el = sceneElement(scene);
     const now = voiceTime(scene);
@@ -561,15 +635,20 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         updateChrome();
         setPlaying(false);
       }
-      return;
+      return false;
     }
     applySceneState(el, sceneStateAt(scene, now));
+    followEvents(scene, now);
     const shown = stepsShownAt(scene, now);
     if (shown !== stepsShown) {
       stepsShown = shown;
       updateChrome();
     }
-    playFrame = requestAnimationFrame(followVoice);
+    return true;
+  }
+
+  function followVoice(): void {
+    if (catchUp()) playFrame = requestAnimationFrame(followVoice);
   }
 
   function setPlaying(on: boolean): void {
@@ -587,6 +666,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     } else {
       cancelAnimationFrame(playFrame);
       voice.pause();
+      stopVoiceVideos();
       // What has come in stays; the rest waits for the keys again.
       applySceneState(sceneElement(scene), sceneState(scene, stepsShown, Infinity));
     }
@@ -642,11 +722,15 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     fit();
   }
 
-  /** Opens the "Lær mer" panel of an element. `opener` gets the focus back when it closes. */
-  function openMore(element: SceneElement, opener: HTMLElement): void {
+  /**
+   * Opens the "Lær mer" panel of an element. `opener` gets the focus back
+   * when it closes. `byVoice`: the lecturer opened it while reading the
+   * slide in, and the voice goes on.
+   */
+  function openMore(element: SceneElement, opener: HTMLElement, byVoice = false): void {
     const more = moreOf(element);
     if (!more) return;
-    setPlaying(false); // the voice waits while the student reads more
+    if (!byVoice) setPlaying(false); // the voice waits while the student reads more
     if (moreOpener && moreOpener !== opener) moreOpener.setAttribute('aria-expanded', 'false');
     moreOpener = opener;
     panelTitle.textContent = moreTitle(ctx, element);
@@ -660,11 +744,17 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     panel.classList.remove('lp-pop-in');
     void panel.offsetWidth;
     panel.classList.add('lp-pop-in');
-    panelTitle.focus({ preventScroll: true });
+    if (!byVoice) panelTitle.focus({ preventScroll: true });
   }
 
-  function closeMore(restoreFocus: boolean): void {
+  function closeMore(restoreFocus: boolean, byVoice = false): void {
     if (panel.hidden) return;
+    if (playing && !byVoice) {
+      // The student put away a box the voice had opened: it is not opened again by itself.
+      const scene = scenes[index];
+      const open = scene ? moreAt(scene, voiceTime(scene)) : undefined;
+      if (scene && open) dismissedBox = voiceTime(scene) - open.since;
+    }
     for (const video of Array.from(panel.querySelectorAll('video'))) video.pause();
     panel.hidden = true;
     // Removing the content also stops anything fetched from the web.

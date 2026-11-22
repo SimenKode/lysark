@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 5), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 6), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -50,6 +50,37 @@ brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
+
+## Format 6: det som åpnes og spilles under innlesing, og lydspor
+
+**Hendelser.** Et lysark kan ha en liste `events`: det foreleseren
+gjorde på lysarket mens det ble lest inn, utenom å gå til neste steg.
+Hver hendelse har en `id` og et tidspunkt `at` i sekunder fra lysarkets
+start, akkurat som stegenes `at`. Det er fire slag:
+
+- `more-open` med `element`: «Lær mer»-boksen til elementet spretter ut.
+- `more-close`: boksen som er åpen, legges bort.
+- `video-play` med `element` (og `block` når videoen ligger inne i
+  elementets boks), `from` (hvor i filmen den starter) og `duration`
+  (filmens lengde, så klokka vet når den er slutt).
+- `video-pause` med `element` (og `block`).
+
+Ut fra lista sier klokka hvilken boks som er åpen og hvor hver video
+står på et hvilket som helst tidspunkt. En video stopper når den blir
+stoppet, når filmen er slutt, når boksen den ligger i legges bort, og
+når lysarket er slutt. Videoeksporten og «Spill av» i HTML-fila gjør det
+samme på samme tid. Når lyden klippes eller får en pause, flytter
+hendelsene seg sammen med stegene; fjernes lyden, fjernes de.
+
+**Lydspor.** Prosjektet kan ha `tracks: { music, sound }`: lyd som hører
+til hele forelesningen, ikke til ett lysark. Stemmen er ikke her; den
+ligger på hvert lysark som før. Et klipp på et spor har en lydfil
+(`asset`, i prosjektets lydformat), et feste (`scene` og `offset`:
+hvilket lysark det starter på, og hvor mange sekunder ut i det), et
+utsnitt av fila (`from`, `to`) og valgfritt `gain`, `fadeIn` og
+`fadeOut`. Festet gjør at klippet følger med når lysark flyttes eller
+endrer lengde. `video.duckMusic` sier om musikken skal dempes mens det
+snakkes (på når det ikke står noe).
 
 ## Format 5: skiltformen og avslutningsanimasjonen
 

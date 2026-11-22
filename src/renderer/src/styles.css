@@ -848,6 +848,33 @@ textarea {
   background: var(--indigo);
   color: #fff;
 }
+/* What was opened and played while the slide was read in: marks along the lower edge. */
+.track-event {
+  position: absolute;
+  bottom: 2px;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin-left: -11px;
+  padding: 0;
+  border-radius: 6px;
+  border: 2px solid #fff;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: ew-resize;
+}
+.track-event.is-video-play,
+.track-event.is-video-pause {
+  background: var(--oransje);
+  color: #000;
+}
+.track-event:hover:not(:disabled) {
+  background: var(--lilla);
+  color: #fff;
+}
 .track-playhead {
   position: absolute;
   top: 0;
@@ -1906,4 +1933,58 @@ legend {
       scale: 0.9;
     }
   }
+}
+
+/* ---------- Pressing on the slide while it is read in ---------- */
+.recorder-stage-inner.is-live {
+  pointer-events: auto;
+}
+.recorder-stage-inner.is-live .ls-has-more,
+.recorder-stage-inner.is-live .ls-el-deepdive,
+.recorder-stage-inner.is-live .ls-video {
+  cursor: pointer;
+}
+/* A video that can be played shows it, as it has no buttons of its own here. */
+.recorder-stage-inner .ls-video {
+  position: relative;
+}
+.recorder-stage-inner.is-live .ls-video:not(.is-playing):not(.ls-video-failed)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  background: var(--lilla);
+  box-shadow: 0 0 0 6px #fff;
+  pointer-events: none;
+}
+.recorder-stage-inner.is-live .ls-video:not(.is-playing):not(.ls-video-failed)::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 50%;
+  margin: -28px 0 0 -18px;
+  border-style: solid;
+  border-width: 28px 0 28px 46px;
+  border-color: transparent transparent transparent #fff;
+  pointer-events: none;
+}
+.recorder-stage-inner.is-live .ls-pop .ls-video:not(.is-playing):not(.ls-video-failed)::after {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  box-shadow: 0 0 0 4px #fff;
+}
+.recorder-stage-inner.is-live .ls-pop .ls-video:not(.is-playing):not(.ls-video-failed)::before {
+  margin: -14px 0 0 -9px;
+  border-width: 14px 0 14px 23px;
+}
+.recorder-press {
+  flex: none;
+  margin: 8px 0 0;
+  color: var(--indigo);
 }

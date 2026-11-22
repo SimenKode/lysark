@@ -11,7 +11,7 @@ import {
 import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
-import type { Element, Project } from '../../shared/format/schema';
+import type { Element, Project, SceneEvent } from '../../shared/format/schema';
 import { formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
@@ -200,6 +200,7 @@ export async function saveRecording(
   samples: Float32Array,
   stepAts: ReadonlyArray<number | undefined>,
   keepBefore?: number,
+  events: ReadonlyArray<SceneEvent> = [],
 ): Promise<boolean> {
   const { dir, project } = useStore.getState();
   const index = project?.scenes.findIndex((s) => s.id === sceneId) ?? -1;
@@ -214,9 +215,9 @@ export async function saveRecording(
     draft.assets[added.id] = added.asset;
     const id = (): string => newId('c');
     if (keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0) {
-      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id);
+      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id, events);
     } else {
-      replaceSound(scene, added.id, added.seconds, stepAts, id);
+      replaceSound(scene, added.id, added.seconds, stepAts, id, events);
     }
   });
   return true;

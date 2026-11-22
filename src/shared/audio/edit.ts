@@ -3,15 +3,15 @@
 // touches a recording: clips only point at parts of it. When sound is cut
 // out or a pause is put in, the times of the steps after it move along, so
 // what is shown still follows what is said.
-import type { AudioClip, Scene } from '../format/schema';
-import { clipDuration, trackDuration } from '../render/clock';
+import type { AudioClip, Scene, SceneEvent } from '../format/schema';
+import { clipDuration, trackDuration, videosAt, videoKey } from '../render/clock';
 
 /** Clips shorter than this are not worth keeping; they are leftovers of rounding. */
 const SLIVER = 0.005;
 /** The shortest pause that can be put in or left. */
 export const MIN_PAUSE = 0.05;
 
-type AudioScene = Pick<Scene, 'audio' | 'timeline'>;
+type AudioScene = Pick<Scene, 'audio' | 'timeline'> & Partial<Pick<Scene, 'events'>>;
 type NewId = () => string;
 
 function clips(scene: AudioScene): AudioClip[] {
@@ -44,20 +44,38 @@ function tidy(scene: AudioScene): void {
   if (out.length === 0 && scene.audio.gain === undefined) delete scene.audio;
 }
 
-/** Moves the steps that have a time: those at or after `from` move by `delta`. */
+/**
+ * Moves the steps that have a time, and what was opened and played: those
+ * at or after `from` move by `delta`.
+ */
 function shiftSteps(scene: AudioScene, from: number, delta: number): void {
   for (const step of scene.timeline) {
     if (step.at !== undefined && step.at >= from) step.at = Math.max(from, step.at + delta);
   }
+  for (const event of scene.events ?? []) {
+    if (event.at >= from) event.at = Math.max(from, event.at + delta);
+  }
 }
 
-/** Keeps step times inside the slide after its sound got shorter. */
+/** Keeps step and event times inside the slide after its sound got shorter. */
 function clampSteps(scene: AudioScene): void {
   const end = trackDuration(scene.audio);
   if (end <= 0) return;
   for (const step of scene.timeline) {
     if (step.at !== undefined) step.at = Math.min(end, Math.max(0, step.at));
   }
+  for (const event of scene.events ?? []) event.at = Math.min(end, Math.max(0, event.at));
+}
+
+/** Puts the events in order of time, and drops the list when it is empty. */
+function tidyEvents(scene: AudioScene): void {
+  if (!scene.events) return;
+  if (scene.events.length === 0) {
+    delete scene.events;
+    return;
+  }
+  const order = new Map(scene.events.map((event, index) => [event, index]));
+  scene.events.sort((a, b) => a.at - b.at || order.get(a)! - order.get(b)!);
 }
 
 /**
@@ -108,8 +126,20 @@ export function cutRange(scene: AudioScene, from: number, to: number, newId: New
     if (step.at >= b) step.at -= b - a;
     else if (step.at > a) step.at = a;
   }
+  // The same goes for what was opened and played. A film started inside the
+  // cut starts where the cut is, as far into the film as it had come.
+  for (const event of scene.events ?? []) {
+    if (event.at >= b) event.at -= b - a;
+    else if (event.at > a) {
+      if (event.kind === 'video-play') {
+        event.from = Math.min(event.duration, event.from + (b - event.at));
+      }
+      event.at = a;
+    }
+  }
   tidy(scene);
   clampSteps(scene);
+  tidyEvents(scene);
 }
 
 /** Puts silence in at `t`. What comes after moves back. */
@@ -120,6 +150,7 @@ export function insertPause(scene: AudioScene, t: number, duration: number, newI
   clips(scene).splice(index, 0, { id: newId(), kind: 'pause', duration });
   shiftSteps(scene, at, duration);
   tidy(scene);
+  tidyEvents(scene);
 }
 
 /** Changes the length of a pause. What comes after moves with it. */
@@ -146,7 +177,8 @@ export function appendSound(scene: AudioScene, asset: string, seconds: number, n
 
 /**
  * Replaces the slide's sound with a new recording ("ta om"). Steps keep
- * the times given, which the recording set as the owner pressed on.
+ * the times given, which the recording set as the owner pressed on, and
+ * what was opened and played is what this recording did.
  */
 export function replaceSound(
   scene: AudioScene,
@@ -154,6 +186,7 @@ export function replaceSound(
   seconds: number,
   stepAts: ReadonlyArray<number | undefined>,
   newId: NewId,
+  events: ReadonlyArray<SceneEvent> = [],
 ): void {
   const gain = scene.audio?.gain;
   scene.audio = { clips: [], ...(gain === undefined ? {} : { gain }) };
@@ -163,14 +196,21 @@ export function replaceSound(
     if (at === undefined) delete step.at;
     else step.at = Math.max(0, Math.min(seconds, at));
   });
+  scene.events = events.map((event) => ({
+    ...event,
+    at: Math.max(0, Math.min(seconds, event.at)),
+  }));
   tidy(scene);
+  tidyEvents(scene);
 }
 
 /**
  * Keeps the slide's sound up to `keepBefore` and lets a new recording
  * follow it ("ta om herfra"). Steps that happen in the part that is kept
  * keep their times; the others get theirs from the new recording, counted
- * from where it starts.
+ * from where it starts. What was opened and played before that point
+ * stays; a film that was running there stops, and the new recording's own
+ * events follow.
  */
 export function continueSound(
   scene: AudioScene,
@@ -179,11 +219,18 @@ export function continueSound(
   seconds: number,
   stepAts: ReadonlyArray<number | undefined>,
   newId: NewId,
+  events: ReadonlyArray<SceneEvent> = [],
 ): void {
   const kept = Math.max(0, Math.min(keepBefore, trackDuration(scene.audio)));
   const before = scene.timeline.map((step) => step.at);
+  const keptEvents = stateEventsBefore(scene, kept, newId);
   cutRange(scene, kept, trackDuration(scene.audio), newId);
   appendSound(scene, asset, seconds, newId);
+  scene.events = [
+    ...keptEvents,
+    ...events.map((event) => ({ ...event, at: kept + Math.max(0, Math.min(seconds, event.at)) })),
+  ];
+  tidyEvents(scene);
   scene.timeline.forEach((step, index) => {
     const pressed = stepAts[index];
     const old = before[index];
@@ -193,10 +240,53 @@ export function continueSound(
   });
 }
 
-/** Removes the slide's sound. Steps lose their times and are spread evenly again. */
+/**
+ * The events before `at`, with every film that is running at `at` stopped
+ * there: what a recording that takes over from `at` starts out with.
+ */
+function stateEventsBefore(scene: AudioScene, at: number, newId: NewId): SceneEvent[] {
+  const kept = (scene.events ?? []).filter((event) => event.at < at).map((event) => ({ ...event }));
+  const playing = videosAt({ ...scene, events: kept }, at);
+  for (const event of [...kept]) {
+    if (event.kind !== 'video-play') continue;
+    const key = videoKey(event.element, event.block);
+    if (!playing.get(key)?.playing) continue;
+    playing.delete(key);
+    kept.push({
+      id: newId(),
+      at,
+      kind: 'video-pause',
+      element: event.element,
+      ...(event.block === undefined ? {} : { block: event.block }),
+    });
+  }
+  return kept;
+}
+
+/**
+ * Removes the slide's sound. Steps lose their times and are spread evenly
+ * again, and what was opened and played is forgotten with the recording.
+ */
 export function removeSound(scene: AudioScene): void {
   delete scene.audio;
+  delete scene.events;
   for (const step of scene.timeline) delete step.at;
+}
+
+/** Sets when something that was opened or played happens, inside the slide. */
+export function setEventTime(scene: AudioScene, eventId: string, at: number): void {
+  const event = scene.events?.find((e) => e.id === eventId);
+  if (!event) return;
+  const end = trackDuration(scene.audio);
+  event.at = Math.max(0, end > 0 ? Math.min(end, at) : at);
+  tidyEvents(scene);
+}
+
+/** Removes one event: the box is then not opened, or the film not started, there. */
+export function removeEvent(scene: AudioScene, eventId: string): void {
+  if (!scene.events) return;
+  scene.events = scene.events.filter((event) => event.id !== eventId);
+  tidyEvents(scene);
 }
 
 /** Sets when a step happens, inside the slide. */

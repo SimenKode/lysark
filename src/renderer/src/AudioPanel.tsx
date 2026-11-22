@@ -10,16 +10,19 @@ import {
   removeSound,
   setGain,
   setPauseDuration,
+  removeEvent,
+  setEventTime,
   setStepTime,
 } from '../../shared/audio/edit';
 import { peaks, secondsToSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
-import { GAIN_DB, type Project, type Scene } from '../../shared/format/schema';
+import { GAIN_DB, type Project, type Scene, type SceneEvent } from '../../shared/format/schema';
 import {
   formatTime,
   hasSound,
   schedule,
   sceneDuration,
+  sceneEvents,
   stepTimes,
   stepsShownAt,
   trackDuration,
@@ -90,6 +93,14 @@ interface TrackProps {
 }
 
 /** The slide's sound: waveform, pauses, steps, the marked stretch and the playhead. */
+/** What the marks for things opened and played while reading say. */
+const EVENT_TEXT: Record<SceneEvent['kind'], { label: string; mark: string }> = {
+  'more-open': { label: '«Lær mer» åpnes', mark: '+' },
+  'more-close': { label: '«Lær mer» lukkes', mark: '×' },
+  'video-play': { label: 'Video starter', mark: '▶' },
+  'video-pause': { label: 'Video stopper', mark: 'Ⅱ' },
+};
+
 function Track(props: TrackProps) {
   const { project, scene, playhead, range } = props;
   const box = useRef<HTMLDivElement>(null);
@@ -182,6 +193,10 @@ function Track(props: TrackProps) {
   const stepDrag = useRef<string | null>(null);
   const moveStep = (stepId: string, t: number): void =>
     updateScene((s) => setStepTime(s, stepId, t), `step-time-${stepId}`);
+  // The same for what was opened and played while the slide was read in.
+  const moveEvent = (eventId: string, t: number): void =>
+    updateScene((s) => setEventTime(s, eventId, t), `event-time-${eventId}`);
+  const events = sceneEvents(scene);
 
   return (
     <div className="track-wrap">
@@ -263,6 +278,45 @@ function Track(props: TrackProps) {
             {i + 1}
           </button>
         ))}
+        {events.map((event) => {
+          const what = EVENT_TEXT[event.kind];
+          return (
+            <button
+              key={event.id}
+              type="button"
+              className={`track-event is-${event.kind}`}
+              style={{ left: percent(event.at) }}
+              aria-label={`${what.label} ved ${preciseTime(event.at)}. Piltaster flytter, Delete fjerner.`}
+              title={`${what.label} ved ${preciseTime(event.at)}. Dra for å flytte, Delete fjerner.`}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                stepDrag.current = event.id;
+              }}
+              onPointerMove={(e) => {
+                if (stepDrag.current === event.id) moveEvent(event.id, timeAt(e.clientX));
+              }}
+              onPointerUp={() => {
+                stepDrag.current = null;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  updateScene((s) => removeEvent(s, event.id));
+                  return;
+                }
+                const delta = e.key === 'ArrowLeft' ? -0.1 : e.key === 'ArrowRight' ? 0.1 : 0;
+                if (!delta) return;
+                e.preventDefault();
+                e.stopPropagation();
+                moveEvent(event.id, event.at + delta * (e.shiftKey ? 10 : 1));
+              }}
+            >
+              <span aria-hidden="true">{what.mark}</span>
+            </button>
+          );
+        })}
         <span className="track-playhead" style={{ left: percent(playhead) }} />
       </div>
       <div className="track-scale" aria-hidden="true">

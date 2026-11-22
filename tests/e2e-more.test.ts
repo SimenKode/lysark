@@ -10,6 +10,7 @@ import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OFFLINE } from './fixtures/offline';
+import { FORMAT_VERSION } from '../src/shared/format/schema';
 import { testPng, writeSampleProject } from './fixtures/sampleProject';
 
 const root = resolve(__dirname, '..');
@@ -366,7 +367,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
         }>;
       }>;
     };
-    expect(saved.version).toBe(5);
+    expect(saved.version).toBe(FORMAT_VERSION);
     const image = saved.scenes[1]!.elements.find((e) => e.type === 'image')!;
     expect(image.more!.title).toBe('Om bildet A');
     expect(image.more!.corner).toBe('bl');

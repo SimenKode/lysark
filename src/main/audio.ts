@@ -17,8 +17,15 @@ import { tmpdir } from 'node:os';
 import { basename, extname, join } from 'node:path';
 import { newId } from '../shared/format/factory';
 import type { Asset, Project, Scene } from '../shared/format/schema';
+import { mixInto, spanAsset } from '../shared/audio/mix';
 import { readWavInfo, renderTrack, secondsToSamples, wavSamples } from '../shared/audio/wav';
-import { SAMPLE_RATE, hasSound, sceneDuration, type Schedule } from '../shared/render/clock';
+import {
+  SAMPLE_RATE,
+  hasSound,
+  sceneDuration,
+  videoSpans,
+  type Schedule,
+} from '../shared/render/clock';
 import { ffmpegPath, runFfmpeg, writeTo } from './ffmpeg';
 import { mediaPath } from './projectIo';
 
@@ -121,16 +128,88 @@ function bytesOf(samples: Int16Array): Uint8Array {
 }
 
 /**
+ * The sound of a stretch of a video file, in the project's format. A film
+ * without sound, or one FFmpeg cannot read, is silence.
+ */
+export async function videoSound(file: string, from: number, length: number): Promise<Int16Array> {
+  const work = mkdtempSync(join(tmpdir(), 'lysark-lyd-'));
+  const target = join(work, 'film.pcm');
+  try {
+    await runFfmpeg([
+      '-y',
+      '-ss',
+      String(Math.max(0, from)),
+      '-t',
+      String(length),
+      '-i',
+      file,
+      '-vn',
+      '-ac',
+      '1',
+      '-ar',
+      String(SAMPLE_RATE),
+      '-f',
+      's16le',
+      target,
+    ]).done;
+    const bytes = readFileSync(target);
+    const samples = new Int16Array(Math.floor(bytes.byteLength / 2));
+    new Uint8Array(samples.buffer).set(bytes.subarray(0, samples.length * 2));
+    return samples;
+  } catch {
+    return new Int16Array(0);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+/** Adds to the sound of one slide. `start` is where the slide begins in the lecture, in samples. */
+export type SlideMix = (scene: Scene, start: number, part: Int16Array) => Promise<void>;
+
+/**
+ * Puts the sound of the films that were played while a slide was read in,
+ * into the slide's sound: each film where the lecturer started it.
+ */
+export function filmSound(dir: string, project: Project): SlideMix {
+  return async (scene, _start, part) => {
+    for (const span of videoSpans(scene)) {
+      const id = spanAsset(scene, span);
+      const asset = id ? project.assets[id] : undefined;
+      if (asset?.kind !== 'video') continue;
+      const sound = await videoSound(mediaPath(dir, asset.file), span.from, span.length);
+      const wanted = secondsToSamples(span.length);
+      mixInto(part, secondsToSamples(span.at), sound.subarray(0, Math.min(sound.length, wanted)));
+    }
+  };
+}
+
+/** The sound of one slide, exactly `want` samples long: the voice, and what `mixes` add to it. */
+async function slideSound(
+  scene: Scene,
+  start: number,
+  want: number,
+  samplesOf: (assetId: string) => Int16Array | undefined,
+  mixes: readonly SlideMix[],
+): Promise<Int16Array> {
+  const track = hasSound(scene) ? renderTrack(scene.audio, samplesOf) : new Int16Array(0);
+  const part = new Int16Array(want);
+  part.set(track.subarray(0, Math.min(track.length, want)));
+  for (const mix of mixes) await mix(scene, start, part);
+  return part;
+}
+
+/**
  * Writes the sound of the whole lecture to a file of raw samples, slide by
  * slide, each exactly as long as its slide stands, so sound and picture
  * cannot drift apart. Returns the number of samples written.
  */
-export function writeLectureSound(
+export async function writeLectureSound(
   file: string,
   scenes: readonly Scene[],
   plan: Schedule,
   samplesOf: (assetId: string) => Int16Array | undefined,
-): number {
+  mixes: readonly SlideMix[] = [],
+): Promise<number> {
   const out = openSync(file, 'w');
   let written = 0;
   try {
@@ -138,9 +217,7 @@ export function writeLectureSound(
       const scene = scenes[entry.index]!;
       const end = secondsToSamples(entry.start + entry.duration);
       const want = Math.max(0, end - written);
-      const track = hasSound(scene) ? renderTrack(scene.audio, samplesOf) : new Int16Array(0);
-      const part = new Int16Array(want);
-      part.set(track.subarray(0, Math.min(track.length, want)));
+      const part = await slideSound(scene, written, want, samplesOf, mixes);
       writeSync(out, bytesOf(part));
       written += want;
     }
@@ -154,11 +231,11 @@ export function writeLectureSound(
 export async function encodeSceneSound(
   scene: Scene,
   samplesOf: (assetId: string) => Int16Array | undefined,
+  start = 0,
+  mixes: readonly SlideMix[] = [],
 ): Promise<{ data: Uint8Array; seconds: number }> {
   const want = secondsToSamples(sceneDuration(scene));
-  const track = renderTrack(scene.audio, samplesOf);
-  const samples = new Int16Array(want);
-  samples.set(track.subarray(0, Math.min(track.length, want)));
+  const samples = await slideSound(scene, start, want, samplesOf, mixes);
   const work = mkdtempSync(join(tmpdir(), 'lysark-lyd-'));
   const target = join(work, 'lyd.m4a');
   try {

@@ -1193,7 +1193,7 @@ per spørsmål:
    FFmpeg. Opptaket av stemmen går videre mens videoen spiller.
    YouTube-videoer kan ikke bli med i en videofil.
 
-   Svar:
+   Svar: som anbefalt (22.11.2026).
 
 2. **Flere lydspor.** Anbefaling: to spor i tillegg til stemmen,
    «Musikk» og «Lyd», som hører til hele forelesningen. Et klipp er en
@@ -1204,23 +1204,83 @@ per spørsmål:
    både video og «Spill av» i HTML-fila. Programmet følger ikke med
    musikk; kreditering kan føres som for bilder.
 
-   Svar:
+   Svar: som anbefalt (22.11.2026).
 
 3. **Tidslinje.** Anbefaling: en egen visning der lysarkene står på rad
    med bredde etter lengde, og sporene Stemme, Musikk og Lyd ligger
    under. Dra i grensene for å strekke et lysark, dra klipp på plass,
    og spill av hele forelesningen. Bygges sammen med flere lydspor.
 
-   Svar:
+   Svar: som anbefalt (22.11.2026).
 
 4. **Rekkefølge.** Anbefaling: «Lær mer» og video under innlesing
    først (bygger på det som finnes), så tidslinje og flere lydspor.
 
-   Svar:
+   Svar: som anbefalt (22.11.2026).
 
 Dette opphever ett tidligere valg: i spørsmål 17
 ([sporsmal-videre.md](sporsmal-videre.md)) ble musikk og flere lydspor
 holdt utenfor. Eieren vil nå ha dem.
+
+### 6.20 «Lær mer» og video under innlesing (23.11.2026)
+
+Første del av den nye leveransen, bygget etter at eieren svarte «som
+anbefalt» på de fire spørsmålene.
+
+**Hva som er nytt.**
+
+- **Innlesingen.** Mens opptaket går, kan foreleseren trykke på
+  lysarket: «+» (eller elementet selv) åpner «Lær mer»-boksen, «Lukk»
+  eller et trykk ved siden av legger den bort, og en videofil starter og
+  stopper når man trykker på den, også en video inne i boksen. Hvert
+  trykk får tidspunktet sitt, slik stegene får det av pil høyre.
+  Videoen har et stort avspillingsmerke når den kan trykkes på. «Lyd fra
+  video» kan slås av; mikrofonen tar ellers opp lyden en gang til, så
+  hodetelefoner er det riktige. Ved «Ta om herfra» står boksen og
+  videoene slik de sto på det tidspunktet.
+- **Formatet (versjon 6).** Lysarket har en liste `events` med fire
+  slag: boks åpnet, boks lukket, video startet, video stoppet. Se
+  `docs/prosjektformat.md`.
+- **Klokka.** `moreAt`, `videoSpans` og `videosAt` i
+  `src/shared/render/clock.ts` sier hvilken boks som er åpen og hvor
+  hver video står på et tidspunkt. En video stopper når den blir
+  stoppet, når filmen er slutt, når boksen den ligger i legges bort, og
+  når lysarket er slutt.
+- **Videoen.** Boksen tegnes på lysarket slik studenten ser den i et
+  vindu på 1280 × 720 (`src/shared/render/popover.ts`, samme plassering
+  som i byggeren) og spretter ut som funksjon av tiden. Videoene spoles
+  bilde for bilde. «+»-merket vises bare på det som faktisk ble åpnet.
+  Lyden fra videoene blandes inn i lydsporet (`filmSound` i
+  `src/main/audio.ts`, `mixInto` i `src/shared/audio/mix.ts`).
+- **HTML-fila.** «Spill av» åpner og lukker boksen og starter og stopper
+  videoene på de samme tidspunktene, og stemmen går videre. Legger
+  studenten bort en boks som stemmen åpnet, blir den borte til neste
+  åpnes. Spilleren følger nå også stemmens egne tidssignaler, ikke bare
+  skjermtegningen, så steg, bokser og videoer følger med også i et vindu
+  som ikke ligger fremst.
+- **Lydpanelet.** Hendelsene vises som merker langs nedre kant av
+  lydsporet. De kan dras, flyttes med piltastene og fjernes med Delete.
+  Klipp og pauser flytter dem sammen med stegene.
+
+**Begrensninger, sagt rett ut.**
+
+- En YouTube-video kan ikke spilles under innlesing (grensesnittet har
+  ikke nett) og kan ikke bli med i en videofil. I MP4 står stillbildet;
+  i HTML spiller studenten den selv.
+- Avspillingen i lydpanelet viser ikke boksen og videoene; det gjør
+  forhåndsvisningen («Spill av» der) og videoen.
+- En boks med mer innhold enn det er plass til, vises i videoen så langt
+  den rekker. Ingen kan rulle i en video.
+
+**Prøvd.** 21 nye enhetstester (`tests/events.test.ts`) og tre
+ende-til-ende-tester (`tests/e2e-events.test.ts`) på Linux Mint: et
+opptak med falsk mikrofon der boksen åpnes, videoen i boksen spilles,
+boksen lukkes og videoen på lysarket startes og stoppes; MP4-fila
+kontrolleres bilde for bilde (boksens kant er der bare mens den er åpen,
+videoene rører seg bare mens de spiller) og på lyden (filmens tone høres
+bare mens en film spiller); HTML-fila kontrolleres i «Spill av». Hele
+settet: 323 tester. **Ikke prøvd:** Windows, og ekte mikrofon og
+høyttalere.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
