@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildHtml, type ExportSources } from '../src/exporter/html';
 import { importHtml, sidecarPath, type SidecarReader } from '../src/importer/html';
+import { FORMAT_VERSION } from '../src/shared/format/schema';
 import { readHtmlExport, readProject, writeHtmlExport } from '../src/main/projectIo';
 import { newId, newScene } from '../src/shared/format/factory';
 import type { Project } from '../src/shared/format/schema';
