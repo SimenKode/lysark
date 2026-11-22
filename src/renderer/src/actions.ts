@@ -101,7 +101,7 @@ export async function exportHtml(): Promise<void> {
   const state = useStore.getState();
   if (!state.dir || !state.project) return;
   if (state.project.scenes.length === 0) {
-    state.setNotice({ kind: 'error', text: 'Prosjektet har ingen scener å eksportere.' });
+    state.setNotice({ kind: 'error', text: 'Prosjektet har ingen lysark å eksportere.' });
     return;
   }
   const summary = await guard(() => api().exportHtml(state.dir!, state.project!));

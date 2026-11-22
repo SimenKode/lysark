@@ -134,6 +134,36 @@ describe.skipIf(!built)('the program, end to end', () => {
     await shot(page, '02-valgt');
   });
 
+  it('changes the thickness of an arrow, with its head, and goes back to the theme’s', async () => {
+    const arrow = page.locator('.stage-inner .ls-el-shape').nth(1);
+    const line = arrow.locator('line');
+    const head = async (): Promise<number> => {
+      const points = (await arrow.locator('polygon').getAttribute('points'))!
+        .split(' ')
+        .map((p) => Number(p.split(',')[0]));
+      return points[0]! - points[1]!;
+    };
+    const box = (await arrow.boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    const slider = page.getByRole('slider', { name: /^Tykkelse/ });
+    await slider.waitFor();
+    expect(await line.getAttribute('stroke-width')).toBe('6');
+    const thin = await head();
+
+    await slider.fill('24');
+    await expect.poll(() => line.getAttribute('stroke-width')).toBe('24');
+    expect(await head()).toBeGreaterThan(2 * thin);
+    expect(await page.locator('.stroke-row output').textContent()).toBe('24 px');
+    await shot(page, '02b-tykkelse');
+
+    await page.locator('.stroke-row').getByRole('button', { name: 'Tilbakestill' }).click();
+    await expect.poll(() => line.getAttribute('stroke-width')).toBe('6');
+    await slider.fill('24');
+    await page.getByRole('button', { name: 'Angre' }).click();
+    await expect.poll(() => line.getAttribute('stroke-width')).toBe('6');
+    await page.keyboard.press('Escape');
+  });
+
   it('drags an element and snaps it to the grid', async () => {
     const image = page.locator('.stage-inner .ls-el-image');
     const box = (await image.boundingBox())!;
@@ -297,5 +327,73 @@ describe.skipIf(!built)('the program, end to end', () => {
     await player.keyboard.press('Escape');
     await player.keyboard.press('Escape');
     await shot(player, '08-spiller-tittel');
+  });
+
+  it('navigates with the round arrows and the arrow keys, never by a click on the slide', async () => {
+    const player = app.windows().find((w) => w.url().startsWith('http://127.0.0.1:'))!;
+    const counter = (): Promise<string | null> => player.locator('.lp-counter').textContent();
+    const prev = player.getByRole('button', { name: 'Forrige' });
+    const next = player.getByRole('button', { name: 'Neste' });
+    await expect.poll(counter).toBe('1 / 3');
+    expect(await prev.isDisabled()).toBe(true);
+
+    // One large round arrow on each side of the slide, beside it and not on it.
+    const boxes = await player.evaluate(() => {
+      const box = (selector: string): DOMRect =>
+        document.querySelector(selector)!.getBoundingClientRect();
+      const [p, n, s] = [box('.lp-nav-prev'), box('.lp-nav-next'), box('.lp-stagebox')];
+      const radius = getComputedStyle(document.querySelector('.lp-nav-next')!).borderRadius;
+      return { p, n, s, radius };
+    });
+    expect(boxes.p.width).toBeGreaterThanOrEqual(64);
+    expect(boxes.p.width).toBe(boxes.p.height);
+    expect(boxes.radius).toBe('50%');
+    expect(boxes.p.right).toBeLessThanOrEqual(boxes.s.left);
+    expect(boxes.n.left).toBeGreaterThanOrEqual(boxes.s.right);
+
+    // A click on the slide goes nowhere.
+    await player.locator('.lp-stage .ls-scene').click({ position: { x: 20, y: 20 } });
+    await player.locator('.lp-stage .ls-el-text').first().click();
+    expect(await counter()).toBe('1 / 3');
+
+    await next.click();
+    await expect.poll(counter).toBe('2 / 3');
+    await prev.click();
+    await expect.poll(counter).toBe('1 / 3');
+
+    // Arrow down and up navigate like right and left, steps included.
+    await player.locator('.lp-viewport').focus();
+    await player.keyboard.press('ArrowDown');
+    await expect.poll(counter).toBe('2 / 3');
+    const shape = player.locator('.lp-stage .ls-el-shape').first();
+    expect(await shape.evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+    await player.keyboard.press('ArrowDown');
+    await expect
+      .poll(() => shape.evaluate((el) => getComputedStyle(el).visibility))
+      .toBe('visible');
+    await player.keyboard.press('ArrowUp');
+    await expect.poll(() => shape.evaluate((el) => getComputedStyle(el).visibility)).toBe('hidden');
+    await player.keyboard.press('ArrowUp');
+    await expect.poll(counter).toBe('1 / 3');
+
+    // With the focus in a panel they scroll the panel instead.
+    await player.keyboard.press('i');
+    await player.waitForSelector('.lp-toc:not([hidden])');
+    await player.keyboard.press('ArrowDown');
+    expect(await counter()).toBe('1 / 3');
+    await player.keyboard.press('Escape');
+    await shot(player, '09-spiller-runde-piler');
+
+    // On a narrow screen the arrows sit in the lower corners, under the slide.
+    await player.setViewportSize({ width: 420, height: 800 });
+    await expect
+      .poll(() =>
+        player.evaluate(() => getComputedStyle(document.querySelector('.lp-nav')!).position),
+      )
+      .toBe('absolute');
+    await shot(player, '10-spiller-smal');
+    await next.click();
+    await expect.poll(counter).toBe('2 / 3');
+    await player.setViewportSize({ width: 1280, height: 800 });
   });
 });

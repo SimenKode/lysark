@@ -199,7 +199,7 @@ function VideoEditor({ elementId, block }: { elementId: string; block: Block<'vi
             />
             <span className="field-hint">
               {youtube
-                ? 'YouTube-video. Studenten ser et stillbilde; spilleren hentes fra YouTube først når hen klikker.'
+                ? 'YouTube-video. Studenten får YouTubes spiller i panelet; den hentes fra YouTube når panelet åpnes.'
                 : direct
                   ? 'Direkte lenke til en videofil. Den spilles i panelet og krever nett.'
                   : source.url.trim()

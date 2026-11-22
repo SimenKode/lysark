@@ -7,6 +7,7 @@ import { getTheme, sceneSurface } from '../shared/theme/theme';
 import { collectCredits, renderCredit, renderMore } from '../shared/render/more';
 import {
   SCENE_STRINGS,
+  activateWebFrames,
   moreOf,
   moreTitle,
   renderScene,
@@ -116,6 +117,26 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     stageBox,
   );
 
+  // The large round arrows, one on each side of the slide.
+  const navButton = (direction: 'prev' | 'next', label: string): HTMLButtonElement => {
+    const button = h('button', {
+      class: `lp-nav lp-nav-${direction}`,
+      type: 'button',
+      'aria-label': label,
+      title: label,
+    });
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', direction === 'prev' ? 'M15 4 7 12l8 8' : 'm9 4 8 8-8 8');
+    icon.appendChild(path);
+    button.appendChild(icon);
+    return button;
+  };
+  const prevButton = navButton('prev', t.previous);
+  const nextButton = navButton('next', t.next);
+
   const scriptText = h('div', { class: 'lp-script-text' });
   const scriptPanel = h(
     'section',
@@ -177,16 +198,6 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     { class: 'lp-btn', type: 'button', 'aria-expanded': 'false' },
     t.contents,
   );
-  const prevButton = h(
-    'button',
-    { class: 'lp-btn lp-btn-strong', type: 'button', 'aria-label': t.previous, title: t.previous },
-    '←',
-  );
-  const nextButton = h(
-    'button',
-    { class: 'lp-btn lp-btn-strong', type: 'button', 'aria-label': t.next, title: t.next },
-    '→',
-  );
   const counter = h('span', { class: 'lp-counter' });
   const progressFill = h('div');
   const progress = h(
@@ -221,9 +232,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     'footer',
     { class: 'lp-bar' },
     tocButton,
-    prevButton,
     counter,
-    nextButton,
     progress,
     scriptButton,
     creditsButton,
@@ -283,7 +292,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       'div',
       { class: 'lp-body' },
       toc,
-      h('div', { class: 'lp-center' }, viewport, scriptPanel),
+      h(
+        'div',
+        { class: 'lp-center' },
+        h('div', { class: 'lp-stagerow' }, prevButton, viewport, nextButton),
+        scriptPanel,
+      ),
       panel,
       help,
       creditsBack,
@@ -351,6 +365,9 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       }
       closeMore(false);
       stage.replaceChildren(el);
+      // A YouTube video the owner has put on the slide is fetched now, when
+      // the slide is shown, and never before.
+      activateWebFrames(el);
       viewport.style.background = PALETTE[sceneSurface(theme, scene)];
       viewport.setAttribute(
         'aria-label',
@@ -447,6 +464,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     moreOpener = opener;
     panelTitle.textContent = moreTitle(ctx, element);
     panelBody.replaceChildren(renderMore(ctx, more));
+    activateWebFrames(panelBody);
     panel.hidden = false;
     panel.scrollTop = 0;
     opener.setAttribute('aria-expanded', 'true');
@@ -499,15 +517,9 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         if (!panel.hidden && moreOpener === opener) closeMore(true);
         else openMore(element, opener);
       }
-      return;
     }
-    // A click on the scene itself goes on, unless it was on something
-    // interactive or the reader is selecting text.
-    if (stage.contains(target)) {
-      if (target.closest('a, button, video, audio, iframe')) return;
-      if (window.getSelection()?.toString()) return;
-      next();
-    }
+    // A click on the slide itself does nothing: slides hold things to click
+    // on. The arrows, the keyboard and a swipe go on.
   });
 
   tocButton.addEventListener('click', () => toggleToc());
@@ -558,7 +570,17 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       return;
     }
     const onControl = tag === 'BUTTON' || tag === 'A';
+    // Up and down scroll a panel when the focus is in one; elsewhere they navigate.
+    const inScroller = target.closest('.lp-panel, .lp-toc, .lp-script') !== null;
     switch (event.key) {
+      case 'ArrowDown':
+        if (inScroller) return;
+        next();
+        break;
+      case 'ArrowUp':
+        if (inScroller) return;
+        previous();
+        break;
       case 'ArrowRight':
       case 'PageDown':
         next();

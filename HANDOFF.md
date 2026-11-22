@@ -1,7 +1,7 @@
 # Handoff: Lysark etter leveranse 2
 
-Skrevet 22.11.2026 og holdt oppdatert gjennom økt 2, 3 og 4. Sist endret
-etter at eieren hadde prøvd leveranse 2.
+Skrevet 22.11.2026 og holdt oppdatert gjennom økt 2, 3, 4 og 5. Sist
+endret i økt 5, etter at A1–A6 i 6.14 var bygget (se 6.15).
 
 ## Start her
 
@@ -56,9 +56,9 @@ Leveranse 1 og 2 av 5. Leveranse 1: PPTX inn, interaktiv HTML ut.
 - **Import** av PPTX til en prosjektmappe, med rapport over det som må
   lages på nytt.
 - **Tema** «ren»: USNs palett, kontrasttabellen som data, 8 kolonner,
-  profilformer på tittelscener, logo hentet uendret fra logopakka.
-- **Redigering:** scener, flytte og endre størrelse med feste til
-  rutenett, tekst rett i scenen, tabeller, video, «Lær mer»-bokser, steg,
+  profilformer på tittellysark, logo hentet uendret fra logopakka.
+- **Redigering:** lysark, flytte og endre størrelse med feste til
+  rutenett, tekst rett i lysarket, tabeller, video, «Lær mer»-bokser, steg,
   manus, angre.
 - **Eksport** til én HTML-fil uten nettkall, og forhåndsvisning av
   nøyaktig det samme.
@@ -70,11 +70,11 @@ Leveranse 2, «Lær mer»-byggeren:
 
 - **Utdyping på alle elementer:** tekst, bilde, form, tabell og video kan
   få et «+»-merke som åpner et panel. «+ Lær mer» er fortsatt en egen
-  knapp i scenen.
+  knapp i lysarket.
 - **Byggeren:** et vindu over hele arbeidsflaten med byggesteiner (tekst,
   overskrift, bilde, video, tabell, innbygging) til venstre og panelet
   slik studenten ser det til høyre. Veier inn: «+ Lær mer», Element-fanen
-  og høyreklikk i scenen.
+  og høyreklikk i lysarket.
 - **Mediedialogen:** søk i Wikimedia Commons, opplasting, og «I
   prosjektet». Bilder fra Commons får kreditering med seg.
 - **Spilleren:** merket er en knapp med navn for skjermleser, hele
@@ -94,7 +94,7 @@ Ikke påbegynt: leveranse 3 (lyd og video), 4 (figurer og bevegelser) og
 | Automatiske tester på Linux Mint | Etter leveranse 2: 206 består (161 etter økt 3, 157 etter økt 2, 129 etter økt 1). Tre testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer» og hente medier. |
 | Det pakkede Linux-programmet | Bygget på nytt etter leveranse 2 (AppImage og Windows-zip, 22.11.2026). De tre gjennomkjøringene (27 tester) besto mot `release/linux-unpacked/lysark`. AppImage-fila selv er ikke startet, og Windows-zip-en er ikke prøvd. |
 | Leveranse 2 mot ekte nett | Én gang på Linux Mint: Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen (spilte) og fra en fil åpnet fra disk («Error 153»). Se 6.13. |
-| Rettingene i økt 3, sett på skjermbilder | Programmet ble kjørt uten vindu på Linux Mint med Stål importert: scenelista, lenkekortet med stillbilde og meldingene for video som ikke kan vises. Ikke prøvd på Windows. |
+| Rettingene i økt 3, sett på skjermbilder | Programmet ble kjørt uten vindu på Linux Mint med Stål importert: lysarklista, lenkekortet med stillbilde og meldingene for video som ikke kan vises. Ikke prøvd på Windows. |
 | Import av de ekte forelesningene | Alle åtte (315 lysark) og malfila importeres uten feil. Økt 2: alle 315 er sammenlignet side om side med PDF-utgavene, før og etter rettingene (se del 4). Gjennomgangen ble gjort av hjelpeagenter som så på bildene, og jeg sjekket funnene og de viktigste rettingene selv. |
 | Windows 11 (eierens VM) | Prøvd for hånd 22.11.2026 med zip-utgaven (økt 1), se under. Endringene fra økt 2 og økt 3, og hele leveranse 2, er ikke prøvd på Windows. |
 | Canvas | Ikke prøvd. |
@@ -108,7 +108,7 @@ Zip-utgaven ble pakket ut og startet. Alt dette virket:
 - import av `PB1020 2025 - 04 - Stål.pptx` gjennom Windows' egne
   fildialoger: 26 lysark og importrapport
 - logopakka valgt under Innstillinger: norsk og engelsk logo funnet
-- tekst redigert rett i scenen, lagret med Ctrl+S
+- tekst redigert rett i lysarket, lagret med Ctrl+S
 - eksport til HTML (22,5 MB) og avspilling i Edge: klikk, piltaster og
   innholdsoversikt
 - forhåndsvisning (F5)
@@ -190,7 +190,7 @@ Funnene, og hva som ble gjort:
 | Tekst i former alltid midtstilt | Lovverk 16 | Justeringen fra PowerPoint følger med |
 | Tette tabeller blir for høye | Trevirke 19 | Cellemargene fra PowerPoint følger med (radhøyder og blandede størrelser gjenstår) |
 | Senket skrift blir vanlig («CO2», «fmk») | Trevirke 9, 19 (23 steder); hevet skrift i Stål (6) | Senket og hevet skrift følger med |
-| Logoen dekkes av bilder og bildetekster | Betong 25, 61, 65, 69, 70, 72, 73; HMS 39 | Logoen slås av på scenen, med merknad |
+| Logoen dekkes av bilder og bildetekster | Betong 25, 61, 65, 69, 70, 72, 73; HMS 39 | Logoen slås av på lysarket, med merknad |
 | Loddrett tekst blir vannrett og knekt | Betong 33; HMS 33; Trevirke 19; Bygg 14 | Dreid tekst, også i fylte former |
 
 ## 5. Kjente mangler og småfeil
@@ -207,7 +207,7 @@ Større:
    skrives inn når programmet bygges på Linux.
 5. **Radhøyder og justering i tabeller** følger temaet, og hele tabellen
    får én skriftstørrelse. Tette tabeller kan derfor bli høyere enn i
-   PowerPoint og gå inn i det som står under eller ut av scenen
+   PowerPoint og gå inn i det som står under eller ut av lysarket
    (Praktisk HMS 35, Trevirke 17 og 19, Stål 4). Lange ord i smale
    kolonner brytes ikke, så de kan gå inn i nabocellen. Cellemargene
    følger PowerPoint fra økt 2. Dette er den største gjenværende feilen
@@ -228,11 +228,11 @@ Mindre:
 - Tittelskriften er litt bredere enn Calibri, så en tittel som går helt
   inntil et bilde, kan få siste bokstav dekket (Betong 33 og 42).
 
-Rettet under leveranse 2: den valgte scenen i scenelista ble lys med hvit
-tittel når musa sto over den. Rettingen fra økt 3 holdt ikke (en generell
-knappregel vant); nå er den rettet og har en test.
+Rettet under leveranse 2: det valgte lysarket i lysarklista ble lyst med
+hvit tittel når musa sto over det. Rettingen fra økt 3 holdt ikke (en
+generell knappregel vant); nå er den rettet og har en test.
 
-Rettet i økt 3: miniatyrene i scenelista holder seg i boksen sin,
+Rettet i økt 3: miniatyrene i lysarklista holder seg i boksen sin,
 videolenker viser stillbildet sitt, lenkekortet er lesbart i «Lær
 mer»-panelet, og en video som ikke kan vises, sier fra (se 6.11).
 
@@ -258,18 +258,18 @@ Skriv rett under hvert punkt. Tomt felt betyr «ikke sett på ennå».
 
   Svar:
 
-- **Lys beige grunnflate** på innholdsscener (malen har hvit). Merk
+- **Lys beige grunnflate** på innholdslysark (malen har hvit). Merk
   (økt 2): mange av bildene dine har hvit bakgrunn, og den syns som hvite
-  felt på beige. På hvit grunnflate ville de gått i ett med scenen, slik
+  felt på beige. På hvit grunnflate ville de gått i ett med lysarket, slik
   som i PowerPoint.
 
   Svar:
 
-- **Tittelscenen:** lilla flate, hvit tekst, to profilformer til høyre.
+- **Tittellysarket:** lilla flate, hvit tekst, to profilformer til høyre.
 
   Svar:
 
-- **Logoen** nede til venstre på alle scener.
+- **Logoen** nede til venstre på alle lysark.
 
   Svar:
 
@@ -285,7 +285,7 @@ Skriv rett under hvert punkt. Tomt felt betyr «ikke sett på ennå».
 
 ### 6.2 Importen
 
-- Stemmer scenene med PowerPoint der du har sett? Noter lysark som
+- Stemmer lysarkene med PowerPoint der du har sett? Noter lysark som
   bommer (forelesning og nummer).
 
   Svar:
@@ -371,10 +371,10 @@ melder tilbake:
 Disse valgene tok jeg selv under rettingen av importen. Si fra om noe
 skal være annerledes.
 
-- **Logoen slås av ved import** på scener der et bilde, en form eller en
+- **Logoen slås av ved import** på lysark der et bilde, en form eller en
   bildetekst ligger der logoen skal stå, i stedet for at innholdet
-  dekker halve logoen. Scenen får en merknad, og «Vis USNs logo» slår den
-  på igjen. I de åtte forelesningene gjelder det 42 av 315 scener: de 8
+  dekker halve logoen. Lysarket får en merknad, og «Vis USNs logo» slår den
+  på igjen. I de åtte forelesningene gjelder det 42 av 315 lysark: de 8
   siste lysarkene med logoanimasjonen, og 34 der bilder, former eller
   bildetekster ligger nede til venstre.
 
@@ -428,8 +428,8 @@ Slik er det lest (bekreftes med eieren i neste økt):
 
 - «Godt utgangspunkt» er en positiv helhetsvurdering, men ikke svar på
   punktene i 6.1–6.8. De står fortsatt åpne.
-- **Feil i scenelista:** miniatyren til den valgte scenen stikker ut av
-  den lilla boksen (skjermbilde fra eieren, scene 70 i Betong). Trolig
+- **Feil i lysarklista:** miniatyren til det valgte lysarket stikker ut av
+  den lilla boksen (skjermbilde fra eieren, lysark 70 i Betong). Trolig
   årsak, ikke undersøkt: miniatyren er fast 192 px bred
   (`THUMB_SCALE = 0.1` i `src/renderer/src/SceneList.tsx`), mens spalten
   er 252 px (`styles.css`, `.workspace`). Etter marger, nummerspalte og
@@ -437,7 +437,7 @@ Slik er det lest (bekreftes med eieren i neste økt):
 - **Et av tre store ønsker** (de to andre står i 6.10): en rik bygger
   for «Lær mer». Knappen «+ Lær
   mer» beholdes som den enkle veien inn, men læreren skal også kunne
-  klikke på et hvilket som helst element i scenen (bilde, overskrift,
+  klikke på et hvilket som helst element i lysarket (bilde, overskrift,
   tekst …) og knytte utdypende innhold til det. Panelet som bygger
   innholdet, trenger mer plass enn sidepanelet har i dag, og byggesteiner
   for tekst, lenker, tabeller, bilder, video, innbygging og animasjoner.
@@ -498,10 +498,10 @@ Slik er det lest (bekreftes med eieren):
 - **Video skal være en hoveddel av verktøyet, ikke et tillegg.**
   Arbeidsflyten eieren beskriver: forelesningen gjøres om til moderne
   HTML, så leses voice-over inn, og så redigeres det enkelt: klippe lyd,
-  strekke ut scener og lignende. Leveranse 3 i planen dekker innspilling
-  per scene, klipping av start og slutt, tidspunkt for steg og MP4 bilde
+  strekke ut lysark og lignende. Leveranse 3 i planen dekker innspilling
+  per lysark, klipping av start og slutt, tidspunkt for steg og MP4 bilde
   for bilde. Nytt er ønsket om enkel redigering på en tidslinje
-  (klipping inne i lyden, lengden på scenene) og at det skal være dypt
+  (klipping inne i lyden, lengden på lysarkene) og at det skal være dypt
   integrert.
 - **Inndata for video:** prosjektfiler, HTML og PPTX eller PDF.
   - Prosjektfiler: finnes.
@@ -509,7 +509,7 @@ Slik er det lest (bekreftes med eieren):
     (`<script type="application/json" id="lysark-data">` og mediene i
     base64), så den kan åpnes igjen. Det er ikke bygget.
   - PPTX: importen finnes.
-  - PDF: helt nytt. Sidene må tegnes som bilder per scene. Det krever en
+  - PDF: helt nytt. Sidene må tegnes som bilder per lysark. Det krever en
     PDF-leser med fri lisens: pdf.js (Apache-2.0) kan bygges inn, mens
     Poppler (GPL) bare kan brukes som eget program. Tekst fra PDF blir
     bilder, ikke redigerbar tekst, med mindre noe mer avansert bygges.
@@ -521,7 +521,7 @@ Dette må avklares før noe bygges:
   dyp videointegrasjon (leveranse 3). Planen må skrives om etter eierens
   svar. Hver leveranse skal fortsatt være ferdig og brukbar alene.
 - **Videoredigering:** hvor mye som trengs (klipp, flytt, strekk, pauser,
-  musikk?), og om redigeringen skjer per scene eller på én samlet
+  musikk?), og om redigeringen skjer per lysark eller på én samlet
   tidslinje for hele forelesningen.
 - **Arkitekturen holder:** formatet har allerede tidslinje med steg, og
   tegningen er en ren funksjon av (prosjekt, tema, tid), slik at
@@ -535,14 +535,14 @@ Dette må avklares før noe bygges:
 
 ### 6.11 Økt 3: det som ble rettet, og det som venter på svar
 
-**Scenelista (rettet).** Årsaken var som antatt: miniatyren var fast
+**Lysarklista (rettet).** Årsaken var som antatt: miniatyren var fast
 192 px bred, men etter marger, nummerspalte og rullefelt var det bare
-omtrent 180 px igjen. Feilen gjaldt alle scener, men syntes bare på den
-valgte, fordi den har farget bakgrunn. Miniatyrene måler nå plassen de
+omtrent 180 px igjen. Feilen gjaldt alle lysark, men syntes bare på det
+valgte, fordi det har farget bakgrunn. Miniatyrene måler nå plassen de
 har, og fyller den (også når rullefeltet kommer og går, og på Windows
 der rullefeltet har en annen bredde). I samme slengen: når musa sto over
-den valgte scenen, ble bakgrunnen lys med hvit tittel oppå, altså
-uleselig. Den valgte scenen beholder nå den lilla fargen. Prøvd med
+det valgte lysarket, ble bakgrunnen lys med hvit tittel oppå, altså
+uleselig. Det valgte lysarket beholder nå den lilla fargen. Prøvd med
 skjermbilde av programmet uten vindu, og med en ny test som også tvinger
 fram rullefeltet.
 
@@ -551,7 +551,7 @@ importert, og med en «Lær mer»-boks som hadde en videofil og en
 YouTube-lenke:
 
 - En YouTube-lenke blir aldri en spiller. Den blir et kort som åpner
-  nettleseren, både i scenen og i panelet. Det er et valg fra
+  nettleseren, både i lysarket og i panelet. Det er et valg fra
   leveranse 1, ikke en feil, og innbygging står som spørsmål 10 i
   [docs/sporsmal-videre.md](docs/sporsmal-videre.md).
 - **Feil, rettet:** kortet viste aldri stillbildet PowerPoint hadde
@@ -561,7 +561,7 @@ YouTube-lenke:
   nettleseren (krever nett)» i et felt under. Bildet er en fil i
   prosjektet; ingenting hentes fra nettet.
 - **Feil, rettet:** i «Lær mer»-panelet hadde lenkekortet lilla tekst på
-  mørk indigo (uleselig), og var like stort som i en scene. Nå er
+  mørk indigo (uleselig), og var like stort som i et lysark. Nå er
   teksten hvit, og kortet følger panelets størrelse.
 - **Den svarte spilleren (0:02 / 0:05) er ikke gjenskapt.** En vanlig
   videofil (USNs logoanimasjon, 10 s, 3840 × 2160) spiller riktig i
@@ -698,13 +698,13 @@ opplevelsen), og dra-og-slipp av byggesteiner i automatiske tester.
 - Bildene som fulgte med fra PowerPoint, har ingen kreditering.
   «Bildekilder» viser bare det som er fylt inn (Element-fanen,
   «Kreditering», eller mediedialogen).
-- Merket på et dreid element holdes ikke innenfor scenekanten.
+- Merket på et dreid element holdes ikke innenfor lysarkkanten.
 - Noen nettsteder nekter å bli bygget inn; da er rammen tom, og lenka
   «Åpne i nettleseren» er veien.
 
 ### 6.14 Eieren har prøvd leveranse 2 (22.11.2026)
 
-Ordrett, med to skjermbilder (en høyreklikkmeny i scenen, og en rund,
+Ordrett, med to skjermbilder (en høyreklikkmeny i lysarket, og en rund,
 grå knapp med pil på svart bunn):
 
 > Testet nå. Mye bra, men frykter at noen vil slite med gui og navn. Vi
@@ -802,6 +802,29 @@ det til eieren når det bygges):
    navigasjonen skal føles god. Spør om han heller vil ha lekenheten før
    video.
 
+### 6.15 Økt 5: A1–A6 er bygget (22.11.2026)
+
+Spørsmålene i 6.14 B ble stilt samlet i chatten, med ett tillegg
+(spørsmål 6: skal annen innbygging enn YouTube også lastes direkte?
+Anbefaling: nei, behold «klikk for å laste»). Svarene skrives inn her
+når de kommer. Ingenting fra B er bygget.
+
+| Nr. | Bygget slik |
+| --- | --- |
+| A1 | Alle tekster i programmet og spilleren sier «lysark» (fanen heter «Lysark», «Nytt lysark», «Flytt lysarket opp» osv.). README, denne fila og `docs/` er skrevet om. Kode beholder `scene` |
+| A2 | Nytt felt `strokeWidth` på former (format 3, se [docs/prosjektformat.md](docs/prosjektformat.md)). Element-fanen har en glidebryter «Tykkelse» (1–60) for linjer, piler og omriss, og «Tilbakestill» gir temaets tykkelse. Pilspissen vokser med tykkelsen. Importen setter ikke tykkelse; importerte piler har temaets, som før |
+| A3 | Runde piler (72 px) på hver side av lysarket, ved siden av det og ikke oppå. De små pilene i bunnlinja er borte. På smal skjerm (under 700 px) står mindre piler nede i hjørnene |
+| A4 | Klikk på lysarket gjør ingenting. «+»-merker, lenker og knapper virker som før |
+| A5 | Pil ned = neste, pil opp = forrige. Med fokus i innholdslista, manuspanelet eller «Lær mer»-panelet ruller de panelet |
+| A6 | YouTubes spiller står i lysarket og i «Lær mer»-panelet. Den hentes når lysarket vises eller panelet åpnes, starter ikke av seg selv, og tas bort når man går videre. Fra disk: stillbilde med knapp som åpner YouTube. I redigeringen: stillbildet |
+
+**Prøvd:** automatisk på Linux Mint, 212 tester, også med hele
+programmet uten vindu (tykkelse med angre, pilene, klikk som ikke går
+videre, pil opp og ned, smal skjerm, og YouTube der testen selv svarer
+for nettet og kontrollerer at ingenting hentes før lysarket vises).
+Skjermbilder er sett på. **Ikke prøvd:** Windows, Canvas, og andre
+nettlesere enn den innebygde.
+
 ## 7. Arbeidsordre for neste økt
 
 Eieren vil at neste økt **bygger**, ikke bare planlegger. Rekkefølge:
@@ -885,6 +908,6 @@ ikke er prøvd.
 ```
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
-tar bilder av scenene (se toppen av fila), og `pdftoppm` gir bilder av
+tar bilder av lysarkene (se toppen av fila), og `pdftoppm` gir bilder av
 PDF-sidene. Legg dem side om side og se på dem. `pdftotext -bbox` gir
 ordposisjonene i PDF-en når noe må måles nøyaktig.

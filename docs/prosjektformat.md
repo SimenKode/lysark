@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 2), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 3), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -37,7 +37,7 @@ fil» i Fil-menyen lager en zip av mappa for flytting og arkivering, og
 Skissen under viser hovedtrekkene slik de ble tegnet før byggingen.
 Noen detaljer ble enklere i den ferdige koden: formatet heter `lysark`,
 tekst er avsnitt med nivå og listetype, farger på elementer er navn fra
-profilpaletten, og hver scene har egne valg for profilformer og logo.
+profilpaletten, og hvert lysark har egne valg for profilformer og logo.
 Importert tekst kan ha med seg det PowerPoint bestemte: størrelse per
 listenivå (`levelScale`), linjeavstand (`lineHeight`), avstand før
 avsnitt (`spaceBefore`) og innrykk (`indent`), alle målt i forhold til
@@ -50,6 +50,18 @@ brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler og lyd er ikke i formatet ennå (leveranse 3 og 4).
+
+## Format 3: tykkelse på strek
+
+En form kan ha sin egen tykkelse på streken (`strokeWidth`, i
+lysarkpiksler, fra 1 til 60). Den gjelder linjer, piler og omrisset på
+former uten fyll. Pilspissen vokser med tykkelsen (lengden er tre ganger
+tykkelsen pluss 6), så en tynn pil fortsatt har en spiss som syns. Uten
+feltet brukes temaets tykkelse (6 i ren stil), slik som før. Prosjekter
+i format 2 løftes ved at versjonsnummeret økes; ingenting annet endres.
+
+Importen fra PowerPoint setter ikke feltet: importerte linjer og piler
+får temaets tykkelse, som før, og kan endres i Element-fanen.
 
 ## Format 2: utdyping («Lær mer») og kreditering
 

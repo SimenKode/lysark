@@ -51,9 +51,9 @@ Forslag til ny plan. Hver leveranse er ferdig og brukbar alene:
 | Nr. | Leveranse | Du kan etterpå |
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering, HTML (bygget) | Gjøre en forelesning om til HTML |
-| 2 | **«Lær mer»-byggeren** | Knytte rik utdyping til hva som helst i en scene, hente bilder fra Wikimedia Commons med riktig navngivelse, og vise YouTube slik du velger i spørsmål 10 |
+| 2 | **«Lær mer»-byggeren** | Knytte rik utdyping til hva som helst i et lysark, hente bilder fra Wikimedia Commons med riktig navngivelse, og vise YouTube slik du velger i spørsmål 10 |
 | 3 | **Lyd og video** | Lese inn stemme, redigere på tidslinje, eksportere MP4 med teksting, og få HTML-fila til å spille seg selv med stemmen din. Start fra prosjekt, PPTX, eksportert HTML eller PDF |
-| 4 | **Figurer og bevegelser** | Bygge statiske og animerte figurer fra maler og fritt, og bruke dem i scener, i «Lær mer» og i video |
+| 4 | **Figurer og bevegelser** | Bygge statiske og animerte figurer fra maler og fritt, og bruke dem i lysark, i «Lær mer» og i video |
 | 5 | **Håndlaget stil** | Bytte hele forelesningen til kullstrek-uttrykket med ett valg |
 
 Byggesteinen «animasjon» i «Lær mer»-byggeren kommer med leveranse 4,
@@ -136,8 +136,8 @@ Anbefaling:
   adressen til bildets side på Commons**, og om det er beskåret.
 - Krediteringen settes inn av programmet: **liten linje under bildet** i
   «Lær mer»-panelet, og **«Bildekilder»** som egen oversikt i spilleren
-  (og som valgfri siste scene i video). Du kan ikke fjerne den for bilder
-  som krever navngivelse.
+  (og som valgfritt siste lysark i video). Du kan ikke fjerne den for
+  bilder som krever navngivelse.
 - Egne opplastinger får de samme feltene, frivillige.
 - Bildet lastes ned i **høyst 2560 px bredde**, ikke originalen, så
   HTML-fila ikke eser ut.
@@ -158,7 +158,7 @@ Fakta først:
   153». Fra Canvas (https) skal det virke. **Dette er ikke prøvd**, og
   må prøves i Canvas.
 
-Anbefaling: **innebygd, men to-trinns:** scenen viser bare stillbildet
+Anbefaling: **innebygd, men to-trinns:** lysarket viser bare stillbildet
 (lokalt, ingen nettkall) med teksten «Spill av fra YouTube». Først når
 studenten klikker, lastes spilleren fra `youtube-nocookie.com`. Lenka
 «Åpne på YouTube» står alltid ved siden av, så videoen kan nås også der
@@ -220,13 +220,13 @@ USNs svar om indigo tavle, og på at uttrykket (6.1) er godkjent.
 
 ## D. Video
 
-**16. Per scene eller én samlet tidslinje?**
-Anbefaling: **begge, som to visninger av de samme dataene.** Hver scene
-eier sin lyd og sine tidspunkter, så du kan lese inn én scene på nytt
-uten å forstyrre resten, og flytte scener fritt. Over dette ligger én
-tidslinje for hele forelesningen, der scenene står etter hverandre og
+**16. Per lysark eller én samlet tidslinje?**
+Anbefaling: **begge, som to visninger av de samme dataene.** Hvert lysark
+eier sin lyd og sine tidspunkter, så du kan lese inn ett lysark på nytt
+uten å forstyrre resten, og flytte lysark fritt. Over dette ligger én
+tidslinje for hele forelesningen, der lysarkene står etter hverandre og
 du drar i grensene, spiller gjennom og ser total lengde. Det passer
-formatet som finnes (lyd og steg per scene), og ingen utgave får egen
+formatet som finnes (lyd og steg per lysark), og ingen utgave får egen
 kopi av innholdet.
 
 **17. Hvilke grep skal redigeringen ha?**
@@ -235,22 +235,22 @@ Anbefaling, første versjon:
   (merk et område, slett). Originalopptaket beholdes; klipp er en liste
   som kan angres
 - **dele** lyden og **legge inn pause**
-- **strekke en scene:** la bildet stå lenger før, etter eller mellom
+- **strekke et lysark:** la bildet stå lenger før, etter eller mellom
   setninger
 - **flytte tidspunktet for hvert steg** ved å dra merker på tidslinja
-- **ta om** en scene, eller ta om fra spillehodet og ut
-- **lydstyrke per scene**, og jevn styrke for hele videoen ved eksport
-- overgang mellom scener: rent klipp, eller kort toning (0,3 s) som valg
+- **ta om** et lysark, eller ta om fra spillehodet og ut
+- **lydstyrke per lysark**, og jevn styrke for hele videoen ved eksport
+- overgang mellom lysark: rent klipp, eller kort toning (0,3 s) som valg
 
 Ikke med: musikk og flere lydspor, endring av hastighet, effekter. Musikk
 drar med seg lisensspørsmål og er sjelden ønsket i undervisningsvideo.
 
 **18. Innspillingen.**
 Anbefaling: **les inn fortløpende.** Manuset står på skjermen, pil høyre
-går til neste steg eller neste scene og setter tidspunktet, og opptaket
-deles automatisk ved scenegrensene. Du kan altså lese inn en hel
-forelesning i ett strekk og likevel redigere scene for scene.
-Nedtelling, nivåmåler, pause og «ta om denne scenen» er med. Lydfil kan
+går til neste steg eller neste lysark og setter tidspunktet, og opptaket
+deles automatisk ved lysarkgrensene. Du kan altså lese inn en hel
+forelesning i ett strekk og likevel redigere lysark for lysark.
+Nedtelling, nivåmåler, pause og «ta om dette lysarket» er med. Lydfil kan
 også importeres.
 
 **19. Hva kommer ut?**
@@ -270,7 +270,7 @@ HTML laget av Lysark kan åpnes; andre HTML-filer avvises med en
 forklaring.
 
 **21. PDF som inndata.**
-Anbefaling: **hver side blir en scene med siden som bilde,** tegnet i
+Anbefaling: **hver side blir et lysark med siden som bilde,** tegnet i
 dobbel oppløsning. Teksten på siden hentes ut og legges som alternativ
 tekst, så skjermleser og søk virker. Innholdet kan ikke redigeres, men
 du kan legge på steg, zoom, «Lær mer» og stemme. PPTX er fortsatt veien

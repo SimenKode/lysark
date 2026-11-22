@@ -33,14 +33,14 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
 2. **Les importrapporten.** Den sier hva som kom med, og hva som må lages
    på nytt (SmartArt, diagrammer, animasjoner, buede piler, bilder i
    formater som ikke kan vises), og hvor logoen er slått av fordi noe
-   ligger der den skal stå. Merknadene står også på hver scene.
-3. **Rett opp scenene.** Klikk for å velge, dra for å flytte,
-   dobbeltklikk for å skrive. «Tilpass til rutenett» (fanen Scene) rydder
-   en scene inn i de åtte kolonnene.
+   ligger der den skal stå. Merknadene står også på hvert lysark.
+3. **Rett opp lysarkene.** Klikk for å velge, dra for å flytte,
+   dobbeltklikk for å skrive. «Tilpass til rutenett» (fanen Lysark) rydder
+   et lysark inn i de åtte kolonnene.
 4. **Legg inn steg** (fanen Steg) for det som skal komme inn ett for ett.
 5. **Legg til utdyping («Lær mer»).** Høyreklikk på et hvilket som helst
    element og velg «Legg til utdyping …», eller bruk «+ Lær mer» for en
-   egen knapp i scenen. Byggeren åpnes over hele vinduet: byggesteiner
+   egen knapp i lysarket. Byggeren åpnes over hele vinduet: byggesteiner
    til venstre (tekst, overskrift, bilde, video, tabell, innbygging), og
    panelet slik studenten ser det til høyre. Elementet får et «+»-merke
    som åpner panelet.
@@ -52,10 +52,11 @@ Canvas. Zip-utgaven er prøvd på Windows 11.
 8. **Eksporter HTML.** Resultatet er én fil. Videoer over 20 MB legges i
    en mappe ved siden av fila, og programmet sier fra når det skjer.
 
-**YouTube** vises med et stillbilde og en avspillingsknapp. Spilleren
-hentes fra YouTube først når studenten trykker, og «Åpne på YouTube» står
-alltid ved siden av. Åpnes HTML-fila rett fra disk, åpner knappen YouTube
-i nettleseren, fordi YouTube ikke spiller i en slik side.
+**YouTube** vises som YouTubes egen spiller, rett i lysarket. Den hentes
+fra YouTube når lysarket vises, og «Åpne på YouTube» står alltid ved
+siden av. Åpnes HTML-fila rett fra disk, vises et stillbilde med en
+knapp som åpner YouTube i nettleseren, fordi YouTube ikke spiller i en
+slik side.
 
 **Nett:** programmet kontakter nettet bare når du selv søker etter et
 bilde i Wikimedia Commons eller henter et forhåndsbilde fra YouTube. Da
@@ -95,7 +96,7 @@ lagring, eksport og avspilling.
 | [AGENTS.md](AGENTS.md) | Reglene alle som arbeider i prosjektet skal følge |
 | [docs/plan.md](docs/plan.md) | De fem leveransene og hva som er med i hver |
 | [docs/stakk.md](docs/stakk.md) | Valgt teknologi, begrunnelse og lisens per avhengighet |
-| [docs/prosjektformat.md](docs/prosjektformat.md) | Prosjektformatet (scener, elementer, tidslinje) |
+| [docs/prosjektformat.md](docs/prosjektformat.md) | Prosjektformatet (lysark, elementer, tidslinje) |
 | [docs/designmanual.md](docs/designmanual.md) | Det som gjelder fra USNs designmanual, og hvordan programmet følger det |
 | [docs/sporsmal-leveranse-1.md](docs/sporsmal-leveranse-1.md) | Designspørsmålene for leveranse 1, med svar |
 | [docs/sporsmal-videre.md](docs/sporsmal-videre.md) | Designspørsmålene for leveranse 2–5, med svar |

@@ -61,11 +61,11 @@ export function ImportReportDialog(props: {
         {count(report.slides, 'lysark', 'lysark')}, {count(report.texts, 'tekst', 'tekster')},{' '}
         {count(report.images, 'bilde', 'bilder')}, {count(report.tables, 'tabell', 'tabeller')},{' '}
         {count(report.shapes, 'form', 'former')} og {count(report.videos, 'video', 'videoer')}.
-        Notatene ble manus på {count(report.notes, 'scene', 'scener')}.
+        Notatene ble manus på {count(report.notes, 'lysark', 'lysark')}.
       </p>
       <p>
         Plasseringen er beholdt fra PowerPoint. Skrift og farger følger USN-temaet. Se gjennom
-        scenene, og bruk «Tilpass til rutenett» der noe står skjevt.
+        lysarkene, og bruk «Tilpass til rutenett» der noe står skjevt.
       </p>
       {bySlide.size === 0 ? (
         <p>Alt innholdet kom med.</p>
@@ -88,7 +88,7 @@ export function ImportReportDialog(props: {
                 </li>
               ))}
           </ul>
-          <p className="hint">Merknadene står også på hver scene, under fanen «Scene».</p>
+          <p className="hint">Merknadene står også på hvert lysark, under fanen «Lysark».</p>
         </>
       )}
     </Dialog>

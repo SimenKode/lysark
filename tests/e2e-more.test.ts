@@ -35,7 +35,17 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
   beforeAll(async () => {
     work = mkdtempSync(join(tmpdir(), 'lysark-more-'));
     projectDir = join(work, 'prosjekt');
-    writeSampleProject(projectDir);
+    const sample = writeSampleProject(projectDir);
+    // A YouTube video on the last slide, with a still picture from the project.
+    sample.scenes[2]!.elements.push({
+      id: 'e_youtube',
+      type: 'video',
+      source: { kind: 'url', url: 'https://youtu.be/BBBBBBBBBBB' },
+      title: 'Video B',
+      poster: Object.keys(sample.assets)[0]!,
+      box: { x: 960, y: 270, w: 800, h: 540, rotation: 0 },
+    });
+    writeFileSync(join(projectDir, 'prosjekt.json'), JSON.stringify(sample, null, 2), 'utf8');
     writeFileSync(join(work, 'opplastet.png'), testPng(320, 200));
     // Stands in for "somewhere on the network": nothing may ever reach it.
     outside = createServer((_req, res) => {
@@ -344,7 +354,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
         }>;
       }>;
     };
-    expect(saved.version).toBe(2);
+    expect(saved.version).toBe(3);
     const image = saved.scenes[1]!.elements.find((e) => e.type === 'image')!;
     expect(image.more!.title).toBe('Om bildet A');
     expect(image.more!.corner).toBe('bl');
@@ -354,7 +364,21 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     expect(existsSync(join(projectDir, fromCommons.file))).toBe(true);
   });
 
-  it('plays: the mark opens the panel by keyboard and by click, and web content waits', async () => {
+  it('plays: the mark opens the panel, YouTube plays in place when shown, other web content waits', async () => {
+    // The test answers for the web here too: whatever the preview asks for
+    // is noted and answered with an empty page. Nothing leaves the machine.
+    await app.evaluate(({ session }) => {
+      const asked: string[] = [];
+      (globalThis as unknown as { lysarkAsked: string[] }).lysarkAsked = asked;
+      session.fromPartition('lysark-preview').protocol.handle('https', (request) => {
+        asked.push(request.url);
+        return new Response('<!doctype html><title>x</title>', {
+          headers: { 'content-type': 'text/html' },
+        });
+      });
+    });
+    const asked = (): Promise<string[]> =>
+      app.evaluate(() => (globalThis as unknown as { lysarkAsked: string[] }).lysarkAsked);
     const opened = app.waitForEvent('window');
     await page.getByRole('button', { name: 'Forhåndsvis' }).click();
     const player = await opened;
@@ -374,12 +398,15 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       .toBe('lp-panel-title');
     const panel = player.locator('.lp-panel');
     expect(await panel.locator('.lm-table th').count()).toBe(2);
-    // A YouTube video and an embedded page: buttons and links, but nothing fetched.
-    expect(await panel.locator('button.ls-webvideo-play').count()).toBe(2);
+    // The YouTube video is YouTube's player, fetched now that the panel is
+    // open. The embedded page is still a button, and is not fetched.
+    const inPanel = 'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0';
+    expect(await panel.locator('iframe.ls-webvideo-frame').getAttribute('src')).toBe(inPanel);
+    expect(await panel.locator('button.ls-webvideo-play').count()).toBe(1);
     expect(await panel.locator('a.ls-webvideo-open').first().getAttribute('href')).toBe(
       'https://www.youtube.com/watch?v=AAAAAAAAAAA',
     );
-    expect(await player.locator('iframe').count()).toBe(0);
+    await expect.poll(asked).toEqual([inPanel]);
     await shot(player, 'm07-spiller-panel');
 
     await panel.getByRole('button', { name: 'Utvid' }).click();
@@ -407,5 +434,24 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     await shot(player, 'm09-bildekilder');
     await player.keyboard.press('Escape');
     await expect.poll(() => player.locator('.lp-credits').isVisible()).toBe(false);
+
+    // The video on the last slide: nothing was asked for it until the slide is shown.
+    const onSlide = 'https://www.youtube-nocookie.com/embed/BBBBBBBBBBB?rel=0';
+    expect(await asked()).not.toContain(onSlide);
+    expect(await player.locator('iframe').count()).toBe(0); // closing the panel took its player away
+    await player.keyboard.press('End');
+    await expect.poll(() => player.locator('.lp-counter').textContent()).toBe('3 / 3');
+    const frame = player.locator('.lp-stage .ls-el-video iframe.ls-webvideo-frame');
+    expect(await frame.getAttribute('src')).toBe(onSlide);
+    expect(await frame.getAttribute('title')).toBe('Video B');
+    await expect.poll(asked).toContain(onSlide);
+    expect(
+      await player.locator('.lp-stage .ls-el-video a.ls-webvideo-open').getAttribute('href'),
+    ).toBe('https://www.youtube.com/watch?v=BBBBBBBBBBB');
+    await shot(player, 'm10-youtube-i-lysarket');
+    // Going on takes the player away, so nothing plays in the background.
+    await player.locator('.lp-nav-prev').click();
+    await expect.poll(() => player.locator('.lp-counter').textContent()).toBe('2 / 3');
+    expect(await player.locator('iframe').count()).toBe(0);
   });
 });

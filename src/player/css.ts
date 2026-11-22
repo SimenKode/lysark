@@ -16,10 +16,22 @@ body { background: ${C.indigo}; }
 .lp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .lp-body { position: relative; flex: 1; min-height: 0; display: flex; }
 .lp-center { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lp-stagerow { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; }
 .lp-viewport {
-  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center;
   overflow: hidden; outline: none;
 }
+/* The large round arrows on each side of the slide. They stand beside the
+   slide, never on top of it, so they cover nothing. */
+.lp-nav {
+  flex: none; width: 72px; height: 72px; margin: 0 14px; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(255, 255, 255, 0.2); color: ${C.hvit};
+}
+.lp-nav svg { width: 36px; height: 36px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.lp-nav:hover { background: ${C.hvit}; color: ${C.indigo}; }
+.lp-nav:active { background: ${C.lysIndigo}; color: ${C.indigo}; }
+.lp-nav:disabled { opacity: 0.3; cursor: default; background: rgba(255, 255, 255, 0.2); color: ${C.hvit}; }
 .lp-stagebox { position: relative; flex: none; overflow: hidden; }
 .lp-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
 .lp-stage .ls-deepdive:focus-visible, .lp-stage a:focus-visible, .lp-stage video:focus-visible,
@@ -113,9 +125,22 @@ body { background: ${C.indigo}; }
   .lp-toc { left: 0; }
   .lp-panel { right: 0; }
 }
+/* On a narrow screen there is no room beside the slide: smaller arrows sit in
+   the lower corners, where an upright phone has empty space under the slide. */
+@media (max-width: 700px) {
+  .lp-nav {
+    position: absolute; z-index: 5; bottom: 12px; width: 52px; height: 52px; margin: 0;
+    background: rgba(47, 11, 99, 0.78); border: 2px solid ${C.hvit};
+  }
+  .lp-nav svg { width: 26px; height: 26px; }
+  .lp-nav:disabled { background: rgba(47, 11, 99, 0.78); }
+  .lp-nav-prev { left: 12px; }
+  .lp-nav-next { right: 12px; }
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .lp-progress > div { transition: width 0.2s ease-out; }
+  .lp-nav { transition: background-color 0.15s ease-out, color 0.15s ease-out; }
 }
 
 @media print {

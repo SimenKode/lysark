@@ -9,7 +9,7 @@ prøvd på både Linux Mint og Windows 11.
 | Nr. | Leveranse | Status |
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
-| 2 | «Lær mer»-byggeren | Bygget og prøvd på Linux Mint. Eieren har prøvd den og bedt om endringer (runde 2, under). Gjenstår også: Windows, og Canvas som eieren prøver selv |
+| 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Ikke påbegynt |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
@@ -24,24 +24,24 @@ eksporterer én HTML-fil studentene kan bruke uten nett.
   alternativ tekst), plassering og størrelse, grupper, tabeller, notater
   som manus.
 - Plassholdere arver plassering fra layout og mal, slik PowerPoint gjør.
-- Importrapport per scene: hva som kom med, og hva som må lages på nytt
+- Importrapport per lysark: hva som kom med, og hva som må lages på nytt
   (SmartArt, diagrammer, animasjoner, bilder i formater som ikke kan
   vises).
 
 **Tema**
 - Ren stil ferdig: palett, kontrasttabell, skriftskala, 8 kolonner,
-  profilformer på tittel- og seksjonsscener, logo fra originalfilene.
+  profilformer på tittel- og seksjonslysark, logo fra originalfilene.
 - Temaet er bygd slik at håndlaget stil kan legges til (leveranse 5)
   uten å røre innholdet.
 
 **Redigering**
-- Sceneliste: flytte, kopiere, slette, legge til, endre scenetype.
-- Scenen: velge, flytte, endre størrelse, feste til rutenett, rekkefølge
+- Lysarkliste: flytte, kopiere, slette, legge til, endre lysarktype.
+- Lysarket: velge, flytte, endre størrelse, feste til rutenett, rekkefølge
   foran og bak, redigere tekst og tekstrolle, tekstmarkering.
 - Legge til tekst, bilde, video (fil eller lenke), lenke og
   fordypningsboks.
 - Steg: hvilke elementer som kommer inn når.
-- Manus per scene. Angre og gjør om. Lagring og åpning av prosjekt.
+- Manus per lysark. Angre og gjør om. Lagring og åpning av prosjekt.
 
 **HTML-eksport**
 - Én fil, virker uten nett. Skrifter og bilder ligger i fila.
@@ -54,13 +54,13 @@ eksporterer én HTML-fil studentene kan bruke uten nett.
 
 ## Leveranse 2: «Lær mer»-byggeren
 
-Du knytter rik utdyping til hva som helst i en scene, og studenten åpner
+Du knytter rik utdyping til hva som helst i et lysark, og studenten åpner
 den i et panel.
 
 **Utdyping på alle elementer**
 - Alle elementer (tekst, bilde, form, tabell, video) kan ha utdyping:
   en tittel og en liste med byggesteiner. «+ Lær mer» er fortsatt den
-  enkle veien inn: en knapp i scenen med samme slags utdyping.
+  enkle veien inn: en knapp i lysarket med samme slags utdyping.
 - Byggesteiner: tekst (overskrifter, lister, markering, lenker), bilde
   (med bildetekst og kreditering), video (fil eller lenke), tabell og
   innbygging. Rekkefølgen kan endres.
@@ -90,8 +90,8 @@ den i et panel.
   bilde (se [AGENTS.md](../AGENTS.md)).
 
 **YouTube og annen innbygging**
-- To trinn: scenen viser et stillbilde som ligger i fila. Først når
-  studenten klikker, lastes spilleren fra `youtube-nocookie.com`.
+- Først bygget i to trinn (stillbilde, og spilleren først ved klikk).
+  Endret i runde 2 (under): YouTubes spiller står rett i lysarket.
   «Åpne på YouTube» står alltid ved siden av.
 - Annen innbygging: «Innhold fra <vert> – klikk for å laste».
 - Forhåndsvisningen vises fra en adresse på din egen maskin
@@ -125,7 +125,7 @@ Prøvd én gang mot ekte nett, på Linux Mint:
 Avvik fra det som ble valgt, og hvorfor:
 
 - **Bilder hentes i høyst 1920 px bredde**, ikke 2560. Wikimedia leverer
-  bilder i faste bredder, og 1920 er scenens bredde.
+  bilder i faste bredder, og 1920 er lysarkets bredde.
 - **Bare YouTube kjennes igjen som video i to trinn.** Vimeo, Panopto og
   andre videosider er fortsatt et kort som åpner nettleseren når de står
   som video. De kan bygges inn med byggesteinen «Innbygging».
@@ -140,20 +140,28 @@ Gjenstår før leveransen er ferdig:
 
 ### Runde 2 etter eierens utprøving (22.11.2026)
 
-Eieren prøvde leveranse 2 og bestemte dette (HANDOFF.md 6.14). Ikke
-bygget ennå, unntatt det siste punktet:
+Eieren prøvde leveranse 2 og bestemte dette (HANDOFF.md 6.14). Alt er
+bygget (økt 5) og prøvd automatisk på Linux Mint:
 
 - «Scene» heter «lysark» i alt du og studentene leser.
-- Tykkelsen på piler, linjer og omriss kan endres, og pilspissen følger
-  med.
-- Store, runde piler på hver side av lysarket i HTML-spilleren.
+- Tykkelsen på piler, linjer og omriss kan endres i Element-fanen (1 til
+  60), og pilspissen følger med. «Tilbakestill» gir temaets tykkelse.
+- Store, runde piler på hver side av lysarket i HTML-spilleren. De står
+  ved siden av lysarket, ikke oppå det. På smal skjerm (mobil) står de
+  nede i hjørnene.
 - Klikk på lysarket går ikke videre; det er pilene, tastaturet og sveip
   som gjør det.
-- Pil opp og pil ned navigerer.
-- YouTube er innebygd som spiller i lysarket, ikke et stillbilde med
-  «Spill av fra YouTube». Åpnet rett fra disk blir stillbildet med lenke
-  stående, fordi YouTube ikke spiller der.
-- `thumb.wikimedia.org` er på lista over verter (gjort).
+- Pil opp og pil ned navigerer. Står fokus i et panel (innhold, manus,
+  «Lær mer»), ruller de panelet i stedet.
+- YouTube er innebygd som YouTubes spiller i lysarket og i «Lær
+  mer»-panelet. Den hentes fra `youtube-nocookie.com` når lysarket
+  vises eller panelet åpnes, starter ikke av seg selv, og tas bort når
+  man går videre. Åpnet rett fra disk blir stillbildet stående med en
+  knapp som åpner YouTube, fordi YouTube ikke spiller der. I
+  redigeringen vises bare stillbildet.
+- `thumb.wikimedia.org` er på lista over verter.
+
+Annen innbygging enn YouTube er uendret: «klikk for å laste».
 
 Eieren vil også ha flere animasjoner og mer lekenhet, USNs
 avslutningsanimasjon som et innebygd forslag til avslutning, og flere
@@ -165,24 +173,24 @@ HTML og video. Til da er repoet privat.
 ## Leveranse 3: Lyd og video
 
 - **Inndata:** prosjekt, PPTX, eksportert HTML («Åpne HTML-fil …» gjør
-  en Lysark-eksport til prosjekt igjen) og PDF (hver side blir en scene
+  en Lysark-eksport til prosjekt igjen) og PDF (hver side blir et lysark
   med siden som bilde; teksten hentes ut som alternativ tekst; lest med
   pdf.js, Apache-2.0).
 - **Innspilling fortløpende:** manuset står på skjermen, pil høyre går
-  til neste steg eller scene og setter tidspunktet, og opptaket deles
-  ved scenegrensene. Nedtelling, nivåmåler, pause, «ta om denne scenen».
-  Lydfil kan også importeres.
-- **Tidslinje:** hver scene eier sin lyd og sine tidspunkter; over dette
+  til neste steg eller lysark og setter tidspunktet, og opptaket deles
+  ved lysarkgrensene. Nedtelling, nivåmåler, pause, «ta om dette
+  lysarket». Lydfil kan også importeres.
+- **Tidslinje:** hvert lysark eier sin lyd og sine tidspunkter; over dette
   ligger én tidslinje for hele forelesningen.
 - **Grep:** klippe start, slutt og midt i (originalen beholdes), dele,
-  legge inn pause, strekke en scene, flytte tidspunktet for hvert steg,
-  ta om, lydstyrke per scene og jevn styrke ved eksport, rent klipp
-  eller kort toning mellom scener. Ikke musikk, flere lydspor eller
+  legge inn pause, strekke et lysark, flytte tidspunktet for hvert steg,
+  ta om, lydstyrke per lysark og jevn styrke ved eksport, rent klipp
+  eller kort toning mellom lysark. Ikke musikk, flere lydspor eller
   hastighetsendring.
 - **Ut:** MP4 1080p, 30 bilder i sekundet, H.264 og AAC, tegnet bilde
   for bilde mot en virtuell klokke. Teksting som egen WebVTT-fil laget
   av manuset. HTML-fila får «Spill av» med stemmen og stegene på de
-  samme tidspunktene. «Bildekilder» som valgfri siste scene.
+  samme tidspunktene. «Bildekilder» som valgfritt siste lysark.
 - **FFmpeg:** GPL-bygget med libx264 fra BtbN/FFmpeg-Builds, en fast
   utgave hentet med kontroll av sjekksum, lagt ved programmet som eget
   program med lisenstekst og lenke til kildekoden. Aldri i git.
@@ -199,7 +207,7 @@ HTML og video. Til da er repoet privat.
   holdes sammen som ett element.
 - Bevegelser: tone inn, gli inn, tegne strek, vokse, markere, telle opp,
   forsvinne, og zoome inn på et utsnitt.
-- Figurer kan brukes i scener, i «Lær mer» (egen byggestein) og i video.
+- Figurer kan brukes i lysark, i «Lær mer» (egen byggestein) og i video.
 
 ## Leveranse 5: Håndlaget stil
 
@@ -214,7 +222,7 @@ Bygd og prøvd automatisk på Linux Mint:
 - import av PPTX til prosjektmappe, med rapport
 - ren stil med palett, kontrasttabell, skriftskala, 8 kolonner og
   profilformer
-- redigering: scener, elementer, tekst i scenen, tabeller, video,
+- redigering: lysark, elementer, tekst i lysarket, tabeller, video,
   fordypningsbokser, steg, manus, angre og gjør om
 - forhåndsvisning og eksport til én HTML-fil
 - spilleren: tastatur, klikk, sveip, innhold, manus, fordypningspanel,
@@ -321,7 +329,7 @@ Det filene viste om innholdet:
 Gjenstår før leveransen er ferdig:
 
 1. **Canvas.** HTML-fila er ikke prøvd der.
-2. **Godkjenning av uttrykket** på dine egne scener.
+2. **Godkjenning av uttrykket** på dine egne lysark.
 3. **Restavvikene i importen** som står under «Kjente begrensninger».
 4. **Windows-installasjonsfil.** Bare zip-utgaven finnes.
 
@@ -351,7 +359,7 @@ Kjente begrensninger i importen (kommer i rapporten der det er relevant):
 - Tekst og bilder som ligger i PowerPoint-malen (ikke på lysarket)
   følger ikke med; temaet bestemmer bakgrunn og logo.
 - Der et bilde, en form eller en bildetekst ligger på logoens plass,
-  importeres scenen uten logo, med en merknad. Logoen kan slås på igjen
+  importeres lysarket uten logo, med en merknad. Logoen kan slås på igjen
   under «Vis USNs logo».
 - Tabeller mister fyllfarger, kantlinjer, radhøyder og justering per
   celle, og hele tabellen får én skriftstørrelse. En tabell med svært
@@ -363,7 +371,7 @@ Kjente begrensninger i importen (kommer i rapporten der det er relevant):
 
 Rettet i økt 3:
 
-- **Miniatyrene i scenelista** stakk ut av boksen sin. De fyller nå
+- **Miniatyrene i lysarklista** stakk ut av boksen sin. De fyller nå
   plassen de har, uansett rullefelt.
 - **Videolenker** viser stillbildet sitt, og lenkekortet er lesbart i
   «Lær mer»-panelet.

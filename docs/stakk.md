@@ -20,7 +20,7 @@ som startes utenfra (FFmpeg).
 Linux. Det betyr at redigering, HTML-forhåndsvisning og videobilder
 tegnes av nøyaktig samme motor.
 
-**Scenen tegnes som HTML og SVG, ikke på lerret (canvas).** Tekst blir
+**Lysarket tegnes som HTML og SVG, ikke på lerret (canvas).** Tekst blir
 ekte tekst: den brytes riktig, kan markeres, leses av skjermleser og
 inneholde lenker. Former og diagrammer er SVG, som er skarpe i alle
 størrelser. Samme tegnekode brukes tre steder: i redigeringsflaten, i
@@ -52,7 +52,7 @@ vanskelig å styre mot temaroller. Valget prøves mot eierens ekte filer
 tidlig i leveranse 1.
 
 **Video: bilde for bilde, ikke skjermopptak.** Et skjult vindu tegner
-scenen for tidspunkt t, bildet hentes ut som rå piksler og sendes rett
+lysarket for tidspunkt t, bildet hentes ut som rå piksler og sendes rett
 til FFmpeg, så t + 1/30 s, og så videre. Lyden legges på av FFmpeg.
 Resultatet er likt hver gang og uavhengig av hvor rask maskinen er.
 
@@ -192,7 +192,7 @@ Leveranse 2 («Lær mer»-byggeren) tok ikke inn noen nye avhengigheter.
 
 - **EMF- og WMF-bilder** i eldre PPTX-filer kan ikke vises av
   nettlesermotoren. Importen melder dem i rapporten, så de kan byttes ut.
-- **Video inne i en scene ved MP4-eksport** må hentes bilde for bilde.
+- **Video inne i et lysark ved MP4-eksport** må hentes bilde for bilde.
   Det løses i leveranse 3.
 - **Windows-bygg laget på Linux** må prøves på en ekte Windows 11-maskin
   før en leveranse kalles ferdig.

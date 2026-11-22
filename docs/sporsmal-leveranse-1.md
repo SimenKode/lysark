@@ -55,7 +55,7 @@ i bredformat (16:9)?
 ## B. HTML-spilleren
 
 **5. Hvordan skal studenten bevege seg gjennom forelesningen?**
-Anbefaling: **scene for scene, i bredformat som fyller vinduet**, med
+Anbefaling: **lysark for lysark, i bredformat som fyller vinduet**, med
 piltaster, mellomrom og klikk, innholdsoversikt og framdriftslinje. Det
 er samme form som videoen og som PPTX-en du kommer fra. Alternativet er
 én lang rullbar side; den kan komme senere som en lesevisning.
@@ -73,10 +73,10 @@ hjelper universell utforming. Manuset er notatene dine fra PPTX-en, så du
 bør kunne velge det bort når notatene ikke er skrevet for studenter.
 
 **8. Hvordan skal en fordypningsboks åpne seg?**
-Anbefaling: **en avrundet knapp «Lær mer» i scenen, som åpner et panel
-fra høyre.** Scenen står synlig ved siden av, panelet lukkes med Esc, og
+Anbefaling: **en avrundet knapp «Lær mer» i lysarket, som åpner et panel
+fra høyre.** Lysarket står synlig ved siden av, panelet lukkes med Esc, og
 det kan inneholde tekst, bilde, lenker og video. Alternativer: en boks
-midt på skjermen, eller at teksten folder seg ut inne i scenen.
+midt på skjermen, eller at teksten folder seg ut inne i lysarket.
 
 **9. Hva gjør vi med lokale videofiler når alt skal være én fil?**
 Anbefaling: **små videoer bakes inn i HTML-fila; store legges ved siden
@@ -98,7 +98,7 @@ være.
 **11. Hvor tro skal importen være mot PPTX-en?**
 Anbefaling: **plasseringen beholdes, mens skrift og farger byttes til
 USN-temaet.** Titler og brødtekst får temaets roller; bilder står som de
-står. Hver scene får en knapp «Tilpass til rutenett» som rydder den inn i
+står. Hvert lysark får en knapp «Tilpass til rutenett» som rydder det inn i
 de åtte kolonnene. Alternativet, å beholde PowerPoint-fargene og
 -skriftene, gir et utkast som ikke følger profilen.
 
@@ -107,9 +107,9 @@ Anbefaling: **stor tittel i vanlig vekt.** Referansevideoen har tung,
 fet tittel, men designmanualen sier at tittelskriften aldri skal settes
 i fet. Tyngden lages med størrelse og med lilla flate bak.
 
-**13. Hvilken grunnflate skal innholdsscenene ha?**
+**13. Hvilken grunnflate skal innholdslysarkene ha?**
 Anbefaling: **lys beige med sort tekst og lilla titler; tittel- og
-seksjonsscener på lilla flate med to overlappende profilformer.** Lys
+seksjonslysark på lilla flate med to overlappende profilformer.** Lys
 beige er roligere for øynene enn hvit, er tillatt som stor flate, og er
 samme «papir» som håndlaget stil bruker, så de to stilene henger sammen.
 Alternativet er hvit grunnflate.
@@ -117,8 +117,8 @@ Alternativet er hvit grunnflate.
 **14. Logoen: kan du legge USNs logopakke i mappa `merkevare/`?**
 Den lastes ned fra designmanualen («Last ned logopakke»). Si fra om du
 heller vil at jeg henter den. Mappa ligger ikke i git.
-Anbefaling for plassering: **nede til venstre på alle scener, liten, og
-mulig å skru av per scene.** Titler står oppe til venstre, så logoen
+Anbefaling for plassering: **nede til venstre på alle lysark, liten, og
+mulig å skru av per lysark.** Titler står oppe til venstre, så logoen
 kolliderer ikke med dem der nede.
 
 ## D. Lagring
@@ -132,7 +132,7 @@ ved hver lagring.
 
 ## Valg jeg har tatt uten å spørre (si fra om du er uenig)
 
-- Scenene er i bredformat, 1920 x 1080.
+- Lysarkene er i bredformat, 1920 x 1080.
 - HTML-fila bygges for universell utforming (WCAG 2.1 AA).
 - Programmet kontakter aldri nettet og oppdaterer seg ikke selv.
 - Kode som bygges inn i programmet, har tillatende fri lisens. FFmpeg

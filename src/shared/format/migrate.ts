@@ -68,5 +68,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   }
   const project = structuredClone(data);
   if (project.version === 1) lift1to2(project);
+  // 2 -> 3 only added an optional field (the stroke width of shapes).
+  if (project.version === 2) project.version = 3;
   return project;
 }

@@ -43,10 +43,14 @@ export function youtubeRef(address: string): YouTubeRef | undefined {
   return start ? { id, start } : { id };
 }
 
-/** The player address, on YouTube's domain that sets no cookies before the video is played. */
+/**
+ * The player address, on YouTube's domain that sets no cookies before the
+ * video is played. The video does not start by itself: the viewer presses
+ * play in YouTube's own player.
+ */
 export function youtubeEmbedUrl(ref: YouTubeRef): string {
   const start = ref.start ? `&start=${ref.start}` : '';
-  return `https://www.youtube-nocookie.com/embed/${ref.id}?autoplay=1&rel=0${start}`;
+  return `https://www.youtube-nocookie.com/embed/${ref.id}?rel=0${start}`;
 }
 
 export function youtubeWatchUrl(ref: YouTubeRef): string {

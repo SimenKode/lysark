@@ -255,7 +255,7 @@ function InsertBar() {
           add(() => element, false);
           useStore.getState().openBuilder(element.id);
         }}
-        title="Knapp som åpner et panel med mer stoff. Du kan også høyreklikke på et element i scenen."
+        title="Knapp som åpner et panel med mer stoff. Du kan også høyreklikke på et element i lysarket."
       >
         + Lær mer
       </button>
@@ -280,7 +280,7 @@ function ScriptPanel() {
     <section className="script-panel">
       <label>
         <span className="field-label">
-          Manus for scenen (fra notatene; blir stemmen i videoen, og kan vises for studentene)
+          Manus for lysarket (fra notatene; blir stemmen i videoen, og kan vises for studentene)
         </span>
         <textarea
           rows={4}

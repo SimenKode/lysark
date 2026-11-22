@@ -62,7 +62,7 @@ export function SceneList() {
   const remove = (): void => {
     const source = project.scenes[index];
     if (!source) return;
-    const name = source.title.trim() || `scene ${index + 1}`;
+    const name = source.title.trim() || `lysark ${index + 1}`;
     if (!window.confirm(`Slette «${name}»? Du kan angre etterpå.`)) return;
     const next = project.scenes[index + 1] ?? project.scenes[index - 1];
     update((draft) => {
@@ -90,7 +90,7 @@ export function SceneList() {
   };
 
   return (
-    <nav className="scene-list" aria-label="Scener">
+    <nav className="scene-list" aria-label="Lysark">
       <div className="scene-tools">
         <div className="menu-anchor">
           <button
@@ -99,7 +99,7 @@ export function SceneList() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            Ny scene
+            Nytt lysark
           </button>
           {menuOpen && (
             <div className="menu" role="menu">
@@ -111,12 +111,12 @@ export function SceneList() {
             </div>
           )}
         </div>
-        <button type="button" title="Lag kopi av scenen" disabled={index < 0} onClick={duplicate}>
+        <button type="button" title="Lag kopi av lysarket" disabled={index < 0} onClick={duplicate}>
           Kopi
         </button>
         <button
           type="button"
-          title="Flytt scenen opp"
+          title="Flytt lysarket opp"
           disabled={index <= 0}
           onClick={() => move(-1)}
         >
@@ -124,13 +124,13 @@ export function SceneList() {
         </button>
         <button
           type="button"
-          title="Flytt scenen ned"
+          title="Flytt lysarket ned"
           disabled={index < 0 || index >= project.scenes.length - 1}
           onClick={() => move(1)}
         >
           ↓
         </button>
-        <button type="button" title="Slett scenen" disabled={index < 0} onClick={remove}>
+        <button type="button" title="Slett lysarket" disabled={index < 0} onClick={remove}>
           Slett
         </button>
       </div>

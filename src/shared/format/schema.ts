@@ -5,8 +5,11 @@ import { z } from 'zod';
 import { migrateProject } from './migrate';
 
 export const FORMAT_NAME = 'lysark';
-/** 2: every element can carry "Lær mer" content (`more`); assets can carry a credit. */
-export const FORMAT_VERSION = 2;
+/**
+ * 2: every element can carry "Lær mer" content (`more`); assets can carry a credit.
+ * 3: shapes can carry their own stroke width.
+ */
+export const FORMAT_VERSION = 3;
 
 export { STAGE } from './constants';
 
@@ -239,6 +242,8 @@ export const ImageElement = z.object({
 });
 export type ImageElement = z.infer<typeof ImageElement>;
 
+/** The thinnest and thickest stroke a shape can be given. */
+export const STROKE_WIDTH = { min: 1, max: 60 } as const;
 export const SHAPE_GEOMETRIES = ['rect', 'roundRect', 'ellipse', 'line', 'arrow'] as const;
 export const ShapeElement = z.object({
   ...elementBase,
@@ -246,6 +251,11 @@ export const ShapeElement = z.object({
   geometry: z.enum(SHAPE_GEOMETRIES),
   fill: PaletteColor.optional(),
   stroke: PaletteColor.optional(),
+  /**
+   * Thickness of a line, an arrow or an outline, in stage pixels. The head
+   * of an arrow grows with it. When absent the theme's thickness is used.
+   */
+  strokeWidth: z.number().min(STROKE_WIDTH.min).max(STROKE_WIDTH.max).optional(),
   /** For line and arrow: which diagonal of the box, and the arrow direction. */
   flipH: z.boolean().optional(),
   flipV: z.boolean().optional(),

@@ -9,7 +9,7 @@ function formatName(extension: string): string {
 export const WARNINGS = {
   hidden: (): ImportWarning => ({
     code: 'hidden',
-    message: 'Lysbildet var skjult i PowerPoint. Slett scenen hvis den ikke skal være med.',
+    message: 'Lysbildet var skjult i PowerPoint. Slett lysarket hvis det ikke skal være med.',
   }),
   animation: (): ImportWarning => ({
     code: 'animation',
@@ -32,7 +32,7 @@ export const WARNINGS = {
     code: 'other',
     message: wholeSlide
       ? 'Logoen er slått av fordi et bilde eller en video dekker hele lysbildet.'
-      : 'Logoen er slått av fordi innhold ligger der den skal stå. Flytt innholdet og slå på «Vis USNs logo» hvis scenen skal ha logo.',
+      : 'Logoen er slått av fordi innhold ligger der den skal stå. Flytt innholdet og slå på «Vis USNs logo» hvis lysarket skal ha logo.',
   }),
   arrow: (): ImportWarning => ({
     code: 'geometry',

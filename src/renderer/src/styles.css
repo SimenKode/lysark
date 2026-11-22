@@ -741,6 +741,22 @@ legend {
   border: 1.5px solid var(--line);
   border-radius: 14px;
 }
+.stroke-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stroke-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--lilla);
+}
+.stroke-row output {
+  flex: none;
+  min-width: 3.4em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .media-item .field {
   margin-bottom: 6px;
 }

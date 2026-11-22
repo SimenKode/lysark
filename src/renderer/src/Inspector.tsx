@@ -6,6 +6,7 @@ import { richText } from '../../shared/format/factory';
 import {
   SCENE_KINDS,
   SHAPE_GEOMETRIES,
+  STROKE_WIDTH,
   SURFACES,
   TEXT_ROLES,
   type Element,
@@ -86,6 +87,41 @@ function NumberField(props: {
         }}
       />
     </label>
+  );
+}
+
+/** A slider and a number for the thickness of lines, arrows and outlines. */
+function StrokeWidthField(props: {
+  label: string;
+  value: number | undefined;
+  themeValue: number;
+  onChange: (value: number | undefined) => void;
+}) {
+  const shown = props.value ?? props.themeValue;
+  return (
+    <div className="field field-stroke">
+      <span className="field-label">{props.label}</span>
+      <div className="stroke-row">
+        <input
+          type="range"
+          aria-label={props.label}
+          min={STROKE_WIDTH.min}
+          max={STROKE_WIDTH.max}
+          step={1}
+          value={shown}
+          onChange={(e) => props.onChange(Number(e.target.value))}
+        />
+        <output>{Math.round(shown)} px</output>
+        <button
+          type="button"
+          disabled={props.value === undefined}
+          title="Bruk temaets tykkelse"
+          onClick={() => props.onChange(undefined)}
+        >
+          Tilbakestill
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -354,6 +390,8 @@ function ImageFields({ el }: { el: Extract<Element, { type: 'image' }> }) {
 
 function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
   const update = useElementUpdate(el.id);
+  const project = useStore((s) => s.project);
+  const theme = getTheme(project!);
   const line = el.geometry === 'line' || el.geometry === 'arrow';
   return (
     <>
@@ -408,6 +446,19 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
               if (value) s.stroke = value;
               else delete s.stroke;
             })
+          }
+        />
+      )}
+      {(line || !el.fill) && (
+        <StrokeWidthField
+          label={el.geometry === 'arrow' ? 'Tykkelse (pilspissen følger med)' : 'Tykkelse'}
+          value={el.strokeWidth}
+          themeValue={theme.shape.strokeWidth}
+          onChange={(value) =>
+            update<typeof el>((s) => {
+              if (value === undefined) delete s.strokeWidth;
+              else s.strokeWidth = value;
+            }, 'stroke')
           }
         />
       )}
@@ -596,7 +647,7 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
         <>
           <Field
             label="Adresse"
-            hint="En YouTube-video vises med stillbilde, og spilleren hentes fra YouTube først når studenten klikker. Andre videosider (for eksempel Panopto) åpnes i nettleseren. En direkte lenke til en MP4- eller WebM-fil spilles i scenen. Alt dette krever nett hos studenten."
+            hint="En YouTube-video vises som YouTubes spiller i lysarket, og hentes fra YouTube når lysarket vises. Her i redigeringen ser du bare stillbildet; bruk Forhåndsvis for å se spilleren. Åpner studenten fila rett fra disk, blir stillbildet stående med en knapp som åpner YouTube. Andre videosider (for eksempel Panopto) åpnes i nettleseren. En direkte lenke til en MP4- eller WebM-fil spilles i lysarket. Alt dette krever nett hos studenten."
           >
             <input
               type="text"
@@ -768,7 +819,7 @@ function ElementPanel({ scene }: { scene: Scene }) {
   if (selected.length === 0) {
     return (
       <p className="hint panel-empty">
-        Klikk på noe i scenen for å endre det. Dobbeltklikk for å skrive.
+        Klikk på noe i lysarket for å endre det. Dobbeltklikk for å skrive.
       </p>
     );
   }
@@ -913,7 +964,7 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
           Tilpass til rutenett
         </button>
         <p className="hint">
-          Rydder scenen inn i de åtte kolonnene, venstrestiller teksten og bruker temaets
+          Rydder lysarket inn i de åtte kolonnene, venstrestiller teksten og bruker temaets
           skriftstørrelser. Kan angres.
         </p>
       </div>
@@ -1000,7 +1051,7 @@ function StepsPanel({ scene }: { scene: Scene }) {
 
       {total > 0 && (
         <div className="step-preview">
-          <span>Vis scenen etter</span>
+          <span>Vis lysarket etter</span>
           <button
             type="button"
             disabled={(previewSteps ?? total) <= 0}
@@ -1135,7 +1186,7 @@ export function Inspector({ onLogo }: { onLogo: () => void }) {
   if (!scene) return <aside className="inspector" />;
   const tabs: Array<[Tab, string]> = [
     ['element', 'Element'],
-    ['scene', 'Scene'],
+    ['scene', 'Lysark'],
     ['steps', `Steg${scene.timeline.length ? ` (${scene.timeline.length})` : ''}`],
   ];
   return (

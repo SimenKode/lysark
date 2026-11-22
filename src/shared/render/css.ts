@@ -119,7 +119,7 @@ export const STAGE_CSS = `
   font: inherit; font-size: 30px; font-weight: 700; line-height: 1.15; text-align: center;
 }
 .ls-deepdive::before { content: '+'; font-weight: 400; font-size: 1.3em; line-height: 1; }
-/* Content from the web: a still picture and a button; the frame replaces the button on a click. */
+/* Content from the web: a still picture; the frame takes its place (YouTube when the slide is shown, other pages on a click). */
 .ls-webvideo { padding: 0; gap: 0; overflow: hidden; align-items: stretch; justify-content: flex-start; }
 .ls-webvideo-play {
   position: relative; flex: 1; min-height: 0; width: 100%; margin: 0; padding: 0; border: 0;
@@ -133,6 +133,7 @@ button.ls-webvideo-play { cursor: pointer; }
   background: var(--ls-card-bg); color: var(--ls-card-text); font-weight: 700;
 }
 .ls-webvideo-embed .ls-webvideo-cta { padding: 14px 30px; }
+.ls-webvideo .ls-webvideo-cta-icon { padding: 14px; }
 .ls-webvideo .ls-webvideo-cta svg { width: 72px; height: 72px; }
 .ls-webvideo-frame { flex: 1; min-height: 0; width: 100%; border: 0; display: block; background: #000; }
 .ls-webvideo .ls-videocard-info {
@@ -208,6 +209,7 @@ export const MORE_CSS = `
 .lm-body .ls-webvideo-embed .ls-webvideo-frame { aspect-ratio: 4 / 3; }
 .lm-body .ls-webvideo-cta { gap: 12px; padding: 8px 18px 8px 8px; font-size: 1rem; }
 .lm-body .ls-webvideo-embed .ls-webvideo-cta { padding: 10px 18px; }
+.lm-body .ls-webvideo .ls-webvideo-cta-icon { padding: 8px; }
 .lm-body .ls-webvideo .ls-webvideo-cta svg { width: 44px; height: 44px; }
 .lm-body .ls-webvideo .ls-videocard-info { padding: 10px 14px; gap: 14px; flex-wrap: wrap; }
 .lm-body .ls-webvideo-open { font-size: 0.95rem; }

@@ -47,10 +47,13 @@ export interface SceneStrings {
   videoUnplayable: string;
   /** A video file on the web: not fetched while editing. */
   playsFromWeb: string;
-  playFromYouTube: string;
+  /** On the still picture of a YouTube video in a file opened from disk, where it cannot play in place. */
+  playOnYouTube: string;
   openOnYouTube: string;
-  /** Under a YouTube video that has not been fetched yet. */
-  fetchedOnClick: string;
+  /** Under a YouTube video that plays in the slide. */
+  youtubeInPlace: string;
+  /** Under a YouTube video that can only be opened on YouTube (file opened from disk). */
+  youtubeOpens: string;
   /** On the button that fetches an embedded page. */
   embedLoad: (host: string) => string;
   openInBrowser: string;
@@ -165,12 +168,20 @@ function renderImage(ctx: RenderContext, surface: Surface, el: ImageElement): No
   return frame;
 }
 
+/**
+ * Length of an arrow head for a stroke of the given width. It grows with
+ * the stroke, but a thin arrow still gets a head that can be seen.
+ */
+export function arrowHeadLength(strokeWidth: number): number {
+  return strokeWidth * 3 + 6;
+}
+
 function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): Node {
   const { doc, theme } = ctx;
   const { w, h } = el.box;
   const wrap = doc.createElement('div');
   wrap.className = 'ls-shape';
-  const sw = theme.shape.strokeWidth;
+  const sw = el.strokeWidth ?? theme.shape.strokeWidth;
   const root = svg(doc, 'svg', { viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: 'none' });
   root.setAttribute('aria-hidden', 'true');
   const lineColor = PALETTE[el.stroke ?? defaultTextColor(theme, surface, 'body', 36)];
@@ -183,7 +194,7 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
     const length = Math.hypot(x2 - x1, y2 - y1) || 1;
     const ux = (x2 - x1) / length;
     const uy = (y2 - y1) / length;
-    const head = el.geometry === 'arrow' ? sw * 4 : 0;
+    const head = el.geometry === 'arrow' ? arrowHeadLength(sw) : 0;
     // The line stops where the arrow head begins so the tip stays sharp.
     root.appendChild(
       svg(doc, 'line', {
@@ -406,11 +417,42 @@ function posterImage(doc: Document, url: string): HTMLImageElement {
   return picture;
 }
 
+function webFrame(
+  doc: Document,
+  kind: 'youtube' | 'embed',
+  url: string,
+  title: string,
+): HTMLIFrameElement {
+  const frame = doc.createElement('iframe');
+  frame.className = 'ls-webvideo-frame';
+  frame.title = title;
+  frame.referrerPolicy = 'strict-origin-when-cross-origin';
+  frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  frame.allowFullscreen = true;
+  if (kind === 'embed') {
+    frame.setAttribute(
+      'sandbox',
+      'allow-scripts allow-same-origin allow-popups allow-forms allow-presentation',
+    );
+  }
+  frame.src = url;
+  return frame;
+}
+
 /**
- * Content from the web in two stages. The card shows only what lies in the
- * file: a still picture and a button. Nothing is fetched until the viewer
- * presses the button; then the frame takes the button's place. The link
- * beside it always works, also where frames do not (a file opened from disk).
+ * Content from the web. The card itself holds only what lies in the file: a
+ * still picture, a title and a link that always works.
+ *
+ * A YouTube video is shown as YouTube's player, in place (the owner's
+ * choice, 22.11.2026). The card is drawn with the still picture and a mark
+ * that says which frame belongs there; `activateWebFrames` puts the frame
+ * in when the slide is shown, so nothing is fetched for slides that are
+ * not on screen, for print or for video. In a file opened straight from
+ * disk YouTube refuses to play ("Error 153", tried 22.11.2026), so there
+ * the still picture stays and its button opens YouTube instead.
+ *
+ * Any other embedded page is fetched only when the viewer presses its
+ * button; then the frame takes the button's place.
  */
 function renderWebFrame(
   ctx: RenderContext,
@@ -428,46 +470,40 @@ function renderWebFrame(
 ): HTMLElement {
   const { doc } = ctx;
   const play = ctx.mode === 'play';
+  const fromDisk = doc.defaultView?.location.protocol === 'file:';
+  // A YouTube player that is put in place without a click.
+  const direct = play && o.kind === 'youtube' && !fromDisk;
   const card = doc.createElement('div');
   card.className = `ls-videocard ls-webvideo ls-webvideo-${o.kind}`;
   cardColors(card, surface);
 
-  const button = doc.createElement(play ? 'button' : 'div');
+  const button = doc.createElement(play && !direct ? 'button' : 'div');
   button.className = 'ls-webvideo-play';
   if (o.posterUrl) button.appendChild(posterImage(doc, o.posterUrl));
   const cta = doc.createElement('span');
   cta.className = 'ls-webvideo-cta';
   if (o.kind === 'youtube') cta.appendChild(playIcon(doc));
-  const ctaText = doc.createElement('span');
-  ctaText.textContent = o.cta;
-  cta.appendChild(ctaText);
+  if (o.cta) {
+    const ctaText = doc.createElement('span');
+    ctaText.textContent = o.cta;
+    cta.appendChild(ctaText);
+  } else {
+    cta.classList.add('ls-webvideo-cta-icon');
+  }
   button.appendChild(cta);
 
-  if (play) {
+  if (direct) {
+    button.dataset.frame = o.frameUrl;
+    button.dataset.frameTitle = o.title || o.linkText;
+  } else if (play) {
     button.setAttribute('type', 'button');
     if (o.title) button.setAttribute('aria-label', `${o.cta}: ${o.title}`);
     button.addEventListener('click', () => {
-      // YouTube refuses to play inside a page that was opened straight from
-      // disk (it answers "Error 153"), so there the button opens YouTube
-      // instead. Tried 22.11.2026: plays from an http(s) address, fails from file:.
-      const view = doc.defaultView;
-      if (o.kind === 'youtube' && view?.location.protocol === 'file:') {
-        view.open(o.linkUrl, '_blank', 'noopener,noreferrer');
+      if (o.kind === 'youtube') {
+        doc.defaultView?.open(o.linkUrl, '_blank', 'noopener,noreferrer');
         return;
       }
-      const frame = doc.createElement('iframe');
-      frame.className = 'ls-webvideo-frame';
-      frame.title = o.title || o.cta;
-      frame.referrerPolicy = 'strict-origin-when-cross-origin';
-      frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
-      frame.allowFullscreen = true;
-      if (o.kind === 'embed') {
-        frame.setAttribute(
-          'sandbox',
-          'allow-scripts allow-same-origin allow-popups allow-forms allow-presentation',
-        );
-      }
-      frame.src = o.frameUrl;
+      const frame = webFrame(doc, o.kind, o.frameUrl, o.title || o.cta);
       button.replaceWith(frame);
       frame.focus();
     });
@@ -488,6 +524,25 @@ function renderWebFrame(
   info.appendChild(link);
   card.append(button, info);
   return card;
+}
+
+/**
+ * Puts YouTube's player into every video card under `root` that waits for
+ * one. The player calls this when a slide, or a "Lær mer" panel, is shown.
+ * Returns how many frames were put in.
+ */
+export function activateWebFrames(root: Element): number {
+  const waiting = Array.from(root.querySelectorAll<HTMLElement>('.ls-webvideo-play[data-frame]'));
+  for (const holder of waiting) {
+    const frame = webFrame(
+      holder.ownerDocument,
+      'youtube',
+      holder.dataset.frame!,
+      holder.dataset.frameTitle ?? '',
+    );
+    holder.replaceWith(frame);
+  }
+  return waiting.length;
 }
 
 /** A page from the web shown in a frame, fetched only when the viewer asks for it. */
@@ -513,8 +568,8 @@ export function renderEmbed(
 }
 
 /**
- * A video player; a YouTube video that is fetched when the viewer asks for
- * it; or a card that links out when the video cannot be shown in place.
+ * A video player; a YouTube video shown as YouTube's own player; or a card
+ * that links out when the video cannot be shown in place.
  */
 export function renderVideo(
   ctx: RenderContext,
@@ -543,13 +598,15 @@ export function renderVideo(
     return figure;
   }
   if (resolved.kind === 'youtube') {
+    // Opened from disk the still picture stays, and its button opens YouTube.
+    const fromDisk = ctx.mode === 'play' && doc.defaultView?.location.protocol === 'file:';
     return renderWebFrame(ctx, surface, {
       kind: 'youtube',
       frameUrl: youtubeEmbedUrl(resolved.ref),
       linkUrl: youtubeWatchUrl(resolved.ref),
       title,
-      cta: ctx.strings.playFromYouTube,
-      note: ctx.strings.fetchedOnClick,
+      cta: fromDisk ? ctx.strings.playOnYouTube : '',
+      note: fromDisk ? ctx.strings.youtubeOpens : ctx.strings.youtubeInPlace,
       linkText: ctx.strings.openOnYouTube,
       posterUrl,
     });
@@ -796,9 +853,10 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     videoUnplayable:
       'Videoen kan ikke spilles av her. Fila mangler, kan ikke hentes, eller er kodet på en måte som ikke støttes.',
     playsFromWeb: 'Spilles fra nettet (krever nett)',
-    playFromYouTube: 'Spill av fra YouTube',
+    playOnYouTube: 'Spill av på YouTube',
     openOnYouTube: 'Åpne på YouTube',
-    fetchedOnClick: 'Hentes fra YouTube først når du klikker (krever nett)',
+    youtubeInPlace: 'Spilles fra YouTube (krever nett)',
+    youtubeOpens: 'Åpnes på YouTube (krever nett)',
     embedLoad: (host) => `Innhold fra ${host} – klikk for å laste`,
     openInBrowser: 'Åpne i nettleseren',
     needsInternet: 'Krever nett',
@@ -818,9 +876,10 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     videoUnplayable:
       'The video cannot be played here. The file is missing, cannot be fetched, or is coded in an unsupported way.',
     playsFromWeb: 'Plays from the web (needs internet)',
-    playFromYouTube: 'Play from YouTube',
+    playOnYouTube: 'Play on YouTube',
     openOnYouTube: 'Open on YouTube',
-    fetchedOnClick: 'Fetched from YouTube only when you click (needs internet)',
+    youtubeInPlace: 'Plays from YouTube (needs internet)',
+    youtubeOpens: 'Opens on YouTube (needs internet)',
     embedLoad: (host) => `Content from ${host} – click to load`,
     openInBrowser: 'Open in the browser',
     needsInternet: 'Needs internet',

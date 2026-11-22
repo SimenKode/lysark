@@ -105,10 +105,13 @@ the manual, raise it with the owner instead of choosing silently.
   (22.11.2026, after trying the two-stage version): a YouTube video he
   has put in is shown as YouTube's player, embedded in the slide, not as
   a still picture with a "play from YouTube" button. It is fetched when
-  the slide it stands on is shown, never before. This is decided but not
-  built yet; see `HANDOFF.md` 6.14. Other content from the web (links,
-  other embedded pages) is still fetched only when the viewer activates
-  it, until the owner says otherwise.
+  the slide it stands on is shown (or the "Lær mer" panel it stands in
+  is opened), never before, and is taken away when the viewer moves on
+  (`activateWebFrames` in `src/shared/render/scene.ts`). In a file
+  opened straight from disk YouTube refuses to play, so there the still
+  picture stays and its button opens YouTube. Other content from the
+  web (links, other embedded pages) is still fetched only when the
+  viewer activates it, until the owner says otherwise.
 - The program collects nothing. It contacts the network only when the
   owner asks for it in the media dialog (decided 22.11.2026):
   - a search he types and sends to Wikimedia Commons, and the download of

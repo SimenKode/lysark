@@ -5,9 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { buildHtml, usedAssets, usedFonts, type ExportSources } from '../src/exporter/html';
 import { newId, newScene, richText } from '../src/shared/format/factory';
 import {
+  FORMAT_VERSION,
   PALETTE_COLORS,
   Project,
   SCENE_KINDS,
+  STROKE_WIDTH,
   SURFACES,
   TEXT_ROLES,
   parseProject,
@@ -16,7 +18,12 @@ import {
 import { fitToGrid } from '../src/shared/layout/fitToGrid';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../src/shared/limits';
 import { classifyLink, numberMarker, renderRichText } from '../src/shared/render/richtext';
-import { SCENE_STRINGS, renderScene, type RenderContext } from '../src/shared/render/scene';
+import {
+  SCENE_STRINGS,
+  arrowHeadLength,
+  renderScene,
+  type RenderContext,
+} from '../src/shared/render/scene';
 import {
   applySceneState,
   pruneTimeline,
@@ -553,6 +560,74 @@ describe('shapes with text', () => {
     expect([content.style.width, content.style.height]).toEqual(['300px', '80px']);
     expect([content.style.left, content.style.top]).toEqual(['-110px', '110px']);
     expect(content.style.padding).toBe('1px 2px 3px 0px');
+  });
+});
+
+describe('stroke width of shapes', () => {
+  const arrow = (strokeWidth?: number): Scene['elements'][number] => ({
+    id: 'e_arrow',
+    type: 'shape',
+    geometry: 'arrow',
+    box: { x: 0, y: 0, w: 400, h: 1, rotation: 0 },
+    ...(strokeWidth === undefined ? {} : { strokeWidth }),
+  });
+  const draw = (element: Scene['elements'][number]): HTMLElement => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    scene.elements = [element];
+    scene.timeline = [];
+    return renderScene(context(project), scene);
+  };
+  const headLength = (el: HTMLElement): number => {
+    const points = el
+      .querySelector('polygon')!
+      .getAttribute('points')!
+      .split(' ')
+      .map((p) => Number(p.split(',')[0]));
+    return points[0]! - points[1]!;
+  };
+
+  it('uses the theme’s thickness until the shape gets its own', () => {
+    const plain = draw(arrow());
+    expect(plain.querySelector('line')!.getAttribute('stroke-width')).toBe(
+      String(THEME_REN.shape.strokeWidth),
+    );
+    const thick = draw(arrow(20));
+    expect(thick.querySelector('line')!.getAttribute('stroke-width')).toBe('20');
+  });
+
+  it('lets the head of an arrow grow with the stroke, and keeps a thin arrow’s head visible', () => {
+    const thin = headLength(draw(arrow(1)));
+    const normal = headLength(draw(arrow()));
+    const thick = headLength(draw(arrow(20)));
+    expect(normal).toBeCloseTo(arrowHeadLength(THEME_REN.shape.strokeWidth), 0);
+    expect(thin).toBeGreaterThanOrEqual(8);
+    expect(thin).toBeLessThan(normal);
+    expect(thick).toBeGreaterThan(2 * normal);
+  });
+
+  it('draws an outline of the chosen thickness inside the box', () => {
+    const el = draw({
+      id: 'e_ring',
+      type: 'shape',
+      geometry: 'ellipse',
+      box: { x: 0, y: 0, w: 200, h: 100, rotation: 0 },
+      strokeWidth: 12,
+    });
+    const ellipse = el.querySelector('ellipse')!;
+    expect(ellipse.getAttribute('stroke-width')).toBe('12');
+    expect([ellipse.getAttribute('rx'), ellipse.getAttribute('ry')]).toEqual(['94', '44']);
+  });
+
+  it('accepts only thicknesses within the limits, and lifts format 2 files', () => {
+    const { project } = sampleProject();
+    const data = JSON.parse(JSON.stringify(project)) as Project;
+    data.scenes[1]!.elements.push(arrow(STROKE_WIDTH.max));
+    expect(() => parseProject(data)).not.toThrow();
+    data.scenes[1]!.elements.push({ ...arrow(STROKE_WIDTH.max + 1), id: 'e_too_thick' });
+    expect(() => parseProject(data)).toThrow(/strokeWidth/);
+    const old = { ...(JSON.parse(JSON.stringify(project)) as Project), version: 2 };
+    expect(parseProject(old).version).toBe(FORMAT_VERSION);
   });
 });
 

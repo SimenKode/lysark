@@ -609,8 +609,8 @@ export function Stage() {
     return (
       <div className="stage-area stage-empty" ref={area}>
         <p>
-          Prosjektet har ingen scener ennå. Legg til en scene i lista til venstre, eller importer en
-          PowerPoint-fil.
+          Prosjektet har ingen lysark ennå. Legg til et lysark i lista til venstre, eller importer
+          en PowerPoint-fil.
         </p>
       </div>
     );
@@ -695,7 +695,7 @@ export function Stage() {
         className="stage-area"
         ref={area}
         tabIndex={0}
-        aria-label="Scene"
+        aria-label="Lysark"
         onKeyDown={onKeyDown}
         onCopy={(e) => onCopy(e, false)}
         onCut={(e) => onCopy(e, true)}

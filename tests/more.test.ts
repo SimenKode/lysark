@@ -13,6 +13,7 @@ import {
 import { collectCredits, creditText, renderCredit, renderMore } from '../src/shared/render/more';
 import {
   SCENE_STRINGS,
+  activateWebFrames,
   moreCorner,
   moreOf,
   moreTitle,
@@ -268,7 +269,7 @@ describe('content from the web', () => {
     }
     const ref = { id: 'AAAAAAAAAAA', start: 90 };
     expect(youtubeEmbedUrl(ref)).toBe(
-      'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?autoplay=1&rel=0&start=90',
+      'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0&start=90',
     );
     expect(youtubeWatchUrl(ref)).toBe('https://www.youtube.com/watch?v=AAAAAAAAAAA&t=90s');
     expect(youtubeStillUrl(ref)).toBe('https://i.ytimg.com/vi/AAAAAAAAAAA/hqdefault.jpg');
@@ -283,26 +284,35 @@ describe('content from the web', () => {
     expect(embedTarget('javascript:alert(1)')).toBeUndefined();
   });
 
-  it('fetches nothing until the viewer presses play, and always offers a link', () => {
+  it('puts YouTube’s player in when the slide or panel is shown, not before, and always offers a link', () => {
     const body = renderMore(context(project), image.more!);
     const video = body.querySelector('[data-block="m4"] .ls-webvideo')!;
-    expect(video.querySelector('iframe')).toBeNull();
-    const play = video.querySelector<HTMLButtonElement>('button.ls-webvideo-play')!;
-    expect(play.getAttribute('aria-label')).toBe('Spill av fra YouTube: Video A');
+    // Drawing fetches nothing: the still picture waits for its frame.
+    expect(body.querySelector('iframe')).toBeNull();
+    const holder = video.querySelector<HTMLElement>('.ls-webvideo-play')!;
+    expect(holder.tagName).toBe('DIV');
+    expect(holder.dataset.frame).toBe('https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0');
     const link = video.querySelector('a.ls-webvideo-open')!;
     expect(link.getAttribute('href')).toBe('https://www.youtube.com/watch?v=AAAAAAAAAAA');
     expect(link.textContent).toBe('Åpne på YouTube');
+    expect(video.textContent).toContain(SCENE_STRINGS.nb.youtubeInPlace);
 
-    play.click();
+    // The player shows the panel: now the frame comes, without starting to play.
+    expect(activateWebFrames(body)).toBe(1);
     const frame = video.querySelector('iframe')!;
     expect(frame.getAttribute('src')).toBe(
-      'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?autoplay=1&rel=0',
+      'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0',
     );
+    expect(frame.getAttribute('src')).not.toContain('autoplay');
+    expect(frame.title).toBe('Video A');
     expect(frame.referrerPolicy).toBe('strict-origin-when-cross-origin');
-    expect(video.querySelector('button.ls-webvideo-play')).toBeNull();
+    expect(video.querySelector('.ls-webvideo-play')).toBeNull();
     expect(video.querySelector('a.ls-webvideo-open')).not.toBeNull(); // the link stays
+    expect(activateWebFrames(body)).toBe(0); // once only
 
+    // Any other embedded page still waits for a click.
     const embed = body.querySelector('[data-block="m5"] .ls-webvideo')!;
+    expect(embed.querySelector('iframe')).toBeNull();
     const load = embed.querySelector<HTMLButtonElement>('button.ls-webvideo-play')!;
     expect(load.textContent).toBe('Innhold fra example.org – klikk for å laste');
     load.click();
@@ -311,7 +321,7 @@ describe('content from the web', () => {
     expect(page.getAttribute('sandbox')).toContain('allow-scripts');
   });
 
-  it('opens YouTube in the browser instead when the file was opened straight from disk', () => {
+  it('keeps the still picture and opens YouTube in the browser when the file was opened straight from disk', () => {
     const view = window as unknown as {
       happyDOM: { setURL(url: string): void };
       open: typeof window.open;
@@ -325,7 +335,16 @@ describe('content from the web', () => {
     view.happyDOM.setURL('file:///C:/forelesning.html');
     try {
       const body = renderMore(context(project), image.more!);
-      body.querySelector<HTMLButtonElement>('[data-block="m4"] button.ls-webvideo-play')!.click();
+      // YouTube answers "Error 153" in a file opened from disk, so no frame is put in.
+      expect(activateWebFrames(body)).toBe(0);
+      const play = body.querySelector<HTMLButtonElement>(
+        '[data-block="m4"] button.ls-webvideo-play',
+      )!;
+      expect(play.getAttribute('aria-label')).toBe('Spill av på YouTube: Video A');
+      expect(body.querySelector('[data-block="m4"]')!.textContent).toContain(
+        SCENE_STRINGS.nb.youtubeOpens,
+      );
+      play.click();
       expect(opened).toEqual(['https://www.youtube.com/watch?v=AAAAAAAAAAA']);
       expect(body.querySelector('iframe')).toBeNull();
       // Other embedded pages have no such demand and are framed as usual.
@@ -355,23 +374,32 @@ describe('content from the web', () => {
     expect(renderScene(context(project, 'play'), scene).querySelector('video')).not.toBeNull();
   });
 
-  it('draws a YouTube video in a scene with its still picture and the same two stages', () => {
+  it('draws a YouTube video on a slide with its still picture, and the player when the slide is shown', () => {
     const still = Object.keys(project.assets)[0]!;
     const scene = newScene('content', 'Video');
     scene.elements.push({
       id: 'e_y',
       type: 'video',
-      source: { kind: 'url', url: 'https://youtu.be/AAAAAAAAAAA' },
+      source: { kind: 'url', url: 'https://youtu.be/AAAAAAAAAAA?t=90' },
       title: 'Video A',
       poster: still,
       box: { x: 0, y: 0, w: 960, h: 540, rotation: 0 },
     });
-    const card = renderScene(context(project), scene).querySelector('.ls-webvideo-youtube')!;
-    expect(card.querySelector('button.ls-webvideo-play img')!.getAttribute('src')).toBe(
-      `asset:${still}`,
-    );
+    const drawn = renderScene(context(project), scene);
+    const card = drawn.querySelector('.ls-webvideo-youtube')!;
+    expect(card.querySelector('.ls-webvideo-play img')!.getAttribute('src')).toBe(`asset:${still}`);
     expect(card.querySelector('iframe')).toBeNull();
-    expect(card.textContent).toContain(SCENE_STRINGS.nb.fetchedOnClick);
+    expect(card.textContent).toContain(SCENE_STRINGS.nb.youtubeInPlace);
+    expect(activateWebFrames(drawn)).toBe(1);
+    expect(card.querySelector('iframe')!.getAttribute('src')).toBe(
+      'https://www.youtube-nocookie.com/embed/AAAAAAAAAAA?rel=0&start=90',
+    );
+
+    // While editing only the still picture is drawn, and nothing can put a frame there.
+    const edited = renderScene(context(project, 'edit'), scene);
+    expect(edited.querySelector('.ls-webvideo-play img')).not.toBeNull();
+    expect(activateWebFrames(edited)).toBe(0);
+    expect(edited.querySelector('iframe')).toBeNull();
   });
 });
 
