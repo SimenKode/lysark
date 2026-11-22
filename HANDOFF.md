@@ -1,33 +1,32 @@
-# Handoff: Lysark etter leveranse 2
+# Handoff: Lysark etter leveranse 3
 
 Skrevet 22.11.2026 og holdt oppdatert gjennom økt 2, 3, 4 og 5. Sist
-endret i økt 5, etter at A1–A6 i 6.14 var bygget (se 6.15).
+endret i slutten av økt 5, da leveranse 3 (lyd og video) var bygget.
 
 ## Start her
 
-1. Les [AGENTS.md](AGENTS.md). Reglene er bindende, og flere ble endret
-   av eieren 22.11.2026.
-2. Les [6.14](#614-eieren-har-prøvd-leveranse-2-22112026): eierens
-   tilbakemelding etter utprøvingen, ordrett, og hva den betyr.
-3. Les [del 7](#7-arbeidsordre-for-neste-økt): det som skal bygges, i
-   rekkefølge, og hva som må spørres om først.
-4. Resten av fila er historikk og bakgrunn. Slå opp ved behov.
+1. Les [AGENTS.md](AGENTS.md). Reglene er bindende.
+2. Les [del 7](#7-arbeidsordre-for-neste-økt): hva som står for tur, og
+   hva som venter på eieren.
+3. Les [6.14 B](#614-eieren-har-prøvd-leveranse-2-22112026): seks
+   spørsmål som er stilt til eieren og ikke besvart. Ingenting derfra
+   bygges før han har svart.
+4. Les [6.15](#615-økt-5-a1a6-er-bygget-22112026),
+   [6.16](#616-økt-5-windows-utprøving-av-leveranse-2-og-a1a6-og-leveranse-3)
+   og [6.17](#617-økt-5-leveranse-3-på-windows-og-inndataene): hva økt 5
+   bygde og prøvde.
+5. Resten av fila er historikk og bakgrunn. Slå opp ved behov.
 
-**Kort status:** leveranse 1 (PPTX til HTML) og 2 («Lær mer»-byggeren)
-er bygget og prøvd på Linux Mint. Eieren har prøvd leveranse 2 og sier
-«mye bra», men vil ha endringer i navn, navigasjon, YouTube og former,
-og mer animasjon og lekenhet. Målet nå er en første brukbar utgave med
-**både HTML og video**. Repoet ligger privat på GitHub til den finnes.
+**Kort status:** leveranse 1 (PPTX til HTML), 2 («Lær mer»-byggeren, med
+endringene eieren ba om) og 3 (lyd og video) er bygget. Dermed finnes
+den **første brukbare utgaven med både HTML og video**, som eieren satte
+som merke for når repoet kan bli offentlig. Den avgjørelsen er hans, og
+de tre punktene i 6.12 må han ta stilling til først. Leveranse 4
+(figurer og bevegelser) og 5 (håndlaget stil) er ikke påbegynt.
 
-**Økt 2 i korte trekk:** del 6 var ikke fylt ut, så ingenting i
-uttrykket (6.1) er endret, og leveranse 2 er ikke påbegynt. Økten
-sammenlignet i stedet alle 315 lysark med PDF-utgavene og rettet
-importen der den bommet (se [del 4](#4-hva-de-ekte-forelesningene-viste)).
-Valgene som ble tatt underveis, står i [6.8](#68-valg-tatt-i-økt-2).
-Etter økten ga eieren tilbakemelding i chat, med retning for neste økt:
-se [6.9](#69-eierens-tilbakemelding-i-chat-etter-økt-2-22112026) («Lær
-mer»-byggeren) og [6.10](#610-mer-fra-eieren-samme-dag-figurer-animasjon-og-video)
-(figurer, animasjon og video).
+**Det viktigste som ikke er prøvd:** en ekte mikrofon (alt opptak er
+prøvd med prøvemikrofon eller stille inndata), Canvas (eieren prøver
+selv), og en hel forelesning lest inn i ett strekk.
 
 ## 1. Hvor ting er
 
@@ -37,8 +36,9 @@ mer»-byggeren) og [6.10](#610-mer-fra-eieren-samme-dag-figurer-animasjon-og-vid
 | På GitHub | `SimenKode/lysark`, **privat** til eieren selv gjør det offentlig eller ber om det |
 | Lisens | GPL-3.0-or-later ([LICENSE](LICENSE)), med unntak for eksporterte forelesninger ([EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md)) |
 | Commits | se `git log`. Eieren har sagt ja til commits på `main` etter hvert ferdige, testede trinn, og til at de pushes til det private repoet fortløpende. Synlighet og publisering avgjør han. |
-| Ferdige programfiler | `release/Lysark-0.1.0.AppImage` (Linux) og `release/Lysark-0.1.0-win.zip` (Windows), bygget på nytt etter økt 3 |
-| Spørsmål som venter på svar | [docs/sporsmal-videre.md](docs/sporsmal-videre.md) |
+| Ferdige programfiler | `release/Lysark-0.1.0.AppImage` (Linux, 202 MB) og `release/Lysark-0.1.0-win.zip` (Windows, 222 MB), bygget fra koden slik den var i slutten av økt 5, med FFmpeg ved siden av |
+| FFmpeg | `vendor/ffmpeg/` (ikke i git), hentet med `npm run fetch:ffmpeg` |
+| Spørsmål som venter på svar | 6.14 B i denne fila (seks spørsmål, stilt i chatten i økt 5) |
 | Eierens forelesninger | `eksempler/` (åtte PPTX med PDF-utgaver, ikke i git) |
 | USNs logopakke | `merkevare/` (pakket ut, ikke i git) |
 | Plan og status | [docs/plan.md](docs/plan.md) |
@@ -46,12 +46,13 @@ mer»-byggeren) og [6.10](#610-mer-fra-eieren-samme-dag-figurer-animasjon-og-vid
 | Designmanualens regler | [docs/designmanual.md](docs/designmanual.md) |
 | Stakk og lisenser | [docs/stakk.md](docs/stakk.md) |
 
-Kommandoer: `npm run dev` (start), `npm test` (bygger og kjører alt),
-`npm run dist:linux`, `npm run dist:win`.
+Kommandoer: `npm run fetch:ffmpeg` (én gang), `npm run dev` (start),
+`npm test` (bygger og kjører alt), `npm run dist:linux`,
+`npm run dist:win`.
 
 ## 2. Hva som er laget
 
-Leveranse 1 og 2 av 5. Leveranse 1: PPTX inn, interaktiv HTML ut.
+Leveranse 1, 2 og 3 av 5. Leveranse 1: PPTX inn, interaktiv HTML ut.
 
 - **Import** av PPTX til en prosjektmappe, med rapport over det som må
   lages på nytt.
@@ -84,20 +85,39 @@ Leveranse 2, «Lær mer»-byggeren:
   ingenting hentes før seeren trykker.
 - **Format 2**, med automatisk løft av eldre prosjekter.
 
-Ikke påbegynt: leveranse 3 (lyd og video), 4 (figurer og bevegelser) og
-5 (håndlaget stil).
+Runde 2 av leveranse 2 (eierens endringer, se 6.15): «lysark» i stedet
+for «scene», tykkelse på piler og omriss, runde piler i spilleren, klikk
+som ikke går videre, pil opp og ned, og YouTubes spiller i lysarket.
+
+Leveranse 3, lyd og video (detaljer i [docs/plan.md](docs/plan.md)):
+
+- **Innlesing** med manus og lysark på skjermen; pil høyre setter
+  tidspunktet for hvert steg og deler opptaket ved hvert lysark.
+- **Lydpanelet** under lysarket: hele forelesningen som en stripe, og
+  lyden på lysarket som et spor som kan spilles og klippes.
+- **Video:** MP4 1920 × 1080, tegnet bilde for bilde, med teksting som
+  egen fil.
+- **HTML-fila** får stemmen med og kan spille seg selv («Spill av»).
+- **Inndata:** «Importer PDF …» og «Åpne HTML-fil …» i Fil-menyen.
+- **FFmpeg** følger med som eget program.
+- **Format 4**, med automatisk løft av eldre prosjekter.
+
+Ikke påbegynt: leveranse 4 (figurer og bevegelser) og 5 (håndlaget
+stil).
 
 ## 3. Hva som er prøvd, og hvordan
 
 | Hva | Resultat |
 | --- | --- |
-| Automatiske tester på Linux Mint | Etter leveranse 2: 206 består (161 etter økt 3, 157 etter økt 2, 129 etter økt 1). Tre testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer» og hente medier. |
-| Det pakkede Linux-programmet | Bygget på nytt etter leveranse 2 (AppImage og Windows-zip, 22.11.2026). De tre gjennomkjøringene (27 tester) besto mot `release/linux-unpacked/lysark`. AppImage-fila selv er ikke startet, og Windows-zip-en er ikke prøvd. |
-| Leveranse 2 mot ekte nett | Én gang på Linux Mint: Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen (spilte) og fra en fil åpnet fra disk («Error 153»). Se 6.13. |
-| Rettingene i økt 3, sett på skjermbilder | Programmet ble kjørt uten vindu på Linux Mint med Stål importert: lysarklista, lenkekortet med stillbilde og meldingene for video som ikke kan vises. Ikke prøvd på Windows. |
+| Automatiske tester på Linux Mint | Etter leveranse 3: 282 består, 1 hoppes over (206 etter leveranse 2). Seks testfiler starter hele programmet uten vindu og går gjennom åpne, redigere, angre, lagre, eksportere, spille av, bygge «Lær mer», hente medier, importere PowerPoint, PDF og HTML, lese inn med prøvemikrofon, klippe, og eksportere video. |
+| Det pakkede Linux-programmet | Bygget i slutten av økt 5 (AppImage 202 MB). De seks gjennomkjøringene (49 tester) besto mot `release/linux-unpacked/lysark`, også videoeksporten med FFmpeg fra pakka. AppImage-fila selv er ikke startet. |
+| Video av en ekte forelesning | Stål (26 lysark, uten lyd) ble til en MP4 på 2:10 og 14 MB på 40 sekunder, på Linux Mint uten vindu. Fire bilder fra videoen er sett på; de er skarpe og riktige. |
+| PDF-import av en ekte PDF | `PB1020 2025 - 04 - Stål.pdf`: 26 lysark på 17 sekunder, 8,4 MB bilder, riktige titler og tekst. Ett skjermbilde er sett på. De andre sju PDF-ene er ikke prøvd. |
+| Leveranse 2 mot ekte nett | Linux Mint (økt 4): Commons-søk, innsetting med kreditering, forhåndsbilde fra YouTube, YouTube i forhåndsvisningen. Windows 11 (økt 5): Commons-søk og YouTubes spiller i lysarket, se 6.16. YouTubes spiller i lysarket er **ikke** prøvd mot ekte nett på Linux Mint etter ombyggingen (A6); der er bare testen som selv svarer for YouTube, kjørt. |
 | Import av de ekte forelesningene | Alle åtte (315 lysark) og malfila importeres uten feil. Økt 2: alle 315 er sammenlignet side om side med PDF-utgavene, før og etter rettingene (se del 4). Gjennomgangen ble gjort av hjelpeagenter som så på bildene, og jeg sjekket funnene og de viktigste rettingene selv. |
-| Windows 11 (eierens VM) | Prøvd for hånd 22.11.2026 med zip-utgaven (økt 1), se under. Endringene fra økt 2 og økt 3, og hele leveranse 2, er ikke prøvd på Windows. |
-| Canvas | Ikke prøvd. |
+| Windows 11 (eierens VM) | Prøvd for hånd tre ganger med zip-utgaven: leveranse 1 (økt 1, under), leveranse 2 og A1–A6 (økt 5, se 6.16), og lyd og video (økt 5, se 6.17). |
+| Ekte mikrofon | Ikke prøvd, verken på Linux eller Windows. |
+| Canvas | Ikke prøvd. Eieren prøver selv (6.5). |
 
 ### Windows 11, det som ble prøvd i VM-en
 
@@ -213,13 +233,26 @@ Større:
    følger PowerPoint fra økt 2. Dette er den største gjenværende feilen
    i importen.
 6. **Mediefiler som ikke lenger brukes**, ryddes ikke ut av
-   prosjektmappa.
+   prosjektmappa. Det gjelder nå også opptak som er tatt om: de gamle
+   blir liggende (omtrent 6 MB per minutt).
 7. **Hvite bildebakgrunner** syns som hvite felt på den lys beige flaten.
    I PowerPoint forsvinner de mot det hvite lysarket. Dette er ikke en
    importfeil, men henger sammen med valget av grunnflate (6.1).
 
+8. **Video inne i et lysark blir stillbilde i MP4-fila.** USNs
+   logoanimasjon på siste lysark starter fra hvitt, så den blir et hvitt
+   bilde i videoen. Henger sammen med spørsmål 3 i 6.14 B.
+9. **Tekstingen er beregnet, ikke lyttet fram** (se
+   [docs/plan.md](docs/plan.md)). Snakker du fritt i stedet for å lese
+   manuset, stemmer den dårlig.
+10. **PDF-import gir bilder, ikke redigerbart innhold**, og en tittel
+    som går over to linjer i PDF-en, blir bare første linje
+    («Materialegenskaper og»). Tittelen kan rettes i fanen Lysark.
+
 Mindre:
 
+- Piltastene navigerer ikke i spilleren rett etter et klikk i
+  YouTube-spilleren; tastene går da til YouTube. De runde pilene virker.
 - Videolenker fra PowerPoint heter «Media på Internett 4» og lignende,
   fordi det er navnet PowerPoint ga dem. Tittelen må skrives for hånd.
 - Edge tilbyr å oversette siden fordi den er merket som norsk.
@@ -337,6 +370,10 @@ melder tilbake:
 7. Hvor stor fil godtar emnet? (Stål er 23 MB; Trevirke er større.)
 8. En forelesning med stor video: følger mappa ved siden av med?
 9. På mobil, i Canvas-appen.
+10. En forelesning med stemme: virker «Spill av», og følger steg og
+    lysark stemmen?
+11. Videoen (MP4) og tekstingen (.vtt): tar Canvas imot begge, og kan
+    studenten slå tekstingen av og på?
 
   Svar:
 
@@ -802,6 +839,54 @@ det til eieren når det bygges):
    navigasjonen skal føles god. Spør om han heller vil ha lekenheten før
    video.
 
+#### Slik ble spørsmålene stilt i økt 5 (22.11.2026). Ikke besvart ennå
+
+Hvert spørsmål hadde én anbefaling. «Som anbefalt» holder som svar.
+
+1. **Navn og grensesnitt.** Forslag: «Utdyping» blir **«Lær mer»**
+   overalt (samme ord som studenten ser), «Byggestein» blir
+   **«Innhold»**, «Innbygging» blir **«Nettside»**, «Tilpass til
+   rutenett» blir **«Rydd opp lysarket»**, og «Pakk prosjektet til én
+   fil …» blir **«Lagre som én fil …»**. Element, Steg, Manus og
+   Forhåndsvis beholdes. Anbefaling: bytt de fem. To ting å få vite: var
+   skjermbildet av høyreklikkmenyen et eksempel på et vanskelig navn
+   eller på den skjeve oransje rammen, og hva var vanskelig å finne?
+
+   Svar:
+
+2. **Mer animasjon og lekenhet.** Anbefaling: lekenhet i responsen, ro
+   i innholdet: myk overgang mellom lysark, elementer som glir mykt inn
+   per steg, knapper og «+»-merker som svarer når man peker og trykker,
+   og panelet som glir inn. Ingen sprett eller snurr på faginnholdet.
+   Alt av for dem som har bedt systemet om lite bevegelse.
+
+   Svar:
+
+3. **USNs avslutningsanimasjon.** Anbefaling: Lysark tar vare på fila
+   slik det gjør med logoen (plukkes opp ved import, eller eieren peker
+   på den én gang; aldri i repoet), og «Avslutning» blir et lysark som
+   spiller den av seg selv én gang, uten knapper og uten lyd.
+
+   Svar:
+
+4. **Flere kilder til frie bilder.** Anbefaling: vent til etter første
+   brukbare utgave, og ta da Openverse først. Hva savnes i Commons?
+
+   Svar:
+
+5. **Rekkefølgen.** Anbefaling: A1–A6, så lyd og video, og lekenhet,
+   navn, avslutningsanimasjon og bildekilder etterpå. (De to første er
+   nå gjort.)
+
+   Svar:
+
+6. **Annen innbygging enn YouTube** (GeoGebra, Panopto og lignende).
+   Anbefaling: behold «klikk for å laste», fordi det er vilkårlige
+   nettsteder studentens nettleser ellers ville kontaktet uten å bli
+   spurt.
+
+   Svar:
+
 ### 6.15 Økt 5: A1–A6 er bygget (22.11.2026)
 
 Spørsmålene i 6.14 B ble stilt samlet i chatten, med ett tillegg
@@ -862,30 +947,36 @@ formatet i [docs/prosjektformat.md](docs/prosjektformat.md) («Format 4»).
 
 ## 7. Arbeidsordre for neste økt
 
-Eieren vil at neste økt **bygger**, ikke bare planlegger. Rekkefølge:
+Økt 5 gjorde det forrige arbeidsordren ba om: spørsmålene i 6.14 B ble
+stilt, A1–A6 ble bygget, leveranse 2 og A1–A6 ble prøvd på Windows, og
+leveranse 3 ble bygget og prøvd. Det som står for tur:
 
-1. **Still spørsmålene i 6.14 B samlet med én gang**, hvert med én
-   anbefaling, slik at eieren kan svare mens A bygges. Ikke bygg noe fra
-   B før han har svart.
-2. **Bygg A1–A6**, ett trinn om gangen, med tester, og commit hvert
-   trinn når testene består. Vis eieren skjermbilder av de runde pilene
-   og av YouTube-spilleren i lysarket. Hold
-   [docs/prosjektformat.md](docs/prosjektformat.md) sann når formene får
-   tykkelse (A2).
-3. **Prøv leveranse 2 og A1–A6 på Windows 11** i eierens VM
-   ([tools/windows-vm.py](tools/windows-vm.py)). Ingenting av leveranse 2
-   er prøvd der.
-4. **Leveranse 3, lyd og video** ([docs/plan.md](docs/plan.md)).
-   Spørsmålene er besvart i
-   [docs/sporsmal-videre.md](docs/sporsmal-videre.md) (16–23). Rigg
-   mikrofon i VM-en selv. Når leveranse 3 er ferdig og prøvd på begge
-   systemer, finnes den første brukbare utgaven, og eieren avgjør om
-   repoet skal bli offentlig. Minn ham da om de tre punktene i 6.12.
-5. **Etter svarene på B:** navn og grensesnitt, lekenhet og animasjoner,
-   avslutningsanimasjonen, og flere bildekilder, i den rekkefølgen
-   eieren velger.
-6. Gi eieren Canvas-sjekklista (6.5) når A1–A6 er bygget, og skriv inn
-   det han melder.
+1. **Hent svarene på 6.14 B** (seks spørsmål: navn og grensesnitt,
+   lekenhet, USNs avslutningsanimasjon, flere bildekilder, rekkefølgen,
+   og om annen innbygging enn YouTube skal lastes direkte). Skriv dem
+   inn i 6.14, og bygg det han velger, i den rekkefølgen han velger.
+   Ingenting derfra er bygget.
+2. **Få eieren til å prøve leveranse 3 selv**, med sin egen mikrofon, og
+   skriv inn det han melder. Be ham særlig om:
+   - å lese inn tre–fire lysark i ett strekk og høre på resultatet
+   - å klippe bort et feilsnakk og legge inn en pause
+   - å eksportere video og se den, med tekstingen
+   - å åpne HTML-fila med «Spill av» i nettleseren og i Canvas
+3. **Canvas:** gi ham sjekklista i 6.5 (den har fått to punkter om lyd og
+   video), og skriv inn det han melder. Ingen KI der.
+4. **Repoet:** første brukbare utgave med både HTML og video finnes nå.
+   Eieren avgjør om repoet skal bli offentlig. Minn ham om de tre
+   punktene i 6.12 (unntaket for eksporterte forelesninger, USNs profil,
+   og hvem som eier koden) før han bestemmer seg. Gjør ingenting med
+   synligheten selv.
+5. **En hel forelesning:** les inn (eller importer lyd til) en hel
+   forelesning på 40–60 lysark og se at innlesing, lydpanel, video og
+   HTML-fil holder i den størrelsen. Det er ikke prøvd; det lengste som
+   er prøvd, er noen sekunder lyd og 26 lysark uten lyd.
+6. **Det som gjenstår av småting** står i del 5 og i tabellen i 6.16.
+7. **Leveranse 4** (figurer og bevegelser) begynner først når eieren har
+   svart på spørsmål 2 og 5 i 6.14 B, for de avgjør hva den skal
+   inneholde og når.
 
 Eieren har sagt ja til at `main` pushes til det private repoet
 fortløpende, uten å spørre hver gang (22.11.2026). Synligheten rører du
@@ -903,16 +994,17 @@ Eieren kan lime inn dette i en ny chat i mappa
 
 ```text
 Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) som
-gjør PowerPoint-forelesningene mine om til interaktiv HTML og
-animasjonsvideo med voice-over, i USNs visuelle profil. Prosjektet ligger
-i ~/Forelesningsverktoy/lysark, har sitt eget git-repo og ligger privat
-på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til HTML) og 2
-(«Lær mer»-byggeren) er bygget.
+gjør PowerPoint-forelesningene mine om til interaktiv HTML og video med
+stemmen min, i USNs visuelle profil. Prosjektet ligger i
+~/Forelesningsverktoy/lysark, har sitt eget git-repo og ligger privat
+på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til HTML), 2
+(«Lær mer»-byggeren) og 3 (lyd og video) er bygget.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
-2. Les HANDOFF.md: «Start her», 6.14 (min tilbakemelding etter at jeg
-   prøvde leveranse 2) og del 7 (arbeidsordren).
+2. Les HANDOFF.md: «Start her», del 7 (arbeidsordren), 6.14 B
+   (spørsmålene jeg skal svare på) og 6.15–6.17 (det forrige økt bygde
+   og prøvde).
 3. Les docs/plan.md.
 
 Rammer:
@@ -922,20 +1014,20 @@ Rammer:
   bokmål; kode, kommentarer og commits på engelsk.
 - Commit hvert ferdige, testede trinn, og push main til det private
   repoet fortløpende. Ikke endre synligheten.
-- Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), og
-  aldri kontakte nettet.
+- Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), aldri
+  kontakte nettet og aldri bruke den ekte mikrofonen min.
 - Canvas prøver jeg selv, for hånd. Ingen KI der.
 
+Mine svar på spørsmålene i HANDOFF.md 6.14 B:
+(skriv svarene her, eller «som anbefalt»)
+
+Det jeg fant da jeg prøvde lyd og video selv:
+(skriv her)
+
 Gjør dette:
-1. Still spørsmålene i HANDOFF.md 6.14 B samlet, med én anbefaling per
-   spørsmål. Jeg svarer mens du bygger.
-2. Bygg A1–A6 i 6.14: «scene» heter «lysark», tykkelse på piler og
-   former, store runde piler på hver side i HTML-spilleren, klikk på
-   lysarket går ikke videre, pil opp og ned navigerer, og YouTube
-   innebygd som spiller i lysarket. Vis meg skjermbilder.
-3. Prøv leveranse 2 og det nye på Windows 11 i VM-en min.
-4. Bygg leveranse 3, lyd og video, slik at vi får en første brukbar
-   utgave med både HTML og video. Rigg mikrofon i VM-en selv.
+1. Skriv svarene mine inn i HANDOFF.md, og bygg det jeg har valgt.
+2. Rett det jeg fant.
+3. Følg ellers arbeidsordren i del 7.
 
 Hold HANDOFF.md, docs/plan.md, docs/prosjektformat.md og docs/stakk.md
 sanne. Rapporter ærlig: hva som er prøvd, på hvilket system, og hva som

@@ -327,4 +327,24 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await page.getByRole('tab', { name: /^Lyd/ }).click();
     await expect.poll(total).toMatch(/^Hele forelesningen: 0:\d\d$/);
   }, 120_000);
+  it('stops a video export when asked to, and leaves no half-made file', async () => {
+    // Long enough to be stopped: five minutes of pause on the slide that is open.
+    await page.getByLabel('Pausens lengde i sekunder').fill('300');
+    await page.getByRole('button', { name: 'Sett inn pause' }).click();
+    const out = join(work, 'avbrutt.mp4');
+    await answerSaveDialog(out);
+    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
+    const dialog = page.locator('dialog.video-dialog');
+    await dialog.getByRole('button', { name: 'Eksporter video …' }).click();
+    await dialog
+      .locator('.video-progress', { hasText: 'Tegner bilde' })
+      .waitFor({ timeout: 60_000 });
+    expect(existsSync(out)).toBe(true); // FFmpeg has begun writing
+    await dialog.getByRole('button', { name: 'Avbryt eksporten' }).click();
+    // The dialog is back to where it was, with nothing said and nothing left on disk.
+    await dialog.getByRole('button', { name: 'Eksporter video …' }).waitFor({ timeout: 20_000 });
+    await expect.poll(() => existsSync(out)).toBe(false);
+    expect(await page.locator('.notice-error').count()).toBe(0);
+    await dialog.getByRole('button', { name: 'Lukk' }).click();
+  }, 120_000);
 });

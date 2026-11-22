@@ -11,7 +11,7 @@ import { appendSound, continueSound, replaceSound } from '../../shared/audio/edi
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
 import type { Element, Project } from '../../shared/format/schema';
-import { formatTime, trackDuration } from '../../shared/render/clock';
+import { formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
@@ -130,11 +130,20 @@ export async function exportVideo(choices: NonNullable<Project['video']>): Promi
     return;
   }
   // The choices are part of the project, so the next export starts from them.
-  state.update((draft) => {
-    draft.video = choices;
-  });
+  // A project whose choices were not touched is not changed by exporting.
+  const before = videoOptions(state.project);
+  if (
+    before.transition !== choices.transition ||
+    before.evenLoudness !== choices.evenLoudness ||
+    before.credits !== choices.credits
+  ) {
+    state.update((draft) => {
+      draft.video = choices;
+    });
+  }
   const { dir, project } = useStore.getState();
-  state.setVideoProgress({ phase: 'sound', frame: 0, frames: 1 });
+  // Progress is shown from the first word from the main process, which
+  // comes when the owner has said where the file is to go.
   const stop = api().onVideoProgress((progress) => useStore.getState().setVideoProgress(progress));
   try {
     const summary = await guard(() => api().exportVideo(dir!, project!));

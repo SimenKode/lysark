@@ -70,7 +70,11 @@ hentes bare fra mappa HTML-fila selv ligger i.
 **Video: bilde for bilde, ikke skjermopptak.** Et skjult vindu tegner
 lysarket for tidspunkt t, bildet hentes ut som rå piksler og sendes rett
 til FFmpeg, så t + 1/30 s, og så videre. Lyden legges på av FFmpeg.
-Resultatet er likt hver gang og uavhengig av hvor rask maskinen er.
+Resultatet er uavhengig av hvor rask maskinen er, og likt for øyet hver
+gang. Det er ikke likt bit for bit: to eksporter av samme prosjekt
+skilte seg på avrundingsnivå på lysark med fotografier (målt 22.11.2026:
+PSNR rundt 60 dB, laveste enkeltbilde 50 dB), fordi nettlesermotoren
+ikke skalerer store bilder helt likt hver gang.
 Der ingenting beveger seg (det meste av en forelesning), sendes det
 samme bildet på nytt uten å tegnes om, så en video av en forelesning på
 to minutter lages på under ett minutt.
@@ -80,8 +84,8 @@ to minutter lages på under ett minutt.
 lydpanelet i programmet bruker den samme, og den leser aldri veggklokka.
 
 **Lyd som ukomprimert WAV.** Opptakene lagres som WAV (mono, 48 kHz,
-16 bit), og klipp er pekere inn i dem. Da er klipping nøyaktig på
-enkeltpunktet, ingenting må dekodes, og et opptak endres aldri. Prisen
+16 bit), og klipp er pekere inn i dem. Da er klipping nøyaktig, ingenting
+må dekodes, og et opptak endres aldri. Prisen
 er omtrent 6 MB per minutt i prosjektmappa. I HTML-fila og videoen er
 lyden komprimert (AAC).
 

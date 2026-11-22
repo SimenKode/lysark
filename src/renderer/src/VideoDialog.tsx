@@ -19,6 +19,8 @@ export function VideoDialog() {
   const ref = useRef<HTMLDialogElement>(null);
   const [choices, setChoices] = useState(() => videoOptions(project));
   const [ffmpeg, setFfmpeg] = useState<boolean | null>(null);
+  /** From the press on the button until the export has ended, also while the file is being chosen. */
+  const [busy, setBusy] = useState(false);
   const running = progress !== null;
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function VideoDialog() {
   }, []);
 
   const close = (): void => {
-    if (running) return;
+    if (running || busy) return;
     useStore.getState().setVideoDialog(false);
   };
 
@@ -46,7 +48,7 @@ export function VideoDialog() {
       onClose={close}
       onCancel={(event) => {
         // Esc must not close the dialog under a running export.
-        if (running) event.preventDefault();
+        if (running || busy) event.preventDefault();
         else close();
       }}
     >
@@ -131,16 +133,19 @@ export function VideoDialog() {
           </button>
         ) : (
           <>
-            <button type="button" onClick={close}>
+            <button type="button" disabled={busy} onClick={close}>
               Lukk
             </button>
             <button
               type="button"
               className="strong"
-              disabled={ffmpeg !== true || project.scenes.length === 0}
-              onClick={() =>
-                void exportVideo({ ...choices, credits: choices.credits && credits > 0 })
-              }
+              disabled={busy || ffmpeg !== true || project.scenes.length === 0}
+              onClick={() => {
+                setBusy(true);
+                void exportVideo({ ...choices, credits: choices.credits && credits > 0 }).finally(
+                  () => setBusy(false),
+                );
+              }}
             >
               Eksporter video …
             </button>

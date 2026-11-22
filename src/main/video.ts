@@ -24,7 +24,7 @@ import {
 } from '../shared/render/clock';
 import { SCENE_STRINGS } from '../shared/render/scene';
 import { sampleReader, writeLectureSound } from './audio';
-import { requireFfmpeg, runFfmpeg, writeTo } from './ffmpeg';
+import { abortFfmpeg, requireFfmpeg, runFfmpeg, writeTo } from './ffmpeg';
 
 const CREDIT_TEXTS = {
   nb: { heading: 'Bildekilder', slide: (n: number[]) => `lysark ${n.join(', ')}` },
@@ -54,6 +54,31 @@ interface Options {
   /** The page that draws the frames (out/renderer/frame.html, or the dev server's). */
   loadFramePage: (window: BrowserWindow) => Promise<void>;
   onProgress: (progress: VideoProgress) => void;
+}
+
+/**
+ * Resolves when the hidden window has stopped drawing: no new picture for
+ * `quiet` milliseconds, or `longest` at the most. A large photo is put on
+ * screen a moment after the page says it is ready; a picture taken before
+ * that would lack it (seen on Windows and on Linux, 22.11.2026).
+ */
+function drawingSettled(window: BrowserWindow, quiet: number, longest: number): Promise<void> {
+  return new Promise((resolve) => {
+    const contents = window.webContents;
+    const done = (): void => {
+      clearTimeout(timer);
+      clearTimeout(limit);
+      contents.off('paint', onPaint);
+      resolve();
+    };
+    const onPaint = (): void => {
+      clearTimeout(timer);
+      timer = setTimeout(done, quiet);
+    };
+    let timer = setTimeout(done, quiet);
+    const limit = setTimeout(done, longest);
+    contents.on('paint', onPaint);
+  });
 }
 
 /** A picture of the hidden window as raw pixels (blue, green, red, alpha), in the video's size. */
@@ -167,7 +192,7 @@ export function exportVideo(options: Options): VideoJob {
       String(totalFrames),
       outFile,
     ]);
-    stop = () => ffmpeg.process.kill();
+    stop = () => abortFfmpeg(ffmpeg);
     let failed: Error | null = null;
     ffmpeg.done.catch((error: Error) => {
       failed = error;
@@ -180,9 +205,17 @@ export function exportVideo(options: Options): VideoJob {
       if (failed) throw failed;
       const time = frame / VIDEO_FPS;
       if (!pixels || frame > still) {
-        await window.webContents.executeJavaScript(`window.lysarkFrame.draw(${time})`, true);
-        pixels = await capture(window);
+        const draw = (): Promise<boolean> =>
+          window!.webContents.executeJavaScript(`window.lysarkFrame.draw(${time})`, true);
+        // A slide that is drawn for the first time is first shown whole, to
+        // bring its pictures in; when that has settled, the moment itself.
+        for (let round = 0; (await draw()) && round < 3; round++) {
+          await drawingSettled(window, 200, 4000);
+        }
         const until = stillUntil(scenes, plan, time, transition);
+        // A picture that will stand for a while is worth a moment's wait.
+        if (until > time) await drawingSettled(window, 100, 1500);
+        pixels = await capture(window);
         // The picture holds for every frame that starts before the next change.
         still = until > time ? Math.ceil(until * VIDEO_FPS - 1e-6) - 1 : frame;
       }
@@ -192,7 +225,7 @@ export function exportVideo(options: Options): VideoJob {
       }
     }
     if (cancelled) {
-      ffmpeg.process.kill();
+      abortFfmpeg(ffmpeg);
       await ffmpeg.done.catch(() => undefined);
       return null;
     }
@@ -236,6 +269,8 @@ export function exportVideo(options: Options): VideoJob {
   return {
     cancel() {
       cancelled = true;
+      // FFmpeg is stopped at once, so nothing is left running if the program closes.
+      stop?.();
     },
     done,
   };

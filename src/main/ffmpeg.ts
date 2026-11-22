@@ -69,6 +69,16 @@ export function runFfmpeg(args: string[]): FfmpegRun {
   return { process: child, done };
 }
 
+/**
+ * Stops FFmpeg at once, when its result is not wanted (a cancelled export).
+ * Closing its input alone is not enough, and a polite signal can be left
+ * unanswered while it waits for more input.
+ */
+export function abortFfmpeg(run: FfmpegRun): void {
+  run.process.stdin.destroy();
+  run.process.kill('SIGKILL');
+}
+
 /** Writes to FFmpeg's input, waiting when it cannot take more yet. */
 export function writeTo(run: FfmpegRun, data: Uint8Array): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -77,7 +87,17 @@ export function writeTo(run: FfmpegRun, data: Uint8Array): Promise<void> {
       reject(new Error('FFmpeg tar ikke imot mer.'));
       return;
     }
-    if (stdin.write(data)) resolve();
-    else stdin.once('drain', () => resolve());
+    if (stdin.write(data)) {
+      resolve();
+      return;
+    }
+    // Wait until FFmpeg has taken it; if FFmpeg stops meanwhile, do not wait for ever.
+    const done = (): void => {
+      stdin.off('drain', done);
+      stdin.off('close', done);
+      resolve();
+    };
+    stdin.once('drain', done);
+    stdin.once('close', done);
   });
 }

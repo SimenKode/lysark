@@ -30,8 +30,14 @@ export interface FrameJob {
 
 interface FrameApi {
   load(job: FrameJob): Promise<void>;
-  /** Draws the lecture as it is `time` seconds in, and resolves when it is on screen. */
-  draw(time: number): Promise<void>;
+  /**
+   * Draws the lecture as it is `time` seconds in, and resolves when it is
+   * on screen. Resolves with true when a slide was drawn for the first
+   * time: it is then shown with everything on it visible, so that all its
+   * pictures are brought in, and the caller must wait for the drawing to
+   * settle and call again to get the moment it asked for.
+   */
+  draw(time: number): Promise<boolean>;
 }
 
 declare global {
@@ -73,12 +79,21 @@ function timeout(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Resolves when an image has been fetched (or cannot be) and is ready to be drawn. */
+async function imageReady(img: HTMLImageElement): Promise<void> {
+  if (!img.complete) {
+    await new Promise<void>((resolve) => {
+      img.addEventListener('load', () => resolve(), { once: true });
+      img.addEventListener('error', () => resolve(), { once: true });
+    });
+  }
+  await img.decode().catch(() => undefined);
+}
+
 /** Waits until the pictures (and the first picture of each video) of a slide can be drawn. */
 async function settle(el: HTMLElement): Promise<void> {
   const waits: Array<Promise<unknown>> = [];
-  for (const img of Array.from(el.querySelectorAll('img'))) {
-    waits.push(img.decode().catch(() => undefined));
-  }
+  for (const img of Array.from(el.querySelectorAll('img'))) waits.push(imageReady(img));
   for (const video of Array.from(el.querySelectorAll('video'))) {
     video.muted = true;
     video.preload = 'auto';
@@ -91,7 +106,7 @@ async function settle(el: HTMLElement): Promise<void> {
       );
     }
   }
-  await Promise.race([Promise.all(waits), timeout(8000)]);
+  await Promise.race([Promise.all(waits), timeout(20_000)]);
 }
 
 async function sceneElement(index: number): Promise<HTMLElement> {
@@ -103,15 +118,28 @@ async function sceneElement(index: number): Promise<HTMLElement> {
   return el;
 }
 
-async function place(layer: HTMLElement, index: number, t: number, opacity: number): Promise<void> {
+/** Puts a slide in a layer. Returns true when the slide was drawn for the first time. */
+async function place(
+  layer: HTMLElement,
+  index: number,
+  t: number,
+  opacity: number,
+): Promise<boolean> {
   const el = await sceneElement(index);
   if (layer.firstElementChild !== el) layer.replaceChildren(el);
   if (!ready.has(index)) {
+    // The first time, everything on the slide is shown, also what a later
+    // step brings in: a picture that is first drawn in the middle of a fade
+    // would otherwise be missing from the first frames it should be in.
+    applySceneState(el, new Map());
+    layer.style.opacity = '1';
     await settle(el);
     ready.add(index);
+    return true;
   }
   applySceneState(el, sceneStateAt(job!.scenes[index]!, t));
   layer.style.opacity = String(opacity);
+  return false;
 }
 
 window.lysarkFrame = {
@@ -146,18 +174,20 @@ window.lysarkFrame = {
   },
 
   async draw(time) {
-    if (!job || job.scenes.length === 0) return;
+    if (!job || job.scenes.length === 0) return false;
     const state = frameAt(plan, time, job.transition);
     const scene = job.scenes[state.index]!;
     host.style.background = PALETTE[sceneSurface(context!.theme, scene)];
+    let fresh = false;
     if (state.fade) {
       const before = job.scenes[state.fade.from]!;
-      await place(below, state.fade.from, sceneDuration(before), 1);
-      await place(above, state.index, state.t, state.fade.progress);
+      fresh = await place(below, state.fade.from, sceneDuration(before), 1);
+      fresh = (await place(above, state.index, state.t, state.fade.progress)) || fresh;
     } else {
       below.replaceChildren();
-      await place(above, state.index, state.t, 1);
+      fresh = await place(above, state.index, state.t, 1);
     }
     await nextPaint();
+    return fresh;
   },
 };

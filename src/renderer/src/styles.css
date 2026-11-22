@@ -1343,10 +1343,12 @@ legend {
 .logo-row .button-row {
   margin: 0;
 }
+/* Over the hint line above the slide, where it covers nothing one presses:
+   the lower part of the window holds the manuscript and the sound tools. */
 .notice {
   position: fixed;
   left: 50%;
-  bottom: 20px;
+  top: 100px;
   transform: translateX(-50%);
   z-index: 20000;
   display: flex;

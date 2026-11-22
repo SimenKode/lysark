@@ -823,6 +823,9 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
   });
 
+  // An export that is running when the program closes is stopped, FFmpeg included.
+  app.on('before-quit', () => videoJob?.cancel());
+
   app.on('window-all-closed', () => {
     videoJob?.cancel();
     dropPdfImport();
