@@ -105,8 +105,8 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
 | USNs avslutningsanimasjon | Ja, med den ekte filmen | Ja, med den ekte filmen |
 | GIF-eksport | Ja | Ja |
 | PDF-import | Ja, din Stål-PDF | Nei |
-| «Lær mer» og video under innlesing | Ja, med prøvemikrofon | WINDOWS_A |
-| Tidslinje og musikk | Ja, også målt i videoen | WINDOWS_B |
+| «Lær mer» og video under innlesing | Ja, med prøvemikrofon | Prøves nå, se historikken 6.22 |
+| Tidslinje og musikk | Ja, også målt i videoen | Prøves nå, se historikken 6.22 |
 
 **Ikke prøvd noe sted:** en ekte mikrofon, en video spilt over ekte
 høyttalere under innlesing, en hel forelesning lest inn i ett strekk, og
