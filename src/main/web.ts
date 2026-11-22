@@ -5,6 +5,7 @@
 // against an allow-list, redirects included.
 import { app, session, type Session } from 'electron';
 import {
+  PICTURE_HOSTS,
   COMMONS_DOWNLOAD_WIDTH,
   COMMONS_PREVIEW_WIDTH,
   commonsFileUrl,
@@ -121,7 +122,7 @@ export async function youtubeStill(address: string): Promise<{ data: Uint8Array;
 
 /** Passes a gallery picture from Commons on to the interface, which cannot reach the network itself. */
 export async function proxyPicture(address: string): Promise<Response> {
-  if (!isAllowedUrl(address) || new URL(address).hostname !== 'upload.wikimedia.org') {
+  if (!isAllowedUrl(address) || !PICTURE_HOSTS.includes(new URL(address).hostname)) {
     return new Response(null, { status: 403 });
   }
   try {

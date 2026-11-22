@@ -185,7 +185,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       (globalThis as unknown as { lysarkSeen: string[] }).lysarkSeen = seen;
       const info = (width: number) => ({
         url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Test_A.png',
-        thumburl: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Test_A.png/${width}px-Test_A.png`,
+        thumburl: `https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Test_A.png/${width}px-Test_A.png`,
         descriptionurl: 'https://commons.wikimedia.org/wiki/File:Test_A.png',
         width: 640,
         height: 480,
@@ -208,7 +208,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
             headers: { 'content-type': 'application/json' },
           });
         }
-        if (url.hostname === 'upload.wikimedia.org') {
+        if (url.hostname === 'upload.wikimedia.org' || url.hostname === 'thumb.wikimedia.org') {
           return new Response(Buffer.from(picture, 'base64'), {
             headers: { 'content-type': 'image/png' },
           });
@@ -245,7 +245,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     expect(sent.userAgent).toMatch(/^Lysark\/\d+\.\d+\.\d+$/);
     expect(sent.seen.length).toBeGreaterThan(0);
     for (const address of sent.seen) {
-      expect(address).toMatch(/^https:\/\/(commons|upload)\.wikimedia\.org\//);
+      expect(address).toMatch(/^https:\/\/(commons|upload|thumb)\.wikimedia\.org\//);
     }
     expect(sent.seen.some((address) => address.includes('gsrsearch=A+B+filetype'))).toBe(true);
   });

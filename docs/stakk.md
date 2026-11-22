@@ -151,7 +151,8 @@ lydbehandling), uten bibliotek.
   [AGENTS.md](../AGENTS.md)): et søk du sender til Wikimedia Commons,
   nedlasting av bildet du velger, og forhåndsbildet til en YouTube-lenke
   når du trykker «Hent forhåndsbilde». Vertene er
-  `commons.wikimedia.org`, `upload.wikimedia.org` og `i.ytimg.com`.
+  `commons.wikimedia.org`, `upload.wikimedia.org`, `thumb.wikimedia.org`
+  og `i.ytimg.com`.
 - **Slik håndheves det** (`src/main/web.ts`, `src/main/commons.ts`):
   - Grensesnittet når ikke nettet i det hele tatt. Alt det ber om over
     http(s), avvises i hovedprosessen.
@@ -181,11 +182,9 @@ Leveranse 2 («Lær mer»-byggeren) tok ikke inn noen nye avhengigheter.
 
 ## Kjente vanskelige punkter
 
-- **Småbildene fra Wikimedia** leveres nå fra `thumb.wikimedia.org`, som
-  ikke står på lista. De samme bildene finnes på `upload.wikimedia.org`,
-  og programmet bruker den adressen. Det virket 22.11.2026, men er ikke
-  noe Wikimedia lover. Slutter det å virke, må verten legges til på
-  lista (eierens avgjørelse).
+- **Småbildene fra Wikimedia** leveres fra `thumb.wikimedia.org`. Den
+  verten kom på lista 22.11.2026 etter eierens ja. Sporingsparametrene
+  Wikimedia legger på bildeadressene, sendes ikke med.
 - **YouTube fra disk:** åpnes den eksporterte fila rett fra disk, svarer
   YouTube «Error 153» i rammen. Der åpner avspillingsknappen derfor
   YouTube i nettleseren i stedet. Fra en http(s)-adresse spiller videoen

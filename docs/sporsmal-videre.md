@@ -4,20 +4,26 @@
 dermed valgt. Planen er skrevet om etter dem ([plan.md](plan.md)), og
 unntaket for nettilgang (spørsmål 8) står i [AGENTS.md](../AGENTS.md).
 
-Leveranse 2 er bygd etter svarene. Tre steder ble det litt annerledes
+Leveranse 2 er bygd etter svarene. To steder ble det litt annerledes
 enn anbefalingen, se «Avvik» under leveranse 2 i [plan.md](plan.md):
-bilder hentes i høyst 1920 px (ikke 2560), småbildene hentes fra
-`upload.wikimedia.org`, og bare YouTube spilles i to trinn. Spørsmål 10
-er nå prøvd på ekte: YouTube spiller fra forhåndsvisningen, og svarer
-«Error 153» når fila åpnes rett fra disk.
+bilder hentes i høyst 1920 px (ikke 2560), og bare YouTube spilles i to
+trinn. Spørsmål 10 er prøvd på ekte: YouTube spiller fra
+forhåndsvisningen, og svarer «Error 153» når fila åpnes rett fra disk.
 
-Tre ting er fortsatt åpne, fordi de er spørsmål til deg og ikke
-anbefalinger:
+**Endret av eieren 22.11.2026, etter at han hadde prøvd leveranse 2**
+(se [HANDOFF.md](../HANDOFF.md) 6.14):
 
-- Canvas må prøves sammen med deg mens du er innlogget (spørsmål 3 og
-  10).
-- Kan Windows-VM-en få en mikrofon (spørsmål 23)?
-- Hvilken fil eller lenke ga den svarte videospilleren (spørsmål 24)?
+- Spørsmål 8: `thumb.wikimedia.org` er lagt til på lista, og andre kilder
+  til bilder i det offentlige domenet er velkomne.
+- Spørsmål 10: YouTube skal være **innebygd som spiller i lysarket**,
+  ikke et stillbilde med «Spill av fra YouTube». Ikke bygget ennå.
+- Spørsmål 3 og 10: Canvas prøver eieren selv, for hånd. Ingen KI der.
+- Spørsmål 14: eieren vil ha **flere animasjoner og mer lekenhet** enn
+  anbefalingen la opp til.
+- Spørsmål 23: mikrofon i Windows-VM-en kan rigges av den som bygger.
+
+Ett spørsmål er fortsatt åpent: hvilken fil eller lenke ga den svarte
+videospilleren (spørsmål 24)?
 
 Spørsmålene slik de ble stilt 22.11.2026 (økt 3), etter tilbakemeldingene
 i [HANDOFF.md](../HANDOFF.md) 6.9 og 6.10:

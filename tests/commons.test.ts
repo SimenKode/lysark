@@ -42,6 +42,7 @@ describe('the allow-list', () => {
     expect([...ALLOWED_HOSTS]).toEqual([
       'commons.wikimedia.org',
       'upload.wikimedia.org',
+      'thumb.wikimedia.org',
       'i.ytimg.com',
     ]);
   });
@@ -184,8 +185,8 @@ describe('reading the answer', () => {
     expect(parseCommonsAnswer(answer).hits).toEqual([]);
   });
 
-  it('uses the approved host for scaled pictures and sends no tracking parameters', () => {
-    // What Wikimedia answers today: scaled pictures on another host, with parameters added.
+  it('takes scaled pictures from where Wikimedia serves them, without the tracking parameters', () => {
+    // What Wikimedia answers today: scaled pictures on their own host, with parameters added.
     const answer = {
       query: {
         pages: [
@@ -204,7 +205,7 @@ describe('reading the answer', () => {
     };
     const hit = parseCommonsAnswer(answer).hits[0]!;
     expect(hit.thumbUrl).toBe(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/A.jpg/330px-A.jpg',
+      'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/A.jpg/330px-A.jpg',
     );
     expect(hit.originalUrl).toBe('https://upload.wikimedia.org/wikipedia/commons/a/ab/A.jpg');
     expect(isAllowedUrl(hit.thumbUrl) && isAllowedUrl(hit.originalUrl)).toBe(true);

@@ -9,7 +9,7 @@ prøvd på både Linux Mint og Windows 11.
 | Nr. | Leveranse | Status |
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
-| 2 | «Lær mer»-byggeren | Bygget og prøvd på Linux Mint. Gjenstår: Canvas, Windows |
+| 2 | «Lær mer»-byggeren | Bygget og prøvd på Linux Mint. Eieren har prøvd den og bedt om endringer (runde 2, under). Gjenstår også: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Ikke påbegynt |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
@@ -99,8 +99,8 @@ den i et panel.
 - Stillbilde for en YouTube-lenke hentes når du trykker «Hent
   forhåndsbilde».
 
-**Prøves i Canvas** sammen med deg før leveransen er ferdig: skript,
-innbygging, filstørrelse, fullskjerm.
+**Canvas** prøver du selv, for hånd: skript, innbygging, filstørrelse,
+fullskjerm (sjekkliste i HANDOFF.md 6.5).
 
 **Ikke med:** byggesteinen «figur/animasjon» (kommer med leveranse 4),
 lyd, video-eksport.
@@ -126,20 +126,41 @@ Avvik fra det som ble valgt, og hvorfor:
 
 - **Bilder hentes i høyst 1920 px bredde**, ikke 2560. Wikimedia leverer
   bilder i faste bredder, og 1920 er scenens bredde.
-- **Småbildene hentes fra `upload.wikimedia.org`**, selv om Wikimedia nå
-  oppgir `thumb.wikimedia.org`, fordi bare den første står på lista over
-  verter programmet får kontakte.
 - **Bare YouTube kjennes igjen som video i to trinn.** Vimeo, Panopto og
   andre videosider er fortsatt et kort som åpner nettleseren når de står
   som video. De kan bygges inn med byggesteinen «Innbygging».
 
 Gjenstår før leveransen er ferdig:
 
-1. **Canvas** sammen med eieren: skript, innbygging, filstørrelse,
-   fullskjerm.
+1. **Canvas:** eieren prøver selv, for hånd (sjekkliste i HANDOFF.md
+   6.5).
 2. **Windows 11:** ingenting av leveranse 2 er prøvd der.
 3. Dra-og-slipp av byggesteiner er ikke dekket av automatiske tester
    (knappene «flytt opp» og «flytt ned» er det).
+
+### Runde 2 etter eierens utprøving (22.11.2026)
+
+Eieren prøvde leveranse 2 og bestemte dette (HANDOFF.md 6.14). Ikke
+bygget ennå, unntatt det siste punktet:
+
+- «Scene» heter «lysark» i alt du og studentene leser.
+- Tykkelsen på piler, linjer og omriss kan endres, og pilspissen følger
+  med.
+- Store, runde piler på hver side av lysarket i HTML-spilleren.
+- Klikk på lysarket går ikke videre; det er pilene, tastaturet og sveip
+  som gjør det.
+- Pil opp og pil ned navigerer.
+- YouTube er innebygd som spiller i lysarket, ikke et stillbilde med
+  «Spill av fra YouTube». Åpnet rett fra disk blir stillbildet med lenke
+  stående, fordi YouTube ikke spiller der.
+- `thumb.wikimedia.org` er på lista over verter (gjort).
+
+Eieren vil også ha flere animasjoner og mer lekenhet, USNs
+avslutningsanimasjon som et innebygd forslag til avslutning, og flere
+kilder til frie bilder. Det må spørres ut før det bygges (6.14 B).
+
+**Første brukbare utgave** er når leveranse 3 er ferdig: da finnes både
+HTML og video. Til da er repoet privat.
 
 ## Leveranse 3: Lyd og video
 
@@ -352,8 +373,8 @@ Rettet i økt 3:
 
 ## Rekkefølgen videre
 
-1. Leveranse 2 bygges (se over). Canvas prøves sammen med eieren
-   underveis.
+1. Runde 2 av leveranse 2 bygges (se over). Canvas prøver eieren selv,
+   for hånd.
 2. Uttrykket (HANDOFF.md 6.1) godkjennes når eieren har sett på det; det
    er et tema og kan endres uten å røre innholdet.
 3. Leveranse 3, 4 og 5 i den rekkefølgen.

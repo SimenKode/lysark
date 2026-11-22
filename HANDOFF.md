@@ -1,22 +1,23 @@
 # Handoff: Lysark etter leveranse 2
 
-Skrevet 22.11.2026 for neste chat, og oppdatert samme dag etter økt 2 og
-økt 3. Eieren fyller inn tilbakemeldingene sine i
-[del 6](#6-tilbakemeldinger-fra-eieren), og starter så en ny chat i mappa
-`~/Forelesningsverktoy/lysark`.
+Skrevet 22.11.2026 og holdt oppdatert gjennom økt 2, 3 og 4. Sist endret
+etter at eieren hadde prøvd leveranse 2.
 
-**Økt 3 i korte trekk:** feilen i scenelista er rettet, YouTube-saken er
-undersøkt og to feil rundt videolenker er rettet (se
-[6.11](#611-økt-3-det-som-ble-rettet-og-det-som-venter-på-svar)), og
-designspørsmålene for alt som gjenstår, er stilt samlet i
-[docs/sporsmal-videre.md](docs/sporsmal-videre.md) med forslag til ny
-inndeling av planen. Eieren svarte **«Alt som anbefalt»**, så planen er skrevet om til fem
-leveranser (se [6.12](#612-eierens-svar-og-åpen-kildekode-22112026)).
-Samme dag bestemte eieren at prosjektet skal bli åpen kildekode på
-GitHub, med lisensen GPL-3.0. **Leveranse 2 («Lær mer»-byggeren) er
-bygget** og prøvd på Linux Mint, se
-[6.13](#613-leveranse-2-er-bygget-22112026). Den er ikke prøvd på
-Windows eller i Canvas.
+## Start her
+
+1. Les [AGENTS.md](AGENTS.md). Reglene er bindende, og flere ble endret
+   av eieren 22.11.2026.
+2. Les [6.14](#614-eieren-har-prøvd-leveranse-2-22112026): eierens
+   tilbakemelding etter utprøvingen, ordrett, og hva den betyr.
+3. Les [del 7](#7-arbeidsordre-for-neste-økt): det som skal bygges, i
+   rekkefølge, og hva som må spørres om først.
+4. Resten av fila er historikk og bakgrunn. Slå opp ved behov.
+
+**Kort status:** leveranse 1 (PPTX til HTML) og 2 («Lær mer»-byggeren)
+er bygget og prøvd på Linux Mint. Eieren har prøvd leveranse 2 og sier
+«mye bra», men vil ha endringer i navn, navigasjon, YouTube og former,
+og mer animasjon og lekenhet. Målet nå er en første brukbar utgave med
+**både HTML og video**. Repoet ligger privat på GitHub til den finnes.
 
 **Økt 2 i korte trekk:** del 6 var ikke fylt ut, så ingenting i
 uttrykket (6.1) er endret, og leveranse 2 er ikke påbegynt. Økten
@@ -27,9 +28,6 @@ Etter økten ga eieren tilbakemelding i chat, med retning for neste økt:
 se [6.9](#69-eierens-tilbakemelding-i-chat-etter-økt-2-22112026) («Lær
 mer»-byggeren) og [6.10](#610-mer-fra-eieren-samme-dag-figurer-animasjon-og-video)
 (figurer, animasjon og video).
-
-**Til neste økt:** les [AGENTS.md](AGENTS.md) først (reglene er bindende),
-så denne fila. Begynn med del 6. Ikke rør noe utenfor denne mappa.
 
 ## 1. Hvor ting er
 
@@ -324,18 +322,21 @@ Skriv rett under hvert punkt. Tomt felt betyr «ikke sett på ennå».
 
 ### 6.5 Canvas
 
-Jeg spurte om læringsplattformen fordi det avgjør om fila virker der
-studentene åpner den. Dette må prøves i Canvas, og er ikke gjort:
+**Eieren prøver Canvas selv, for hånd. Ingen KI brukes der** (eieren,
+22.11.2026). Dette er lista over hva han bør se etter; skriv inn det han
+melder tilbake:
 
-- Kjører Canvas skriptet i en HTML-fil som er lastet opp under Filer,
-  eller viser den bare en tom side eller kildekoden?
-- Virker fila når den bygges inn i en Canvas-side, eller bare når den
-  åpnes for seg selv?
-- Hvor stor fil godtar emnet ditt?
-- Virker fullskjerm og lenker ut derfra?
-
-Prøv gjerne selv med `staal.html` fra en eksport, eller si fra i neste
-chat at jeg skal gjøre det mens du er innlogget.
+1. Last opp en eksportert HTML-fil under Filer og åpne den. Vises
+   forelesningen, eller bare en tom side eller kildekoden?
+2. Virker den også når den bygges inn i en Canvas-side, og når den åpnes
+   i egen fane?
+3. Piltaster, de runde pilene, innholdsoversikten og fullskjerm.
+4. «+»-merkene og «Lær mer»-panelet, «Utvid» og «Bildekilder».
+5. YouTube: spiller videoen inne i lysarket?
+6. Lenker ut av forelesningen.
+7. Hvor stor fil godtar emnet? (Stål er 23 MB; Trevirke er større.)
+8. En forelesning med stor video: følger mappa ved siden av med?
+9. På mobil, i Canvas-appen.
 
   Svar:
 
@@ -601,9 +602,9 @@ To ting jeg slo opp og ikke har prøvd selv:
 **Designspørsmålene:** «Alt som anbefalt». Valgene står i
 [docs/sporsmal-videre.md](docs/sporsmal-videre.md), planen i
 [docs/plan.md](docs/plan.md), og unntaket for nettilgang i
-[AGENTS.md](AGENTS.md). Tre ting der er fortsatt åpne: Canvas-prøven
-sammen med eieren, om Windows-VM-en kan få mikrofon, og hvilken fil som
-ga den svarte videospilleren.
+[AGENTS.md](AGENTS.md). Én ting der er fortsatt åpen: hvilken fil som ga
+den svarte videospilleren. (Canvas prøver eieren selv, og mikrofon i
+VM-en kan rigges av den som bygger; se 6.14.)
 
 **Commits:** eieren valgte én commit for økt 2 og 3, og at jeg committer
 underveis i leveranse 2 når et trinn er ferdig og testene består.
@@ -676,11 +677,9 @@ som er valgt, i [docs/sporsmal-videre.md](docs/sporsmal-videre.md).
 **Det ekte nettet lærte meg to ting, og begge er rettet:**
 
 - Wikimedia leverer nå småbilder fra `thumb.wikimedia.org`. Den verten
-  står ikke på lista eieren godkjente, så første ekte søk ga null treff.
-  Programmet bruker nå de samme bildene fra `upload.wikimedia.org`, som
-  står på lista, og fjerner sporingsparametrene Wikimedia legger på
-  adressene. Det virker i dag, men er ikke noe Wikimedia lover.
-  **Eieren bør avgjøre om `thumb.wikimedia.org` skal legges til.**
+  sto ikke på lista eieren godkjente, så første ekte søk ga null treff.
+  Eieren sa siden ja til verten (6.14), og den står nå på lista.
+  Sporingsparametrene Wikimedia legger på adressene, sendes ikke med.
 - YouTube spiller ikke i en fil åpnet fra disk. Avspillingsknappen åpner
   derfor YouTube i nettleseren der, i stedet for å vise en feilmelding.
 
@@ -703,20 +702,185 @@ opplevelsen), og dra-og-slipp av byggesteiner i automatiske tester.
 - Noen nettsteder nekter å bli bygget inn; da er rammen tom, og lenka
   «Åpne i nettleseren» er veien.
 
-## 7. Det neste økt bør gjøre først
+### 6.14 Eieren har prøvd leveranse 2 (22.11.2026)
 
-1. **Canvas sammen med eieren:** last opp en eksportert fil, og se om
-   skript kjører, om YouTube spiller i to trinn, om innbygging virker, og
-   hvor stor fil emnet godtar. Leveranse 2 er ikke ferdig før det er
-   gjort.
-2. **Windows 11:** prøv leveranse 2 i eierens VM (se
-   [tools/windows-vm.py](tools/windows-vm.py)).
-3. Spør eieren om `thumb.wikimedia.org` skal på lista (6.13), og minn om
-   de tre punktene i 6.12 før repoet gjøres offentlig. Ikke push og ikke
-   endre synligheten uten at han ber om det.
-4. Deretter leveranse 3 (lyd og video), se [docs/plan.md](docs/plan.md).
-   Spør først om Windows-VM-en kan få mikrofon (spørsmål 23).
-5. Senere: tabeller i importen (del 5, punkt 5).
+Ordrett, med to skjermbilder (en høyreklikkmeny i scenen, og en rund,
+grå knapp med pil på svart bunn):
+
+> Testet nå. Mye bra, men frykter at noen vil slite med gui og navn. Vi
+> må kalle scene for lysark. Pil og andre former må kunne endre
+> tykkelse/størrelse. Videoene er fortsatt spill av fra youtube og ikke
+> innbygget. Du kan fint rigge mikrofon i VM selv. thumb.wikimedia.org og
+> andre bilder i det offentlige domenet er fair game. Canvas tester jeg
+> helt manuelt, ingen KI anvendes der. Lag handoff som jobber videre og
+> lager programmet jeg forespør. Vi kan godt holde repoet skjult frem til
+> vi har en MVP med både HTML og video. Vi trenger også mer animasjoner
+> og lekenhet i utformingen. Ønsker også bedre navigering i HTML med pil
+> med stor rund pil til hver side. Vil ikke at å klikke på lysarket skal
+> ta en videre da vi skal ha interaktive elementer i lysarket. Pil opp og
+> ned på tastaturet må også fungere som navigasjon. USN
+> avslutningsanimasjonen fungerer fint, men akkurat den burde vi kunne
+> bake inn i programmet som forslag til avslutning og ikke la den spille
+> som video, men at den starter elegant automatisk når man går til
+> lysbildet.
+
+Før dette hadde eieren svart «Ja, push» (de to commitene for leveranse 2
+ble pushet til det private repoet).
+
+#### A. Bestemt av eieren. Bygges uten flere spørsmål
+
+| Nr. | Hva | Merknad |
+| --- | --- | --- |
+| A1 | **«Scene» heter «lysark»** i alt eieren og studentene leser: programmet, spilleren, dokumentene | Regelen står i AGENTS.md. Kode beholder `scene`. Omtrent 34 tekster i redigeringsprogrammet, pluss README og `docs/`. Programmet heter også Lysark; det er meningen |
+| A2 | **Piler og former: tykkelsen skal kunne endres**, og størrelsen på pilspissen med den | I dag er streken fast (temaets, 6 px). Trenger et nytt felt på former i formatet. Gjelder linjer, piler og omriss |
+| A3 | **Store, runde piler på hver side av lysarket** i HTML-spilleren | Skjermbilde 2 er trolig forbildet: rund, grå, med vinkelpil. Bekreft utseendet med et skjermbilde til eieren |
+| A4 | **Klikk på lysarket går ikke videre** | Lysarket skal ha interaktive elementer. Videre går man med pilene, tastaturet og sveip |
+| A5 | **Pil opp og pil ned navigerer** (opp = forrige, ned = neste) | I tillegg til tastene som finnes. Pass på at de fortsatt ruller i et åpent panel når fokus står der |
+| A6 | **YouTube er innebygd som spiller i lysarket**, ikke stillbilde med «Spill av fra YouTube» | Opphever to-trinnsvalget (spørsmål 10) for YouTube. Se «Det YouTube-valget fører med seg» under |
+| A7 | `thumb.wikimedia.org` på lista | **Gjort** i denne økten |
+| A8 | Mikrofon i Windows-VM-en kan rigges av den som bygger | Står i AGENTS.md. Gjelder bare mikrofonen |
+| A9 | Canvas prøves av eieren for hånd, uten KI | Sjekklista står i 6.5 |
+| A10 | Repoet er privat til det finnes en første brukbar utgave med både HTML og video | Står i AGENTS.md |
+
+**Det YouTube-valget fører med seg** (fakta fra utprøvingen i 6.13; si
+det til eieren når det bygges):
+
+- Studentens nettleser henter spilleren fra Google så snart lysarket
+  vises, ikke først ved klikk. Bruk fortsatt `youtube-nocookie.com`.
+- Åpnes fila rett fra disk, svarer YouTube «Error 153». Der må
+  stillbildet med knapp som åpner YouTube, bli stående.
+- Redigeringsflaten når ikke nettet, så der vises stillbildet.
+  Forhåndsvisningen viser den ekte spilleren.
+- I video (leveranse 3) kan bare stillbildet vises.
+- Hent rammen først når lysarket vises, og ta den bort når man går
+  videre, så ingenting spiller i bakgrunnen.
+- Annen innbygging («Innhold fra … – klikk for å laste») er ikke nevnt
+  av eieren. Spør om den også skal lastes direkte.
+
+#### B. Må spørres om, samlet, før det bygges
+
+1. **Navn og grensesnitt.** Eieren frykter at noen vil slite. Han har
+   bare nevnt «scene». Legg fram en liste over ordene i programmet med
+   forslag (for eksempel Element, Steg, Utdyping, Byggestein, Innbygging,
+   Manus, Tilpass til rutenett), og spør hva som var vanskelig å finne
+   eller forstå. Skjermbilde 1 (høyreklikkmenyen med «Legg til utdyping
+   …») er enten et eksempel på et navn han mener er vanskelig, eller på
+   den oransje fokusrammen, som er skjev rundt det øverste menyvalget.
+   **Spør hvilket.** Fokusrammen bør rettes uansett.
+2. **Flere animasjoner og mer lekenhet.** Dette går lenger enn
+   spørsmål 14, der anbefalingen var «ingen sprett eller snurr», og som
+   eieren da godtok. Avklar hva han ser for seg: overganger mellom
+   lysark, måten elementer kommer inn på, respons når man peker og
+   trykker, hvordan panelet åpner seg. Rammer som ligger fast:
+   designmanualen er bindende (si fra der lekenhet kolliderer med den),
+   bevegelser skal kunne slås av for dem som har bedt systemet om lite
+   bevegelse, og alt som skal med i video, må være en ren funksjon av
+   tiden.
+3. **USNs avslutningsanimasjon bakt inn.** Ønsket: et forslag til
+   avslutningslysark som starter animasjonen automatisk og elegant når
+   man kommer dit, uten videospiller. Det jeg vet:
+   - Animasjonen finnes bare som video i eierens PowerPoint-filer (siste
+     lysark i hver forelesning; 2,3 MB, 3840 × 2160, 10 s). Den ligger
+     **ikke** i logopakka (`merkevare/` har bare Hovedlogo, Symbol og
+     vertikal logo).
+   - Den er USNs materiale. AGENTS.md sier at slikt aldri legges i git,
+     og at logoen aldri tegnes på nytt. Den kan altså verken følge med i
+     repoet eller gjenskapes i kode.
+   - Forslag å legge fram: programmet tar vare på animasjonsfila slik det
+     gjør med logofilene (eieren peker på den én gang, eller den plukkes
+     opp ved import; den lagres i innstillingene, aldri i repoet), og
+     avslutningslysarket spiller den av seg selv, én gang, uten knapper.
+     Spør om lyden, og om avspilling uten lyd er greit der nettleseren
+     nekter lyd som starter av seg selv.
+4. **Andre kilder til frie bilder.** Eieren sier at bilder i det
+   offentlige domenet er «fair game». Spør hvilke kilder han tenker på.
+   Hver ny kilde skal på lista i AGENTS.md og i koden, med
+   lisensfiltrering og kreditering som for Commons.
+5. **Rekkefølgen fram til første brukbare utgave.** Forslag: A1–A6
+   først (små og bestemte), så leveranse 3 (lyd og video), og
+   animasjoner og lekenhet etterpå, unntatt det som trengs for at
+   navigasjonen skal føles god. Spør om han heller vil ha lekenheten før
+   video.
+
+## 7. Arbeidsordre for neste økt
+
+Eieren vil at neste økt **bygger**, ikke bare planlegger. Rekkefølge:
+
+1. **Still spørsmålene i 6.14 B samlet med én gang**, hvert med én
+   anbefaling, slik at eieren kan svare mens A bygges. Ikke bygg noe fra
+   B før han har svart.
+2. **Bygg A1–A6**, ett trinn om gangen, med tester, og commit hvert
+   trinn når testene består. Vis eieren skjermbilder av de runde pilene
+   og av YouTube-spilleren i lysarket. Hold
+   [docs/prosjektformat.md](docs/prosjektformat.md) sann når formene får
+   tykkelse (A2).
+3. **Prøv leveranse 2 og A1–A6 på Windows 11** i eierens VM
+   ([tools/windows-vm.py](tools/windows-vm.py)). Ingenting av leveranse 2
+   er prøvd der.
+4. **Leveranse 3, lyd og video** ([docs/plan.md](docs/plan.md)).
+   Spørsmålene er besvart i
+   [docs/sporsmal-videre.md](docs/sporsmal-videre.md) (16–23). Rigg
+   mikrofon i VM-en selv. Når leveranse 3 er ferdig og prøvd på begge
+   systemer, finnes den første brukbare utgaven, og eieren avgjør om
+   repoet skal bli offentlig. Minn ham da om de tre punktene i 6.12.
+5. **Etter svarene på B:** navn og grensesnitt, lekenhet og animasjoner,
+   avslutningsanimasjonen, og flere bildekilder, i den rekkefølgen
+   eieren velger.
+6. Gi eieren Canvas-sjekklista (6.5) når A1–A6 er bygget, og skriv inn
+   det han melder.
+
+Ikke push uten at eieren ber om det. Spør gjerne om han vil at pushing
+til det private repoet skal skje fortløpende.
+
+Åpent fra før, som eieren ikke har svart på: uttrykket (6.1), importen
+(6.2), hvilken fil som ga den svarte videospilleren (6.11), og de tre
+punktene om åpen kildekode (6.12). Tabeller i importen (del 5, punkt 5)
+venter til han peker på lysark som plager ham.
+
+## 8. Startmelding til neste chat
+
+Eieren kan lime inn dette i en ny chat i mappa
+`~/Forelesningsverktoy/lysark`:
+
+```text
+Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) som
+gjør PowerPoint-forelesningene mine om til interaktiv HTML og
+animasjonsvideo med voice-over, i USNs visuelle profil. Prosjektet ligger
+i ~/Forelesningsverktoy/lysark, har sitt eget git-repo og ligger privat
+på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til HTML) og 2
+(«Lær mer»-byggeren) er bygget.
+
+Før du gjør noe annet:
+1. Les AGENTS.md. Reglene er bindende.
+2. Les HANDOFF.md: «Start her», 6.14 (min tilbakemelding etter at jeg
+   prøvde leveranse 2) og del 7 (arbeidsordren).
+3. Les docs/plan.md.
+
+Rammer:
+- Arbeid bare i ~/Forelesningsverktoy/lysark. Ikke les eller endre noe
+  utenfor den mappa.
+- Snakk med meg på norsk bokmål. Det jeg og studentene leser, er på
+  bokmål; kode, kommentarer og commits på engelsk.
+- Commit hvert ferdige, testede trinn. Ikke push uten at jeg ber om det.
+- Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), og
+  aldri kontakte nettet.
+- Canvas prøver jeg selv, for hånd. Ingen KI der.
+
+Gjør dette:
+1. Still spørsmålene i HANDOFF.md 6.14 B samlet, med én anbefaling per
+   spørsmål. Jeg svarer mens du bygger.
+2. Bygg A1–A6 i 6.14: «scene» heter «lysark», tykkelse på piler og
+   former, store runde piler på hver side i HTML-spilleren, klikk på
+   lysarket går ikke videre, pil opp og ned navigerer, og YouTube
+   innebygd som spiller i lysarket. Vis meg skjermbilder.
+3. Prøv leveranse 2 og det nye på Windows 11 i VM-en min.
+4. Bygg leveranse 3, lyd og video, slik at vi får en første brukbar
+   utgave med både HTML og video. Rigg mikrofon i VM-en selv.
+
+Hold HANDOFF.md, docs/plan.md, docs/prosjektformat.md og docs/stakk.md
+sanne. Rapporter ærlig: hva som er prøvd, på hvilket system, og hva som
+ikke er prøvd.
+```
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
 tar bilder av scenene (se toppen av fila), og `pdftoppm` gir bilder av

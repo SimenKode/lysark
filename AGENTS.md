@@ -24,6 +24,10 @@ is not part of any other project the owner has.
   Norwegian bokmål.
 - Code, identifiers, code comments, commit messages and this file are in
   English.
+- What the code calls a scene is called **lysark** in everything the
+  owner or a student reads: the interface, the player, the documents
+  (decided by the owner 22.11.2026; "scene" confused people). Identifiers
+  in code stay `scene`.
 
 ## Licences
 
@@ -97,15 +101,19 @@ the manual, raise it with the owner instead of choosing silently.
   never reads the wall clock, uses unseeded randomness or depends on the
   network. This is what makes frame-by-frame video export exact.
 - Exported HTML is a single file that works offline. It makes no request
-  to any server on its own. Content the owner has inserted from the web
-  (a link, a YouTube video, another embed) is fetched only when the
-  viewer activates it; until then the scene shows a still picture that
-  lies in the file.
+  to any server on its own, with one exception the owner asked for
+  (22.11.2026, after trying the two-stage version): a YouTube video he
+  has put in is shown as YouTube's player, embedded in the slide, not as
+  a still picture with a "play from YouTube" button. It is fetched when
+  the slide it stands on is shown, never before. This is decided but not
+  built yet; see `HANDOFF.md` 6.14. Other content from the web (links,
+  other embedded pages) is still fetched only when the viewer activates
+  it, until the owner says otherwise.
 - The program collects nothing. It contacts the network only when the
   owner asks for it in the media dialog (decided 22.11.2026):
   - a search he types and sends to Wikimedia Commons, and the download of
     the picture he chooses (`commons.wikimedia.org`,
-    `upload.wikimedia.org`);
+    `upload.wikimedia.org`, `thumb.wikimedia.org`);
   - the still picture of a YouTube link, when he presses "Hent
     forhåndsbilde" (`i.ytimg.com`).
 
@@ -116,10 +124,14 @@ the manual, raise it with the owner instead of choosing silently.
   version. Render code and the export are unchanged by this: no network.
   The preview window is the one place that can load what the owner has
   embedded, exactly as a student's browser would, and only on a click.
-  Wikimedia now hands out scaled pictures from `thumb.wikimedia.org`,
-  which is not on the list; the program rewrites those addresses to
-  `upload.wikimedia.org` (`src/main/commons.ts`). Adding a host is the
-  owner's decision.
+  The list in code is `ALLOWED_HOSTS` in `src/main/commons.ts`; it and
+  this section must always say the same.
+- The owner has said (22.11.2026) that other sources of pictures in the
+  public domain are welcome too. That is leave to add such a source, not
+  a blanket opening: each new host is named here and in `ALLOWED_HOSTS`,
+  the same rules apply to it (only on his click, only the search words),
+  its licences are filtered and credited as for Commons, and he is told
+  which source was added.
 - Tests never contact the network. Where a test needs Wikimedia, the test
   answers for it.
 
@@ -127,9 +139,9 @@ the manual, raise it with the owner instead of choosing silently.
 
 - `npm run dev` starts the program for development.
 - `npm run typecheck` must be clean.
-- `npm test` builds and runs every test, including two that start the
-  whole program without showing a window (`LYSARK_HIDDEN=1`). Never show
-  windows on the owner's screen from tests.
+- `npm test` builds and runs every test, including three files that
+  start the whole program without showing a window (`LYSARK_HIDDEN=1`).
+  Never show windows on the owner's screen from tests.
 - `npm run dist:linux` and `npm run dist:win` package the program into
   `release/`.
 - `eksempler/` holds the owner's real lectures (never in git).
@@ -140,6 +152,14 @@ the manual, raise it with the owner instead of choosing silently.
 
 - `tools/windows-vm.py` drives the owner's Windows 11 test VM; read its
   header before using it, and never press Enter on text you did not type.
+  The owner has said (22.11.2026) that you may set up a microphone in
+  that VM yourself (the libvirt domain's sound input), so that recording
+  can be tried on Windows. That leave covers the microphone and nothing
+  else in the VM's configuration.
+- **Canvas is the owner's alone.** He tries the exported files in Canvas
+  by hand. No agent, script or automation is ever used there, and you do
+  not ask to be let in. Give him a short checklist of what to look for
+  instead, and record what he reports.
 
 ## Working with the owner
 
@@ -152,8 +172,9 @@ the manual, raise it with the owner instead of choosing silently.
   `docs/sporsmal-videre.md`; the plan built on them is `docs/plan.md`.
 - The owner has allowed commits on `main` as each tested step is done
   (22.11.2026). Pushing still needs his word.
-- The repository is on GitHub as `SimenKode/lysark`, private until the
-  owner makes it public himself or asks for it. Do not push, change its
+- The repository is on GitHub as `SimenKode/lysark`. It stays private
+  until there is a first usable version with both HTML and video
+  (the owner, 22.11.2026), and then he decides. Do not push, change its
   visibility, create other remote repositories or publish anything
   (releases, packages) unless the owner asks.
 - Commits use the owner's GitHub no-reply address, set in this

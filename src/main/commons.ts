@@ -9,8 +9,13 @@ import type { Credit } from '../shared/format/schema';
 export const ALLOWED_HOSTS = [
   'commons.wikimedia.org',
   'upload.wikimedia.org',
+  // Where Wikimedia serves scaled pictures from (approved by the owner 22.11.2026).
+  'thumb.wikimedia.org',
   'i.ytimg.com',
 ] as const;
+
+/** The hosts pictures from Wikimedia Commons are served from. */
+export const PICTURE_HOSTS: readonly string[] = ['upload.wikimedia.org', 'thumb.wikimedia.org'];
 
 export function isAllowedUrl(address: string): boolean {
   try {
@@ -135,17 +140,13 @@ export function licenceKind(code: string, shortName: string): 'free' | 'attribut
 }
 
 /**
- * The address of a picture, on a host the program may contact. Wikimedia's
- * answers now point at thumb.wikimedia.org for scaled pictures; the same
- * pictures are served from upload.wikimedia.org, which is the host the
- * owner has approved, so that is the one used. The tracking parameters
- * Wikimedia adds to the addresses are dropped: nothing but the address of
- * the picture itself is sent.
+ * The address of a picture, when it lies on a host the program may contact.
+ * The tracking parameters Wikimedia adds to the addresses are dropped:
+ * nothing but the address of the picture itself is sent.
  */
 export function pictureAddress(address: string): string | undefined {
   try {
     const url = new URL(address);
-    if (url.hostname.toLowerCase() === 'thumb.wikimedia.org') url.hostname = 'upload.wikimedia.org';
     url.search = '';
     url.hash = '';
     const clean = url.toString();
