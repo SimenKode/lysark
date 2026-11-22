@@ -197,10 +197,10 @@ export function unpackProject(source: string, dir: string): Project {
   try {
     entries = unzipSync(new Uint8Array(readFileSync(source)));
   } catch {
-    throw new Error('Fila er ikke et pakket Lysark-prosjekt.');
+    throw new Error('Fila er ikke et Lysark-prosjekt lagret som én fil.');
   }
   const projectBytes = entries[PROJECT_FILE];
-  if (!projectBytes) throw new Error('Fila er ikke et pakket Lysark-prosjekt.');
+  if (!projectBytes) throw new Error('Fila er ikke et Lysark-prosjekt lagret som én fil.');
   let project: Project;
   try {
     project = parseProject(JSON.parse(Buffer.from(projectBytes).toString('utf8')));

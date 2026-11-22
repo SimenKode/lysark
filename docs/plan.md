@@ -1,6 +1,7 @@
 # Plan
 
-Fem leveranser (valgt 22.11.2026, se
+Lysark er laget **for forelesere**: det skal kunne brukes uten
+opplæring. Fem leveranser (valgt 22.11.2026, se
 [sporsmal-videre.md](sporsmal-videre.md)). Hver er ferdig og brukbar
 alene, uten stubber eller plassholdere. En leveranse begynner først når
 designspørsmålene for den er besvart, og er ferdig først når den er
@@ -100,7 +101,7 @@ den i et panel.
   forhåndsbilde».
 
 **Canvas** prøver du selv, for hånd: skript, innbygging, filstørrelse,
-fullskjerm (sjekkliste i HANDOFF.md 6.5).
+fullskjerm (sjekkliste i historikk.md 6.5).
 
 **Ikke med:** byggesteinen «figur/animasjon» (kommer med leveranse 4),
 lyd, video-eksport.
@@ -140,7 +141,7 @@ Gjenstår før leveransen er ferdig:
 
 ### Runde 2 etter eierens utprøving (22.11.2026)
 
-Eieren prøvde leveranse 2 og bestemte dette (HANDOFF.md 6.14). Alt er
+Eieren prøvde leveranse 2 og bestemte dette (historikk.md 6.14). Alt er
 bygget (økt 5) og prøvd automatisk på Linux Mint:
 
 - «Scene» heter «lysark» i alt du og studentene leser.
@@ -161,7 +162,14 @@ bygget (økt 5) og prøvd automatisk på Linux Mint:
   redigeringen vises bare stillbildet.
 - `thumb.wikimedia.org` er på lista over verter.
 
-Annen innbygging enn YouTube er uendret: «klikk for å laste».
+Annen innbygging enn YouTube er uendret: «klikk for å laste». Det
+bekreftet eieren 22.11.2026.
+
+**Navn** (bestemt 22.11.2026, byttet i programmet i økt 5): «Utdyping»
+heter «Lær mer», «Byggestein» heter «Innhold», «Innbygging» heter
+«Nettside», «Tilpass til rutenett» heter «Rydd opp lysarket», og «Pakk
+prosjektet til én fil» heter «Lagre som én fil». Beskrivelsen av
+leveranse 2 over bruker de gamle ordene, slik planen ble skrevet.
 
 Eieren vil også ha flere animasjoner og mer lekenhet, USNs
 avslutningsanimasjon som et innebygd forslag til avslutning, og flere
@@ -224,6 +232,10 @@ Bygget:
 - **Inndata:** «Importer PDF …» (hver side blir et lysark med siden som
   bilde og teksten som alternativ tekst) og «Åpne HTML-fil …» (en
   eksportert Lysark-fil blir prosjekt igjen, også med stemmen).
+- **GIF** (bedt om av eieren 22.11.2026): i eksportdialogen velger du
+  filtype (video eller GIF) og hvilke lysark (hele forelesningen, bare
+  dette lysarket, eller fra og til). En GIF er uten lyd, 480, 640 eller
+  960 piksler bred, 12,5 bilder i sekundet, og høyst to minutter.
 - **FFmpeg** 9.0.2 (GPL-bygget fra BtbN, utgaven fra 31.10.2026) hentes
   av `tools/fetch-ffmpeg.mjs` med kontroll av sjekksum, og legges ved
   programmet i mappa `ffmpeg` med lisenstekst og lenke til kildekoden.
@@ -246,6 +258,8 @@ Slik ble det, der det avviker fra eller presiserer planen:
   (animert GIF). YouTube vises som stillbildet sitt. USNs
   logoanimasjon på siste lysark starter fra hvitt, så den blir et hvitt
   bilde.
+- **GIF har 12,5 bilder i sekundet**, ikke 15: en GIF angir tid i
+  hundredeler, og bare en rate som går opp i hundre, gir riktig lengde.
 - **«Dele» er ikke en egen knapp.** Å sette inn en pause eller klippe
   deler lyden der det trengs.
 - **Lysark uten lyd** står i 5 sekunder, pluss 2 per steg. En pause
@@ -265,7 +279,7 @@ lyd) ble laget på 40 sekunder og sett på.
 
 Prøvd for hånd på Windows 11 (eierens VM): innlesing (med stille
 inndata), pause, angre, avspilling, video med FFmpeg, og HTML-fila med
-«Spill av» i Edge. Detaljer og funn står i HANDOFF.md 6.17.
+«Spill av» i Edge. Detaljer og funn står i historikk.md 6.17.
 
 En lang forelesning (41 lysark med ett minutt kunstig lyd hver) ble til
 video på 9 minutter og HTML på et halvt minutt.
@@ -415,7 +429,7 @@ Gjenstår før leveransen er ferdig:
 Zip-utgaven er prøvd for hånd i eierens Windows 11-VM 22.11.2026: start,
 import av en ekte forelesning, logo fra logopakka, tekstredigering,
 lagring, forhåndsvisning, eksport og avspilling i Edge virket. Detaljer og
-det som ikke ble prøvd, står i [HANDOFF.md](../HANDOFF.md). Endringene i
+det som ikke ble prøvd, står i [historikk.md](historikk.md). Endringene i
 importen fra økt 2 er ikke prøvd på Windows ennå.
 
 Kjente begrensninger i importen (kommer i rapporten der det er relevant):
@@ -458,10 +472,22 @@ Rettet i økt 3:
 
 ## Rekkefølgen videre
 
-1. Runde 2 av leveranse 2 bygges (se over). Canvas prøver eieren selv,
-   for hånd.
-2. Uttrykket (HANDOFF.md 6.1) godkjennes når eieren har sett på det; det
-   er et tema og kan endres uten å røre innholdet.
-3. Leveranse 3, 4 og 5 i den rekkefølgen.
-4. Tabeller i importen rettes når eieren har pekt på lysark som plager
+Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
+2 og 3 er bygget. Det som står for tur:
+
+1. **Mer liv og lekenhet:** myk overgang mellom lysark, elementer som
+   glir inn per steg, knapper og «+»-merker som svarer når man peker og
+   trykker, og panel som glir inn. Ro i faginnholdet: ingen sprett eller
+   snurr der. Alt av for dem som har bedt systemet om lite bevegelse, og
+   alt som skal med i video, er en ren funksjon av tiden.
+2. **USNs avslutningsanimasjon** som eget avslutningslysark: Lysark tar
+   vare på fila slik det gjør med logoen (aldri i repoet), og lysarket
+   spiller den av seg selv én gang, uten knapper og uten lyd.
+3. **Det eieren melder** etter å ha prøvd mikrofon, video og Canvas.
+4. **Flere bildekilder**, Openverse først, når resten sitter.
+5. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
+   stil).
+6. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;
+   det er et tema og kan endres uten å røre innholdet.
+7. Tabeller i importen rettes når eieren har pekt på lysark som plager
    ham.

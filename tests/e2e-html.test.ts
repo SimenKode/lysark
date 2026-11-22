@@ -128,7 +128,7 @@ describe.skipIf(!built)('opening an exported HTML file as a project, end to end'
     // The picture carries "Lær mer" content, and so does the button.
     expect(await page.locator('.stage-inner .ls-el-image .ls-more-badge').count()).toBe(1);
     await image.click({ position: { x: 20, y: 20 } });
-    await page.getByRole('button', { name: 'Rediger utdyping …' }).click();
+    await page.getByRole('button', { name: 'Rediger «Lær mer» …' }).click();
     await page.waitForSelector('.builder');
     const panel = page.locator('.builder-panel');
     expect(await panel.locator('h2').textContent()).toBe('Om bildet');

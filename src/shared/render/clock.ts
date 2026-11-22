@@ -12,6 +12,15 @@ export const SILENT_STEP_SECONDS = 2;
 export const FADE_SECONDS = 0.3;
 export const VIDEO_FPS = 30;
 export const VIDEO_SIZE = { width: 1920, height: 1080 } as const;
+/**
+ * A GIF is for short clips: fewer pictures a second, no sound, and not long.
+ * A GIF gives the time of each picture in hundredths of a second, so the
+ * rate must divide 100 evenly, or the clip runs slower than the lecture:
+ * 12.5 a second is 8 hundredths each.
+ */
+export const GIF_FPS = 12.5;
+export const GIF_MAX_SECONDS = 120;
+export const GIF_WIDTHS = [480, 640, 960] as const;
 /** All sound in a project is mono at this rate. */
 export const SAMPLE_RATE = 48000;
 

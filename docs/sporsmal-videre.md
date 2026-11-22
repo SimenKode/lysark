@@ -11,7 +11,7 @@ trinn. Spørsmål 10 er prøvd på ekte: YouTube spiller fra
 forhåndsvisningen, og svarer «Error 153» når fila åpnes rett fra disk.
 
 **Endret av eieren 22.11.2026, etter at han hadde prøvd leveranse 2**
-(se [HANDOFF.md](../HANDOFF.md) 6.14):
+(se [historikk.md](historikk.md) 6.14):
 
 - Spørsmål 8: `thumb.wikimedia.org` er lagt til på lista, og andre kilder
   til bilder i det offentlige domenet er velkomne.
@@ -26,7 +26,7 @@ Ett spørsmål er fortsatt åpent: hvilken fil eller lenke ga den svarte
 videospilleren (spørsmål 24)?
 
 Spørsmålene slik de ble stilt 22.11.2026 (økt 3), etter tilbakemeldingene
-i [HANDOFF.md](../HANDOFF.md) 6.9 og 6.10:
+i [historikk.md](historikk.md) 6.9 og 6.10:
 
 ---
 

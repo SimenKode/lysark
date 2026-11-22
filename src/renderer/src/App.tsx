@@ -63,10 +63,16 @@ function Welcome() {
     <main className="welcome">
       <div className="welcome-box">
         <h1>Lysark</h1>
-        <p>Gjør en PowerPoint-forelesning om til en interaktiv HTML-fil i USNs visuelle profil.</p>
+        <p>
+          For forelesere: gjør en forelesning i PowerPoint eller PDF om til en interaktiv HTML-fil
+          og en video med stemmen din, i USNs visuelle profil.
+        </p>
         <div className="welcome-actions">
           <button type="button" className="strong big" onClick={() => void importPptx()}>
             Importer PowerPoint …
+          </button>
+          <button type="button" className="big" onClick={() => void importPdf()}>
+            Importer PDF …
           </button>
           <button type="button" className="big" onClick={() => void openProject()}>
             Åpne prosjekt …

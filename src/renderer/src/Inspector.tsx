@@ -745,7 +745,7 @@ function MoreFields({ el }: { el: Element }) {
   const has = !!el.more && el.more.blocks.length > 0;
   return (
     <div className="group">
-      <span className="field-label">Utdyping («Lær mer»)</span>
+      <span className="field-label">Lær mer</span>
       {has ? (
         <>
           <p className="hint">
@@ -753,7 +753,7 @@ function MoreFields({ el }: { el: Element }) {
           </p>
           <div className="button-row">
             <button type="button" onClick={() => openBuilder(el.id)}>
-              Rediger utdyping …
+              Rediger «Lær mer» …
             </button>
             <button
               type="button"
@@ -771,12 +771,12 @@ function MoreFields({ el }: { el: Element }) {
       ) : (
         <>
           <p className="hint">
-            Knytt mer stoff til dette elementet: tekst, bilder, video, tabeller og innbygging.
+            Knytt mer stoff til dette elementet: tekst, bilder, video, tabeller og nettsider.
             Studenten åpner det fra et «+»-merke.
           </p>
           <div className="button-row">
             <button type="button" onClick={() => openBuilder(el.id)}>
-              Legg til utdyping …
+              Legg til «Lær mer» …
             </button>
           </div>
         </>
@@ -965,7 +965,7 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
       )}
       <div className="group">
         <button type="button" onClick={() => updateScene((s) => fitToGrid(s, theme))}>
-          Tilpass til rutenett
+          Rydd opp lysarket
         </button>
         <p className="hint">
           Rydder lysarket inn i de åtte kolonnene, venstrestiller teksten og bruker temaets

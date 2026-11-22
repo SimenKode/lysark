@@ -1,12 +1,14 @@
 # Lysark
 
-Skrivebordsprogram som gjør en PowerPoint-forelesning (PPTX) om til
+Et skrivebordsprogram **for forelesere**. Det gjør en forelesning du
+allerede har, i PowerPoint (PPTX) eller PDF, om til
 
 1. en interaktiv HTML-fil som virker uten nett, og
-2. en video (MP4, 1080p) med stemmen din lest inn, og teksting,
+2. en video (MP4, 1080p) med stemmen din lest inn, og teksting, eller en
+   GIF av et kort klipp,
 
-begge i USNs visuelle profil. Programmet skal virke på Windows 11 og
-Linux Mint / Ubuntu.
+begge i USNs visuelle profil. Programmet skal kunne brukes uten
+opplæring, og virke på Windows 11 og Linux Mint / Ubuntu.
 
 Lysark er fri programvare under GNU General Public License, versjon 3
 eller senere (se [Lisens](#lisens)).
@@ -20,7 +22,8 @@ bevegelser (4) og håndlaget stil (5) gjenstår; planen står i
 [docs/plan.md](docs/plan.md).
 
 Hva som er prøvd, på hvilket system, og hva som ikke er prøvd, står i
-[HANDOFF.md](HANDOFF.md). Kort: alt er prøvd automatisk på Linux Mint,
+[HANDOFF.md](HANDOFF.md) (kort) og [docs/historikk.md](docs/historikk.md)
+(i detalj). Kort: alt er prøvd automatisk på Linux Mint,
 importen er prøvd mot åtte ekte forelesninger (315 lysark), og
 zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
 
@@ -33,13 +36,13 @@ zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
    formater som ikke kan vises), og hvor logoen er slått av fordi noe
    ligger der den skal stå. Merknadene står også på hvert lysark.
 3. **Rett opp lysarkene.** Klikk for å velge, dra for å flytte,
-   dobbeltklikk for å skrive. «Tilpass til rutenett» (fanen Lysark) rydder
+   dobbeltklikk for å skrive. «Rydd opp lysarket» (fanen Lysark) rydder
    et lysark inn i de åtte kolonnene.
 4. **Legg inn steg** (fanen Steg) for det som skal komme inn ett for ett.
-5. **Legg til utdyping («Lær mer»).** Høyreklikk på et hvilket som helst
-   element og velg «Legg til utdyping …», eller bruk «+ Lær mer» for en
-   egen knapp i lysarket. Byggeren åpnes over hele vinduet: byggesteiner
-   til venstre (tekst, overskrift, bilde, video, tabell, innbygging), og
+5. **Legg til «Lær mer».** Høyreklikk på et hvilket som helst element
+   og velg «Legg til «Lær mer» …», eller bruk «+ Lær mer» for en egen
+   knapp i lysarket. Byggeren åpnes over hele vinduet: innholdet til
+   venstre (tekst, overskrift, bilde, video, tabell, nettside), og
    panelet slik studenten ser det til høyre. Elementet får et «+»-merke
    som åpner panelet.
 6. **Hent bilder.** «Bilde» åpner mediedialogen: søk i Wikimedia Commons,
@@ -62,6 +65,10 @@ zip-utgaven er prøvd for hånd på Windows 11. Canvas er ikke prøvd.
     og tekstingen som en egen fil ved siden av (`.vtt`), laget av
     manuset. Har lysarkene lyd, får også HTML-fila stemmen med, og
     studentene kan trykke «Spill av».
+12. **Lag en GIF** av et kort klipp: i samme dialog velger du «GIF» og
+    hvilke lysark (hele forelesningen, bare dette lysarket, eller fra og
+    til). En GIF har ikke lyd, spiller i løkke, og kan være høyst to
+    minutter.
 
 **Andre inndata** (Fil-menyen):
 
@@ -133,7 +140,8 @@ en prøvemikrofon, klipping, eksport til HTML og video, og avspilling.
 
 | Fil | Innhold |
 | --- | --- |
-| [HANDOFF.md](HANDOFF.md) | Status, hva som er prøvd, og eierens tilbakemeldinger til neste økt |
+| [HANDOFF.md](HANDOFF.md) | Kort status: hva programmet kan, hva som er bestemt, og hva som står for tur |
+| [docs/historikk.md](docs/historikk.md) | Loggen: alt som er bygget og prøvd i detalj, og tilbakemeldingene |
 | [AGENTS.md](AGENTS.md) | Reglene alle som arbeider i prosjektet skal følge |
 | [docs/plan.md](docs/plan.md) | De fem leveransene og hva som er med i hver |
 | [docs/stakk.md](docs/stakk.md) | Valgt teknologi, begrunnelse og lisens per avhengighet |

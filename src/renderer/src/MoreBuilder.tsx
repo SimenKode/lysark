@@ -438,7 +438,7 @@ function Preview({ element }: { element: Element }) {
         <h2>{moreTitle(ctx, element)}</h2>
         <div ref={host} />
         {(!more || more.blocks.length === 0) && (
-          <p className="hint">Panelet er tomt. Legg til en byggestein til venstre.</p>
+          <p className="hint">Panelet er tomt. Legg til innhold til venstre.</p>
         )}
       </div>
     </section>
@@ -531,7 +531,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
         </button>
       </header>
       <div className="builder-body">
-        <section className="builder-blocks" aria-label="Byggesteiner">
+        <section className="builder-blocks" aria-label="Innhold">
           <label className="field">
             <span className="field-label">Overskrift i panelet</span>
             <input
@@ -661,7 +661,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
             ))}
           </ol>
 
-          <div className="block-add" role="toolbar" aria-label="Legg til byggestein">
+          <div className="block-add" role="toolbar" aria-label="Legg til innhold">
             <span className="bar-label">Legg til</span>
             <button type="button" onClick={() => add(newBlock('text'))}>
               Tekst
@@ -709,7 +709,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
               Tabell
             </button>
             <button type="button" onClick={() => add(newBlock('embed'))}>
-              Innbygging
+              Nettside
             </button>
           </div>
 
@@ -721,7 +721,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
                 onClick={() => {
                   if (
                     more.blocks.length > 0 &&
-                    !window.confirm('Fjerne utdypingen fra dette elementet? Du kan angre etterpå.')
+                    !window.confirm('Fjerne «Lær mer» fra dette elementet? Du kan angre etterpå.')
                   ) {
                     return;
                   }
@@ -733,7 +733,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
                   state.openBuilder(null);
                 }}
               >
-                Fjern utdypingen
+                Fjern «Lær mer»
               </button>
             </div>
           )}

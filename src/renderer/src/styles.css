@@ -444,6 +444,10 @@ textarea {
   text-align: left;
   border-radius: 12px;
 }
+/* The ring lies inside the menu item, so the rounded menu never cuts it. */
+.menu button:focus-visible {
+  outline-offset: -3px;
+}
 
 /* ---------- Stage ---------- */
 .stage-column {
@@ -1001,6 +1005,27 @@ textarea {
 }
 
 /* ---------- Video export ---------- */
+.video-range {
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+}
+.video-range .check {
+  align-items: center;
+  margin: 2px 0;
+  gap: 8px;
+}
+.video-range .check input[type='text'] {
+  margin-top: 0;
+}
+.video-range .check input.video-number {
+  flex: 0 0 3.6em;
+  width: 3.6em;
+  text-align: right;
+}
+.video-range .check {
+  white-space: nowrap;
+}
 .video-dialog .dialog-actions {
   gap: 8px;
 }

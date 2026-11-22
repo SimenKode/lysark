@@ -69,14 +69,26 @@ export interface AddedSound extends AddedMedia {
   seconds: number;
 }
 
+/** What to export as video: which slides, and as what kind of file. */
+export interface VideoRequest {
+  /** MP4 with sound and captions, or a GIF (short clips, no sound). */
+  format: 'mp4' | 'gif';
+  /** The first and the last slide to take, counted from 0. */
+  from: number;
+  to: number;
+  /** Width of a GIF in pixels; the height follows (16:9). */
+  gifWidth: number;
+}
+
 export interface VideoProgress {
-  phase: 'sound' | 'frames' | 'finishing';
+  phase: 'sound' | 'frames' | 'finishing' | 'gif';
   /** Pictures handed to FFmpeg so far, and how many there will be. */
   frame: number;
   frames: number;
 }
 
 export interface VideoSummary {
+  format: 'mp4' | 'gif';
   path: string;
   bytes: number;
   seconds: number;
@@ -141,7 +153,7 @@ export interface LysarkApi {
    * Exports the lecture as an MP4 video with captions next to it. Resolves
    * with null when the owner cancels. Progress arrives through onVideoProgress.
    */
-  exportVideo(dir: string, project: Project): Promise<VideoSummary | null>;
+  exportVideo(dir: string, project: Project, request: VideoRequest): Promise<VideoSummary | null>;
   cancelVideo(): void;
   onVideoProgress(listener: (progress: VideoProgress) => void): () => void;
   /** True when FFmpeg, which video and sound export need, is in place. */

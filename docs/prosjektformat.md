@@ -28,9 +28,9 @@ MinForelesning/
   media/               bilder, lyd, video; filnavn etter innholdets sjekksum
 ```
 
-Et prosjekt er en mappe (valgt i spørsmål 15). «Pakk prosjektet til én
+Et prosjekt er en mappe (valgt i spørsmål 15). «Lagre som én
 fil» i Fil-menyen lager en zip av mappa for flytting og arkivering, og
-«Åpne pakket prosjekt» pakker den ut igjen.
+«Åpne prosjekt lagret som én fil» pakker den ut igjen.
 
 ## Oppbygging
 
@@ -41,7 +41,7 @@ profilpaletten, og hvert lysark har egne valg for profilformer og logo.
 Importert tekst kan ha med seg det PowerPoint bestemte: størrelse per
 listenivå (`levelScale`), linjeavstand (`lineHeight`), avstand før
 avsnitt (`spaceBefore`) og innrykk (`indent`), alle målt i forhold til
-tekstens skriftstørrelse. «Temaets størrelse» og «Tilpass til rutenett»
+tekstens skriftstørrelse. «Temaets størrelse» og «Rydd opp lysarket»
 fjerner dem igjen. Avsnitt kan ha bokstav- eller romertallsnummerering
 (`numberStyle`), og tekstbiter kan være senket eller hevet (`script`).
 Former kan ha egne tekstmarger, justering og dreid tekst, tabeller egne

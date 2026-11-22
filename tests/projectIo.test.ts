@@ -108,9 +108,13 @@ describe('one-file packages', () => {
   it('explains when a file is not a packed project', () => {
     const notZip = join(work, 'tekst.zip');
     writeFileSync(notZip, 'ikke en zip');
-    expect(() => unpackProject(notZip, join(work, 'A'))).toThrow(/ikke et pakket Lysark-prosjekt/);
+    expect(() => unpackProject(notZip, join(work, 'A'))).toThrow(
+      /ikke et Lysark-prosjekt lagret som én fil/,
+    );
     const empty = join(work, 'tom.zip');
     writeFileSync(empty, zipSync({ 'annet.txt': strToU8('x') }));
-    expect(() => unpackProject(empty, join(work, 'B'))).toThrow(/ikke et pakket Lysark-prosjekt/);
+    expect(() => unpackProject(empty, join(work, 'B'))).toThrow(
+      /ikke et Lysark-prosjekt lagret som én fil/,
+    );
   });
 });

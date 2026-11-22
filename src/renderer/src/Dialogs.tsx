@@ -65,7 +65,7 @@ export function ImportReportDialog(props: {
       </p>
       <p>
         Plasseringen er beholdt fra PowerPoint. Skrift og farger følger USN-temaet. Se gjennom
-        lysarkene, og bruk «Tilpass til rutenett» der noe står skjevt.
+        lysarkene, og bruk «Rydd opp lysarket» der noe står skjevt.
       </p>
       {bySlide.size === 0 ? (
         <p>Alt innholdet kom med.</p>

@@ -86,7 +86,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
 
   it('opens the builder from the side panel and shows the panel as the student sees it', async () => {
     await page.locator('.stage-inner .ls-el-image').click({ position: { x: 20, y: 20 } });
-    await page.getByRole('button', { name: 'Rediger utdyping …' }).click();
+    await page.getByRole('button', { name: 'Rediger «Lær mer» …' }).click();
     await page.waitForSelector('.builder');
     expect(await page.locator('.block-card').count()).toBe(5);
     const preview = page.locator('.builder-panel');
@@ -274,7 +274,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     const menu = page.locator('.context-menu');
     await menu.waitFor();
     await shot(page, 'm06-hoyreklikk');
-    await menu.getByRole('menuitem', { name: 'Legg til utdyping …' }).click();
+    await menu.getByRole('menuitem', { name: 'Legg til «Lær mer» …' }).click();
     await page.waitForSelector('.builder');
     expect(await page.locator('.block-card').count()).toBe(0);
     await page.locator('.block-add').getByRole('button', { name: 'Tekst' }).click();
@@ -290,7 +290,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     await page.locator('.stage-inner .ls-el-table').click({ button: 'right' });
     await page
       .locator('.context-menu')
-      .getByRole('menuitem', { name: 'Legg til utdyping …' })
+      .getByRole('menuitem', { name: 'Legg til «Lær mer» …' })
       .click();
     await page.getByRole('button', { name: 'Ferdig' }).click();
     expect(await page.locator('.stage-inner .ls-more-badge').count()).toBe(2);

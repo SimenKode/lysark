@@ -11,10 +11,13 @@ import { BrowserWindow } from 'electron';
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { LogoStatus, VideoProgress, VideoSummary } from '../shared/api';
+import type { LogoStatus, VideoProgress, VideoRequest, VideoSummary } from '../shared/api';
 import type { Project, Scene } from '../shared/format/schema';
 import { creditScenes, lectureCues, toWebVtt } from '../shared/render/captions';
 import {
+  GIF_FPS,
+  GIF_MAX_SECONDS,
+  GIF_WIDTHS,
   SAMPLE_RATE,
   VIDEO_FPS,
   VIDEO_SIZE,
@@ -31,14 +34,19 @@ const CREDIT_TEXTS = {
   en: { heading: 'Picture credits', slide: (n: number[]) => `slide ${n.join(', ')}` },
 };
 
-/** The slides of the video: the project's, and the credits when the owner wants them. */
-export function videoScenes(project: Project): Scene[] {
-  if (!videoOptions(project).credits) return project.scenes;
+/**
+ * The slides of the video: the ones asked for, and the credits at the end
+ * when the owner wants them and the video is the whole lecture.
+ */
+export function videoScenes(project: Project, request: VideoRequest): Scene[] {
+  const last = project.scenes.length - 1;
+  const from = Math.max(0, Math.min(last, Math.floor(request.from)));
+  const to = Math.max(from, Math.min(last, Math.floor(request.to)));
+  const chosen = project.scenes.slice(from, to + 1);
+  const whole = from === 0 && to === last;
+  if (request.format !== 'mp4' || !whole || !videoOptions(project).credits) return chosen;
   const language = project.meta.language;
-  return [
-    ...project.scenes,
-    ...creditScenes(project, SCENE_STRINGS[language], CREDIT_TEXTS[language]),
-  ];
+  return [...chosen, ...creditScenes(project, SCENE_STRINGS[language], CREDIT_TEXTS[language])];
 }
 
 export interface VideoJob {
@@ -49,6 +57,7 @@ export interface VideoJob {
 interface Options {
   dir: string;
   project: Project;
+  request: VideoRequest;
   outFile: string;
   logo: LogoStatus;
   /** The page that draws the frames (out/renderer/frame.html, or the dev server's). */
@@ -97,11 +106,20 @@ async function capture(window: BrowserWindow): Promise<Buffer> {
 }
 
 export function exportVideo(options: Options): VideoJob {
-  const { project, outFile } = options;
+  const { project, outFile, request } = options;
   requireFfmpeg();
-  const scenes = videoScenes(project);
+  const gif = request.format === 'gif';
+  const scenes = videoScenes(project, request);
   if (scenes.length === 0) throw new Error('Prosjektet har ingen lysark å lage video av.');
   const plan = schedule(scenes);
+  if (gif && plan.total > GIF_MAX_SECONDS + 0.5) {
+    throw new Error(
+      `En GIF kan være høyst ${GIF_MAX_SECONDS / 60} minutter. Velg færre lysark, eller eksporter video.`,
+    );
+  }
+  const gifWidth = GIF_WIDTHS.includes(request.gifWidth as (typeof GIF_WIDTHS)[number])
+    ? request.gifWidth
+    : 640;
   const { transition, evenLoudness } = videoOptions(project);
   const totalFrames = Math.max(1, Math.ceil(plan.total * VIDEO_FPS));
 
@@ -111,10 +129,13 @@ export function exportVideo(options: Options): VideoJob {
 
   const work = mkdtempSync(join(tmpdir(), 'lysark-video-'));
   const soundFile = join(work, 'lyd.pcm');
+  // A GIF is made in two goes: first a video without loss worth mentioning,
+  // then the GIF from it, with colours chosen for exactly these pictures.
+  const videoFile = gif ? join(work, 'mellom.mp4') : outFile;
 
   const run = async (): Promise<VideoSummary | null> => {
     options.onProgress({ phase: 'sound', frame: 0, frames: totalFrames });
-    writeLectureSound(soundFile, scenes, plan, sampleReader(options.dir, project));
+    if (!gif) writeLectureSound(soundFile, scenes, plan, sampleReader(options.dir, project));
 
     window = new BrowserWindow({
       show: false,
@@ -145,7 +166,7 @@ export function exportVideo(options: Options): VideoJob {
       true,
     );
 
-    const ffmpeg = runFfmpeg([
+    const pictures = [
       '-y',
       // Pictures: raw pixels on standard input.
       '-f',
@@ -158,40 +179,62 @@ export function exportVideo(options: Options): VideoJob {
       String(VIDEO_FPS),
       '-i',
       'pipe:0',
-      // Sound: the samples written above.
-      '-f',
-      's16le',
-      '-ar',
-      String(SAMPLE_RATE),
-      '-ac',
-      '1',
-      '-i',
-      soundFile,
-      '-c:v',
-      'libx264',
-      '-preset',
-      'medium',
-      '-crf',
-      '20',
-      '-pix_fmt',
-      'yuv420p',
-      '-g',
-      String(VIDEO_FPS * 2),
-      '-c:a',
-      'aac',
-      '-b:a',
-      '128k',
-      ...(evenLoudness ? ['-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', String(SAMPLE_RATE)] : []),
-      '-movflags',
-      '+faststart',
-      '-map_metadata',
-      '-1',
-      '-metadata',
-      `title=${project.meta.title}`,
-      '-frames:v',
-      String(totalFrames),
-      outFile,
-    ]);
+    ];
+    const ffmpeg = runFfmpeg(
+      gif
+        ? [
+            ...pictures,
+            '-c:v',
+            'libx264',
+            '-preset',
+            'veryfast',
+            '-crf',
+            '10',
+            '-pix_fmt',
+            'yuv444p',
+            '-frames:v',
+            String(totalFrames),
+            videoFile,
+          ]
+        : [
+            ...pictures,
+            // Sound: the samples written above.
+            '-f',
+            's16le',
+            '-ar',
+            String(SAMPLE_RATE),
+            '-ac',
+            '1',
+            '-i',
+            soundFile,
+            '-c:v',
+            'libx264',
+            '-preset',
+            'medium',
+            '-crf',
+            '20',
+            '-pix_fmt',
+            'yuv420p',
+            '-g',
+            String(VIDEO_FPS * 2),
+            '-c:a',
+            'aac',
+            '-b:a',
+            '128k',
+            ...(evenLoudness
+              ? ['-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', String(SAMPLE_RATE)]
+              : []),
+            '-movflags',
+            '+faststart',
+            '-map_metadata',
+            '-1',
+            '-metadata',
+            `title=${project.meta.title}`,
+            '-frames:v',
+            String(totalFrames),
+            videoFile,
+          ],
+    );
     stop = () => abortFfmpeg(ffmpeg);
     let failed: Error | null = null;
     ffmpeg.done.catch((error: Error) => {
@@ -235,6 +278,45 @@ export function exportVideo(options: Options): VideoJob {
     ffmpeg.process.stdin.end();
     await ffmpeg.done;
 
+    if (gif) {
+      options.onProgress({ phase: 'gif', frame: totalFrames, frames: totalFrames });
+      const shape = `fps=${GIF_FPS},scale=${gifWidth}:-2:flags=lanczos`;
+      const palette = join(work, 'farger.png');
+      // The colours a GIF may use (256 at the most), chosen from these very pictures.
+      const first = runFfmpeg([
+        '-y',
+        '-i',
+        videoFile,
+        '-vf',
+        `${shape},palettegen=stats_mode=diff`,
+        palette,
+      ]);
+      stop = () => abortFfmpeg(first);
+      await first.done;
+      if (cancelled) return null;
+      const second = runFfmpeg([
+        '-y',
+        '-i',
+        videoFile,
+        '-i',
+        palette,
+        '-lavfi',
+        `${shape}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+        '-loop',
+        '0',
+        outFile,
+      ]);
+      stop = () => abortFfmpeg(second);
+      await second.done;
+      if (cancelled) return null;
+      return {
+        format: 'gif',
+        path: outFile,
+        bytes: statSync(outFile).size,
+        seconds: totalFrames / VIDEO_FPS,
+      };
+    }
+
     const cues = lectureCues(scenes, plan);
     let captions: string | undefined;
     if (cues.length > 0) {
@@ -242,6 +324,7 @@ export function exportVideo(options: Options): VideoJob {
       writeFileSync(captions, toWebVtt(cues, project.meta.language), 'utf8');
     }
     return {
+      format: 'mp4',
       path: outFile,
       bytes: statSync(outFile).size,
       seconds: totalFrames / VIDEO_FPS,

@@ -146,7 +146,7 @@ export const BLOCK_NAMES: Record<MoreBlockKind, string> = {
   image: 'Bilde',
   video: 'Video',
   table: 'Tabell',
-  embed: 'Innbygging',
+  embed: 'Nettside',
 };
 
 export const CORNER_NAMES: Record<NonNullable<More['corner']>, string> = {
@@ -189,7 +189,7 @@ export function describeMore(more: More | undefined): string {
   const count = more?.blocks.length ?? 0;
   if (count === 0) return 'Panelet er tomt.';
   const kinds = [...new Set(more!.blocks.map((b) => BLOCK_NAMES[b.kind].toLowerCase()))];
-  return `${count} ${count === 1 ? 'byggestein' : 'byggesteiner'}: ${kinds.join(', ')}.`;
+  return `${count} ${count === 1 ? 'del' : 'deler'}: ${kinds.join(', ')}.`;
 }
 
 /** Moves a block to a new place in the list. */

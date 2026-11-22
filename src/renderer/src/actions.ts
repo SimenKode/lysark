@@ -6,6 +6,7 @@ import {
   type CommonsPicture,
   type CommonsResult,
   type LysarkApi,
+  type VideoRequest,
 } from '../../shared/api';
 import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
@@ -121,8 +122,14 @@ export async function exportHtml(): Promise<void> {
   state.setNotice({ kind: 'info', text: parts.join(' '), path: summary.path });
 }
 
-/** Exports the lecture as video with the given choices. The dialog shows the progress. */
-export async function exportVideo(choices: NonNullable<Project['video']>): Promise<void> {
+/**
+ * Exports the lecture, or some of its slides, as video or as a GIF with
+ * the given choices. The dialog shows the progress.
+ */
+export async function exportVideo(
+  choices: NonNullable<Project['video']>,
+  request: VideoRequest,
+): Promise<void> {
   const state = useStore.getState();
   if (!state.dir || !state.project) return;
   if (state.project.scenes.length === 0) {
@@ -146,14 +153,18 @@ export async function exportVideo(choices: NonNullable<Project['video']>): Promi
   // comes when the owner has said where the file is to go.
   const stop = api().onVideoProgress((progress) => useStore.getState().setVideoProgress(progress));
   try {
-    const summary = await guard(() => api().exportVideo(dir!, project!));
+    const summary = await guard(() => api().exportVideo(dir!, project!, request));
     if (!summary) return;
-    const parts = [
-      `Videoen er lagret (${formatTime(summary.seconds)}, ${megabytes(summary.bytes)}).`,
-      summary.captions
-        ? 'Tekstingen ligger i en egen fil ved siden av (samme navn, .vtt).'
-        : 'Ingen lysark har manus, så det er ikke laget teksting.',
-    ];
+    const size = `${formatTime(summary.seconds)}, ${megabytes(summary.bytes)}`;
+    const parts =
+      summary.format === 'gif'
+        ? [`GIF-fila er lagret (${size}). Den har ikke lyd.`]
+        : [
+            `Videoen er lagret (${size}).`,
+            summary.captions
+              ? 'Tekstingen ligger i en egen fil ved siden av (samme navn, .vtt).'
+              : 'Ingen lysark har manus, så det er ikke laget teksting.',
+          ];
     useStore.getState().setNotice({ kind: 'info', text: parts.join(' '), path: summary.path });
     useStore.getState().setVideoDialog(false);
   } finally {
@@ -229,7 +240,7 @@ export async function packProject(): Promise<void> {
   if (packed) {
     state.setNotice({
       kind: 'info',
-      text: `Prosjektet er pakket til én fil (${megabytes(packed.bytes)}).`,
+      text: `Prosjektet er lagret som én fil (${megabytes(packed.bytes)}).`,
       path: packed.path,
     });
   }

@@ -5,11 +5,17 @@ owner's decisions; do not relax them without asking him.
 
 ## What this is
 
-A standalone desktop program for one lecturer at USN (University of
-South-Eastern Norway). It turns a PPTX lecture into (1) an interactive
-single-file HTML presentation and (2) an animated MP4 video with recorded
-voice-over, both in USN's visual identity. Targets: Windows 11 and Linux
-Mint / Ubuntu.
+A standalone desktop program for lecturers at USN (University of
+South-Eastern Norway). It turns a lecture they already have, as PPTX or
+PDF, into (1) an interactive single-file HTML presentation and (2) a
+video (MP4, or a GIF for short clips) with recorded voice-over, both in
+USN's visual identity. Targets: Windows 11 and Linux Mint / Ubuntu.
+
+**The users are lecturers, not developers** (the owner, 22.11.2026). The
+owner is one of them and speaks for them. Everything a lecturer meets
+must be understandable without training: plain words, the same word for
+the same thing everywhere, no jargon from the code. When a name or a
+flow would make a lecturer hesitate, that is a defect.
 
 The project is self-contained and lives in `lysark/`, with its own git
 repository. Do not read, search or change anything outside this folder. It
@@ -196,8 +202,17 @@ the manual, raise it with the owner instead of choosing silently.
 
 ## Working with the owner
 
-- `HANDOFF.md` holds the current status and the owner's feedback. Read it
-  at the start of a session and keep it true.
+- `HANDOFF.md` is the owner's page: what Lysark can do now, what he has
+  decided, what is needed from him, what comes next, and the start
+  message for the next chat. Read it at the start of a session and keep
+  it true. **Keep it short and easy to read** (he asked for that,
+  22.11.2026): no logs, no test details, no long tables. What was built
+  and tried in detail, and his feedback word for word, goes into
+  `docs/historikk.md`, which is the log.
+- In the interface, the same thing has one name. The owner chose these
+  on 22.11.2026: "Lær mer" (never "utdyping"), "Innhold" for what a
+  "Lær mer" panel holds (never "byggestein"), "Nettside" for an embedded
+  page (never "innbygging"), "Rydd opp lysarket", and "Lagre som én fil".
 
 - Ask design questions together and early, each with one recommendation.
   Do not start building a delivery before its questions are answered.

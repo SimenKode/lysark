@@ -20,6 +20,7 @@ import type {
   OpenedHtml,
   OpenedProject,
   VideoProgress,
+  VideoRequest,
   VideoSummary,
   PickedPdf,
 } from '../shared/api';
@@ -286,8 +287,8 @@ function buildMenu(): void {
         { type: 'separator' },
         { label: 'Les inn stemme …', accelerator: 'CmdOrCtrl+R', click: () => send('record') },
         { type: 'separator' },
-        { label: 'Pakk prosjektet til én fil …', click: () => send('pack') },
-        { label: 'Åpne pakket prosjekt …', click: () => send('unpack') },
+        { label: 'Lagre som én fil …', click: () => send('pack') },
+        { label: 'Åpne prosjekt lagret som én fil …', click: () => send('unpack') },
         { label: 'Åpne HTML-fil …', click: () => send('open-html') },
         { type: 'separator' },
         { label: 'Logo fra USN …', click: () => send('settings') },
@@ -549,22 +550,35 @@ function registerHandlers(): void {
 
   handle(
     'lysark:export-video',
-    async (dir: string, project: Project): Promise<VideoSummary | null> => {
+    async (dir: string, project: Project, asked: VideoRequest): Promise<VideoSummary | null> => {
       if (!mainWindow) return null;
       if (videoJob) throw new Error('En video eksporteres allerede.');
+      const request: VideoRequest = {
+        format: asked?.format === 'gif' ? 'gif' : 'mp4',
+        from: Number(asked?.from) || 0,
+        to: Number.isFinite(Number(asked?.to)) ? Number(asked.to) : project.scenes.length - 1,
+        gifWidth: Number(asked?.gifWidth) || 640,
+      };
+      const gif = request.format === 'gif';
+      const extension = gif ? 'gif' : 'mp4';
       const safeName = (project.meta.title || 'forelesning').replace(/[\\/:*?"<>|]+/g, ' ').trim();
       const result = await dialog.showSaveDialog(mainWindow, {
-        title: 'Eksporter video',
+        title: gif ? 'Eksporter GIF' : 'Eksporter video',
         buttonLabel: 'Eksporter',
-        defaultPath: join(dirname(dir), `${safeName || 'forelesning'}.mp4`),
-        filters: [{ name: 'MP4-video', extensions: ['mp4'] }],
+        defaultPath: join(dirname(dir), `${safeName || 'forelesning'}.${extension}`),
+        filters: [
+          gif ? { name: 'GIF', extensions: ['gif'] } : { name: 'MP4-video', extensions: ['mp4'] },
+        ],
       });
       if (result.canceled || !result.filePath) return null;
-      const outFile = /\.mp4$/i.test(result.filePath) ? result.filePath : `${result.filePath}.mp4`;
+      const outFile = new RegExp(`\\.${extension}$`, 'i').test(result.filePath)
+        ? result.filePath
+        : `${result.filePath}.${extension}`;
       const devUrl = process.env.ELECTRON_RENDERER_URL;
       videoJob = exportVideo({
         dir,
         project,
+        request,
         outFile,
         logo: logoStatus(),
         loadFramePage: (window) =>
@@ -609,10 +623,10 @@ function registerHandlers(): void {
   handle('lysark:pack', async (dir: string): Promise<{ path: string; bytes: number } | null> => {
     if (!mainWindow) return null;
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Pakk prosjektet til én fil',
+      title: 'Lagre som én fil',
       buttonLabel: 'Pakk',
       defaultPath: join(dirname(dir), `${basename(dir)}.lysark.zip`),
-      filters: [{ name: 'Pakket Lysark-prosjekt', extensions: ['zip'] }],
+      filters: [{ name: 'Lysark-prosjekt i én fil', extensions: ['zip'] }],
     });
     if (result.canceled || !result.filePath) return null;
     return { path: result.filePath, bytes: packProject(dir, result.filePath) };
@@ -621,9 +635,9 @@ function registerHandlers(): void {
   handle('lysark:unpack', async (): Promise<OpenedProject | null> => {
     if (!mainWindow) return null;
     const pick = await dialog.showOpenDialog(mainWindow, {
-      title: 'Åpne pakket prosjekt',
+      title: 'Åpne prosjekt lagret som én fil',
       buttonLabel: 'Åpne',
-      filters: [{ name: 'Pakket Lysark-prosjekt', extensions: ['zip'] }],
+      filters: [{ name: 'Lysark-prosjekt i én fil', extensions: ['zip'] }],
       properties: ['openFile'],
     });
     const source = pick.filePaths[0];

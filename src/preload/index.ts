@@ -22,7 +22,7 @@ const api: LysarkApi = {
   addCommonsPicture: (dir, title) => call('lysark:commons-add', dir, title),
   addYouTubeStill: (dir, url) => call('lysark:youtube-still', dir, url),
   exportHtml: (dir, project) => call('lysark:export', dir, project),
-  exportVideo: (dir, project) => call('lysark:export-video', dir, project),
+  exportVideo: (dir, project, request) => call('lysark:export-video', dir, project, request),
   cancelVideo: () => ipcRenderer.send('lysark:cancel-video'),
   onVideoProgress: (listener) => {
     const handler = (_event: unknown, progress: VideoProgress): void => listener(progress);
