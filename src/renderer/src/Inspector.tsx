@@ -766,7 +766,7 @@ function MoreFields({ el }: { el: Element }) {
       {has ? (
         <>
           <p className="hint">
-            Elementet har et «+»-merke som åpner et panel. {describeMore(el.more)}
+            Elementet har et «+»-merke som åpner en boks på lysarket. {describeMore(el.more)}
           </p>
           <div className="button-row">
             <button type="button" onClick={() => openBuilder(el.id)}>

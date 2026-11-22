@@ -207,9 +207,9 @@ function VideoEditor({ elementId, block }: { elementId: string; block: Block<'vi
             />
             <span className="field-hint">
               {youtube
-                ? 'YouTube-video. Studenten får YouTubes spiller i panelet; den hentes fra YouTube når panelet åpnes.'
+                ? 'YouTube-video. Studenten får YouTubes spiller i boksen; den hentes fra YouTube når boksen åpnes.'
                 : direct
-                  ? 'Direkte lenke til en videofil. Den spilles i panelet og krever nett.'
+                  ? 'Direkte lenke til en videofil. Den spilles i boksen og krever nett.'
                   : source.url.trim()
                     ? 'Lenke til en videoside. Den åpnes i nettleseren og krever nett.'
                     : 'Lim inn adressen til en YouTube-video, en videoside eller en videofil.'}
@@ -387,7 +387,7 @@ function EmbedEditor({ elementId, block }: { elementId: string; block: Block<'em
               ? `Studenten ser «Innhold fra ${target.host} – klikk for å laste». Ingenting hentes før hen klikker. Noen nettsteder tillater ikke å bli bygget inn; lenka «Åpne i nettleseren» virker uansett.`
               : block.url.trim()
                 ? 'Adressen må begynne med https://'
-                : 'Adressen til en side som skal vises i panelet, for eksempel en Panopto-video eller en GeoGebra-figur.'}
+                : 'Adressen til en side som skal vises i boksen, for eksempel en Panopto-video eller en GeoGebra-figur.'}
         </span>
       </label>
       <label className="field">
@@ -627,7 +627,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
       <div className="builder-body">
         <section className="builder-blocks" aria-label="Innhold">
           <label className="field">
-            <span className="field-label">Overskrift i panelet</span>
+            <span className="field-label">Overskrift i boksen</span>
             <input
               type="text"
               value={more.title}

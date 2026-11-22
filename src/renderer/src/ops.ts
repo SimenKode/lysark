@@ -200,7 +200,7 @@ export function newBlock(kind: 'heading' | 'text' | 'table' | 'embed' | 'video-l
 /** A short description of what a panel holds, for the side panel. */
 export function describeMore(more: More | undefined): string {
   const count = more?.blocks.length ?? 0;
-  if (count === 0) return 'Panelet er tomt.';
+  if (count === 0) return 'Boksen er tom.';
   const kinds = [...new Set(more!.blocks.map((b) => BLOCK_NAMES[b.kind].toLowerCase()))];
   return `${count} ${count === 1 ? 'del' : 'deler'}: ${kinds.join(', ')}.`;
 }

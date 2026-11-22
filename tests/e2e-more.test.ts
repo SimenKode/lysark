@@ -125,7 +125,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       .poll(() => preview.locator('.lm-heading').first().textContent())
       .toBe('Overskrift C');
 
-    await page.getByLabel('Overskrift i panelet').fill('Om bildet A');
+    await page.getByLabel('Overskrift i boksen').fill('Om bildet A');
     await expect.poll(() => preview.locator('h2').textContent()).toBe('Om bildet A');
 
     await page.getByRole('button', { name: 'Nede til venstre' }).click();

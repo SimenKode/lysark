@@ -323,7 +323,7 @@ function InsertBar() {
           add(() => element, false);
           useStore.getState().openBuilder(element.id);
         }}
-        title="Knapp som åpner et panel med mer stoff. Du kan også høyreklikke på et element i lysarket."
+        title="Knapp som åpner en boks med mer stoff. Du kan også høyreklikke på et element i lysarket."
       >
         + Lær mer
       </button>
