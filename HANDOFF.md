@@ -105,8 +105,12 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
 | USNs avslutningsanimasjon | Ja, med den ekte filmen | Ja, med den ekte filmen |
 | GIF-eksport | Ja | Ja |
 | PDF-import | Ja, din Stål-PDF | Nei |
-| «Lær mer» og video under innlesing | Ja, med prøvemikrofon | Prøves nå, se historikken 6.22 |
-| Tidslinje og musikk | Ja, også målt i videoen | Prøves nå, se historikken 6.22 |
+| «Lær mer» og video under innlesing | Ja, med prøvemikrofon | Ja, for hånd, med stille inndata |
+| Tidslinje og musikk | Ja, også målt i videoen | Ja, for hånd. Lyden kan ikke høres i VM-en |
+
+Utprøvingen på Windows fant ni småting i tidslinja og tekstene. De er
+rettet og prøvd på Linux, men ikke på Windows etterpå (historikken,
+6.22).
 
 **Ikke prøvd noe sted:** en ekte mikrofon, en video spilt over ekte
 høyttalere under innlesing, en hel forelesning lest inn i ett strekk, og

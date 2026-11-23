@@ -45,7 +45,7 @@ import './timeline.css';
 
 const LABELS: Record<TrackName, string> = { music: 'Musikk', sound: 'Lyd' };
 /** How many pixels a second can be at the most and at the least. */
-const MAX_ZOOM = 60;
+const MAX_ZOOM = 300;
 const MIN_ZOOM = 0.2;
 /** Peaks kept for drawing, by what they were made from. */
 const PEAKS = new Map<string, Float32Array>();
@@ -145,6 +145,7 @@ export function Timeline() {
     const index = project.scenes.findIndex((s) => s.id === sceneId);
     return plan.entries[Math.max(0, index)]?.start ?? 0;
   });
+  const creditDialog = useRef<HTMLDialogElement>(null);
   const playback = useRef<LecturePlayback | null>(null);
   const frame = useRef(0);
 
@@ -221,7 +222,12 @@ export function Timeline() {
 
   const seek = (seconds: number): void => {
     if (playing) stop();
-    setPlayhead(Math.max(0, Math.min(total, seconds)));
+    const to = Math.max(0, Math.min(total, seconds));
+    setPlayhead(to);
+    // The slide under the playhead is the slide that is shown.
+    const entry = plan.entries.find((e) => to < e.start + e.duration) ?? plan.entries.at(-1);
+    const scene = entry && project.scenes[entry.index];
+    if (scene && scene.id !== sceneId) setScene(scene.id);
   };
 
   /** The time in the lecture under a point on the screen. */
@@ -384,7 +390,8 @@ export function Timeline() {
             <div className="tl-row tl-ruler" aria-hidden="true">
               {marks.map((t) => (
                 <span key={t} className="tl-mark" style={{ left: x(t) }}>
-                  {formatTime(t)}
+                  {/* A number that has no room before the edge is left out; its line stays. */}
+                  {x(extent - t) >= 34 ? formatTime(t) : ''}
                 </span>
               ))}
             </div>
@@ -609,9 +616,13 @@ export function Timeline() {
           >
             Fjern klippet
           </button>
-          <details className="tl-credit">
-            <summary>Kreditering</summary>
+          <button type="button" onClick={() => creditDialog.current?.showModal()}>
+            Kreditering
+          </button>
+          <dialog ref={creditDialog} className="dialog tl-credit">
+            <h2>Kreditering av {chosenAsset?.name ?? 'lydfila'}</h2>
             <CreditFields
+              what="sound"
               credit={chosenAsset?.credit}
               onChange={(credit) =>
                 update((draft) => {
@@ -622,7 +633,16 @@ export function Timeline() {
                 }, `credit-${chosen.clip.asset}`)
               }
             />
-          </details>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="strong"
+                onClick={() => creditDialog.current?.close()}
+              >
+                Ferdig
+              </button>
+            </div>
+          </dialog>
         </div>
       ) : (
         <div className="tl-tools">

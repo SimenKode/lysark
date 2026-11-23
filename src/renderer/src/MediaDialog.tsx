@@ -31,15 +31,19 @@ function errorText(error: unknown): string {
 export function CreditFields(props: {
   credit: Credit | undefined;
   onChange: (credit: Credit | undefined) => void;
+  /** What is credited: a picture (when nothing is said), or music or other sound. */
+  what?: 'picture' | 'sound';
 }) {
   const credit = props.credit ?? {};
+  const sound = props.what === 'sound';
   if (credit.required) {
     return (
       <div className="credit-fixed">
         <p>{creditText(credit, STRINGS)}</p>
         <p className="hint">
-          Lisensen krever at dette vises sammen med bildet. Lysark setter det inn under bildet i
-          «Lær mer» og i «Bildekilder», og det kan ikke fjernes.
+          {sound
+            ? 'Lisensen krever at dette vises. Lysark setter det inn i «Bildekilder», og det kan ikke fjernes.'
+            : 'Lisensen krever at dette vises sammen med bildet. Lysark setter det inn under bildet i «Lær mer» og i «Bildekilder», og det kan ikke fjernes.'}
         </p>
       </div>
     );
@@ -61,7 +65,7 @@ export function CreditFields(props: {
         />
       </label>
       <label className="field">
-        <span className="field-label">Tittel på bildet</span>
+        <span className="field-label">{sound ? 'Tittel på stykket' : 'Tittel på bildet'}</span>
         <input
           type="text"
           value={credit.title ?? ''}
@@ -87,8 +91,9 @@ export function CreditFields(props: {
         />
       </label>
       <p className="hint">
-        Frivillig for dine egne bilder. Det du fyller inn, vises under bildet i «Lær mer» og i
-        «Bildekilder».
+        {sound
+          ? 'Frivillig for det du har laget selv. Det du fyller inn, vises i «Bildekilder» i HTML-fila, og på lysarkene med kilder til slutt i videoen når du har valgt dem.'
+          : 'Frivillig for dine egne bilder. Det du fyller inn, vises under bildet i «Lær mer» og i «Bildekilder».'}
       </p>
     </div>
   );

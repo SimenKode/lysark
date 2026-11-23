@@ -203,6 +203,14 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     await page.locator('.tl-tools input[type="range"]').fill('-6');
     expect(await page.locator('.tl-tools .audio-gain-value').textContent()).toContain('-6 dB');
     await shot('t01-tidslinje-musikk');
+    // Who made the music can be written down, in words that fit music.
+    await page.getByRole('button', { name: 'Kreditering' }).click();
+    const credit = page.locator('dialog.tl-credit');
+    await credit.waitFor();
+    expect(await credit.textContent()).toContain('Tittel på stykket');
+    await credit.getByLabel('Opphavsperson').fill('Person A');
+    await credit.getByRole('button', { name: 'Ferdig' }).click();
+    await credit.waitFor({ state: 'hidden' });
 
     await save();
     const placed = saved().tracks!.music[0]!;
@@ -211,7 +219,11 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     expect(placed.to).toBeGreaterThan(7.5);
     expect(placed.to).toBeLessThan(8.5);
     // The music is a file in the project, in the project's own sound format.
-    expect(saved().assets[placed.asset]).toMatchObject({ kind: 'audio', mime: 'audio/wav' });
+    expect(saved().assets[placed.asset]).toMatchObject({
+      kind: 'audio',
+      mime: 'audio/wav',
+      credit: { author: 'Person A' },
+    });
 
     // Divided where the playhead stands, and joined again by undoing.
     // (The clip now ends inside the lecture, so the whole width shows the lecture again.)
@@ -220,6 +232,8 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     const now = Number(await page.locator('.tl-inner').getAttribute('data-pps'));
     await page.mouse.click(ruler.x + 5 * now, ruler.y + ruler.height / 2);
     expect(await time()).toMatch(/^0:0[45],\d \/ 0:11$/);
+    // The slide under the playhead is the slide that is shown.
+    expect(await page.locator('.tl-slide').nth(1).getAttribute('aria-current')).toBe('true');
     await clip().first().click();
     await page.getByRole('button', { name: 'Del ved spillehodet' }).click();
     await expect.poll(() => clip().count()).toBe(2);
@@ -320,7 +334,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     expect(html).toContain('a_voice_s_a');
     expect(html).toContain('a_voice_s_b');
     expect(html).toContain('a_voice_s_c');
-    expect(html).not.toContain('audio/wav');
-    expect(html).not.toContain('"tracks"');
+    // What is left of the music is who made it, for the list of sources.
+    expect(html).toContain('Person A');
   }, 120_000);
 });

@@ -1348,7 +1348,62 @@ deles; et lysark gjøres lengre; hele forelesningen spilles; i MP4-fila
 måles musikken (2000 Hz) til omtrent en fjerdedel under stemmen, full
 styrke ellers, borte før klippet starter og etter at det slutter, og
 tonet ut mot slutten; HTML-fila har lyd på alle tre lysarkene.
-Hele settet: 342 tester.
+Hele settet: 342 tester. De 51 ende-til-ende-testene går også mot det
+pakkede Linux-programmet (0.3.0, utpakket).
+
+### 6.22 Windows-utprøving av det nye, og rettinger etter den (23.11.2026)
+
+**Prøvd på Windows 11 (eierens VM), for hånd av en hjelpeagent**, med
+zip-utgaven slik den var før rettingene under, et lite testprosjekt
+(tre lysark: stemme lest fra disk, bilde med «Lær mer» med tekst og
+video, video på lysarket) og en MP3-fil. Alle sju punktene virket:
+
+1. Start og åpning av prosjektet.
+2. Fanen «Lyd»: bølgeformen til et opptak som er lest fra disk, tegnes,
+   og «Spill av» flytter spillehodet. (Dette er feilen fra 6.21, og den
+   er altså borte også på Windows.)
+3. Fanen «Tidslinje»: tre lysark på rad, bølgeform under det første;
+   «Legg til musikk» gjennom Windows' fildialog; klippet (30 s) rakk
+   forbi slutten og ble skravert der; enden ble dratt inn, klippet
+   flyttet, tonet inn og ut, styrken endret, delt ved spillehodet og
+   samlet igjen med angre; et lysark ble dratt lengre; «Spill av» gikk
+   gjennom alle tre lysarkene. Også «Legg til lyd», zoom, «Vis alt» og
+   «Fjern klippet».
+4. Innlesing: «+» ga boksen «Om bildet» ved siden av bildet, videoen i
+   boksen spilte, «Lukk» la den bort, videoen på lysarket startet og
+   stoppet. Lydsporet fikk fem merker.
+5. Video (MP4, 0:51): i Windows' spiller spratt boksen ut, videoen i
+   den rørte seg, boksen ble borte, videoen på lysarket rørte seg og
+   stoppet.
+6. HTML og «Forhåndsvis»: «Spill av» åpnet boksen av seg selv, spilte
+   videoen i den, lukket boksen, og spilte og stoppet videoen på
+   lysarket.
+7. Avslutning.
+
+**Kunne ikke bedømmes på Windows:** lyd. VM-en kan ikke høres, så at
+musikken er med, dempes og tones, er bare målt på Linux. Opptaket var
+stillhet (VM-en har ingen ekte mikrofon).
+
+**Funn, og hva som er gjort.** Rettingene er prøvd på Linux, ikke på
+Windows etterpå.
+
+| Funn på Windows | Gjort |
+| --- | --- |
+| «Etter slutten: høres ikke» lå oppå tidene i linjalen | Rettet: skraveringen og teksten begynner under linjalen |
+| Siste tid i linjalen var kuttet i høyre kant | Rettet: et tall uten plass skrives ikke; streken står |
+| Navnet på et valgt klipp kunne ikke leses, og det valgte klippet ble helt mørkt uten bølgeform | Rettet: et valgt klipp beholder fargen sin og får oransje ramme; navnet er svart på lyst og ligger over toningen |
+| Panelet hoppet i høyden når et klipp ble valgt eller sluppet | Rettet: verktøyraden har samme høyde med og uten valgt klipp |
+| «Kreditering» for lyd brukte ordene for bilder, og gjorde panelet så høyt at lysarket krympet | Rettet: egen liten dialog, med «Tittel på stykket» og tekst som passer lyd |
+| Zoom-knappene var grå på en kort forelesning | Rettet: det kan zoomes inn til 300 punkter per sekund |
+| Rullefeltet lå over nedre kant av «Lyd»-raden når det var zoomet inn | Rettet: det er satt av plass til det under radene |
+| Dialogen for videoeksport sa at «Lær mer» ikke vises og at video er stillbilde | Rettet: den sier nå at bokser og videoer vises slik de ble åpnet og spilt under innlesingen |
+| Et trykk i linjalen flyttet spillehodet, men ikke lysarket som vises | Rettet: lysarket under spillehodet vises |
+| Fildialogene for musikk og lyd åpner i Nedlastinger | Ikke endret. Det er Windows' eget valg av startmappe |
+| «+»-merket står på bildet gjennom hele lysarket i videoen | Slik er det ment: merket vises på det som ble åpnet, så det synes hvor boksen kommer fra. Eieren kan si om det bør bort |
+| Et lysark som dras lengre, får en pause, og fanen heter da «Lyd (0:07)» uten at det er lyd | Ikke endret; tallet er lysarkets lengde |
+
+I VM-en ligger utprøvingen i `C:\Users\simen\lysark-test\t1123\`.
+Den kan slettes.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

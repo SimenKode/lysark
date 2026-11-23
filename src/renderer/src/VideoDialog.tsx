@@ -253,10 +253,11 @@ export function VideoDialog() {
             : withScript > 0
               ? `Teksting lages av manuset (${withScript} lysark har manus) og lagres som egen fil ved siden av videoen (.vtt). Tidene er beregnet ut fra tekstens lengde, ikke lyttet fram.`
               : 'Ingen av lysarkene har manus, så det lages ikke teksting.'}{' '}
-          «+»-merker og «Lær mer» vises ikke.
+          «Lær mer»-bokser og videoer vises slik du åpnet og spilte dem da du leste inn. Ellers
+          vises ikke «+»-merkene
           {hasVideoElements
-            ? ' Video inne i et lysark vises som stillbilde (første bilde, eller forhåndsbildet).'
-            : ''}
+            ? ', og en video som ikke ble spilt, står som stillbilde (første bilde, eller forhåndsbildet).'
+            : '.'}
         </p>
         {ffmpeg === false && (
           <p className="video-missing" role="alert">
