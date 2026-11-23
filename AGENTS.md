@@ -266,9 +266,9 @@ the manual, raise it with the owner instead of choosing silently.
   (the owner, 22.11.2026), and then he decides. Do not change its
   visibility, create other remote repositories or publish anything
   (releases, packages) unless the owner asks. He asked for a release on
-  22.11.2026: version 0.2.0 is a release in the private repository, with
-  the packaged program for Linux and Windows. Make a new release only
-  when he asks for one.
+  22.11.2026 (version 0.2.0) and again on 23.11.2026 (version 0.3.0):
+  each is a release in the private repository, with the packaged program
+  for Linux and Windows. Make a new release only when he asks for one.
 - Commits use the owner's GitHub no-reply address, set in this
   repository's git configuration. Never put his private e-mail address in
   a commit, a file or a request.

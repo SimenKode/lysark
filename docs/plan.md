@@ -11,7 +11,7 @@ prøvd på både Linux Mint og Windows 11.
 | --- | --- | --- |
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
-| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, pakket som 0.3.0, ikke gitt ut). Gjenstår: en ekte mikrofon |
+| 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
@@ -517,11 +517,10 @@ Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
    Canvas. «Lær mer» og video under innlesing, tidslinje og flere
    lydspor, mer liv og lekenhet og USNs avslutningsanimasjon, som sto
    her, er bygget.
-2. **Ny utgivelse** når eieren ber om den (0.3.0 er pakket lokalt).
-3. **Flere bildekilder**, Openverse først, når resten sitter.
-4. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
+2. **Flere bildekilder**, Openverse først, når resten sitter.
+3. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
    stil).
-5. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;
+4. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;
    det er et tema og kan endres uten å røre innholdet.
-6. Tabeller i importen rettes når eieren har pekt på lysark som plager
+5. Tabeller i importen rettes når eieren har pekt på lysark som plager
    ham.

@@ -1405,6 +1405,16 @@ Windows etterpå.
 I VM-en ligger utprøvingen i `C:\Users\simen\lysark-test\t1123\`.
 Den kan slettes.
 
+**Utgivelse:** eieren ba om det 23.11.2026 («Ja, gi ut 0.3.0»). Versjon
+0.3.0 er gitt ut i det private repoet
+(<https://github.com/SimenKode/lysark/releases/tag/v0.3.0>), med
+`Lysark-0.3.0.AppImage` og `Lysark-0.3.0-win.zip`, pakket etter
+rettingene over. Det pakkede Linux-programmet (utpakket) består de 51
+ende-til-ende-testene. Windows-zipen slik den er gitt ut, er ikke prøvd
+på Windows; utprøvingen der var av bygget rett før rettingene.
+AppImage-fila selv er fortsatt ikke startet av meg (se 6.19).
+Synligheten er ikke endret.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

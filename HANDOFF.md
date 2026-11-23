@@ -74,9 +74,7 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
    dempet under stemmen din, eller skal den lenger ned eller opp?
 3. **Prøv i Canvas** (bare du, ingen KI). Sjekklista står nederst.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
-5. **Vil du ha en ny utgivelse?** Det nye ligger ferdig pakket hos deg
-   som versjon 0.3.0, men er ikke gitt ut på GitHub.
-6. **Repoet** er fortsatt privat. Om det skal bli offentlig, er din
+5. **Repoet** er fortsatt privat. Om det skal bli offentlig, er din
    avgjørelse. Tre ting bør du ta stilling til først (historikken,
    6.12): unntaket som holder dine eksporterte forelesninger utenfor
    GPL, om USN er komfortabel med at profilen er bygd inn, og hvem som
@@ -85,9 +83,8 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd mikrofon, musikk og Canvas.
-2. **Ny utgivelse**, når du ber om den.
-3. **Flere bildekilder** (Openverse først).
-4. **Figurer og bevegelser** (leveranse 4), deretter håndlaget stil
+2. **Flere bildekilder** (Openverse først).
+3. **Figurer og bevegelser** (leveranse 4), deretter håndlaget stil
    (leveranse 5).
 
 ## Hva som er prøvd
@@ -142,8 +139,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 | Hva | Hvor |
 | --- | --- |
-| Programmet med det nye, ferdig pakket (ikke gitt ut) | `release/Lysark-0.3.0.AppImage` (Linux) og `release/Lysark-0.3.0-win.zip` (Windows) |
-| Forrige utgivelse (privat, som repoet), uten det nye | <https://github.com/SimenKode/lysark/releases/tag/v0.2.0> |
+| Programmet, ferdig pakket | `release/Lysark-0.3.0.AppImage` (Linux) og `release/Lysark-0.3.0-win.zip` (Windows) |
+| Utgivelsen (privat, som repoet), gitt ut 23.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.3.0> |
 | Koden | `~/Forelesningsverktoy/lysark`, privat på GitHub (`SimenKode/lysark`) |
 | Planen for de fem leveransene | [docs/plan.md](docs/plan.md) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
@@ -178,7 +175,7 @@ Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger privat på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til
 HTML), 2 («Lær mer») og 3 (lyd, video, GIF, PDF) er bygget, og versjon
 0.2.0 er gitt ut. Etter det er tidslinje, musikk- og lydspor og «Lær
-mer» og video under innlesing bygget (pakket som 0.3.0, ikke gitt ut).
+mer» og video under innlesing bygget, og gitt ut som versjon 0.3.0.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -203,8 +200,6 @@ Det jeg fant da jeg prøvde selv (mikrofon, musikk, video, Canvas):
 
 Innspill til produktet:
 (skriv her)
-
-Ny utgivelse av 0.3.0? (ja/nei)
 
 Gjør dette:
 1. Skriv det jeg fant og innspillene mine inn i docs/historikk.md.
