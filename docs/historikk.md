@@ -1462,11 +1462,14 @@ En kopi av historikken slik den var, ligger hos eieren i
 `release/lysark-for-omskriving.bundle` (ikke i git). Den inneholder det
 som er tatt ut, og kan slettes.
 
-Ett forbehold: GitHub kan beholde de gamle commitene en stund etter en
-tvangspush, uten at noe peker på dem. De kan da bare hentes av den som
-kjenner den lange commit-ID-en, og ingen av dem er nevnt noe sted. Helt
-sikkert borte blir de først når GitHub rydder, eller om repoet slettes
-og opprettes på nytt.
+**Forbehold, kontrollert etter tvangspushen:** GitHub har fortsatt de
+gamle commitene. De er ikke lenger en del av `main` eller merkene, men
+GitHub svarer på dem når man spør med commit-ID-en, og repoets
+aktivitetslogg på GitHub viser tvangspushen med ID-ene før og etter.
+Gjøres dette repoet offentlig slik det er, kan altså den som leter,
+finne det som er tatt ut. Det er to måter å bli kvitt dem på: be GitHub
+Support rydde, eller opprette repoet på nytt fra den omskrevne
+historikken (og legge de to utgivelsene inn igjen). Eieren velger.
 
 **Ikke gjort, venter på eieren:**
 

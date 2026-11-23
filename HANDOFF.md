@@ -76,9 +76,13 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
 5. **Repoet** er fortsatt privat, og du har sagt «vent litt». De tre
    spørsmålene om rettigheter har du svart på, og historikken i git er
-   skrevet om slik du ba om (historikken, 6.23). Én ting gjenstår før
-   det åpnes: **FFmpeg i utgivelsene.** Kildekoden bør ligge ved
-   utgivelsen, ikke bare som lenke til andre. Skal jeg legge den ved?
+   skrevet om slik du ba om (historikken, 6.23). To ting gjenstår før
+   det åpnes:
+   - **GitHub har fortsatt de gamle commitene**, og aktivitetsloggen
+     der peker på dem. De blir borte om repoet opprettes på nytt fra
+     den omskrevne historikken, eller om GitHub Support rydder.
+   - **FFmpeg i utgivelsene:** kildekoden bør ligge ved utgivelsen, ikke
+     bare som lenke til andre. Skal jeg legge den ved?
 
 ## Neste steg, i rekkefølge
 
