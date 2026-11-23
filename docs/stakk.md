@@ -176,6 +176,15 @@ med.
   programfila, `LICENSE.txt` og `BUILD.txt` i `vendor/ffmpeg/`.
   `BUILD.txt` sier hvilken utgave det er og lenker til kildekoden
   (FFmpeg ved `7adfbe40dc`) og byggeskriptene.
+- **Kildekoden følger hver utgivelse.** Fordi Lysark deler FFmpeg videre
+  under GPL, legges tre filer ved hver utgivelse på GitHub:
+  kildekoden til FFmpeg ved nøyaktig den commiten bygget er laget fra,
+  byggeskriptene ved nøyaktig det merket, og `FFMPEG-SOURCE.txt` som
+  sier hva de er. `npm run fetch:ffmpeg-source` henter dem til
+  `vendor/ffmpeg/source/` og kontrollerer at hvert arkiv holder riktig
+  commit. Byggeskriptene oppgir kilde og commit for hvert bibliotek som
+  er bygget inn i FFmpeg (x264 og mange andre; 127 skript);
+  bibliotekenes egen kildekode er ikke kopiert.
 - Ved pakking legges mappa ved siden av programmet som
   `resources/ffmpeg/`. AppImage-fila ble 202 MB og Windows-zip-en 222 MB
   (programfila til FFmpeg er omtrent 170 MB utpakket).

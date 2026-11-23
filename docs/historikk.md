@@ -1488,9 +1488,9 @@ historikken (og legge de to utgivelsene inn igjen).
 
 Synligheten er ikke endret: begge repoene er private.
 
-**Ikke gjort, venter på eieren:**
+**FFmpeg-lisensen (kjapt søk, jeg er ikke jurist).**
 
-- **FFmpeg-lisensen (kjapt søk, jeg er ikke jurist).** Utgivelsene
+- Utgivelsene
   inneholder FFmpeg som ferdig program under GPL versjon 3. Ved siden av
   ligger lisensteksten og lenker til FFmpegs kildekode (nøyaktig commit)
   og til byggeskriptene. GPL versjon 3 punkt 6 d tillater at kildekoden
@@ -1509,7 +1509,32 @@ Synligheten er ikke endret: begge repoene er private.
   <https://jxself.org/outsourcing.shtml>,
   <https://github.com/BtbN/FFmpeg-Builds>.
 
-Repoet er fortsatt privat.
+**Kildekoden til FFmpeg er lagt ved utgivelsene** (eieren: «Ja, legg
+den ved», 23.11.2026). Begge utgivelsene, 0.2.0 og 0.3.0, bruker samme
+FFmpeg-bygg og har fått de samme tre filene:
+
+- `FFmpeg-n9.0.2-39-g7adfbe40dc-source.tar.gz`: kildekoden til FFmpeg,
+  hentet fra FFmpegs repo på GitHub ved commit `7adfbe40dc…`. Arkivet
+  sier selv hvilken commit det holder, og det er kontrollert.
+- `FFmpeg-Builds-autobuild-2026-10-31-12-59.tar.gz`: byggeskriptene fra
+  BtbN ved det merket bygget er laget på (commit `5031c6f…`).
+- `FFMPEG-SOURCE.txt`: hva filene er, sjekksummene, og hvordan
+  Linux-programmet er satt opp (configure-linja).
+
+Utgivelsestekstene sier at filene ligger der. Hentingen er en fast
+kommando (`npm run fetch:ffmpeg-source`), og AGENTS.md sier at en
+utgivelse ikke er ferdig uten dem.
+
+Det som ikke er med: kildekoden til bibliotekene som er bygget inn i
+FFmpeg (x264 og mange andre). Byggeskriptene oppgir kilde og commit
+for hvert av dem, og jeg har kontrollert at alle de 127 skriptene som
+henter noe, gjør det, men selve kildekoden deres ligger hos de
+prosjektene, ikke ved utgivelsen. Å ta med alt ville bety å hente fra
+mange andre nettsteder enn GitHub, og er ikke gjort uten at eieren ber
+om det.
+
+Repoet er fortsatt privat. Ingenting gjenstår fra min side før det
+åpnes; det er eierens avgjørelse.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

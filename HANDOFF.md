@@ -74,12 +74,11 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
    dempet under stemmen din, eller skal den lenger ned eller opp?
 3. **Prøv i Canvas** (bare du, ingen KI). Sjekklista står nederst.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
-5. **Repoet** er fortsatt privat, og du har sagt «vent litt». De tre
-   spørsmålene om rettigheter har du svart på, og historikken i git er
-   skrevet om og repoet opprettet på nytt slik du ba om (historikken,
-   6.23). Én ting gjenstår før det åpnes: **FFmpeg i utgivelsene.**
-   Kildekoden bør ligge ved utgivelsen, ikke bare som lenke til andre.
-   Skal jeg legge den ved?
+5. **Repoet** er fortsatt privat, og du har sagt «vent litt». Det du ba
+   om før det åpnes, er gjort (historikken, 6.23): designmanualen er
+   ute, historikken i git er skrevet om, repoet er opprettet på nytt, og
+   kildekoden til FFmpeg ligger ved utgivelsene. Si fra når det skal
+   åpnes.
 
 ## Neste steg, i rekkefølge
 

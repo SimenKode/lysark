@@ -149,6 +149,10 @@ npm test
 npm run dist:linux
 ```
 
+Til en utgivelse hentes også kildekoden til FFmpeg med
+`npm run fetch:ffmpeg-source`, og legges ved utgivelsen (se
+[docs/stakk.md](docs/stakk.md)).
+
 `npm run fetch:ffmpeg` henter FFmpeg (én fast utgave, med kontroll av
 sjekksum) til `vendor/ffmpeg/`. Uten det kan programmet ikke lage video,
 og testen for lyd og video hoppes over.

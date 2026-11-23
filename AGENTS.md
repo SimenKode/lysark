@@ -174,6 +174,12 @@ instead of choosing silently.
   `vendor/ffmpeg/`, and shipped next to the program with its licence text
   and a link to its source. To change the build, change it there and in
   `docs/stakk.md`, and tell the owner.
+- Lysark hands FFmpeg on under the GPL, so every release carries
+  FFmpeg's source as files of its own, not only as a link (the owner,
+  23.11.2026): `npm run fetch:ffmpeg-source` fetches the FFmpeg source
+  at the exact commit, the build scripts at the exact tag and a note,
+  into `vendor/ffmpeg/source/`. Attach all three to the release. A
+  release without them is not finished.
 - Files the owner opens are untrusted input. An exported HTML file that
   is opened as a project is read as text and never run; its project is
   validated like any project file, and media land only in the new
