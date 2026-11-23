@@ -14,7 +14,7 @@ henvisninger som «6.14» fortsatt treffer.
 | Hva | Hvor |
 | --- | --- |
 | Prosjektet | `~/Forelesningsverktoy/lysark/`, eget git-repo, gren `main` |
-| På GitHub | `SimenKode/lysark`, **privat** til eieren selv gjør det offentlig eller ber om det |
+| På GitHub | `SimenKode/lysark`, **offentlig** fra 23.11.2026 (6.23). Det gamle repoet, `SimenKode/lysark-gammel`, er privat |
 | Lisens | GPL-3.0-or-later ([LICENSE](../LICENSE)), med unntak for eksporterte forelesninger ([EXPORT-EXCEPTION.md](../EXPORT-EXCEPTION.md)) |
 | Commits | se `git log`. Eieren har sagt ja til commits på `main` etter hvert ferdige, testede trinn, og til at de pushes til det private repoet fortløpende. Synlighet og publisering avgjør han. |
 | Ferdige programfiler | `release/Lysark-0.1.0.AppImage` (Linux, 202 MB) og `release/Lysark-0.1.0-win.zip` (Windows, 222 MB), bygget fra koden slik den var i slutten av økt 5, med FFmpeg ved siden av |
@@ -1533,8 +1533,10 @@ prosjektene, ikke ved utgivelsen. Å ta med alt ville bety å hente fra
 mange andre nettsteder enn GitHub, og er ikke gjort uten at eieren ber
 om det.
 
-Repoet er fortsatt privat. Ingenting gjenstår fra min side før det
-åpnes; det er eierens avgjørelse.
+**Repoet er åpnet** (eieren: «Ja, gjør det offentlig», 23.11.2026).
+`SimenKode/lysark` er offentlig, med de to utgivelsene. Det gamle
+repoet, `SimenKode/lysark-gammel`, er fortsatt privat. Fra nå er hver
+push en offentliggjøring.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

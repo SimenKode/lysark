@@ -74,11 +74,9 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
    dempet under stemmen din, eller skal den lenger ned eller opp?
 3. **Prøv i Canvas** (bare du, ingen KI). Sjekklista står nederst.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
-5. **Repoet** er fortsatt privat, og du har sagt «vent litt». Det du ba
-   om før det åpnes, er gjort (historikken, 6.23): designmanualen er
-   ute, historikken i git er skrevet om, repoet er opprettet på nytt, og
-   kildekoden til FFmpeg ligger ved utgivelsene. Si fra når det skal
-   åpnes.
+5. **Repoet er offentlig** fra 23.11.2026, slik du ba om (historikken,
+   6.23). Det gamle repoet (`lysark-gammel`) er privat og har det som
+   ble tatt ut; slett det når du er trygg.
 
 ## Neste steg, i rekkefølge
 
@@ -140,8 +138,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | Hva | Hvor |
 | --- | --- |
 | Programmet, ferdig pakket | `release/Lysark-0.3.0.AppImage` (Linux) og `release/Lysark-0.3.0-win.zip` (Windows) |
-| Utgivelsen (privat, som repoet), gitt ut 23.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.3.0> |
-| Koden | `~/Forelesningsverktoy/lysark`, privat på GitHub (`SimenKode/lysark`) |
+| Utgivelsen, gitt ut 23.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.3.0> |
+| Koden | `~/Forelesningsverktoy/lysark`, offentlig på GitHub (<https://github.com/SimenKode/lysark>) |
 | Det gamle repoet, med det som er tatt ut | `SimenKode/lysark-gammel`, privat. Du kan slette det når du vil |
 | Planen for de fem leveransene | [docs/plan.md](docs/plan.md) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
@@ -173,7 +171,7 @@ Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
 forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
-og ligger privat på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til
+og ligger offentlig på GitHub (SimenKode/lysark). Leveranse 1 (PPTX til
 HTML), 2 («Lær mer») og 3 (lyd, video, GIF, PDF) er bygget, og versjon
 0.2.0 er gitt ut. Etter det er tidslinje, musikk- og lydspor og «Lær
 mer» og video under innlesing bygget, og gitt ut som versjon 0.3.0.
@@ -188,8 +186,9 @@ Rammer:
   utenfor den mappa.
 - Snakk med meg på norsk bokmål. Det jeg, andre forelesere og studentene
   leser, er på bokmål; kode, kommentarer og commits på engelsk.
-- Commit hvert ferdige, testede trinn, og push main til det private
-  repoet fortløpende. Ikke endre synligheten.
+- Commit hvert ferdige, testede trinn, og push main fortløpende. Repoet
+  er offentlig, så det som pushes, er offentliggjort. Ikke endre
+  synligheten.
 - Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), aldri
   kontakte nettet og aldri bruke den ekte mikrofonen min.
 - Canvas prøver jeg selv, for hånd. Ingen KI der.

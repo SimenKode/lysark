@@ -274,23 +274,24 @@ instead of choosing silently.
   The answers so far are in `docs/sporsmal-leveranse-1.md` and
   `docs/sporsmal-videre.md`; the plan built on them is `docs/plan.md`.
 - The owner has allowed commits on `main` as each tested step is done,
-  and pushing them to the private repository as you go, without asking
-  each time (22.11.2026). Push `main` to `origin` only: no force push, no
-  other branches or remotes. (The history was rewritten and force-pushed
+  and pushing them to the repository as you go, without asking each time
+  (22.11.2026). Push `main` to `origin` only: no force push, no other
+  branches or remotes. The repository is public now, so a push is a
+  publication: look at what a commit holds before it goes. (The history was rewritten and force-pushed
   once, on his word, on 23.11.2026, before the repository was opened.
   That was that one time; the rule stands.)
 - `SimenKode/lysark-gammel` is the repository as it was before the
   history was rewritten (23.11.2026). It is private and holds what was
   taken out. Never push to it, fetch from it or copy anything from it;
   the owner deletes it when he chooses.
-- The repository is on GitHub as `SimenKode/lysark`. It stays private
-  until there is a first usable version with both HTML and video
-  (the owner, 22.11.2026), and then he decides. Do not change its
-  visibility, create other remote repositories or publish anything
-  (releases, packages) unless the owner asks. He asked for a release on
-  22.11.2026 (version 0.2.0) and again on 23.11.2026 (version 0.3.0):
-  each is a release in the private repository, with the packaged program
-  for Linux and Windows. Make a new release only when he asks for one.
+- The repository is on GitHub as `SimenKode/lysark`, and it is **public**:
+  the owner opened it on 23.11.2026, after the history had been gone
+  through and rewritten. Do not change its visibility, create other
+  remote repositories or publish anything (releases, packages) unless
+  the owner asks. He asked for a release on 22.11.2026 (version 0.2.0)
+  and again on 23.11.2026 (version 0.3.0): each is a release with the
+  packaged program for Linux and Windows and FFmpeg's source. Make a new
+  release only when he asks for one.
 - Commits use the owner's GitHub no-reply address, set in this
   repository's git configuration. Never put his private e-mail address in
   a commit, a file or a request.

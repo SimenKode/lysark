@@ -176,7 +176,8 @@ avslutningsanimasjon som et innebygd forslag til avslutning, og flere
 kilder til frie bilder. Det må spørres ut før det bygges (6.14 B).
 
 **Første brukbare utgave** er når leveranse 3 er ferdig: da finnes både
-HTML og video. Til da er repoet privat.
+HTML og video. Til da var repoet privat; eieren åpnet det 23.11.2026
+(historikk.md 6.23).
 
 ## Leveranse 3: Lyd og video
 
