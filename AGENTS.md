@@ -18,8 +18,14 @@ the same thing everywhere, no jargon from the code. When a name or a
 flow would make a lecturer hesitate, that is a defect.
 
 The project is self-contained and lives in `lysark/`, with its own git
-repository. Do not read, search or change anything outside this folder. It
-is not part of any other project the owner has.
+repository. Do not read, search or change anything outside this folder,
+and never describe or add anything from outside it here. It is not part
+of any other project the owner has.
+
+It is the owner's private project (he said so on 23.11.2026): he
+publishes it himself, as a private person, and uses it privately. It is
+not made, owned or endorsed by USN, and nothing in the repository may
+say or suggest that it is.
 
 ## Language
 
@@ -93,12 +99,16 @@ templates start empty and are filled in by the owner through a form. Test
 fixtures use obviously neutral content ("A", "B", 1, 2, 3), never
 plausible-looking engineering data.
 
-## USN brand manual is binding
+## The look follows USN's profile
 
-`docs/designmanual.md` summarises the rules from
-<https://brandpad.io/usn/> and how the program applies them. Design
-decisions start there. When a reference video or a request conflicts with
-the manual, raise it with the owner instead of choosing silently.
+The program has chosen the same colours, shapes and kinds of typeface as
+USN's visual profile, so that what it makes fits in at USN. USN's own
+manual is at <https://brandpad.io/usn/>; read it there when a design
+decision needs it. **No copy, summary or digest of that manual is kept
+in this repository** (the owner, 23.11.2026: a summary was removed).
+Write down what Lysark does, not what the manual says. When a reference
+video or a request conflicts with the profile, raise it with the owner
+instead of choosing silently.
 
 ## Architecture invariants
 
@@ -260,7 +270,9 @@ the manual, raise it with the owner instead of choosing silently.
 - The owner has allowed commits on `main` as each tested step is done,
   and pushing them to the private repository as you go, without asking
   each time (22.11.2026). Push `main` to `origin` only: no force push, no
-  other branches or remotes.
+  other branches or remotes. (The history was rewritten and force-pushed
+  once, on his word, on 23.11.2026, before the repository was opened.
+  That was that one time; the rule stands.)
 - The repository is on GitHub as `SimenKode/lysark`. It stays private
   until there is a first usable version with both HTML and video
   (the owner, 22.11.2026), and then he decides. Do not change its

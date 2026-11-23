@@ -10,6 +10,11 @@ allerede har, i PowerPoint (PPTX) eller PDF, om til
 begge i USNs visuelle profil. Programmet skal kunne brukes uten
 opplæring, og virke på Windows 11 og Linux Mint / Ubuntu.
 
+Lysark er et privat prosjekt. Det er ikke laget, eid eller godkjent av
+Universitetet i Sørøst-Norge (USN). Programmet har valgt de samme
+fargene, formene og skrifttypene som USNs profil; USNs logo følger ikke
+med.
+
 Lysark er fri programvare under GNU General Public License, versjon 3
 eller senere (se [Lisens](#lisens)).
 
@@ -164,7 +169,6 @@ tidslinja med musikk, eksport til HTML og video, og avspilling.
 | [docs/plan.md](docs/plan.md) | De fem leveransene og hva som er med i hver |
 | [docs/stakk.md](docs/stakk.md) | Valgt teknologi, begrunnelse og lisens per avhengighet |
 | [docs/prosjektformat.md](docs/prosjektformat.md) | Prosjektformatet (lysark, elementer, tidslinje) |
-| [docs/designmanual.md](docs/designmanual.md) | Det som gjelder fra USNs designmanual, og hvordan programmet følger det |
 | [docs/sporsmal-leveranse-1.md](docs/sporsmal-leveranse-1.md) | Designspørsmålene for leveranse 1, med svar |
 | [docs/sporsmal-videre.md](docs/sporsmal-videre.md) | Designspørsmålene for leveranse 2–5, med svar |
 | [LICENSE](LICENSE), [EXPORT-EXCEPTION.md](EXPORT-EXCEPTION.md) | Lisensen, og unntaket for forelesninger du eksporterer |

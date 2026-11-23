@@ -24,7 +24,7 @@ henvisninger som «6.14» fortsatt treffer.
 | USNs logopakke | `merkevare/` (pakket ut, ikke i git) |
 | Plan og status | [docs/plan.md](plan.md) |
 | Valgene som er tatt | [docs/sporsmal-leveranse-1.md](sporsmal-leveranse-1.md) |
-| Designmanualens regler | [docs/designmanual.md](designmanual.md) |
+| Designmanualens regler | USNs egen manual, <https://brandpad.io/usn/>. Sammendraget som lå i `docs/` er fjernet (6.23) |
 | Stakk og lisenser | [docs/stakk.md](stakk.md) |
 
 Kommandoer: `npm run fetch:ffmpeg` (én gang), `npm run dev` (start),
@@ -652,7 +652,7 @@ Tre ting eieren må ta stilling til før repoet gjøres offentlig:
    (altså forelesningen) måtte deles under GPL. Unntaket sier at
    forelesningen er forfatterens egen. Jeg er ikke jurist.
 2. **USNs profil.** Koden gjengir USNs farger og profilformer, og
-   `docs/designmanual.md` oppsummerer designmanualen. Logoen ligger ikke
+   `docs/designmanual.md` (fjernet 23.11.2026, se 6.23) oppsummerer designmanualen. Logoen ligger ikke
    i repoet. En lisens på koden gir ingen rett til USNs profil; README
    sier det. Eieren bør likevel høre med USN (kommunikasjonsavdelingen)
    om det er greit at et åpent verktøy bygger inn profilen.
@@ -1414,6 +1414,82 @@ ende-til-ende-testene. Windows-zipen slik den er gitt ut, er ikke prøvd
 på Windows; utprøvingen der var av bygget rett før rettingene.
 AppImage-fila selv er fortsatt ikke startet av meg (se 6.19).
 Synligheten er ikke endret.
+
+### 6.23 Før repoet åpnes: eierens avgjørelser (23.11.2026)
+
+Eieren skrev «Tenker vi kan gjøre repoet offentlig». Jeg gikk gjennom
+hva som ville bli synlig (alle 36 commits: bare kode, dokumenter,
+Liberation-skriftene og programikonet; ingen privat e-post, ingen
+hemmeligheter) og la fram de tre spørsmålene fra 6.12. Han svarte:
+
+> Vent litt. […] Vi burde ikke ha en
+> destillert versjon av USN designmanual, men at vi bare har valgt det
+> samme som dem. Det er ikke ulovlig, man eier ikke farger og fontvalg.
+> Fjern det dokumentet. Dette utgis av meg privat, og jeg tenker å
+> anvende dette verktøyet privat også. Unntaket for ekporter er riktig,
+> de er ikke GPL. Gjør et kjapt søk på det med FFmpeg lisens.
+
+Det gir disse svarene på de tre spørsmålene i 6.12:
+
+| Spørsmål | Eierens svar |
+| --- | --- |
+| Unntaket for eksporterte forelesninger | Riktig: eksportene er ikke GPL. `EXPORT-EXCEPTION.md` står |
+| USNs profil | Lysark har valgt de samme fargene og skriftvalgene. Ingen eier farger og skriftvalg. Sammendraget av manualen skal ikke ligge i repoet |
+| Hvem eier koden | Eieren gir det ut privat, og bruker det privat |
+
+**Gjort:**
+
+- `docs/designmanual.md` er fjernet. AGENTS.md sier nå at Lysark følger
+  USNs profil, at USNs egen manual leses der den ligger, og at ingen
+  kopi eller oppsummering av den skal ligge i repoet.
+- AGENTS.md og startmeldingen i HANDOFF.md nevner ikke lenger noe
+  utenfor prosjektmappa (eieren ba om det i samme melding). Regelen
+  står: ingenting utenfor prosjektmappa leses, endres eller omtales.
+- README.md og AGENTS.md sier at Lysark er et privat prosjekt, ikke
+  laget, eid eller godkjent av USN.
+
+**Historikken er skrevet om** (eieren: «Ja, skriv om», 23.11.2026). De
+to tingene lå i nesten alle eldre commits, ikke bare i noen få slik jeg
+først skrev. Sammendraget er tatt ut av hver commit, og setningene som
+nevnte noe utenfor prosjektmappa, er byttet ut med regelen uten navn.
+Alt annet i hver commit er som før, med samme dato og samme tekst
+(to commit-meldinger er rettet der de nevnte det som er tatt ut).
+`main` og merkene `v0.2.0` og `v0.3.0` er tvangspushet; utgivelsene
+følger merkenavnet og har de samme filene. Dette er den ene gangen
+tvangspush er brukt, og regelen mot det står ellers.
+
+En kopi av historikken slik den var, ligger hos eieren i
+`release/lysark-for-omskriving.bundle` (ikke i git). Den inneholder det
+som er tatt ut, og kan slettes.
+
+Ett forbehold: GitHub kan beholde de gamle commitene en stund etter en
+tvangspush, uten at noe peker på dem. De kan da bare hentes av den som
+kjenner den lange commit-ID-en, og ingen av dem er nevnt noe sted. Helt
+sikkert borte blir de først når GitHub rydder, eller om repoet slettes
+og opprettes på nytt.
+
+**Ikke gjort, venter på eieren:**
+
+- **FFmpeg-lisensen (kjapt søk, jeg er ikke jurist).** Utgivelsene
+  inneholder FFmpeg som ferdig program under GPL versjon 3. Ved siden av
+  ligger lisensteksten og lenker til FFmpegs kildekode (nøyaktig commit)
+  og til byggeskriptene. GPL versjon 3 punkt 6 d tillater at kildekoden
+  ligger på en annen tjener, men den som deler programmet, har fortsatt
+  ansvaret for at den er tilgjengelig så lenge det trengs. FFmpegs egen
+  sjekkliste anbefaler å legge kildekoden på samme sted som programfila,
+  og utviklerne har sagt at en lenke til ffmpeg.org ikke holder; det
+  skal være nøyaktig den kildekoden som ble brukt. BtbN, som lager
+  bygget, beholder månedens siste bygg i to år (slik står det i
+  speilinger av README-en deres; ikke kontrollert mot den levende sida),
+  så det stedet er ikke varig. Bygget har dessuten biblioteker (blant
+  annet x264) som også hører til kildekoden. Tryggest er derfor å legge
+  kildekoden til FFmpeg og byggeskriptene ved hver utgivelse. Kilder:
+  <https://www.ffmpeg.org/legal.html>,
+  <https://www.gnu.org/licenses/gpl-faq.html>,
+  <https://jxself.org/outsourcing.shtml>,
+  <https://github.com/BtbN/FFmpeg-Builds>.
+
+Repoet er fortsatt privat.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

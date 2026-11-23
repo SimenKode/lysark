@@ -74,11 +74,11 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
    dempet under stemmen din, eller skal den lenger ned eller opp?
 3. **Prøv i Canvas** (bare du, ingen KI). Sjekklista står nederst.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
-5. **Repoet** er fortsatt privat. Om det skal bli offentlig, er din
-   avgjørelse. Tre ting bør du ta stilling til først (historikken,
-   6.12): unntaket som holder dine eksporterte forelesninger utenfor
-   GPL, om USN er komfortabel med at profilen er bygd inn, og hvem som
-   eier koden.
+5. **Repoet** er fortsatt privat, og du har sagt «vent litt». De tre
+   spørsmålene om rettigheter har du svart på, og historikken i git er
+   skrevet om slik du ba om (historikken, 6.23). Én ting gjenstår før
+   det åpnes: **FFmpeg i utgivelsene.** Kildekoden bør ligge ved
+   utgivelsen, ikke bare som lenke til andre. Skal jeg legge den ved?
 
 ## Neste steg, i rekkefølge
 
