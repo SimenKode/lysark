@@ -273,6 +273,10 @@ instead of choosing silently.
   other branches or remotes. (The history was rewritten and force-pushed
   once, on his word, on 23.11.2026, before the repository was opened.
   That was that one time; the rule stands.)
+- `SimenKode/lysark-gammel` is the repository as it was before the
+  history was rewritten (23.11.2026). It is private and holds what was
+  taken out. Never push to it, fetch from it or copy anything from it;
+  the owner deletes it when he chooses.
 - The repository is on GitHub as `SimenKode/lysark`. It stays private
   until there is a first usable version with both HTML and video
   (the owner, 22.11.2026), and then he decides. Do not change its

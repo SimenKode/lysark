@@ -76,13 +76,10 @@ opptak fra samme økt virket). Eksporten var ikke berørt.
 4. **Si hva som skurrer.** Skriv det i startmeldingen nederst.
 5. **Repoet** er fortsatt privat, og du har sagt «vent litt». De tre
    spørsmålene om rettigheter har du svart på, og historikken i git er
-   skrevet om slik du ba om (historikken, 6.23). To ting gjenstår før
-   det åpnes:
-   - **GitHub har fortsatt de gamle commitene**, og aktivitetsloggen
-     der peker på dem. De blir borte om repoet opprettes på nytt fra
-     den omskrevne historikken, eller om GitHub Support rydder.
-   - **FFmpeg i utgivelsene:** kildekoden bør ligge ved utgivelsen, ikke
-     bare som lenke til andre. Skal jeg legge den ved?
+   skrevet om og repoet opprettet på nytt slik du ba om (historikken,
+   6.23). Én ting gjenstår før det åpnes: **FFmpeg i utgivelsene.**
+   Kildekoden bør ligge ved utgivelsen, ikke bare som lenke til andre.
+   Skal jeg legge den ved?
 
 ## Neste steg, i rekkefølge
 
@@ -146,6 +143,7 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | Programmet, ferdig pakket | `release/Lysark-0.3.0.AppImage` (Linux) og `release/Lysark-0.3.0-win.zip` (Windows) |
 | Utgivelsen (privat, som repoet), gitt ut 23.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.3.0> |
 | Koden | `~/Forelesningsverktoy/lysark`, privat på GitHub (`SimenKode/lysark`) |
+| Det gamle repoet, med det som er tatt ut | `SimenKode/lysark-gammel`, privat. Du kan slette det når du vil |
 | Planen for de fem leveransene | [docs/plan.md](docs/plan.md) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Reglene for den som bygger | [AGENTS.md](AGENTS.md) |

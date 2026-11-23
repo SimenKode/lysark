@@ -1466,10 +1466,27 @@ som er tatt ut, og kan slettes.
 gamle commitene. De er ikke lenger en del av `main` eller merkene, men
 GitHub svarer på dem når man spør med commit-ID-en, og repoets
 aktivitetslogg på GitHub viser tvangspushen med ID-ene før og etter.
-Gjøres dette repoet offentlig slik det er, kan altså den som leter,
+Gjøres det repoet offentlig slik det er, kan altså den som leter,
 finne det som er tatt ut. Det er to måter å bli kvitt dem på: be GitHub
 Support rydde, eller opprette repoet på nytt fra den omskrevne
-historikken (og legge de to utgivelsene inn igjen). Eieren velger.
+historikken (og legge de to utgivelsene inn igjen).
+
+**Repoet er opprettet på nytt** (eieren: «Ja, opprett på nytt»,
+23.11.2026):
+
+- Det gamle repoet heter nå `SimenKode/lysark-gammel`. Det er privat og
+  urørt, og har fortsatt det som er tatt ut. Ingenting er slettet;
+  eieren kan slette det selv når han er trygg.
+- `SimenKode/lysark` er et nytt, privat repo, pushet fra den omskrevne
+  historikken: `main` og merkene `v0.2.0` og `v0.3.0`.
+- De to utgivelsene er lagt inn igjen med samme tittel og tekst. Alle
+  fire filene har samme sjekksum som i det gamle repoet. Datoen på
+  utgivelsene er den nye.
+- Kontrollert etterpå: det nye repoet svarer «finnes ikke» på de gamle
+  commit-ID-ene, aktivitetsloggen har bare én linje (grenen ble
+  opprettet), og ingen fil i det heter designmanual.
+
+Synligheten er ikke endret: begge repoene er private.
 
 **Ikke gjort, venter på eieren:**
 
