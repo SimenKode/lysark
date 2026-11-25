@@ -198,6 +198,8 @@ export interface PagePath {
   index: number;
   /** Two opposite corners: [x0, y0, x1, y1]. */
   bounds: [number, number, number, number];
+  /** Only its outline is painted: a line, or the edge of a shape. */
+  outline: boolean;
 }
 
 export interface PageOperations {
@@ -332,6 +334,7 @@ export function sortOperations(
           paths.push({
             index: i,
             bounds: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)],
+            outline: args[0] === op('stroke') || args[0] === op('closeStroke'),
           });
         }
       }
@@ -342,15 +345,18 @@ export function sortOperations(
   return { kinds, pictures: found, paths, entangled };
 }
 
-/**
- * The lines PowerPoint and others draw under the text of a link: thin, flat
- * shapes in the lower half of a link's rectangle. The stage underlines a
- * link itself, so these belong to the text and not to the background.
- * `links` are the rectangles (stage pixels) of the links that lie on text.
- */
-export function linkUnderlines(paths: PagePath[], links: Rect[], toStage: Matrix): number[] {
-  const found: number[] = [];
-  for (const path of paths) {
+/** A painted shape, with the upright rectangle around it on the stage. */
+export interface PageShape {
+  /** The operation that paints it. */
+  index: number;
+  box: Rect;
+  /** Only its outline is painted. */
+  outline: boolean;
+}
+
+/** Places the painted shapes of a page on the stage. */
+export function placeShapes(paths: PagePath[], toStage: Matrix): PageShape[] {
+  return paths.map((path) => {
     const [px0, py0, px1, py1] = path.bounds;
     const xs: number[] = [];
     const ys: number[] = [];
@@ -362,8 +368,34 @@ export function linkUnderlines(paths: PagePath[], links: Rect[], toStage: Matrix
     }
     const x = Math.min(...xs);
     const y = Math.min(...ys);
-    const w = Math.max(...xs) - x;
-    const h = Math.max(...ys) - y;
+    return {
+      index: path.index,
+      box: { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y },
+      outline: path.outline,
+    };
+  });
+}
+
+/** True when two rectangles share ground, or lie no more than `slack` apart. */
+export function touching(a: Rect, b: Rect, slack = 0): boolean {
+  return (
+    a.x <= b.x + b.w + slack &&
+    a.x + a.w + slack >= b.x &&
+    a.y <= b.y + b.h + slack &&
+    a.y + a.h + slack >= b.y
+  );
+}
+
+/**
+ * The lines PowerPoint and others draw under the text of a link: thin, flat
+ * shapes in the lower half of a link's rectangle. The stage underlines a
+ * link itself, so these belong to the text and not to the background.
+ * `links` are the rectangles (stage pixels) of the links that lie on text.
+ */
+export function linkUnderlines(shapes: PageShape[], links: Rect[]): number[] {
+  const found: number[] = [];
+  for (const { index, box } of shapes) {
+    const { x, y, w, h } = box;
     const under = links.some(
       (link) =>
         h <= Math.max(3, 0.12 * link.h) &&
@@ -373,9 +405,89 @@ export function linkUnderlines(paths: PagePath[], links: Rect[], toStage: Matrix
         y + h / 2 >= link.y + link.h / 2 &&
         y + h / 2 <= link.y + link.h + 3,
     );
-    if (under) found.push(path.index);
+    if (under) found.push(index);
   }
   return found;
+}
+
+/**
+ * The shapes painted on top of a picture: those painted after it that reach
+ * more than `inset` into it, and those painted after it that touch one of
+ * these, so that a sign comes with its edge and an arrow with its head.
+ * A frame around the picture is not on top of it: an outline that goes
+ * round it, or a thin shape along its rim. Empty when nothing lies on the
+ * picture.
+ */
+export function shapesOver(
+  shapes: PageShape[],
+  picture: number,
+  box: Rect,
+  inset: number,
+): number[] {
+  const inner = {
+    x: box.x + inset,
+    y: box.y + inset,
+    w: Math.max(0, box.w - 2 * inset),
+    h: Math.max(0, box.h - 2 * inset),
+  };
+  const goesRound = (shape: PageShape): boolean =>
+    shape.outline &&
+    shape.box.x <= inner.x &&
+    shape.box.y <= inner.y &&
+    shape.box.x + shape.box.w >= inner.x + inner.w &&
+    shape.box.y + shape.box.h >= inner.y + inner.h;
+  const later = shapes.filter((shape) => shape.index > picture && !goesRound(shape));
+  const found = later.filter((shape) => touching(shape.box, inner));
+  if (found.length === 0) return [];
+  // A drawing of thousands of strokes is not gone through stroke by stroke.
+  if (later.length <= 1500) {
+    // A thin shape along the rim of the picture is a side of its frame.
+    const rim = (shape: PageShape): boolean =>
+      Math.min(shape.box.w, shape.box.h) <= 2 * inset && touching(shape.box, box);
+    const rest = new Set(later.filter((shape) => !found.includes(shape) && !rim(shape)));
+    for (let i = 0; i < found.length; i++) {
+      for (const shape of rest) {
+        if (touching(shape.box, found[i]!.box, 2)) {
+          found.push(shape);
+          rest.delete(shape);
+        }
+      }
+    }
+  }
+  return found.map((shape) => shape.index).sort((p, q) => p - q);
+}
+
+/** Gathers things that touch each other, directly or through others, into groups. */
+export function groupTouching<T extends { box: Rect }>(members: T[]): T[][] {
+  const groups: T[][] = [];
+  const left = new Set(members);
+  for (const member of members) {
+    if (!left.has(member)) continue;
+    left.delete(member);
+    const group = [member];
+    for (let i = 0; i < group.length; i++) {
+      for (const other of left) {
+        if (touching(other.box, group[i]!.box, 2)) {
+          group.push(other);
+          left.delete(other);
+        }
+      }
+    }
+    groups.push(group);
+  }
+  return groups;
+}
+
+/** The smallest rectangle around some rectangles. */
+export function around(boxes: Rect[]): Rect {
+  const x = Math.min(...boxes.map((b) => b.x));
+  const y = Math.min(...boxes.map((b) => b.y));
+  return {
+    x,
+    y,
+    w: Math.max(...boxes.map((b) => b.x + b.w)) - x,
+    h: Math.max(...boxes.map((b) => b.y + b.h)) - y,
+  };
 }
 
 /** Where a picture stands on the stage, before anything is cut from it. */
@@ -1401,8 +1513,17 @@ export interface TextPlan {
   surface: Surface;
   /** The text elements, in the PDF's own order. */
   texts: Array<Omit<TextElement, 'id'>>;
-  /** Text that shows on the page but stays in the picture of it: where it stands, and what it says. */
-  kept: Array<{ area: Rect; text: string; why: 'formula' | 'unreadable' | 'color' | 'not-plain' }>;
+  /**
+   * Text that shows on the page but cannot be set as text: where it stands,
+   * what it says, and why. It is drawn into the background, or (`apart`)
+   * into a picture of its own that lies on top of a picture.
+   */
+  kept: Array<{
+    area: Rect;
+    text: string;
+    why: 'formula' | 'unreadable' | 'color' | 'not-plain';
+    apart?: boolean;
+  }>;
   /** Text that got another colour than it had, because the palette does not have its colour. */
   recoloured: boolean;
   /** The lines of the text that shows, in the PDF's own order. */
@@ -1649,11 +1770,15 @@ export interface PdfPage {
   surface?: Surface;
   /** Everything on the page that is neither text nor a picture of its own. */
   background?: StoredPicture;
-  /** The pictures, back to front, with where they stand on the stage. */
-  pictures?: Array<StoredPicture & { box: Rect; alt: string }>;
+  /**
+   * The pictures, back to front, with where they stand on the stage: the
+   * pictures of the page, and what was painted on top of them (`decorative`
+   * when it says nothing: an arrow, a frame).
+   */
+  pictures?: Array<StoredPicture & { box: Rect; alt: string; decorative?: boolean }>;
   /** The text elements, in the PDF's own order. */
   texts?: Array<Omit<TextElement, 'id'>>;
-  /** Text that stays in the background picture. */
+  /** Text that could not be set as text, and is in the background or in a picture on top of one. */
   kept?: TextPlan['kept'];
   recoloured?: boolean;
   /** Links that did not lie on text: where they led. */
@@ -1667,9 +1792,9 @@ const GARBLED =
 const ENTANGLED =
   'Siden er bygd opp slik at tekst og bilder ikke kan tas ut hver for seg, så hele siden er lagt inn som ett bilde. Teksten på siden er lagt inn som alternativ tekst for bildet.';
 const KEPT_FORMULA =
-  'Tekst med formler ligger igjen i bakgrunnsbildet, slik at formlene blir riktige. Den teksten kan ikke endres her.';
+  'Tekst med formler er lagt inn som bilde, slik at formlene blir riktige. Den teksten kan ikke endres her.';
 const KEPT_OTHER =
-  'Noe av teksten kunne ikke gjøres om til tekst som kan endres, og ligger igjen i bakgrunnsbildet. Det gjelder tekst på farget bunn i en farge som tekst ikke kan ha her, tekst med tegn som ikke kan leses ut av PDF-fila, og tekst som er gjennomsiktig, speilvendt, skrevet loddrett eller skrevet fra høyre mot venstre.';
+  'Noe av teksten kunne ikke gjøres om til tekst som kan endres, og er lagt inn som bilde. Det gjelder tekst på farget bunn i en farge som tekst ikke kan ha her, tekst med tegn som ikke kan leses ut av PDF-fila, og tekst som er gjennomsiktig, speilvendt, skrevet loddrett eller skrevet fra høyre mot venstre.';
 const RECOLOURED =
   'Noe av teksten har fått en annen farge enn i PDF-fila, fordi fargen ikke finnes blant fargene tekst kan ha her.';
 
@@ -1696,7 +1821,8 @@ export function isPagePicture(scene: Scene): boolean {
 
 /**
  * A page as a scene. Text and pictures are elements of their own, standing
- * where they stood; the rest of the page lies behind them as one picture.
+ * where they stood; the rest of the page lies behind them as one picture,
+ * and what was painted on top of a picture lies on top of it as a picture.
  * No logo and no brand shapes are put on top of the page, and there are no
  * steps and no script until the owner adds them. Elements lie back to
  * front: the background, the pictures, then the text in the PDF's order.
@@ -1729,7 +1855,13 @@ export function pdfScene(page: PdfPage): Scene {
   const kept = page.kept ?? [];
   if (page.background) {
     // Text that stays in the picture is what the picture says to a screen reader.
-    const alt = cut(kept.map((k) => k.text.replace(/\s+/g, ' ')).join('\n'), ALT_LIMIT);
+    const alt = cut(
+      kept
+        .filter((k) => !k.apart)
+        .map((k) => k.text.replace(/\s+/g, ' '))
+        .join('\n'),
+      ALT_LIMIT,
+    );
     const picture: Element = {
       id: newId('e'),
       type: 'image',
@@ -1741,7 +1873,7 @@ export function pdfScene(page: PdfPage): Scene {
     scene.elements.push(picture);
   }
   for (const picture of page.pictures ?? []) {
-    scene.elements.push({
+    const element: Element = {
       id: newId('e'),
       type: 'image',
       asset: picture.assetId,
@@ -1753,7 +1885,9 @@ export function pdfScene(page: PdfPage): Scene {
         h: round(picture.box.h, 2),
         rotation: 0,
       },
-    });
+    };
+    if (picture.decorative && !picture.alt) element.decorative = true;
+    scene.elements.push(element);
   }
   for (const text of page.texts ?? []) {
     scene.elements.push({ id: newId('e'), ...structuredClone(text) });
