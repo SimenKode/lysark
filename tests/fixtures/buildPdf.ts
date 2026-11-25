@@ -1,6 +1,47 @@
 // Writes small PDF files by hand for tests: a few pages with a line of
-// text each, and optionally pictures in the formats pdf.js needs its own
-// decoders for. The content is deliberately neutral ("A", "B").
+// text each, and optionally more lines of text, filled rectangles, links,
+// and pictures in the formats pdf.js needs its own decoders for. The
+// content is deliberately neutral ("A", "B").
+
+/** Red, green and blue, each from 0 to 1. */
+export type TestColor = [number, number, number];
+
+/** A line of text at a place of its own. Places are in points from the page's lower left corner. */
+export interface TestLine {
+  text: string;
+  /** Where the baseline starts. */
+  x: number;
+  y: number;
+  size: number;
+  /** Black when left out. */
+  color?: TestColor;
+  /**
+   * Helvetica, Helvetica-Bold or Times-Italic, none of them embedded, or the
+   * embedded font under a name that says it is bold (letters A to Z only).
+   * Helvetica when left out.
+   */
+  font?: 'plain' | 'bold' | 'serif' | 'embedded-bold';
+  /** Written without showing, as the text a scanner program lays over a scanned page. */
+  invisible?: boolean;
+}
+
+export interface TestRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: TestColor;
+}
+
+/** A link over a rectangle: to an address, or to another page of the file (from 1). */
+export interface TestLink {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  url?: string;
+  page?: number;
+}
 
 export interface TestPage {
   /** Page size in points. */
@@ -14,6 +55,13 @@ export interface TestPage {
   pictures?: Array<'jpeg2000' | 'ccitt' | 'jbig2'>;
   /** Degrees the page is turned when shown. */
   rotate?: 0 | 90 | 180 | 270;
+  /** Filled rectangles, drawn first. */
+  rects?: TestRect[];
+  /** More lines of text, drawn after `text`. */
+  lines?: TestLine[];
+  /** Rectangles drawn after everything else, on top of text and pictures. */
+  cover?: TestRect[];
+  links?: TestLink[];
 }
 
 export interface TestPdf {
@@ -77,7 +125,14 @@ export function buildPdf(spec: TestPdf): Uint8Array {
   const standardFont = add(
     '/Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding',
   );
+  const boldFont = add(
+    '/Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding',
+  );
+  const serifFont = add(
+    '/Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding /WinAnsiEncoding',
+  );
   let embeddedFont = 0;
+  let embeddedBold = 0;
   if (spec.fontFile) {
     const file = add(`/Length1 ${spec.fontFile.byteLength}`, spec.fontFile);
     const descriptor = add(
@@ -89,6 +144,15 @@ export function buildPdf(spec: TestPdf): Uint8Array {
     embeddedFont = add(
       '/Type /Font /Subtype /TrueType /BaseFont /TestSans /Encoding /WinAnsiEncoding ' +
         `/FirstChar 65 /LastChar 90 /Widths [${widths}] /FontDescriptor ${descriptor} 0 R`,
+    );
+    // The same font file under a bold name: an embedded font says it is bold only by its name.
+    const boldDescriptor = add(
+      '/Type /FontDescriptor /FontName /TestSans-Bold /Flags 32 /FontBBox [-544 -303 1302 980] ' +
+        `/ItalicAngle 0 /Ascent 905 /Descent -212 /CapHeight 729 /StemV 80 /FontFile2 ${file} 0 R`,
+    );
+    embeddedBold = add(
+      '/Type /Font /Subtype /TrueType /BaseFont /TestSans-Bold /Encoding /WinAnsiEncoding ' +
+        `/FirstChar 65 /LastChar 90 /Widths [${widths}] /FontDescriptor ${boldDescriptor} 0 R`,
     );
   }
   const jpeg2000 = add(
@@ -108,24 +172,56 @@ export function buildPdf(spec: TestPdf): Uint8Array {
   );
 
   const kids: number[] = [];
+  /** Links to other pages are written when every page has its number. */
+  const pageLinks: Array<{ object: number; link: TestLink }> = [];
+  const fill = (rect: TestRect): string =>
+    `${rect.color.join(' ')} rg ${rect.x} ${rect.y} ${rect.w} ${rect.h} re f\n`;
+  const place = (link: TestLink): string =>
+    `/Type /Annot /Subtype /Link /Border [0 0 0] /Rect [${link.x} ${link.y} ${link.x + link.w} ${link.y + link.h}]`;
+  const FONT_NAMES = { plain: 'F2', bold: 'F3', serif: 'F4', 'embedded-bold': 'F5' } as const;
   for (const page of spec.pages) {
     const font = page.font === 'embedded' && embeddedFont ? embeddedFont : standardFont;
     let content = '';
+    for (const rect of page.rects ?? []) content += fill(rect);
+    if (page.rects?.length) content += '0 0 0 rg\n';
     if (page.text !== undefined) {
       content += `BT /F1 96 Tf 72 ${page.height - 160} Td ${pdfString(page.text)} Tj ET\n`;
+    }
+    for (const line of page.lines ?? []) {
+      content +=
+        `BT ${(line.color ?? [0, 0, 0]).join(' ')} rg ${line.invisible ? '3' : '0'} Tr ` +
+        `/${FONT_NAMES[line.font ?? 'plain']} ${line.size} Tf ${line.x} ${line.y} Td ` +
+        `${pdfString(line.text)} Tj ET\n`;
     }
     (page.pictures ?? []).forEach((kind, index) => {
       content += `q 100 0 0 100 ${100 + index * 120} 100 cm /${PICTURE_NAMES[kind]} Do Q\n`;
     });
+    for (const rect of page.cover ?? []) content += fill(rect);
     const stream = add('', Buffer.from(content, 'latin1'));
+    const annotations: number[] = [];
+    for (const link of page.links ?? []) {
+      if (link.url !== undefined) {
+        annotations.push(add(`${place(link)} /A << /S /URI /URI ${pdfString(link.url)} >>`));
+      } else {
+        const object = reserve();
+        annotations.push(object);
+        pageLinks.push({ object, link });
+      }
+    }
     kids.push(
       add(
         `/Type /Page /Parent ${pages} 0 R /MediaBox [0 0 ${page.width} ${page.height}] ` +
           `${page.rotate ? `/Rotate ${page.rotate} ` : ''}` +
-          `/Resources << /Font << /F1 ${font} 0 R >> /XObject << /Im1 ${jpeg2000} 0 R /Im2 ${ccitt} 0 R /Im3 ${jbig2} 0 R >> >> ` +
+          `${annotations.length ? `/Annots [${annotations.map((a) => `${a} 0 R`).join(' ')}] ` : ''}` +
+          `/Resources << /Font << /F1 ${font} 0 R /F2 ${standardFont} 0 R /F3 ${boldFont} 0 R /F4 ${serifFont} 0 R /F5 ${embeddedBold || boldFont} 0 R >> ` +
+          `/XObject << /Im1 ${jpeg2000} 0 R /Im2 ${ccitt} 0 R /Im3 ${jbig2} 0 R >> >> ` +
           `/Contents ${stream} 0 R`,
       ),
     );
+  }
+  for (const { object, link } of pageLinks) {
+    const target = kids[(link.page ?? 1) - 1] ?? kids[0]!;
+    objects[object - 1] = Buffer.from(`<< ${place(link)} /Dest [${target} 0 R /Fit] >>`, 'latin1');
   }
   objects[catalog - 1] = Buffer.from(`<< /Type /Catalog /Pages ${pages} 0 R >>`);
   objects[pages - 1] = Buffer.from(

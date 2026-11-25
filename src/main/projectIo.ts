@@ -316,8 +316,8 @@ export function beginImportFolder(dir: string): ImportFolder {
 }
 
 /**
- * Stores one page picture made by the interface. Only WebP is accepted, and
- * only up to a size no page picture should reach.
+ * Stores one picture the interface has made from a page of a PDF. Only WebP
+ * is accepted, and only up to a size no such picture should reach.
  */
 export function addPagePicture(
   folder: ImportFolder,
