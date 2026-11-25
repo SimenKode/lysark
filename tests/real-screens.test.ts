@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { _electron as electron } from 'playwright';
+import { _electron as electron, type Page } from 'playwright';
 import { describe, expect, it } from 'vitest';
 import { OFFLINE } from './fixtures/offline';
 
@@ -18,6 +18,16 @@ const pdf = process.env.LYSARK_PDF;
 const name = pdf ?? process.env.LYSARK_PPTX;
 const source = name ? join(root, 'eksempler', name) : '';
 const range = /^(\d+)-(\d+)$/.exec(process.env.LYSARK_SCENES ?? '');
+/** LYSARK_LOOK=keep or theme: how the slides are to look. A PDF keeps its look, a PowerPoint file is made over, unless said. */
+const wantedLook = process.env.LYSARK_LOOK as 'keep' | 'theme' | undefined;
+
+async function chooseLook(page: Page, look: 'keep' | 'theme'): Promise<void> {
+  const dialog = page.locator('dialog.look-dialog');
+  await dialog.waitFor();
+  const name = look === 'keep' ? /^Behold utseendet/ : /^Gjør om til USN-stil/;
+  await dialog.getByRole('radio', { name }).check();
+  await dialog.getByRole('button', { name: 'Importer' }).click();
+}
 
 describe.skipIf(!shots || !name || !existsSync(source))('pictures of a real lecture', () => {
   it('imports the file and pictures every scene', async () => {
@@ -60,9 +70,16 @@ describe.skipIf(!shots || !name || !existsSync(source))('pictures of a real lect
           const file = Menu.getApplicationMenu()!.items.find((item) => item.label === 'Fil')!;
           file.submenu!.items.find((item) => item.label === 'Importer PDF …')!.click();
         });
+        await chooseLook(page, wantedLook ?? 'keep');
+        await page.waitForSelector('.scene-item', { timeout: 540_000 });
+      } else if (wantedLook === 'keep') {
+        // The presentation keeps its look: imported by way of a PDF, without a report.
+        await page.getByRole('button', { name: 'Importer PowerPoint' }).click();
+        await chooseLook(page, 'keep');
         await page.waitForSelector('.scene-item', { timeout: 540_000 });
       } else {
-        await page.getByRole('button', { name: 'Importer PowerPoint …' }).click();
+        await page.getByRole('button', { name: 'Importer PowerPoint' }).click();
+        await chooseLook(page, 'theme');
         await page.waitForSelector('dialog.dialog[open]', { timeout: 120_000 });
         await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
       }

@@ -8,10 +8,13 @@ import {
   type CommonsResult,
   type LysarkApi,
   type OpenverseResult,
+  type PickedPdf,
+  type PptxPdf,
   type PictureBytes,
   type VideoRequest,
 } from '../../shared/api';
 import { appendSound } from '../../shared/audio/edit';
+import { applyPptxSlides, type PptxSlide } from '../../importer/pptxSlides';
 import { applyRecording, type Applied, type Take } from '../../shared/audio/session';
 import { addTrackClip } from '../../shared/audio/tracks';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
@@ -22,7 +25,7 @@ import { formatTime, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
-import { currentScene, isDirty, useStore } from './store';
+import { currentScene, isDirty, useStore, type ImportLook, type LookRequest } from './store';
 
 declare global {
   interface Window {
@@ -73,8 +76,28 @@ export async function openProject(dir?: string): Promise<void> {
   if (opened) useStore.getState().load(opened.dir, opened.project);
 }
 
+/** Asks how the slides of the picked file are to look. Undefined when the owner breaks off. */
+function askLook(kind: LookRequest['kind'], name: string): Promise<ImportLook | undefined> {
+  return new Promise((resolve) => {
+    useStore.getState().setLookRequest({ kind, name, resolve });
+  });
+}
+
+/**
+ * Imports a PowerPoint file. The owner chooses freely whether the slides
+ * keep the look they have or are made over into the theme.
+ */
 export async function importPptx(): Promise<void> {
+  if (pdfImport) return;
   if (!(await leaveCurrent())) return;
+  const picked = await guard(() => api().pickPptx());
+  if (!picked) return;
+  const look = await askLook('pptx', picked.name);
+  if (!look) return;
+  if (look === 'keep') {
+    await importPptxWithItsLook(picked.name);
+    return;
+  }
   const imported = await guard(() => api().importPptx());
   if (!imported) return;
   // The import may have taken USN's closing animation into the settings.
@@ -373,21 +396,84 @@ export async function importPdf(): Promise<void> {
   if (!(await leaveCurrent())) return;
   const picked = await guard(() => api().pickPdf());
   if (!picked) return;
+  const look = await askLook('pdf', picked.name);
+  if (!look) return;
+  pdfImport = new AbortController();
+  await importPickedPdf(picked, pdfImport, { look });
+}
+
+/**
+ * A PowerPoint file that keeps its look. A program on the machine that can
+ * draw PowerPoint slides makes a PDF of it, which is imported like any PDF;
+ * the names of the slides, the manuscript and the chapters come from the
+ * PowerPoint file itself. When no such program is there, the owner is asked
+ * for a PDF of the presentation.
+ */
+async function importPptxWithItsLook(name: string): Promise<void> {
   const control = new AbortController();
   pdfImport = control;
+  const setProgress = useStore.getState().setPdfProgress;
+  setProgress({ name, page: 0, pages: 0, preparing: true });
+  let pdf: PickedPdf | PptxPdf | null | undefined;
+  let slides: PptxSlide[] | undefined;
+  try {
+    pdf = await guard(() => api().pptxAsPdf());
+    if (pdf !== undefined && !control.signal.aborted) {
+      slides = await guard(() => api().pptxSlides());
+    }
+  } finally {
+    setProgress(null);
+  }
+  if (pdf === undefined || slides === undefined || control.signal.aborted) {
+    pdfImport = null;
+    return;
+  }
+  if (pdf === null) {
+    const go = window.confirm(
+      'Lysark fant verken PowerPoint eller LibreOffice på denne maskinen, og kan ikke selv tegne ' +
+        'lysarkene slik de ser ut i PowerPoint.\n\n' +
+        'Lagre presentasjonen som PDF (i PowerPoint: Fil, Lagre som, PDF), og velg PDF-fila her. ' +
+        'Manus og kapitler hentes fra PowerPoint-fila.\n\nVil du velge PDF-fila nå?',
+    );
+    pdf = go ? await guard(() => api().pickPdf()) : null;
+    if (!pdf) {
+      pdfImport = null;
+      return;
+    }
+  }
+  const from =
+    'by' in pdf && pdf.by === 'beside'
+      ? `Utseendet er hentet fra ${pdf.file ?? 'PDF-fila'}, som lå ved siden av PowerPoint-fila.`
+      : 'by' in pdf && pdf.by === 'libreoffice'
+        ? 'LibreOffice har tegnet lysarkene. Det kan avvike litt fra PowerPoint, særlig der skriftene ' +
+          'i presentasjonen ikke finnes på maskinen. Vil du ha det helt likt, lagrer du presentasjonen ' +
+          'som PDF i PowerPoint, legger PDF-fila ved siden av med samme navn, og importerer på nytt.'
+        : undefined;
+  await importPickedPdf({ name, data: pdf.data }, control, { look: 'keep', slides, from });
+}
+
+/** Reads a PDF that has been picked (or made) and opens it as a new project. */
+async function importPickedPdf(
+  picked: PickedPdf,
+  control: AbortController,
+  options: { look: ImportLook; slides?: PptxSlide[]; from?: string },
+): Promise<void> {
   const setProgress = useStore.getState().setPdfProgress;
   setProgress({ name: picked.name, page: 0, pages: 0 });
   let finished = false;
   try {
     const { importPdfPages, isPagePicture } = await import('./pdfRender');
     const project = await importPdfPages(picked.data, {
-      name: picked.name,
+      name: picked.name.replace(/\.pptx$/i, '.pdf'),
       signal: control.signal,
       begin: () => api().beginPdfImport(),
       progress: (page, pages) => setProgress({ name: picked.name, page, pages }),
       store: (page, data) => api().addPdfPage(page, data),
+      look: options.look,
     });
     if (!project) return;
+    // What the PowerPoint file knows that the PDF of it does not.
+    const fitted = options.slides ? applyPptxSlides(project, options.slides) : undefined;
     const opened = await api().finishPdfImport(project);
     finished = true;
     const state = useStore.getState();
@@ -423,6 +509,18 @@ export async function importPdf(): Promise<void> {
           : noText.length <= 10
             ? `Lysark ${listed(noText)} har ingen tekst som kunne hentes ut; skriv alternativ tekst der.`
             : `${noText.length} lysark har ingen tekst som kunne hentes ut; de er merket i lista.`,
+      );
+    }
+    if (options.look === 'theme') {
+      parts.push(
+        'Lysarkene er gjort om til USN-stil; streker, former og bakgrunn fra PDF-en er ikke med.',
+      );
+    }
+    if (options.from) parts.push(options.from);
+    if (fitted === true) parts.push('Manus og kapitler er hentet fra PowerPoint-fila.');
+    if (fitted === false) {
+      parts.push(
+        'Manus og kapitler kunne ikke hentes fra PowerPoint-fila: antallet lysark stemmer ikke med PDF-en.',
       );
     }
     if (noted.length > 0) {

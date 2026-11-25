@@ -32,6 +32,19 @@ export interface PdfProgress {
   name: string;
   page: number;
   pages: number;
+  /** A PDF of a PowerPoint file is being made, before anything can be read. */
+  preparing?: boolean;
+}
+
+/** How the slides of an imported file are to look. */
+export type ImportLook = 'keep' | 'theme';
+
+/** A file has been picked for import, and the owner is asked how its slides are to look. */
+export interface LookRequest {
+  kind: 'pptx' | 'pdf';
+  name: string;
+  /** Called with the choice, or undefined when the owner breaks off. */
+  resolve: (look: ImportLook | undefined) => void;
 }
 
 interface State {
@@ -74,6 +87,7 @@ interface State {
   videoProgress: VideoProgress | null;
   /** A PDF is being imported: how far it has come. `pages` is 0 until the file is read. */
   pdfProgress: PdfProgress | null;
+  lookRequest: LookRequest | null;
 
   load(dir: string, project: Project): void;
   close(): void;
@@ -103,6 +117,7 @@ interface State {
   setVideoDialog(open: boolean): void;
   setVideoProgress(progress: VideoProgress | null): void;
   setPdfProgress(progress: PdfProgress | null): void;
+  setLookRequest(request: LookRequest | null): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -132,6 +147,7 @@ export const useStore = create<State>((set, get) => ({
   videoDialog: false,
   videoProgress: null,
   pdfProgress: null,
+  lookRequest: null,
 
   load(dir, project) {
     set({
@@ -304,6 +320,10 @@ export const useStore = create<State>((set, get) => ({
 
   setPdfProgress(progress) {
     set({ pdfProgress: progress });
+  },
+
+  setLookRequest(request) {
+    set({ lookRequest: request });
   },
 }));
 

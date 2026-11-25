@@ -116,6 +116,14 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
       file.submenu!.items.find((item) => item.label === text)!.click();
     }, label);
   };
+  /** Starts the import of a PDF from the File menu, and says how its slides are to look. */
+  const importPdfFile = async (look = 'Behold utseendet'): Promise<void> => {
+    await fileMenu('Importer PDF …');
+    const dialog = page.locator('dialog.look-dialog');
+    await dialog.waitFor();
+    await dialog.getByRole('radio', { name: new RegExp(`^${look}`) }).check();
+    await dialog.getByRole('button', { name: 'Importer' }).click();
+  };
   /**
    * Decodes a stored picture in the program's own browser engine and looks
    * at it: how many dark pixels an area holds, and the colours of some points.
@@ -217,7 +225,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     const dir = join(work, 'Fra PDF');
     await answerDialogs(pdf, dir);
     const before = consoleLines.length;
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     // The first import also loads pdf.js and starts its worker.
     await expect.poll(() => page.locator('.scene-item').count(), LONG).toBe(2);
     await expect.poll(() => page.locator('dialog.pdf-import').count()).toBe(0);
@@ -492,7 +500,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     );
     const dir = join(work, 'Lagt oppå');
     await answerDialogs(pdf, dir);
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     await expect.poll(() => existsSync(join(dir, 'prosjekt.json')), LONG).toBe(true);
     await expect
       .poll(() => page.locator('.notice').textContent(), LONG)
@@ -585,7 +593,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     );
     const dir = join(work, 'Uten tekst');
     await answerDialogs(pdf, dir);
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     await expect.poll(() => existsSync(join(dir, 'prosjekt.json')), LONG).toBe(true);
     await expect
       .poll(() => page.locator('.notice').textContent(), LONG)
@@ -646,7 +654,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     );
     const dir = join(work, 'Avbrutt');
     await answerDialogs(pdf, dir);
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     const dialog = page.locator('dialog.pdf-import[open]');
     await expect.poll(() => dialog.textContent(), LONG).toMatch(/Importerer side \d+ av 120 …/);
     expect(existsSync(join(dir, 'media'))).toBe(true);
@@ -670,7 +678,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     );
     const dir = join(work, 'Skal ikke finnes');
     await answerDialogs(locked, dir);
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     await expect
       .poll(() => page.locator('.notice-error').textContent(), LONG)
       .toContain('beskyttet med passord');
@@ -680,7 +688,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     const broken = join(work, 'Skadet.pdf');
     writeFileSync(broken, 'Dette er ikke en PDF.');
     await answerDialogs(broken, dir);
-    await fileMenu('Importer PDF …');
+    await importPdfFile();
     await expect
       .poll(() => page.locator('.notice-error').textContent(), LONG)
       .toContain('ikke en PDF som kan leses');

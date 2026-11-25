@@ -233,6 +233,34 @@ instead of choosing silently.
   at the exact commit, the build scripts at the exact tag and a note,
   into `vendor/ffmpeg/source/`. Attach all three to the release. A
   release without them is not finished.
+- The look of an imported file is the lecturer's free choice, made in a
+  dialog at import (the owner, 25.11.2026): the slides **keep the look
+  they have**, or are **made over into the theme** ("USN-stil"). Keeping
+  the look is what is chosen until the lecturer says otherwise. Both
+  choices must stay there for PowerPoint files and for PDFs. Either way
+  the text is text that can be edited, in the program's own fonts (the
+  owner chose that over an exact picture of the page).
+  - A PDF that keeps its look: its text and pictures are elements, and
+    the rest of the page lies behind them as a picture
+    (`src/importer/pdf.ts`). Made over: the same elements on the theme's
+    surface, in its fonts and colours, without the page's own background.
+  - A PowerPoint file made over is the import there has always been
+    (`src/importer/pptx.ts`). One that keeps its look is imported by way
+    of a PDF of it, because Lysark cannot draw a PowerPoint slide as
+    PowerPoint does: PowerPoint makes the PDF where it is installed
+    (Windows); otherwise a PDF with the same name next to the file, not
+    older than it, is used; otherwise LibreOffice makes it; otherwise the
+    lecturer is asked for a PDF (`src/main/office.ts`). The lecturer is
+    told where the look came from. Names, manuscript and chapters come
+    from the PowerPoint file itself (`src/importer/pptxSlides.ts`).
+  - PowerPoint and LibreOffice are programs the lecturer has installed.
+    Like FFmpeg they are separate programs that Lysark starts; unlike
+    FFmpeg they are never shipped, fetched or required. They work on a
+    copy of the file, show no window, and nothing is sent anywhere.
+    PowerPoint is not open source; the owner chose to let Lysark ask it,
+    since it is the lecturer's own program and nothing of it is taken in.
+    This is the one exception to the rule about open-source software, and
+    it covers starting an installed office program for this, nothing else.
 - Files the owner opens are untrusted input. An exported HTML file that
   is opened as a project is read as text and never run; its project is
   validated like any project file, and media land only in the new

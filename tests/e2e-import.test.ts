@@ -103,6 +103,13 @@ describe.skipIf(!built)('importing a PowerPoint file, end to end', () => {
 
   it('imports, creates the project folder and shows the report', async () => {
     await page.getByRole('button', { name: 'Importer PowerPoint' }).click();
+    // The lecturer is asked how the slides are to look, and chooses freely.
+    const look = page.locator('dialog.look-dialog');
+    await look.waitFor();
+    expect(await look.getByRole('radio', { name: /^Behold utseendet/ }).isChecked()).toBe(true);
+    await look.getByRole('radio', { name: /^Gjør om til USN-stil/ }).check();
+    await look.getByRole('button', { name: 'Importer' }).click();
+    await look.waitFor({ state: 'detached' });
     await page.waitForSelector('dialog.dialog[open]');
     const report = (await page.locator('dialog.dialog').textContent()) ?? '';
     expect(report).toContain('Testimport.pptx');

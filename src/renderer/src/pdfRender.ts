@@ -65,6 +65,7 @@ import {
   type PageFit,
   type PageOperations,
   type PdfLink,
+  type PdfLook,
   type PdfPage,
   type PdfPiece,
   type PdfTextItem,
@@ -139,6 +140,11 @@ export interface PdfImportSteps {
   progress(page: number, pages: number): void;
   /** Stores a picture from a page and describes it as an asset. */
   store(page: number, data: Uint8Array): Promise<AddedMedia>;
+  /**
+   * How the slides are to look: as the pages look ('keep', when absent), or
+   * made over into the program's theme.
+   */
+  look?: PdfLook;
 }
 
 // ---------- Canvases ----------
@@ -1052,8 +1058,10 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       recoloured: plan.recoloured,
       looseLinks: linked.loose.map((link) => link.target),
     };
-    // A plain white page needs no picture behind it.
-    if (!(about.blank && plan.surface === 'hvit')) {
+    // A plain white page needs no picture behind it. Neither does a page
+    // that is made over into the theme, unless text had to stay in it.
+    const madeOver = state.steps.look === 'theme' && !plan.kept.some((k) => !k.apart);
+    if (!madeOver && !(about.blank && plan.surface === 'hvit')) {
       result.background = await store(rest.canvas, restImage);
     }
     return result;
@@ -1171,7 +1179,7 @@ export async function importPdfPages(
     }
     stopIfCancelled();
     const chapters = pdfChapters(await bookmarks(doc), doc.numPages);
-    return pdfProject(documentTitle(info.Title, steps.name), pages, chapters);
+    return pdfProject(documentTitle(info.Title, steps.name), pages, chapters, steps.look);
   } finally {
     await task.destroy().catch(() => undefined);
   }

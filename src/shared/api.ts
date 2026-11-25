@@ -1,5 +1,6 @@
 // The narrow, named set of calls the user interface can make to the main
 // process. The interface itself has no access to files or to Node.
+import type { PptxSlide } from '../importer/pptxSlides';
 import type { Asset, Credit, Project } from './format/schema';
 import type { ImportReport } from '../importer/pptx';
 
@@ -23,6 +24,13 @@ export interface OpenedHtml extends OpenedProject {
   sourceName: string;
   /** What could not be taken along, in Norwegian bokmål. */
   notes: string[];
+}
+
+/** A PDF of a PowerPoint file the owner has picked, and where it came from. */
+export interface PptxPdf extends PickedPdf {
+  by: 'powerpoint' | 'beside' | 'libreoffice';
+  /** The name of the PDF that lay next to the PowerPoint file, when that was used. */
+  file?: string;
 }
 
 /** A PDF the owner has picked for import. Its pages are read and drawn in the interface. */
@@ -162,7 +170,22 @@ export type MenuCommand =
 export interface LysarkApi {
   newProject(): Promise<OpenedProject | null>;
   openProject(dir?: string): Promise<OpenedProject | null>;
+  /**
+   * Lets the owner pick a PowerPoint file for import. What happens to it is
+   * chosen afterwards: `importPptx` makes it over into the theme;
+   * `pptxAsPdf` and `pptxSlides` let it keep its look.
+   */
+  pickPptx(): Promise<{ name: string } | null>;
+  /** Imports the picked PowerPoint file into a new project folder, in the theme. */
   importPptx(): Promise<ImportedProject | null>;
+  /**
+   * A PDF of the picked PowerPoint file, to be imported like any PDF: made
+   * by PowerPoint, found next to the file, or made by LibreOffice. Null when
+   * there is none to be had.
+   */
+  pptxAsPdf(): Promise<PptxPdf | null>;
+  /** The names, notes and chapters of the slides of the picked PowerPoint file. */
+  pptxSlides(): Promise<PptxSlide[]>;
   saveProject(dir: string, project: Project): Promise<void>;
   addMedia(dir: string, kind: 'image' | 'video'): Promise<AddedMedia | null>;
   /** Sends the owner's search words to Wikimedia Commons. Contacts the network. */

@@ -8,7 +8,7 @@ import { formatTime, sceneDuration } from '../../shared/render/clock';
 import { Timeline } from './Timeline';
 import { AudioPanel } from './AudioPanel';
 import { Icon } from './Icon';
-import { ImportReportDialog, PdfImportDialog, SettingsDialog } from './Dialogs';
+import { ImportReportDialog, LookDialog, PdfImportDialog, SettingsDialog } from './Dialogs';
 import { Inspector } from './Inspector';
 import { MediaDialog } from './MediaDialog';
 import { MoreBuilder } from './MoreBuilder';
@@ -439,6 +439,7 @@ export function App() {
   const recorder = useStore((s) => s.recorder);
   const videoDialog = useStore((s) => s.videoDialog);
   const pdfProgress = useStore((s) => s.pdfProgress);
+  const lookRequest = useStore((s) => s.lookRequest);
   /** The current slide is another slide shown once more: nothing on it is edited here. */
   const repeat = useStore((s) => currentScene(s)?.repeat !== undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -578,6 +579,7 @@ export function App() {
       {project && recorder && <Recorder keepBefore={recorder.keepBefore} />}
       {project && videoDialog && <VideoDialog />}
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {lookRequest && <LookDialog request={lookRequest} />}
       {pdfProgress && <PdfImportDialog />}
     </>
   );

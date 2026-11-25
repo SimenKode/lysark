@@ -2237,3 +2237,34 @@ legend {
   background: var(--oransje);
   border-color: #fff;
 }
+
+/* ---------- The look of an imported file ---------- */
+.look-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+}
+.look-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  cursor: pointer;
+}
+.look-option:has(input:checked) {
+  border-color: var(--lilla);
+  background: var(--lys-indigo);
+}
+.look-option input {
+  margin-top: 4px;
+}
+.look-option > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

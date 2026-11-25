@@ -5,6 +5,12 @@
 // slide, how slides are counted, and chapters. No window is used.
 import { describe, expect, it } from 'vitest';
 import { pdfChapters } from '../src/importer/pdfChapters';
+import {
+  applyPptxSlides,
+  pptxSlides,
+  slidesForPages,
+  type PptxSlide,
+} from '../src/importer/pptxSlides';
 import { applyRecording, type Take } from '../src/shared/audio/session';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import {
@@ -447,6 +453,48 @@ describe('chapters', () => {
     c.chapter = 'To';
     handOnChapter(scenes, 1);
     expect(c.chapter).toBe('To');
+  });
+});
+
+describe('what a PowerPoint file knows that a PDF of it does not', () => {
+  const slides: PptxSlide[] = [
+    { title: 'A', script: 'Notat A', chapter: 'En', hidden: false },
+    { title: 'B', script: 'Notat B', chapter: 'To', hidden: true },
+    { title: 'C', script: '', hidden: false },
+    { title: 'D', script: 'Notat D', hidden: false },
+  ];
+
+  it('fits the slides to the pages, with or without the hidden ones', () => {
+    expect(slidesForPages(slides, 4)?.map((s) => s.title)).toEqual(['A', 'B', 'C', 'D']);
+    const shown = slidesForPages(slides, 3)!;
+    expect(shown.map((s) => s.title)).toEqual(['A', 'C', 'D']);
+    // The chapter that began on the hidden slide begins on the next one.
+    expect(shown.map((s) => s.chapter)).toEqual(['En', 'To', undefined]);
+    expect(slidesForPages(slides, 2)).toBeUndefined();
+    expect(slidesForPages(slides, 5)).toBeUndefined();
+  });
+
+  it('gives the pages their names, manuscript and chapters, or leaves them alone', () => {
+    const pages = lecture(slide('1'), slide('2'), slide('3'));
+    pages.scenes[1]!.chapter = 'Fra PDF-en';
+    expect(applyPptxSlides(pages, slides)).toBe(true);
+    expect(pages.scenes.map((s) => s.title)).toEqual(['A', 'C', 'D']);
+    expect(pages.scenes.map((s) => s.script)).toEqual(['Notat A', '', 'Notat D']);
+    expect(pages.scenes.map((s) => s.chapter)).toEqual(['En', 'To', undefined]);
+    const other = lecture(slide('1'), slide('2'));
+    expect(applyPptxSlides(other, slides)).toBe(false);
+    expect(other.scenes.map((s) => s.title)).toEqual(['Lysark 1', 'Lysark 2']);
+  });
+
+  it('reads them from an imported presentation', () => {
+    const project = lecture(slide('A'), slide('B'));
+    project.scenes[0]!.script = 'Notat';
+    project.scenes[0]!.chapter = 'En';
+    project.scenes[1]!.imported = { slide: 2, warnings: [{ code: 'hidden', message: 'Skjult' }] };
+    expect(pptxSlides(project)).toEqual([
+      { title: 'Lysark A', script: 'Notat', chapter: 'En', hidden: false },
+      { title: 'Lysark B', script: '', hidden: true },
+    ]);
   });
 });
 

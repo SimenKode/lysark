@@ -14,7 +14,10 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 const api: LysarkApi = {
   newProject: () => call('lysark:new'),
   openProject: (dir) => call('lysark:open', dir),
+  pickPptx: () => call('lysark:import-pick'),
   importPptx: () => call('lysark:import'),
+  pptxAsPdf: () => call('lysark:pptx-as-pdf'),
+  pptxSlides: () => call('lysark:pptx-slides'),
   saveProject: (dir, project) => call('lysark:save', dir, project),
   addMedia: (dir, kind) => call('lysark:add-media', dir, kind),
   searchCommons: (query, offset) => call('lysark:commons-search', query, offset),

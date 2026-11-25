@@ -25,12 +25,16 @@ import type {
   VideoRequest,
   VideoSummary,
   PickedPdf,
+  PptxPdf,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
 import { webPictureUrl } from '../shared/api';
 import { FETCHED_PICTURE_LIMIT_BYTES, PDF_LIMIT_BYTES } from '../shared/limits';
 import { extensionForMime, type CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
+import { importPptx } from '../importer/pptx';
+import { pptxSlides, type PptxSlide } from '../importer/pptxSlides';
+import { presentationToPdf } from './office';
 import {
   appendCameraFilm,
   beginCameraFilm,
@@ -120,6 +124,8 @@ let currentDir: string | null = null;
  * and can only add pictures to this folder.
  */
 let pdfImport: { sourceName: string; folder: ImportFolder | null } | null = null;
+/** The PowerPoint file the owner has picked for import. */
+let pptxSource: string | null = null;
 let documentState = { dirty: false, title: '' };
 /** The video export that is running, if any. One at a time. */
 let videoJob: VideoJob | null = null;
@@ -517,7 +523,10 @@ function registerHandlers(): void {
     return opened(target, readProject(target));
   });
 
-  handle('lysark:import', async (): Promise<ImportedProject | null> => {
+  // Import of a PowerPoint file goes in two: the owner picks the file, and
+  // then says in the interface whether the slides are to keep their look
+  // or be made over into the theme. Only the file's name leaves this process.
+  handle('lysark:import-pick', async (): Promise<{ name: string } | null> => {
     if (!mainWindow) return null;
     const pick = await dialog.showOpenDialog(mainWindow, {
       title: 'Importer PowerPoint',
@@ -527,6 +536,46 @@ function registerHandlers(): void {
     });
     const source = pick.filePaths[0];
     if (pick.canceled || !source) return null;
+    pptxSource = source;
+    return { name: basename(source) };
+  });
+
+  // The slides keep their look: a PDF of the presentation is made by a
+  // program on the machine that can draw PowerPoint slides (src/main/office.ts),
+  // and imported like any PDF. Null when no such program could make it.
+  handle('lysark:pptx-as-pdf', async (): Promise<PptxPdf | null> => {
+    const source = pptxSource;
+    if (!source) throw new Error('Ingen PowerPoint-fil er valgt.');
+    const made = await presentationToPdf(source);
+    if (!made) return null;
+    const { data } = made;
+    if (data.byteLength > PDF_LIMIT_BYTES) {
+      throw new Error(
+        `Presentasjonen er for stor til å importeres med utseendet sitt (over ${PDF_LIMIT_BYTES / (1024 * 1024)} MB som PDF).`,
+      );
+    }
+    dropPdfImport();
+    pdfImport = { sourceName: `${basename(source).replace(/\.pptx$/i, '')}.pdf`, folder: null };
+    return {
+      name: basename(source),
+      data,
+      by: made.by,
+      ...(made.file === undefined ? {} : { file: made.file }),
+    };
+  });
+
+  // What the PowerPoint file knows that a PDF of it does not: names, notes and sections.
+  handle('lysark:pptx-slides', (): PptxSlide[] => {
+    const source = pptxSource;
+    if (!source) throw new Error('Ingen PowerPoint-fil er valgt.');
+    const bytes = new Uint8Array(readFileSync(source));
+    return pptxSlides(importPptx(bytes, { fileName: basename(source) }).project);
+  });
+
+  handle('lysark:import', async (): Promise<ImportedProject | null> => {
+    if (!mainWindow) return null;
+    const source = pptxSource;
+    if (!source) throw new Error('Ingen PowerPoint-fil er valgt.');
     const dir = await askForNewFolder(basename(source, '.pptx'));
     if (!dir) return null;
     const imported = importPptxToFolder(source, dir);

@@ -8,7 +8,7 @@ import {
   clearClosingAnimation,
   clearLogos,
 } from './actions';
-import { useStore } from './store';
+import { useStore, type ImportLook, type LookRequest } from './store';
 
 function Dialog(props: {
   title: string;
@@ -110,6 +110,94 @@ export function ImportReportDialog(props: {
   );
 }
 
+/** What each look means for each kind of file, in the lecturer's words. */
+const LOOKS: Record<LookRequest['kind'], Record<ImportLook, { name: string; text: string }>> = {
+  pptx: {
+    keep: {
+      name: 'Behold utseendet',
+      text:
+        'Lysarkene ser ut som i PowerPoint. Tekst og bilder kan flyttes og endres, men skriften blir ' +
+        'Lysarks egen. Manus og kapitler følger med. Animasjoner og video i lysarkene følger ikke med. ' +
+        'Utseendet hentes fra en PDF av presentasjonen: PowerPoint lager den i bakgrunnen, eller ' +
+        'Lysark bruker en PDF med samme navn som ligger ved siden av, eller LibreOffice lager den.',
+    },
+    theme: {
+      name: 'Gjør om til USN-stil',
+      text:
+        'Innholdet settes inn i USN-stilen: farger, skrifter, logo og former. Manus, kapitler, tabeller ' +
+        'og video følger med. Det som må lages på nytt, står i en rapport etterpå.',
+    },
+  },
+  pdf: {
+    keep: {
+      name: 'Behold utseendet',
+      text:
+        'Lysarkene ser ut som sidene i PDF-en. Tekst og bilder kan flyttes og endres, men skriften blir ' +
+        'Lysarks egen.',
+    },
+    theme: {
+      name: 'Gjør om til USN-stil',
+      text:
+        'Teksten og bildene settes på USN-stilens flate, i dens skrifter og farger, med logo. Streker, ' +
+        'former og bakgrunn fra PDF-en følger ikke med.',
+    },
+  },
+};
+
+/** Asks how the slides of a file that is being imported are to look. The choice is free. */
+export function LookDialog({ request }: { request: LookRequest }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [look, setLook] = useState<ImportLook>('keep');
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+  const answer = (choice: ImportLook | undefined): void => {
+    useStore.getState().setLookRequest(null);
+    request.resolve(choice);
+  };
+  return (
+    <dialog
+      ref={ref}
+      className="dialog look-dialog"
+      onCancel={(event) => {
+        event.preventDefault();
+        answer(undefined);
+      }}
+    >
+      <h2>Hvordan skal lysarkene se ut?</h2>
+      <p>
+        <strong>{request.name}</strong>
+      </p>
+      <fieldset className="look-choice">
+        <legend className="field-label">Velg fritt. Innholdet er det samme.</legend>
+        {(['keep', 'theme'] as const).map((choice) => (
+          <label key={choice} className="look-option">
+            <input
+              type="radio"
+              name="import-look"
+              checked={look === choice}
+              onChange={() => setLook(choice)}
+            />
+            <span>
+              <strong>{LOOKS[request.kind][choice].name}</strong>
+              <span>{LOOKS[request.kind][choice].text}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="dialog-actions">
+        <button type="button" onClick={() => answer(undefined)}>
+          Avbryt
+        </button>
+        <button type="button" className="strong" onClick={() => answer(look)}>
+          Importer
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
 /** Shown while a PDF is imported. It cannot be closed, only stopped. */
 export function PdfImportDialog() {
   const progress = useStore((s) => s.pdfProgress);
@@ -134,16 +222,18 @@ export function PdfImportDialog() {
         stop();
       }}
     >
-      <h2>Importerer PDF</h2>
+      <h2>{/\.pptx$/i.test(progress.name) ? 'Importerer PowerPoint' : 'Importerer PDF'}</h2>
       <p>
         <strong>{progress.name}</strong>
       </p>
       <p role="status">
         {stopping
           ? 'Avbryter …'
-          : progress.pages > 0
-            ? `Importerer side ${progress.page} av ${progress.pages} …`
-            : 'Leser PDF-fila …'}
+          : progress.preparing
+            ? 'Lager en kopi av presentasjonen som PDF, så lysarkene kan beholde utseendet sitt. Det kan ta et minutt …'
+            : progress.pages > 0
+              ? `Importerer side ${progress.page} av ${progress.pages} …`
+              : 'Leser PDF-fila …'}
       </p>
       {progress.pages > 0 ? (
         <progress max={progress.pages} value={progress.page - 1} />

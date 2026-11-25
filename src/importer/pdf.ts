@@ -5,7 +5,7 @@
 // and how the pages become a project. The drawing itself happens in the
 // interface (src/renderer/src/pdfRender.ts).
 import { STAGE } from '../shared/format/constants';
-import { newId, newProject, newScene } from '../shared/format/factory';
+import { newId, newProject, newScene, plainText } from '../shared/format/factory';
 import {
   SURFACES,
   type Asset,
@@ -22,7 +22,7 @@ import {
 } from '../shared/format/schema';
 import { isAllowedTextColor, isLargeText } from '../shared/theme/contrast';
 import { PALETTE } from '../shared/theme/palette';
-import { THEME_REN, defaultTextColor } from '../shared/theme/theme';
+import { THEME_REN, defaultTextColor, logoArea } from '../shared/theme/theme';
 
 /** Pixels per stage unit: a page is drawn at double resolution. */
 export const PDF_PIXEL_DENSITY = 2;
@@ -1820,6 +1820,49 @@ export function isPagePicture(scene: Scene): boolean {
 }
 
 /**
+ * How the slides made from a PDF are to look. The lecturer chooses freely
+ * at import (the owner, 25.11.2026):
+ * - 'keep': as the pages look. What is neither text nor a picture lies
+ *   behind them as one picture of the page.
+ * - 'theme': made over into the program's theme. The text and the pictures
+ *   stand where they stood, on the theme's surface, in the theme's fonts and
+ *   colours, with the logo. Lines, shapes and the page's own background are
+ *   left out. A page where text had to stay in the picture of the page keeps
+ *   its look, so that nothing that can be read is lost.
+ */
+export type PdfLook = 'keep' | 'theme';
+
+const LOGO_AREA = logoArea(THEME_REN, 'nb');
+
+/** True when an element lies where the theme puts the logo. */
+function onLogo(element: Element): boolean {
+  const { x, y, w, h } = element.box;
+  const a = LOGO_AREA;
+  return x < a.x + a.w && x + w > a.x && y < a.y + a.h && y + h > a.y;
+}
+
+/** Makes a scene of text and pictures over into the theme (see `PdfLook`). */
+function intoTheme(scene: Scene): void {
+  delete scene.background;
+  let title: TextElement | undefined;
+  for (const element of scene.elements) {
+    if (element.type !== 'text') continue;
+    delete element.color;
+    // The page's first line, when no text on the page is larger, is its title.
+    const first = plainText(element.content).split('\n')[0]?.trim() ?? '';
+    if (!title && first !== '' && scene.title.startsWith(first.slice(0, TITLE_LIMIT - 1))) {
+      title = element;
+    }
+  }
+  const largest = Math.max(
+    0,
+    ...scene.elements.map((el) => (el.type === 'text' ? (el.fontSize ?? 0) : 0)),
+  );
+  if (title && (title.fontSize ?? 0) >= largest) title.role = 'title';
+  scene.showLogo = !scene.elements.some(onLogo);
+}
+
+/**
  * A page as a scene. Text and pictures are elements of their own, standing
  * where they stood; the rest of the page lies behind them as one picture,
  * and what was painted on top of a picture lies on top of it as a picture.
@@ -1827,7 +1870,7 @@ export function isPagePicture(scene: Scene): boolean {
  * steps and no script until the owner adds them. Elements lie back to
  * front: the background, the pictures, then the text in the PDF's order.
  */
-export function pdfScene(page: PdfPage): Scene {
+export function pdfScene(page: PdfPage, look: PdfLook = 'keep'): Scene {
   const scene = newScene('content', pageTitle(page.lines, page.number));
   scene.background = page.surface ?? 'hvit';
   scene.showLogo = false;
@@ -1853,7 +1896,8 @@ export function pdfScene(page: PdfPage): Scene {
   }
 
   const kept = page.kept ?? [];
-  if (page.background) {
+  const madeOver = look === 'theme' && !kept.some((k) => !k.apart);
+  if (page.background && !madeOver) {
     // Text that stays in the picture is what the picture says to a screen reader.
     const alt = cut(
       kept
@@ -1895,7 +1939,8 @@ export function pdfScene(page: PdfPage): Scene {
 
   if (kept.some((k) => k.why === 'formula')) warnings.push({ code: 'text', message: KEPT_FORMULA });
   if (kept.some((k) => k.why !== 'formula')) warnings.push({ code: 'text', message: KEPT_OTHER });
-  if (page.recoloured) warnings.push({ code: 'text', message: RECOLOURED });
+  if (madeOver) intoTheme(scene);
+  else if (page.recoloured) warnings.push({ code: 'text', message: RECOLOURED });
   warnings.push(...linkWarnings(page.looseLinks ?? []));
   scene.imported = { slide: page.number, warnings };
   return scene;
@@ -1911,13 +1956,16 @@ export function pdfProject(
   title: string,
   pages: PdfPage[],
   chapters: ReadonlyMap<number, string> = new Map(),
+  look: PdfLook = 'keep',
 ): Project {
   const project = newProject(title);
   for (const page of pages) {
+    const scene = pdfScene(page, look);
+    // Only the pictures the scene shows belong to the project.
+    const shown = new Set(scene.elements.map((el) => (el.type === 'image' ? el.asset : '')));
     for (const stored of [page.whole, page.background, ...(page.pictures ?? [])]) {
-      if (stored) project.assets[stored.assetId] = stored.asset;
+      if (stored && shown.has(stored.assetId)) project.assets[stored.assetId] = stored.asset;
     }
-    const scene = pdfScene(page);
     const chapter = chapters.get(page.number - 1);
     if (chapter !== undefined) scene.chapter = chapter;
     project.scenes.push(scene);
