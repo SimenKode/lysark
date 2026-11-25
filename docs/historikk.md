@@ -84,8 +84,8 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 - **Format 4**, med automatisk løft av eldre prosjekter.
 
 Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
-fri figur (6.32) er bygget. Malene, figur i «Lær mer» og bevegelsene
-gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
+fri figur (6.32) og tre maler (6.33) er bygget. Resten av malene, figur
+i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2371,6 +2371,81 @@ ikke undersøkt nærmere.
 **Ikke prøvd:** Windows, den pakkede utgaven, dine egne lysark, og
 video med en figur i (tegnekoden er uendret, men det er ikke målt).
 Ingen har prøvd dette for hånd med mus; alt er kjørt av testene.
+
+### 6.33 Maler der skjemaet styrer: prosess, lag og sammenligning (26.11.2026)
+
+Bygget rett etter fri figur, i samme økt, på svaret «skjemaet styrer»
+(6.32, spørsmål 2). Ingen nye spørsmål ble stilt; det jeg valgte selv,
+står under «Valg jeg tok».
+
+**Hva som er nytt.**
+
+- **«Sett inn → Figur»** har tre maler: **Prosess** (bokser med piler
+  mellom), **Lagvis oppbygging** (lag oppå hverandre) og
+  **Sammenligning** (kolonner med overskrift og punkter).
+- **Skjemaet står i egenskapene** når figuren er valgt: én rad per boks,
+  lag eller kolonne, med «Legg til», «Flytt opp», «Flytt ned» og «Fjern».
+  Figuren tegner seg selv mens du skriver. Malene starter tomme.
+- **Figuren flyttes og endrer størrelse med rammen** rundt den, og
+  legger seg ut på nytt inni rammen.
+- **Prosess** kan gå bortover eller nedover. **Farge** og
+  **skriftstørrelse** velges for hele figuren.
+- **Du kan også skrive rett i en boks** i lysarket (dobbeltklikk). Det du
+  skriver, går inn i skjemaet.
+- **«Ett steg per boks»** (eller lag, eller kolonne): radene kommer inn
+  én etter én. I en prosess kommer pila sammen med boksen den leder
+  til; i en sammenligning kommer overskriften sammen med punktene.
+- **Hver del kan ha «Lær mer»**, og beholder den og steget sitt om raden
+  flyttes i skjemaet.
+- **«Gjør om til fri figur»** tar bort skjemaet for godt. Formene står
+  igjen som en vanlig gruppe, med pilene festet, og kan endres del for
+  del.
+- **I HTML-fila og i videoen** er figuren vanlige former; koden som
+  tegner lysarket, kjenner ikke til malene. Prosjektformatet er nå
+  versjon 11.
+
+**Valg jeg tok uten å spørre** (si fra hvis noe skal være annerledes):
+
+- En rad heter «boks», «lag» eller «kolonne», aldri «steg», fordi
+  «steg» allerede er stegene i et lysark.
+- Fargene: prosess og overskrifter er lilla. Lagene får hver sin farge
+  fra paletten (indigo, lilla, medium lilla, lys lilla, lys indigo) så de
+  kan skilles; velger du én farge, skilles de av et lite mellomrom.
+- En ny prosess har tre tomme bokser, en ny lagfigur tre lag, og en ny
+  sammenligning to kolonner.
+- **Tidslinje-malen er ikke bygget,** fordi navnet kolliderer med fanen
+  «Tidslinje» under lysarket. Eieren må velge navn først.
+- Søyle- og linjediagram er ikke bygget ennå.
+
+**En feil funnet av testen og rettet før noe ble sendt ut:** når en rad
+ble lagt til i skjemaet, var ikke de nye delene med i det som var valgt,
+så panelet byttet fra skjemaet til «6 elementer valgt». Hele figuren
+holdes nå valgt når skjemaet endres.
+
+**Begrensninger, sagt rett ut.**
+
+- Teksten krymper ikke av seg selv når den er for lang for boksen. Gjør
+  rammen større eller skriften mindre.
+- En del kan ikke flyttes eller få egen farge så lenge skjemaet styrer.
+  Drar du i en del, hopper den tilbake.
+- Teksten i en del er ren tekst: fet, kursiv og lenker følger ikke med
+  inn i skjemaet.
+- Figuren kan ikke dreies.
+- «Lag kopi» av én del gir en løs form, ikke en ny rad.
+
+**Prøvd** på Linux Mint, automatisk og uten vindu: 15 enhetstester
+(`tests/templates.test.ts`) og fire ende-til-ende-tester
+(`tests/e2e-templates.test.ts`): sette inn en prosess, fylle ut, legge
+til, flytte og fjerne rader, snu den nedover, bytte farge, dra figuren,
+endre størrelse med rammen, skrive i en boks i lysarket, ett steg per
+boks, se stegene i forhåndsvisningen, gjøre om til fri figur og angre,
+og sette inn og fylle ut lag og sammenligning. Fem skjermbilder fra
+testen er tatt, og to er sett på. Hele testsamlingen: 498 består, én
+hoppes over som før.
+
+**Ikke prøvd:** Windows, den pakkede utgaven, lange tekster, og video
+med en slik figur i (tegnekoden er uendret, men det er ikke målt).
+Ingen har prøvd dette for hånd med mus.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

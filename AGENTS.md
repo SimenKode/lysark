@@ -302,6 +302,17 @@ instead of choosing silently.
   the render code, the HTML player and the video export never look at
   groups or at what a line is fastened to. In the interface the word is
   "Grupper" and "Del opp gruppen" (the owner's choice, as in PowerPoint).
+- A figure with a form (process, layers, comparison) is drawn by its
+  form, not by hand (the owner's choice, 25.11.2026: "skjemaet styrer").
+  The figure element (`type: 'figure'`) holds the form and a frame and
+  shows nothing; what is seen are ordinary shapes that carry `of`, made,
+  laid out and taken away by one function after every change
+  (`followTemplates` in `src/shared/layout/templates.ts`, called from the
+  store's `update` before `followFigures`). The render code knows only
+  the shapes. "Gjør om til fri figur" takes the form away for good and
+  leaves the shapes as a group. A row of a form is never called "steg"
+  in the interface (that word is the steps of a slide): it is a "boks",
+  a "lag" or a "kolonne".
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

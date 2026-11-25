@@ -14,7 +14,7 @@ PowerPoint eller PDF, og får
 begge i USNs visuelle profil. Programmet skal kunne brukes av en
 foreleser uten opplæring. Det styrer ordvalg og knapper.
 
-## Nytt 26.11.2026: fri figur (ikke gitt ut)
+## Nytt 26.11.2026: figurer (ikke gitt ut)
 
 Du svarte på fire spørsmål (historikken, 6.32): figurer lages **rett i
 lysarket**, i malene **styrer skjemaet**, figurer i «Lær mer» **hentes
@@ -32,6 +32,17 @@ fra et lysark**, og ordet er **«Grupper»**. Første del er bygget:
   skrive i den. «Del opp gruppen» løser den opp.
 - **«Ett steg per del».** Delene i gruppen kommer inn én etter én. En pil
   kommer sammen med boksen den peker på.
+
+Deretter de tre første malene (historikken, 6.33):
+
+- **«Sett inn → Figur»** gir **Prosess**, **Lagvis oppbygging** og
+  **Sammenligning**. Du fyller ut et skjema i egenskapene, og figuren
+  tegner seg selv. Dra i rammen for å flytte den eller endre størrelsen.
+- Du kan også **dobbeltklikke og skrive rett i en boks**.
+- **«Ett steg per boks»** (eller lag, kolonne) lar radene komme inn én
+  etter én.
+- **«Gjør om til fri figur»** tar bort skjemaet for godt, så du kan
+  endre hver del for hånd.
 
 Rettet i samme slengen: **«Lag kopi» av et lysark mistet merkene på
 bildene.** Nå følger de med.
@@ -68,8 +79,9 @@ etiketter oppå et bilde).
    utseendet eller gjøres om til USN-stil. Kapitlene følger med.
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
    i kapitler.
-3. **Tegne figurer** av bokser, ellipser og piler som henger sammen, og
-   gruppere dem.
+3. **Lage figurer:** fra en mal med skjema (prosess, lagvis oppbygging,
+   sammenligning), eller fritt av bokser, ellipser og piler som henger
+   sammen.
 4. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
    Commons og Openverse, og **sette merker på et bilde**.
 5. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
@@ -118,9 +130,12 @@ etiketter oppå et bilde).
 Startmeldingen til denne chatten hadde ingen funn eller innspill, så
 punktene fra sist står fortsatt.
 
-1. **Prøv fri figur** på et av dine egne lysark: tegn tre bokser, sett
-   piler mellom dem, flytt en boks, grupper, og gi delene steg. Si hva
-   som er tungvint eller uventet.
+1. **Prøv figurene** på et av dine egne lysark. Sett inn en prosess og
+   fyll ut skjemaet. Tegn så en fri figur: tre bokser, piler mellom dem,
+   flytt en boks, grupper, og gi delene steg. Si hva som er tungvint
+   eller uventet, og om farger og størrelser er som du vil ha dem.
+   **Ett valg trengs:** hva skal malen for hendelser i rekkefølge hete?
+   «Tidslinje» er allerede fanen under lysarket.
 2. **Prøv «Behold utseendet» for en PowerPoint-fil på Windows.** Der
    skal PowerPoint lage en PDF-kopi i bakgrunnen. Den veien har jeg ikke
    kunnet prøve (jeg har ikke PowerPoint). Si hva som skjer.
@@ -140,10 +155,10 @@ punktene fra sist står fortsatt.
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd fri figur, opptaket, importen og
+1. **Det du melder** etter å ha prøvd figurene, opptaket, importen og
    valget av utseende.
-2. **Malene** (leveranse 4): prosess, lagvis oppbygging, sammenligning,
-   tidslinje, søyle- og linjediagram. Skjemaet styrer figuren.
+2. **Resten av malene** (leveranse 4): tidslinje (trenger et navn fra
+   deg), og søyle- og linjediagram.
 3. **Figur i «Lær mer»**, hentet fra et lysark.
 4. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
    opp, forsvinne og zoome inn på et utsnitt.
@@ -153,7 +168,7 @@ punktene fra sist står fortsatt.
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (479) | Ja | – |
+| Automatiske tester (498) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -167,6 +182,7 @@ punktene fra sist står fortsatt.
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
+| **Maler med skjema** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
@@ -176,6 +192,9 @@ etter 0.4.0, er prøvd på Windows.**
 
 ## Kjente svakheter
 
+- **Maler med skjema:** teksten krymper ikke av seg selv når den er for
+  lang for boksen. En del kan ikke flyttes eller få egen farge før du
+  gjør figuren om til fri figur. Tidslinje og diagrammer er ikke laget.
 - **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
   gruppe større eller mindre. En pil går alltid korteste vei mellom to
   bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
@@ -260,8 +279,9 @@ ut (25.11.2026). Etter det er dette bygget, og ikke gitt ut: merket
 bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
 film for hele opptaket), kapitler, PDF-import der tekst, bilder og
 lenker er egne elementer, fritt valg ved import mellom «Behold
-utseendet» og «Gjør om til USN-stil», og fri figur (grupper, og piler
-som fester seg til bokser).
+utseendet» og «Gjør om til USN-stil», fri figur (grupper, og piler som
+fester seg til bokser), og tre maler med skjema (prosess, lagvis
+oppbygging, sammenligning).
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -283,7 +303,7 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (fri figur, opptak med ekte kamera, fram
+Det jeg har funnet siden sist (figurene, opptak med ekte kamera, fram
 og tilbake under opptak, import med «Behold utseendet» og «USN-stil»,
 særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
 installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):

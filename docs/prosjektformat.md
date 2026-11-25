@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 10), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 11), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -49,7 +49,35 @@ cellemarger, og bilder kan blandes med det som ligger under (`blend`,
 brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
-Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
+Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
+Lyd kom i format 4.
+
+## Format 11: figurer som tegner seg selv fra et skjema
+
+En figur med skjema (`type: "figure"`) holder skjemaet og en ramme, og
+viser ingenting selv. `template` er `process` (bokser med piler mellom),
+`layers` (lag oppå hverandre) eller `comparison` (kolonner med overskrift
+og punkter). `items` er radene i skjemaet: `text`, og for en
+sammenligning `detail` (punktene, ett per linje). `direction` snur en
+prosess nedover, og `color` og `fontSize` overstyrer malens egne.
+
+- **Det som synes, er vanlige former.** Hver del er et eget element av
+  typen `shape` med `of`: hvilken figur den hører til (`figure`) og
+  hvilken del den er (`part`, for eksempel `box:<rad>` eller
+  `arrow:<rad>`). Delene er gruppert med figuren (`group`), og pilene i
+  en prosess er festet til boksene (`startAt`, `endAt`).
+- **Skjemaet styrer.** Etter hver endring lages, plasseres og fjernes
+  delene slik skjemaet sier (`followTemplates` i
+  `src/shared/layout/templates.ts`). En del som flyttes for hånd, legges
+  tilbake. Id-en, steget og «Lær mer» er delens egne, og følger raden om
+  den flyttes i skjemaet.
+- **«Gjør om til fri figur»** fjerner figurelementet. Formene står igjen
+  som en vanlig gruppe uten `of`.
+- Det som tegner lysarket, kjenner bare formene. Figurelementet tegnes
+  som en tom ramme, og sier bare fra i redigeringsprogrammet når
+  skjemaet er tomt.
+
+Et prosjekt i format 10 leses som det er.
 
 ## Format 10: grupper, og linjer som er festet
 

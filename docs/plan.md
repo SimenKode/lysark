@@ -418,13 +418,19 @@ valgte 25.11.2026: rett i lysarket, av formene som fantes fra før.
 - Tegnekoden er ikke endret, så figurene er med i HTML-fila og i videoen
   som alle andre former.
 
+**De tre første malene er bygget 26.11.2026** (historikk.md 6.33):
+«Sett inn → Figur» gir **prosess**, **lagvis oppbygging** og
+**sammenligning**. Eieren valgte 25.11.2026 at **skjemaet styrer**:
+figuren tegner seg selv fra skjemaet i egenskapene, og «Gjør om til fri
+figur» slipper den løs for godt (som SmartArt i PowerPoint). Malene
+starter tomme.
+
 Det som gjenstår av leveranse 4, i denne rekkefølgen:
 
-1. **Maler med skjema:** prosess, lagvis oppbygging, sammenligning,
-   tidslinje, søyle- og linjediagram. Venndiagram og årsak-virkning
-   etterpå ved behov. Malene starter tomme. Eieren valgte 25.11.2026 at
-   **skjemaet styrer**: figuren tegner seg selv fra skjemaet, og «Gjør om
-   til fri figur» slipper den løs for godt (som SmartArt i PowerPoint).
+1. **Resten av malene:** tidslinje, og søyle- og linjediagram.
+   Venndiagram og årsak-virkning etterpå ved behov. Før tidslinja bygges,
+   må eieren velge navn: fanen under lysarket heter allerede
+   «Tidslinje».
 2. **Figur i «Lær mer»** (egen del i byggeren): eieren valgte 25.11.2026
    at figuren **hentes fra et lysark**. Den lages på et lysark, og i
    byggeren velger man «Figur» og peker på den; en kopi legges i boksen.
