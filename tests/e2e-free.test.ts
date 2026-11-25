@@ -409,5 +409,83 @@ describe.skipIf(!built || !existsSync(ffmpeg))(
         .toBe('Spill av');
       await player.close();
     }, 120_000);
+
+    it('pauses, jumps while paused, takes a slide again and breaks off, with the camera on', async () => {
+      await page.locator('.scene-item').nth(1).click();
+      await page.getByRole('tab', { name: /^Lyd/ }).click();
+      await page.getByRole('button', { name: 'Les inn', exact: true }).click();
+      const recorder = page.locator('.recorder');
+      await recorder.waitFor();
+      expect(await where()).toContain('Lysark 2 av 3');
+      await recorder.getByLabel('Kamera', { exact: true }).check();
+      const circle = recorder.locator('.camera-circle');
+      await circle.waitFor();
+      await expect
+        .poll(() => circle.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth))
+        .toBeGreaterThan(0);
+
+      await recorder.getByRole('button', { name: 'Start opptak' }).click();
+      await recorder.locator('.recorder-clock.is-on').waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(1100);
+      await recorder.getByRole('button', { name: 'Pause', exact: true }).click();
+      await expect.poll(() => recorder.locator('.recorder-clock').textContent()).toContain('Pause');
+      const paused = await recorder.locator('.recorder-clock').textContent();
+      await page.waitForTimeout(900);
+      // Nothing is recorded in a pause, but the lecturer can find the next slide meanwhile.
+      expect(await recorder.locator('.recorder-clock').textContent()).toBe(paused);
+      await recorder.getByRole('button', { name: 'Velg lysark' }).click();
+      await recorder.locator('.recorder-menu-item', { hasText: 'Lysark C' }).click();
+      await expect.poll(where).toContain('Lysark 3 av 3');
+      await recorder.getByRole('button', { name: 'Fortsett' }).click();
+      await recorder.locator('.recorder-clock.is-on').waitFor();
+      await page.waitForTimeout(1300);
+
+      // C is read anew from where the lecturer came to it; B stands.
+      await recorder.getByRole('button', { name: 'Ta om dette lysarket' }).click();
+      await recorder.locator('.recorder-count').waitFor();
+      await recorder.locator('.recorder-clock.is-on').waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(1000);
+      await page.keyboard.press('ArrowLeft');
+      await expect.poll(where).toContain('Lysark 2 av 3');
+      await page.waitForTimeout(900);
+      // Breaking off drops the slide the lecturer stands on, and keeps what was read before it.
+      page.once('dialog', (dialog) => void dialog.accept());
+      await recorder.getByRole('button', { name: 'Avbryt' }).click();
+      await recorder.waitFor({ state: 'detached', timeout: 60_000 });
+      expect(await page.locator('.notice').textContent()).toContain(
+        'Opptaket er lagt på 2 lysark.',
+      );
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
+
+      const project = await save();
+      // What followed B in the old recording (A once more) went with it: B was read anew and gone on from.
+      expect(project.scenes.map((s) => s.repeat?.of ?? s.id)).toEqual(['s_A', 's_B', 's_C']);
+      const [, b, c] = project.scenes;
+      // (A press on a button takes a second or two in a window that is not shown.)
+      expect(clipLength(b!)).toBeGreaterThan(0.8);
+      expect(clipLength(b!)).toBeLessThan(4.5);
+      expect(clipLength(c!)).toBeGreaterThan(0.7);
+      expect(clipLength(c!)).toBeLessThan(2);
+      // One film for the recording. It stood still in the pause and during the
+      // countdown, and ran while C was read the first time: the stretch of C
+      // that was kept begins that much later in it.
+      const sound = (scene: Scene): Project['assets'][string] => {
+        const clip = scene.audio!.clips[0]!;
+        return project.assets[clip.kind === 'sound' ? clip.asset : '']!;
+      };
+      expect(sound(b!).camera!.asset).toBe(sound(c!).camera!.asset);
+      expect(Math.abs(sound(b!).camera!.offset)).toBeLessThan(0.05);
+      const later = -sound(c!).camera!.offset - clipLength(b!);
+      // The pause and the countdown together were more than six seconds, and are not in it.
+      expect(later).toBeGreaterThan(0.9);
+      expect(later).toBeLessThan(5);
+      expect(existsSync(join(projectDir, project.assets[sound(b!).camera!.asset]!.file))).toBe(
+        true,
+      );
+
+      // The whole recording is one step to undo.
+      await page.getByRole('button', { name: 'Angre' }).click();
+      await expect.poll(() => page.locator('.scene-item').count()).toBe(4);
+    }, 150_000);
   },
 );
