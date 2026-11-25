@@ -103,7 +103,26 @@ async function withEncodedSound(
       delete out.assets[id];
     }
   }
+  withoutCamera(out);
   return { project: out, generated };
+}
+
+/**
+ * The camera circle is part of the video, not of the HTML file (the owner's
+ * choice, 25.11.2026): the films, where the circle stood and how it was
+ * moved are left out of what is exported.
+ */
+function withoutCamera(project: Project): void {
+  for (const [id, asset] of Object.entries(project.assets)) {
+    if (asset.kind === 'camera') delete project.assets[id];
+    else delete asset.camera;
+  }
+  for (const scene of project.scenes) {
+    delete scene.camera;
+    if (!scene.events) continue;
+    scene.events = scene.events.filter((event) => event.kind !== 'camera-move');
+    if (scene.events.length === 0) delete scene.events;
+  }
 }
 
 function sources(

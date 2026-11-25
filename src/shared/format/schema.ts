@@ -14,8 +14,10 @@ export const FORMAT_NAME = 'lysark';
  *    the brand's closing animation.
  * 6: slides remember what was opened and played while they were read in
  *    (events); the project has tracks for music and other sound.
+ * 7: a recording can carry a film of the lecturer's face (the camera
+ *    circle); a slide says where the circle stands, and events can move it.
  */
-export const FORMAT_VERSION = 6;
+export const FORMAT_VERSION = 7;
 
 export { STAGE } from './constants';
 
@@ -427,8 +429,36 @@ export const SceneEvent = z.discriminatedUnion('kind', [
     element: z.string(),
     block: z.string().optional(),
   }),
+  /**
+   * The camera circle is moved: from this time it glides to a new place.
+   * `x` and `y` are the centre of the circle, in stage pixels.
+   */
+  z.object({
+    id: z.string().min(1),
+    at: z.number().min(0),
+    kind: z.literal('camera-move'),
+    x: z.number(),
+    y: z.number(),
+  }),
 ]);
 export type SceneEvent = z.infer<typeof SceneEvent>;
+
+export const CAMERA_SIZES = ['small', 'medium', 'large'] as const;
+export type CameraSize = (typeof CAMERA_SIZES)[number];
+
+/**
+ * Where the camera circle (the film of the lecturer's face) stands when the
+ * slide begins. The film itself belongs to the recording, not to the slide.
+ */
+export const CameraPlace = z.object({
+  /** The centre of the circle, in stage pixels. */
+  x: z.number(),
+  y: z.number(),
+  size: z.enum(CAMERA_SIZES),
+  /** The circle is not shown on this slide, though it was filmed. */
+  hidden: z.boolean().optional(),
+});
+export type CameraPlace = z.infer<typeof CameraPlace>;
 
 /**
  * A piece of sound on one of the lecture's own tracks (music, other sound).
@@ -514,6 +544,8 @@ export const Scene = z.object({
   closingAnimation: z.object({ seconds: z.number().positive().max(120) }).optional(),
   /** What was opened and played while the slide was read in, in order of time. */
   events: z.array(SceneEvent).optional(),
+  /** Where the camera circle stands on this slide, when a recording of it has a film. */
+  camera: CameraPlace.optional(),
   imported: z
     .object({ slide: z.number().int().min(1), warnings: z.array(ImportWarning) })
     .optional(),
@@ -538,7 +570,12 @@ export const Credit = z.object({
 export type Credit = z.infer<typeof Credit>;
 
 export const Asset = z.object({
-  kind: z.enum(['image', 'video', 'audio']),
+  /**
+   * 'camera' is a film of the lecturer's face, taken while a slide was read
+   * in: square, without sound, 30 pictures a second. It is shown only as the
+   * camera circle, never as a video the owner can put on a slide.
+   */
+  kind: z.enum(['image', 'video', 'audio', 'camera']),
   /** Path relative to the project folder, always inside media/. */
   file: z.string().regex(/^media\/[A-Za-z0-9._-]+$/),
   mime: z.string(),
@@ -546,6 +583,12 @@ export const Asset = z.object({
   /** Original file name, for the owner's reference. */
   name: z.string().optional(),
   credit: Credit.optional(),
+  /**
+   * On a recording: the film that was taken with it (a 'camera' asset), and
+   * how many seconds into the recording the film's first picture belongs.
+   * Every clip that points into the recording shows the same part of the film.
+   */
+  camera: z.object({ asset: z.string(), offset: z.number() }).optional(),
 });
 export type Asset = z.infer<typeof Asset>;
 

@@ -99,6 +99,7 @@ const EVENT_TEXT: Record<SceneEvent['kind'], { label: string; mark: string }> = 
   'more-close': { label: '«Lær mer» lukkes', mark: '×' },
   'video-play': { label: 'Video starter', mark: '▶' },
   'video-pause': { label: 'Video stopper', mark: 'Ⅱ' },
+  'camera-move': { label: 'Kamerasirkelen flyttes', mark: '○' },
 };
 
 function Track(props: TrackProps) {
@@ -360,6 +361,12 @@ export function AudioPanel() {
 
   // Stop when the panel goes away.
   useEffect(() => stop, [stop]);
+
+  // The camera circle on the stage shows the moment the playhead stands at.
+  useEffect(() => {
+    useStore.getState().setSoundAt({ t: playhead, playing });
+  }, [playhead, playing]);
+  useEffect(() => () => useStore.getState().setSoundAt(null), []);
 
   // Read the recordings of the slide so that they can be drawn.
   useEffect(() => {

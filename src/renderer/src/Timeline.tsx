@@ -182,6 +182,7 @@ export function Timeline() {
     playback.current = null;
     setPlaying(false);
     useStore.getState().setPreviewSteps(null);
+    useStore.getState().setSoundAt(null);
   }, []);
   // Stop when the timeline goes away, and when the lecture is changed under what plays.
   useEffect(() => stop, [stop]);
@@ -209,6 +210,7 @@ export function Timeline() {
         const store = useStore.getState();
         if (store.sceneId !== scene.id) store.setScene(scene.id);
         store.setPreviewSteps(stepsShownAt(scene, t - entry.start));
+        store.setSoundAt({ t: t - entry.start, playing: true });
       }
       frame.current = requestAnimationFrame(tick);
     };

@@ -163,11 +163,26 @@ instead of choosing silently.
   something: on 22.11.2026 such a script opened a "Lær mer" box in the
   preview, and the YouTube player in it was fetched for real.
 - The program uses the microphone only while the owner records in the
-  recording window, and never the camera. The main process grants "media"
-  for sound only, and only to the program's own window
-  (`allowMicrophoneOnly` in `src/main/index.ts`). Recordings are stored
-  in the project folder and sent nowhere. Tests record from Chromium's
-  built-in fake microphone, never from a real one.
+  recording window. It uses the camera only there too, and only when the
+  owner has switched "Kamera" on in that window (the owner asked for the
+  camera on 25.11.2026; until then it was never used). It is off until he
+  switches it on, and closed when the window closes. The main process
+  grants "media" (sound and pictures) only to the program's own window
+  (`allowRecordingDevicesOnly` in `src/main/index.ts`). Recordings and
+  films are stored in the project folder and sent nowhere. Tests record
+  from Chromium's built-in fake microphone and fake camera, never from
+  real ones.
+- The camera circle is the lecturer's face in a circle on the slide. The
+  film belongs to the recording it was taken with (`Asset.camera`), so
+  whatever cuts the sound cuts the film with it; where the circle stands
+  belongs to the slide (`Scene.camera`), and a move made while reading is
+  an event with a time (`camera-move`). The clock says which picture of
+  the face is shown and where (`cameraAt` in
+  `src/shared/render/clock.ts`). The circle is in the video (MP4) only:
+  not in the HTML file and not in a GIF (the owner's choice, 25.11.2026).
+  The video export lays it on top of the picture of the slide itself
+  (`src/shared/render/cameraDraw.ts`), and the interface draws the same
+  circle with CSS; change the two together.
 - FFmpeg is a separate program that Lysark starts (`src/main/ffmpeg.ts`),
   never linked in and never in git. One fixed build is fetched by
   `tools/fetch-ffmpeg.mjs` with its checksum checked, placed in

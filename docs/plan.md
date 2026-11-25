@@ -327,6 +327,32 @@ spørsmålene (historikk.md 6.19), og alt er **bygget 23.11.2026**
 Utenfor, med vilje: YouTube-videoer i videofila (vi har ikke fila), og
 medfølgende musikk (eieren legger inn sin egen).
 
+### Kamerasirkelen
+
+Bedt om av eieren 25.11.2026 («sånn sirkel med ansiktet som man også
+skal kunne flytte rundt på skjermen etter behov»). Han valgte: bare i
+videoen, og fri flytting underveis (historikk.md 6.24). **Bygget
+25.11.2026:**
+
+- **«Kamera» i innlesingsvinduet.** Av til du slår det på. Da vises
+  ansiktet ditt i en sirkel på lysarket, og filmes mens du leser inn.
+  Tre størrelser.
+- **Flytting.** Dra sirkelen dit den ikke dekker noe, før du starter
+  eller mens du leser. En flytting underveis huskes med tidspunkt, og
+  videoen gjør det samme: sirkelen glir til den nye plassen. Neste
+  lysark begynner der sirkelen sto.
+- **Etterpå** står sirkelen på lysarket i redigeringsflaten, der den kan
+  dras, få annen størrelse, eller skjules på lysarket (fanen «Lysark»).
+  Flyttinger underveis er merker i lydsporet, som kan flyttes i tid og
+  fjernes.
+- **Klipping.** Filmen følger lyden: klipper du bort et stykke, er det
+  borte fra filmen også. I en pause står ansiktet stille.
+- **I videoen (MP4)** ligger sirkelen oppå lysarket. Den er ikke med i
+  HTML-fila og ikke i en GIF.
+
+Utenfor, med vilje: sirkelen i HTML-fila (kan komme senere; fila vokser
+da med omtrent 1 MB per minutt), og annen form enn sirkel.
+
 ## Leveranse 4: Figurer og bevegelser
 
 - En figur er statisk til delene får steg; samme bygger for begge.
@@ -515,10 +541,9 @@ Rettet i økt 3:
 Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 2 og 3 er bygget. Det som står for tur:
 
-1. **Det eieren melder** etter å ha prøvd mikrofon, video, musikk og
-   Canvas. «Lær mer» og video under innlesing, tidslinje og flere
-   lydspor, mer liv og lekenhet og USNs avslutningsanimasjon, som sto
-   her, er bygget.
+1. **Det eieren melder** etter å ha prøvd mikrofon, kamera, video,
+   musikk, installasjonsfila og Canvas. Kamerasirkelen og
+   installasjonsfila for Windows, som han ba om 25.11.2026, er bygget.
 2. **Flere bildekilder**, Openverse først, når resten sitter.
 3. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
    stil).

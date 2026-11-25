@@ -29,6 +29,7 @@ import { webPictureUrl } from '../shared/api';
 import { PDF_LIMIT_BYTES } from '../shared/limits';
 import type { CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
+import { addCameraFilm } from './camera';
 import { buildPreview, exportHtml } from './exportHtml';
 import { adoptClosingAnimation } from './closing';
 import { ffmpegPath, mediaSeconds } from './ffmpeg';
@@ -214,22 +215,22 @@ function blockNetworkInInterface(): void {
 }
 
 /**
- * The program gives itself leave to use the microphone, and nothing else:
- * sound only, never the camera, and only for its own window. Recordings are
+ * The program gives itself leave to use the microphone and the camera, and
+ * nothing else, and only for its own window. The interface opens them only
+ * in the recording window: the microphone while that window is open, the
+ * camera only when the owner has switched it on there. Recordings are
  * stored in the project folder and sent nowhere.
  */
-function allowMicrophoneOnly(): void {
+function allowRecordingDevicesOnly(): void {
   const own = (contents: Electron.WebContents | null): boolean =>
     !!contents && !!mainWindow && contents.id === mainWindow.webContents.id;
   session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
     const types = (details as { mediaTypes?: string[] }).mediaTypes ?? [];
-    const soundOnly = types.length > 0 && types.every((type) => type === 'audio');
-    callback(permission === 'media' && soundOnly && own(contents));
+    const known = types.length > 0 && types.every((type) => type === 'audio' || type === 'video');
+    callback(permission === 'media' && known && own(contents));
   });
-  session.defaultSession.setPermissionCheckHandler((contents, permission, _origin, details) => {
-    if (permission !== 'media') return false;
-    const type = (details as { mediaType?: string }).mediaType;
-    return own(contents) && type !== 'video';
+  session.defaultSession.setPermissionCheckHandler((contents, permission) => {
+    return permission === 'media' && own(contents);
   });
   // Every other session (the preview, the network session) is given nothing.
   for (const partition of ['lysark-preview', 'lysark-web']) {
@@ -283,7 +284,8 @@ function showAbout(): void {
       'Lysark, ligger i mappa «licenses» samme sted.\n\n' +
       'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
       'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene. ' +
-      'Mikrofonen brukes bare når du leser inn; opptakene lagres i prosjektmappa og sendes ingen steder.',
+      'Mikrofonen brukes bare når du leser inn, og kameraet bare når du har slått det på der; ' +
+      'opptakene lagres i prosjektmappa og sendes ingen steder.',
     buttons: ['Lukk'],
   });
 }
@@ -646,6 +648,16 @@ function registerHandlers(): void {
     return addRecording(dir, wav, String(name ?? ''));
   });
 
+  handle(
+    'lysark:add-camera-film',
+    (dir: string, film: Uint8Array, name: string): Promise<AddedMedia> => {
+      if (!currentDir || resolve(dir) !== resolve(currentDir)) {
+        throw new Error('Opptaket hører ikke til prosjektet som er åpent.');
+      }
+      return addCameraFilm(dir, film, String(name ?? ''));
+    },
+  );
+
   handle('lysark:import-sound', async (dir: string): Promise<AddedSound | null> => {
     if (!mainWindow) return null;
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -895,7 +907,7 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     blockNetworkInInterface();
-    allowMicrophoneOnly();
+    allowRecordingDevicesOnly();
     registerMediaProtocol();
     registerWebPictureProtocol();
     registerHandlers();

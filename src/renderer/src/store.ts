@@ -46,6 +46,11 @@ interface State {
   showGrid: boolean;
   /** Step preview in the editor: how many steps are shown; null = everything. */
   previewSteps: number | null;
+  /**
+   * Where in the slide's sound the sound panel or the timeline stands, and
+   * whether it is playing: the camera circle on the stage shows that moment.
+   */
+  soundAt: { t: number; playing: boolean } | null;
   clipboard: Element[];
   logo: LogoStatus;
   report: { report: ImportReport; sourceName: string; closingSlides?: number[] } | null;
@@ -84,6 +89,7 @@ interface State {
   setEditing(editing: Editing | null): void;
   toggleGrid(): void;
   setPreviewSteps(steps: number | null): void;
+  setSoundAt(at: { t: number; playing: boolean } | null): void;
   setClipboard(elements: Element[]): void;
   setLogo(logo: LogoStatus): void;
   setReport(report: State['report']): void;
@@ -112,6 +118,7 @@ export const useStore = create<State>((set, get) => ({
   coalesce: null,
   showGrid: false,
   previewSteps: null,
+  soundAt: null,
   clipboard: [],
   logo: { nb: { light: false, dark: false }, en: { light: false, dark: false }, version: 0 },
   report: null,
@@ -237,6 +244,13 @@ export const useStore = create<State>((set, get) => ({
 
   setPreviewSteps(steps) {
     set({ previewSteps: steps });
+  },
+
+  setSoundAt(at) {
+    const before = get().soundAt;
+    if (before === at) return;
+    if (before && at && before.t === at.t && before.playing === at.playing) return;
+    set({ soundAt: at });
   },
 
   setClipboard(elements) {

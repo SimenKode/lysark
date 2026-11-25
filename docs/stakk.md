@@ -306,13 +306,15 @@ Det er ikke tatt inn noe ikonbibliotek.
   mer»-panelet den står i, åpnes). Annet innhold fra nettet (lenker,
   innbygging) hentes først når seeren trykker. Fila tillater rammer bare
   over https, og ingen skript utenfra.
-- **Mikrofonen** brukes bare i opptaksvinduet. Hovedprosessen gir
-  programmets eget vindu lov til lyd, aldri kamera, og ingen andre
-  vinduer får noe. Opptakene lagres i prosjektmappa og sendes ingen
+- **Mikrofonen** brukes bare i opptaksvinduet. **Kameraet** brukes bare
+  der også, og bare når du har slått på «Kamera» i det vinduet (fra
+  25.11.2026; før ble kameraet aldri brukt). Hovedprosessen gir
+  programmets eget vindu lov til lyd og bilde, og ingen andre vinduer
+  får noe. Opptakene og filmene lagres i prosjektmappa og sendes ingen
   steder.
 - Testene kontakter aldri nettet. Wikimedia og YouTube besvares av
   testen selv, og innlesing prøves med nettlesermotorens innebygde
-  prøvemikrofon, aldri en ekte.
+  prøvemikrofon og prøvekamera, aldri ekte.
 
 Grensesnittets sikkerhetsregel (Content-Security-Policy) ble utvidet på
 ett punkt i leveranse 3: grensesnittet kan lese prosjektets egne

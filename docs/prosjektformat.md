@@ -51,6 +51,31 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
 
+## Format 7: kamerasirkelen
+
+Foreleseren kan filme ansiktet sitt mens et lysark leses inn. Det vises
+i en sirkel på lysarket, i videoen (ikke i HTML-fila, ikke i en GIF).
+
+- **Filmen hører til opptaket.** Et opptak (en lydfil i `assets`) kan ha
+  `camera: { asset, offset }`: filmen som ble tatt sammen med det, og
+  hvor mange sekunder ut i opptaket filmens første bilde hører hjemme.
+  Filmen er selv en fil i `assets`, med `kind: "camera"`: kvadratisk
+  (480 × 480), 30 bilder i sekundet, uten lyd. Fordi klippene i lyden
+  peker inn i opptaket, følger filmen med når lyden klippes: et klipp
+  viser den delen av filmen som ble tatt mens det ble sagt. I en pause
+  står ansiktet stille.
+- **Plassen hører til lysarket.** `camera: { x, y, size, hidden }` på et
+  lysark sier hvor sirkelens midtpunkt står når lysarket begynner (i
+  scenepiksler), hvor stor den er (`small`, `medium`, `large`), og om
+  den er skjult der.
+- **Flytting underveis er en hendelse.** `events` kan ha
+  `{ kind: "camera-move", at, x, y }`: fra tidspunktet `at` glir
+  sirkelen til en ny plass.
+
+Klokka (`cameraAt` i `src/shared/render/clock.ts`) sier hvilket bilde
+av ansiktet som vises og hvor sirkelen står til enhver tid. Et prosjekt
+i format 6 leses som det er.
+
 ## Format 6: det som åpnes og spilles under innlesing, og lydspor
 
 **Hendelser.** Et lysark kan ha en liste `events`: det foreleseren

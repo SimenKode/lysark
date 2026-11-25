@@ -1622,6 +1622,65 @@ viste USNs logo (testen bruker logopakka når den finnes på maskinen); det
 er ikke brukt. Installasjonsavsnittet for Windows beskriver zip-utgaven
 til en utgivelse med installasjonsfila finnes.
 
+**Kamerasirkelen (bygget og prøvd 25.11.2026).**
+
+Hva som er nytt:
+
+- **«Kamera» i innlesingsvinduet**, av til du slår det på. Valget
+  huskes til neste gang, slik mikrofonvalgene gjør. Har maskinen flere
+  kameraer, kan du velge. «Kamerasirkel» velger størrelsen: liten,
+  middels eller stor (200, 290 og 400 av lysarkets 1080 piksler i
+  høyden).
+- **Sirkelen** viser ansiktet ditt speilvendt mens du leser inn, som i
+  et speil. I videoen er det ikke speilvendt.
+- **Flytting.** Sirkelen starter nede til høyre. Dra den før du starter,
+  og mens du leser. En flytting underveis lagres med tidspunktet du tok
+  tak i sirkelen, og videoen lar den gli dit på 0,4 sekunder. Går du til
+  neste lysark, begynner det der sirkelen sto, og i videoen glir
+  sirkelen dit fra der den sto på lysarket før.
+- **Etterpå.** Sirkelen står på lysarket i redigeringsflaten og viser
+  bildet ved spillehodet i fanen «Lyd». Dra den for å endre plassen som
+  gjelder på det tidspunktet. I fanen «Lysark» kan du endre størrelsen
+  og skjule sirkelen på lysarket. Flyttinger underveis er merker (○) i
+  lydsporet, som kan dras i tid og fjernes med Delete.
+- **Klipping.** Filmen hører til opptaket, så alt som klipper lyden,
+  klipper filmen likt. I en pause står ansiktet stille på siste bilde
+  før pausen. Tar du om et stykke uten kamera, er det ingen sirkel der.
+- **Videoen.** Sirkelen legges oppå bildet av lysarket for hvert bilde i
+  videoen, av hovedprosessen selv, så lysark som står stille, ikke må
+  tegnes på nytt for hvert bilde. Hvor lang tid en lang forelesning med
+  kamera tar, er ikke målt.
+- **Ikke i HTML-fila og ikke i GIF**, slik du valgte. Filmene, plassen
+  og flyttingene tas ut av det som eksporteres.
+- **Lagring.** Filmen lagres i prosjektmappa (`media/kamera-….mp4`,
+  480 × 480, 30 bilder i sekundet, uten lyd) og sendes ingen steder.
+  Prosjektformatet er nå versjon 7; eldre prosjekter åpnes som før.
+
+Reglene: AGENTS.md sa «aldri kameraet». Nå står det at kameraet bare
+brukes i innlesingsvinduet, og bare når du har slått det på der.
+
+Prøvd på Linux Mint, automatisk og uten vindu på skjermen: 12
+enhetstester (`tests/camera.test.ts`) og fire ende-til-ende-tester
+(`tests/e2e-camera.test.ts`) med nettlesermotorens **prøvekamera** (et
+grønt testbilde, aldri et ekte kamera): kameraet er av til det slås på;
+sirkelen dras før og under innlesing; flyttingen lagres med tid; neste
+lysark starter der sirkelen sto; filmene er 480 × 480 og like lange som
+lyden; sirkelen flyttes, gjøres mindre og skjules etterpå; i MP4-fila
+står ansiktet der sirkelen sto før og etter flyttingen, med hvit ring,
+og bildet i sirkelen beveger seg mens lysarket står stille; HTML-fila
+har ingenting av kameraet i seg.
+
+**Ikke prøvd:**
+
+- **Et ekte kamera.** Alt er prøvd med prøvekameraet.
+- **Om munn og lyd følger hverandre.** Lyd og film tas opp hver for seg
+  og legges sammen etter klokka. Med prøvekamera kan jeg måle at de er
+  like lange, men ikke om leppene treffer lyden. Det må du se på.
+- **Windows.** VM-en har ikke kamera, og jeg har bare lov til å sette
+  opp mikrofon der.
+- **En lang forelesning med kamera** (hvor store filmene blir, og hvor
+  lang tid videoen tar).
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

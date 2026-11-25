@@ -8,6 +8,7 @@ import { isEmptyRichText, richText } from '../../shared/format/factory';
 import type { Box, Element, RichText } from '../../shared/format/schema';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
+import { StageCamera } from './StageCamera';
 import { cloneElements, deleteElements, stepOf } from './ops';
 import { createTextEditor, type TextEditor } from './richtext/editor';
 import { TextToolbar } from './TextToolbar';
@@ -723,6 +724,7 @@ export function Stage() {
               editingId={editing?.elementId ?? null}
               previewSteps={previewSteps}
             />
+            <StageCamera scene={scene} />
             <div className={`stage-overlay${editing ? ' is-editing' : ''}`}>
               {showGrid && (
                 <>

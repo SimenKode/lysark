@@ -4,7 +4,13 @@
 // out or a pause is put in, the times of the steps after it move along, so
 // what is shown still follows what is said.
 import type { AudioClip, Scene, SceneEvent } from '../format/schema';
-import { clipDuration, trackDuration, videosAt, videoKey } from '../render/clock';
+import {
+  clipDuration,
+  defaultCameraPlace,
+  trackDuration,
+  videosAt,
+  videoKey,
+} from '../render/clock';
 
 /** Clips shorter than this are not worth keeping; they are leftovers of rounding. */
 const SLIVER = 0.005;
@@ -313,4 +319,27 @@ export function clipSpans(
     start = span.end;
     return span;
   });
+}
+
+/**
+ * Puts the camera circle at a new place as from `t` seconds into the slide.
+ * When the lecturer had moved the circle before that moment, the latest of
+ * those moves gets the new place; otherwise the place the slide starts with.
+ */
+export function setCameraPlace(
+  scene: Pick<Scene, 'camera'> & Partial<Pick<Scene, 'events'>>,
+  t: number,
+  place: { x: number; y: number },
+): void {
+  let latest: Extract<SceneEvent, { kind: 'camera-move' }> | undefined;
+  for (const event of scene.events ?? []) {
+    if (event.kind !== 'camera-move' || event.at > t) continue;
+    if (!latest || event.at >= latest.at) latest = event;
+  }
+  if (latest) {
+    latest.x = place.x;
+    latest.y = place.y;
+  } else {
+    scene.camera = { ...(scene.camera ?? defaultCameraPlace()), x: place.x, y: place.y };
+  }
 }

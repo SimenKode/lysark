@@ -5,12 +5,24 @@
 // While reading, the owner can open a "Lær mer" box and play a video on the
 // slide; the program remembers when, like it does for the steps, and the
 // video and "Spill av" do the same at the same times.
-// Sound only, stored in the project folder, sent nowhere.
+// When the owner switches the camera on, their face is filmed too and shown
+// in a circle on the slide, which can be dragged about while reading; where
+// it stood, and when it was moved, is remembered like the rest.
+// Everything is stored in the project folder and sent nowhere.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { newId } from '../../shared/format/factory';
-import type { Scene, SceneEvent } from '../../shared/format/schema';
 import {
+  CAMERA_SIZES,
+  type CameraSize,
+  type Scene,
+  type SceneEvent,
+} from '../../shared/format/schema';
+import {
+  CAMERA_DIAMETER,
   SAMPLE_RATE,
+  cameraOnStage,
+  cameraPlaceAt,
+  defaultCameraPlace,
   formatTime,
   moreAt,
   stepsShownAt,
@@ -21,6 +33,14 @@ import { createPopover, type SlidePopover } from '../../shared/render/popover';
 import { moreOf } from '../../shared/render/scene';
 import { saveRecording } from './actions';
 import {
+  CameraError,
+  listCameras,
+  openCamera,
+  startFilm,
+  type CameraChoice,
+  type FilmTake,
+} from './audio/camera';
+import {
   MicrophoneError,
   blockPeak,
   joinBlocks,
@@ -29,6 +49,7 @@ import {
   type Capture,
   type MicrophoneChoice,
 } from './audio/capture';
+import { CameraCircle } from './CameraCircle';
 import { SceneView, renderContext } from './SceneView';
 import { useStore } from './store';
 
@@ -44,7 +65,17 @@ interface MicSettings {
   autoGain: boolean;
   /** Let a video that is played while reading be heard. */
   videoSound: boolean;
+  /** Film the lecturer's face while reading. Off until the owner switches it on. */
+  camera: boolean;
+  cameraId: string;
+  cameraSize: CameraSize;
 }
+
+const CAMERA_SIZE_NAMES: Record<CameraSize, string> = {
+  small: 'Liten',
+  medium: 'Middels',
+  large: 'Stor',
+};
 
 function readSettings(): MicSettings {
   try {
@@ -54,9 +85,22 @@ function readSettings(): MicSettings {
       noiseSuppression: saved.noiseSuppression !== false,
       autoGain: saved.autoGain === true,
       videoSound: saved.videoSound !== false,
+      camera: saved.camera === true,
+      cameraId: typeof saved.cameraId === 'string' ? saved.cameraId : '',
+      cameraSize: CAMERA_SIZES.includes(saved.cameraSize as CameraSize)
+        ? (saved.cameraSize as CameraSize)
+        : 'medium',
     };
   } catch {
-    return { deviceId: '', noiseSuppression: true, autoGain: false, videoSound: true };
+    return {
+      deviceId: '',
+      noiseSuppression: true,
+      autoGain: false,
+      videoSound: true,
+      camera: false,
+      cameraId: '',
+      cameraSize: 'medium',
+    };
   }
 }
 
@@ -78,6 +122,7 @@ function FittedScene({
   live,
   inner,
   onPress,
+  children,
 }: {
   scene: Scene;
   steps: number;
@@ -85,6 +130,8 @@ function FittedScene({
   live: boolean;
   inner: React.RefObject<HTMLDivElement | null>;
   onPress: (target: HTMLElement) => void;
+  /** What lies on top of the slide: the camera circle. */
+  children?: React.ReactNode;
 }) {
   const project = useStore((s) => s.project)!;
   const logo = useStore((s) => s.logo);
@@ -111,6 +158,7 @@ function FittedScene({
             onClick={(event) => onPress(event.target as HTMLElement)}
           >
             <SceneView scene={scene} project={project} logo={logo} previewSteps={steps} />
+            {children}
           </div>
         </div>
       )}
@@ -140,6 +188,18 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const [recorded, setRecorded] = useState(0);
   /** Said when something was pressed that cannot be played while reading in. */
   const [pressNote, setPressNote] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<CameraChoice[]>([]);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  /** Where the camera circle stands: where the slide had it, or the lower right corner. */
+  const [circle, setCircle] = useState(() => {
+    const first = project.scenes[startIndex]!;
+    const place =
+      keepBefore !== undefined && first.camera
+        ? cameraPlaceAt(first, keepBefore)
+        : (first.camera ?? defaultCameraPlace());
+    return cameraOnStage(place.x, place.y, settings.cameraSize);
+  });
   const root = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLSpanElement>(null);
   const stage = useRef<HTMLDivElement | null>(null);
@@ -158,7 +218,78 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     saves: [] as Array<Promise<boolean>>,
     index: startIndex,
     stepsShown: firstSteps,
+    /** The camera, when it is on, and the film of the slide that is being read. */
+    stream: null as MediaStream | null,
+    take: null as FilmTake | null,
+    /** How far the sound had come when the film's first picture was taken. */
+    filmOffset: 0,
+    circle,
+    /** Where the circle stood when the reading of this slide began. */
+    circleStart: circle,
+    /** When the circle was taken hold of, in seconds of the slide's sound. */
+    dragAt: 0,
+    cameraSize: settings.cameraSize,
   });
+  live.current.cameraSize = settings.cameraSize;
+
+  // The camera is open only while the owner has it switched on in this window.
+  useEffect(() => {
+    if (!settings.camera) {
+      setCameraError(null);
+      return;
+    }
+    let alive = true;
+    let opened: MediaStream | null = null;
+    setCameraError(null);
+    void openCamera(settings.cameraId)
+      .then(async (stream) => {
+        if (!alive) {
+          for (const track of stream.getTracks()) track.stop();
+          return;
+        }
+        opened = stream;
+        live.current.stream = stream;
+        setCameraStream(stream);
+        setCameras(await listCameras());
+      })
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setCameraError(error instanceof CameraError ? error.message : 'Kameraet kunne ikke åpnes.');
+      });
+    return () => {
+      alive = false;
+      for (const track of opened?.getTracks() ?? []) track.stop();
+      live.current.stream = null;
+      setCameraStream(null);
+    };
+  }, [settings.camera, settings.cameraId]);
+
+  // The circle is kept wholly on the slide, also when its size is changed.
+  useEffect(() => {
+    setCircle((at) => {
+      const next = cameraOnStage(at.x, at.y, settings.cameraSize);
+      live.current.circle = next;
+      return next.x === at.x && next.y === at.y ? at : next;
+    });
+  }, [settings.cameraSize]);
+
+  /** Starts filming the slide that is about to be read, when the camera is on. */
+  const startTake = (): void => {
+    const state = live.current;
+    state.filmOffset = 0;
+    state.circleStart = state.circle;
+    state.take = state.stream
+      ? startFilm(state.stream, () => {
+          state.filmOffset = state.samples / SAMPLE_RATE;
+        })
+      : null;
+  };
+
+  /** Drops the film of the slide that was being read. */
+  const dropTake = (): void => {
+    void live.current.take?.stop();
+    live.current.take = null;
+  };
 
   // The microphone is open while the window is, so the level can be seen before recording.
   useEffect(() => {
@@ -233,6 +364,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   useEffect(() => {
     if (phase !== 'countdown') return;
     if (count <= 0) {
+      if (!live.current.take) startTake();
       live.current.keeping = true;
       setPhase('recording');
       return;
@@ -428,13 +560,22 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     const keep = state.index === startIndex ? keepBefore : undefined;
     const stepAts = state.stepAts.slice();
     const events = state.events.slice();
+    const take = state.take;
+    const camera = take
+      ? {
+          film: take.stop(),
+          offset: state.filmOffset,
+          place: { ...state.circleStart, size: state.cameraSize },
+        }
+      : undefined;
+    state.take = null;
     state.blocks = [];
     state.samples = 0;
     state.stepAts = [];
     state.events = [];
     clearSlide();
     if (!sceneId || samples.length < SAMPLE_RATE * MIN_RECORDING_SECONDS) return;
-    state.saves.push(saveRecording(sceneId, samples, stepAts, keep, events));
+    state.saves.push(saveRecording(sceneId, samples, stepAts, keep, events, camera));
     setRecorded((n) => n + 1);
   }, [keepBefore, startIndex, clearSlide]);
 
@@ -455,6 +596,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       state.stepsShown = 0;
       setIndex(state.index);
       setStepsShown(0);
+      // The next slide is read from this moment, and filmed from it.
+      startTake();
     }
   }, [finishSlide]);
 
@@ -465,6 +608,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     state.samples = 0;
     state.stepAts = [];
     state.events = [];
+    dropTake();
     clearSlide();
     for (const video of videos()) video.currentTime = 0;
     state.stepsShown = state.index === startIndex ? firstSteps : 0;
@@ -478,9 +622,11 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       // A film that plays stops with the reading; it is started again by hand.
       for (const video of videos()) stopVideo(video, true);
       state.keeping = false;
+      state.take?.pause();
       setPhase('paused');
     } else if (phase === 'paused') {
       state.keeping = true;
+      state.take?.resume();
       setPhase('recording');
     }
   };
@@ -489,7 +635,10 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     const state = live.current;
     state.keeping = false;
     if (keepCurrent) finishSlide();
-    else clearSlide();
+    else {
+      dropTake();
+      clearSlide();
+    }
     setPhase('saving');
     const results = await Promise.all(state.saves);
     const saved = results.filter(Boolean).length;
@@ -518,6 +667,34 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       return;
     }
     void close(false);
+  };
+
+  /**
+   * The camera circle is dragged. Before the reading begins, that is where
+   * it stands from the start; while a slide is read, the move is remembered
+   * with its time, and the video does the same.
+   */
+  const moveCircle = (x: number, y: number, part: 'start' | 'move' | 'end'): void => {
+    const state = live.current;
+    if (part === 'start') {
+      state.dragAt = now();
+      return;
+    }
+    const at = cameraOnStage(x, y, state.cameraSize);
+    state.circle = at;
+    setCircle(at);
+    if (part !== 'end') return;
+    if (state.take) {
+      state.events.push({
+        id: newId('h'),
+        at: state.keeping ? state.dragAt : now(),
+        kind: 'camera-move',
+        x: at.x,
+        y: at.y,
+      });
+    }
+    // The arrow keys must go on meaning "next step".
+    root.current?.focus();
   };
 
   const onKeyDown = (event: React.KeyboardEvent): void => {
@@ -574,7 +751,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
             live={phase === 'recording'}
             inner={stage}
             onPress={onPress}
-          />
+          >
+            {settings.camera && cameraStream && (
+              <CameraCircle
+                x={circle.x}
+                y={circle.y}
+                diameter={CAMERA_DIAMETER[settings.cameraSize]}
+                stream={cameraStream}
+                onMove={moveCircle}
+              />
+            )}
+          </FittedScene>
           {phase === 'countdown' && (
             <div className="recorder-count" role="status" aria-live="assertive">
               {count > 0 && (
@@ -605,6 +792,12 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
             <p className="recorder-press">
               Mens du leser inn, kan du trykke på lysarket: «+» åpner «Lær mer», og en video spilles
               når du trykker på den. Det kommer med i videoen på samme tidspunkt.
+            </p>
+          )}
+          {settings.camera && cameraStream && (
+            <p className="recorder-press">
+              Dra kamerasirkelen dit den ikke dekker noe, også mens du leser inn. Den blir med i
+              videoen, ikke i HTML-fila.
             </p>
           )}
         </aside>
@@ -673,6 +866,55 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
             />
             Lyd fra video
           </label>
+          <label
+            className="check"
+            title="Filmer ansiktet ditt mens du leser inn, og viser det i en sirkel i videoen."
+          >
+            <input
+              type="checkbox"
+              checked={settings.camera}
+              disabled={active}
+              onChange={(e) => setSettings({ ...settings, camera: e.target.checked })}
+            />
+            Kamera
+          </label>
+          {settings.camera && cameras.length > 1 && (
+            <label>
+              <span className="field-label">Hvilket kamera</span>
+              <select
+                value={settings.cameraId}
+                disabled={active}
+                onChange={(e) => setSettings({ ...settings, cameraId: e.target.value })}
+              >
+                <option value="">Systemets valg</option>
+                {cameras
+                  .filter((c) => c.deviceId && c.deviceId !== 'default')
+                  .map((c) => (
+                    <option key={c.deviceId} value={c.deviceId}>
+                      {c.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
+          {settings.camera && (
+            <label>
+              <span className="field-label">Kamerasirkel</span>
+              <select
+                value={settings.cameraSize}
+                disabled={active}
+                onChange={(e) =>
+                  setSettings({ ...settings, cameraSize: e.target.value as CameraSize })
+                }
+              >
+                {CAMERA_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {CAMERA_SIZE_NAMES[size]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         <div className="recorder-actions">
@@ -727,6 +969,10 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       {micError ? (
         <p className="recorder-note recorder-error" role="alert">
           {micError}
+        </p>
+      ) : cameraError && settings.camera ? (
+        <p className="recorder-note recorder-error" role="alert">
+          {cameraError} Du kan lese inn uten kamera.
         </p>
       ) : (
         <p className="recorder-note" role={pressNote ? 'status' : undefined}>

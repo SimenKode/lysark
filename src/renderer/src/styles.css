@@ -1988,3 +1988,36 @@ legend {
   margin: 8px 0 0;
   color: var(--indigo);
 }
+
+/* ---------- The camera circle ----------
+   The lecturer's face in a circle with a white ring. The video export draws
+   the same circle itself (src/shared/render/cameraDraw.ts). */
+.camera-circle {
+  position: absolute;
+  z-index: 10001;
+  box-sizing: border-box;
+  border: 6px solid #fff;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #000;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+}
+.camera-circle:active {
+  cursor: grabbing;
+}
+.camera-circle:focus-visible {
+  outline: 6px solid var(--oransje);
+  outline-offset: 4px;
+}
+.camera-circle video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.camera-circle.is-mirrored video {
+  transform: scaleX(-1);
+}

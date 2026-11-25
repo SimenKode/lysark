@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { LogoStatus, VideoProgress, VideoRequest, VideoSummary } from '../shared/api';
 import type { Project, Scene } from '../shared/format/schema';
+import { cameraMask, drawCamera } from '../shared/render/cameraDraw';
 import { creditScenes, lectureCues, toWebVtt } from '../shared/render/captions';
 import {
   GIF_FPS,
@@ -21,12 +22,15 @@ import {
   SAMPLE_RATE,
   VIDEO_FPS,
   VIDEO_SIZE,
+  cameraAt,
+  frameAt,
   schedule,
   stillUntil,
   videoOptions,
 } from '../shared/render/clock';
 import { SCENE_STRINGS } from '../shared/render/scene';
 import { filmSound, hasTracks, sampleReader, trackSound, writeLectureSound } from './audio';
+import { CameraFilms } from './camera';
 import { abortFfmpeg, requireFfmpeg, runFfmpeg, writeTo } from './ffmpeg';
 
 const CREDIT_TEXTS = {
@@ -126,6 +130,11 @@ export function exportVideo(options: Options): VideoJob {
   let cancelled = false;
   let window: BrowserWindow | null = null;
   let stop: (() => void) | null = null;
+  // The camera circle is part of the video, not of a GIF (a GIF has no voice
+  // for the face to go with).
+  const films = gif ? null : new CameraFilms(options.dir, project);
+  const masks = new Map<number, ReturnType<typeof cameraMask>>();
+  const withCamera = Buffer.alloc(VIDEO_SIZE.width * VIDEO_SIZE.height * 4);
 
   const work = mkdtempSync(join(tmpdir(), 'lysark-video-'));
   const soundFile = join(work, 'lyd.pcm');
@@ -274,7 +283,32 @@ export function exportVideo(options: Options): VideoJob {
       }
       // Drawing a new slide can take a moment; the owner may have cancelled meanwhile.
       if (cancelled) break;
-      await writeTo(ffmpeg, pixels);
+      let picture = pixels;
+      if (films) {
+        // The lecturer's face is laid on top of the picture of the slide:
+        // the slide can stand still while the face moves.
+        const state = frameAt(plan, time, transition);
+        const circle = cameraAt(scenes, project.assets, state.index, state.t);
+        const face = circle && (await films.pictureAt(circle.asset, circle.time, circle.diameter));
+        if (circle && face) {
+          let mask = masks.get(circle.diameter);
+          if (!mask) masks.set(circle.diameter, (mask = cameraMask(circle.diameter)));
+          pixels.copy(withCamera);
+          drawCamera(
+            withCamera,
+            VIDEO_SIZE.width,
+            VIDEO_SIZE.height,
+            face,
+            circle.x,
+            circle.y,
+            circle.diameter,
+            mask,
+          );
+          picture = withCamera;
+        }
+      }
+      if (cancelled) break;
+      await writeTo(ffmpeg, picture);
       if (frame % 15 === 0 || frame === totalFrames - 1) {
         options.onProgress({ phase: 'frames', frame: frame + 1, frames: totalFrames });
       }
@@ -351,6 +385,7 @@ export function exportVideo(options: Options): VideoJob {
       throw error;
     })
     .finally(() => {
+      films?.close();
       if (window && !window.isDestroyed()) window.destroy();
       rmSync(work, { recursive: true, force: true });
     })

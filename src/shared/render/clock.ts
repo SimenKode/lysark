@@ -2,8 +2,12 @@
 // project and that moment: the video export draws frame by frame from it,
 // "Spill av" in the HTML player follows it, and the editor's timeline shows
 // it. Nothing here reads a clock.
+import { STAGE } from '../format/constants';
 import type {
+  Asset,
   AudioClip,
+  CameraPlace,
+  CameraSize,
   Project,
   Scene,
   SceneAudio,
@@ -195,6 +199,7 @@ export function videoSpans(scene: Timed): VideoSpan[] {
     }
   };
   for (const event of events) {
+    if (event.kind === 'camera-move') continue;
     if (event.kind === 'more-open' || event.kind === 'more-close') {
       stopBoxVideos(event.at);
     } else {
@@ -331,6 +336,180 @@ export function stillUntil(
     }
   }
   return until;
+}
+
+// ---------- The camera circle ----------
+
+/** The film of the face: square, this many pixels each way and pictures a second. */
+export const CAMERA_FILM_SIZE = 480;
+export const CAMERA_FPS = 30;
+/** How wide the circle is on the stage, in stage pixels. */
+export const CAMERA_DIAMETER: Record<CameraSize, number> = { small: 200, medium: 290, large: 400 };
+/** The white ring round the circle, in stage pixels. */
+export const CAMERA_RING = 6;
+/** How long the circle takes to glide to a new place. */
+export const CAMERA_GLIDE_SECONDS = 0.4;
+
+/** Where the circle stands until the lecturer has put it somewhere: the lower right corner. */
+export function defaultCameraPlace(): CameraPlace {
+  const reach = CAMERA_DIAMETER.medium / 2 + 48;
+  return { x: STAGE.width - reach, y: STAGE.height - reach, size: 'medium' };
+}
+
+/** A place for the circle's centre that keeps the whole circle on the stage. */
+export function cameraOnStage(x: number, y: number, size: CameraSize): { x: number; y: number } {
+  const r = CAMERA_DIAMETER[size] / 2;
+  return {
+    x: Math.round(Math.max(r, Math.min(STAGE.width - r, x))),
+    y: Math.round(Math.max(r, Math.min(STAGE.height - r, y))),
+  };
+}
+
+/** What the clock needs to know about a slide to place the camera circle. */
+export type Filmed = Timed & Partial<Pick<Scene, 'camera'>>;
+type Assets = Readonly<Record<string, Asset>>;
+
+export interface CameraFilmAt {
+  /** The film (a 'camera' asset). */
+  asset: string;
+  /** Which moment of the film is shown, in seconds from its start. */
+  time: number;
+}
+
+/** The film a sound clip was taken with, if it has one. */
+function filmOf(clip: AudioClip, assets: Assets): { asset: string; offset: number } | undefined {
+  if (clip.kind !== 'sound') return undefined;
+  const film = assets[clip.asset]?.camera;
+  return film && assets[film.asset]?.kind === 'camera' ? film : undefined;
+}
+
+/**
+ * Which picture of the face is shown `t` seconds into the slide. The film
+ * follows the sound: a clip shows the part of the film that was taken while
+ * it was said. In a pause the face stands still, on the last picture before
+ * the pause (or the first one after it). Where the voice was recorded
+ * without the camera there is no circle.
+ */
+export function cameraFilmAt(scene: Filmed, assets: Assets, t: number): CameraFilmAt | undefined {
+  const clips = scene.audio?.clips ?? [];
+  if (scene.camera?.hidden || clips.length === 0) return undefined;
+  const first = (clip: AudioClip): CameraFilmAt | undefined => {
+    const film = filmOf(clip, assets);
+    if (!film || clip.kind !== 'sound') return undefined;
+    return { asset: film.asset, time: Math.max(0, clip.from - film.offset) };
+  };
+  const last = (clip: AudioClip): CameraFilmAt | undefined => {
+    const film = filmOf(clip, assets);
+    if (!film || clip.kind !== 'sound') return undefined;
+    return { asset: film.asset, time: Math.max(0, clip.to - film.offset - 1 / CAMERA_FPS) };
+  };
+  // The clip that is played at `t`; after the end, the last one.
+  let at = clips.length - 1;
+  let start = 0;
+  let begins = 0;
+  for (const [index, clip] of clips.entries()) {
+    const length = clipDuration(clip);
+    if (t < start + length || index === clips.length - 1) {
+      at = index;
+      begins = start;
+      break;
+    }
+    start += length;
+  }
+  const clip = clips[at]!;
+  if (clip.kind === 'sound' && t < begins + clipDuration(clip)) {
+    const film = filmOf(clip, assets);
+    if (!film) return undefined;
+    return {
+      asset: film.asset,
+      time: Math.max(0, clip.from + Math.max(0, t - begins) - film.offset),
+    };
+  }
+  // In a pause, or after the last word: the nearest thing said decides.
+  for (let i = clip.kind === 'sound' ? at : at - 1; i >= 0; i--) {
+    if (clips[i]!.kind === 'sound') {
+      const held = last(clips[i]!);
+      if (held) return held;
+      break;
+    }
+  }
+  for (let i = at + 1; i < clips.length; i++) {
+    if (clips[i]!.kind === 'sound') return first(clips[i]!);
+  }
+  return undefined;
+}
+
+/** True when a recording of the slide has a film of the face (shown or hidden). */
+export function hasCameraFilm(scene: Pick<Scene, 'audio'>, assets: Assets): boolean {
+  return (scene.audio?.clips ?? []).some((clip) => filmOf(clip, assets) !== undefined);
+}
+
+function ease(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  return p * p * (3 - 2 * p);
+}
+
+/**
+ * Where the centre of the circle is `t` seconds into the slide. It starts
+ * where the slide says, and glides to a new place at every move the
+ * lecturer made. With `from` (where the circle stood when the slide before
+ * ended) it glides in from there.
+ */
+export function cameraPlaceAt(
+  scene: Filmed,
+  t: number,
+  from?: { x: number; y: number },
+): { x: number; y: number } {
+  const base = scene.camera ?? defaultCameraPlace();
+  let a = from ?? { x: base.x, y: base.y };
+  let b = { x: base.x, y: base.y };
+  let since = from ? 0 : -Infinity;
+  const at = (time: number): { x: number; y: number } => {
+    const p = ease((time - since) / CAMERA_GLIDE_SECONDS);
+    return { x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p };
+  };
+  for (const event of sceneEvents(scene)) {
+    if (event.at > t) break;
+    if (event.kind !== 'camera-move') continue;
+    a = at(event.at);
+    b = { x: event.x, y: event.y };
+    since = event.at;
+  }
+  return at(t);
+}
+
+export interface CameraAt extends CameraFilmAt {
+  /** The centre of the circle, in stage pixels. */
+  x: number;
+  y: number;
+  /** How wide the circle is, in stage pixels. */
+  diameter: number;
+}
+
+/**
+ * The camera circle `t` seconds into slide number `index`: which picture of
+ * the face, and where on the stage. Undefined when there is no circle then.
+ */
+export function cameraAt(
+  scenes: ReadonlyArray<Filmed>,
+  assets: Assets,
+  index: number,
+  t: number,
+): CameraAt | undefined {
+  const scene = scenes[index];
+  if (!scene) return undefined;
+  const film = cameraFilmAt(scene, assets, t);
+  if (!film) return undefined;
+  // When the slide before also ended with the circle, it glides from there.
+  const before = scenes[index - 1];
+  let from: { x: number; y: number } | undefined;
+  if (before) {
+    const end = sceneDuration(before);
+    if (cameraFilmAt(before, assets, end)) from = cameraPlaceAt(before, end);
+  }
+  const place = cameraPlaceAt(scene, t, from);
+  const size = scene.camera?.size ?? defaultCameraPlace().size;
+  return { ...film, x: place.x, y: place.y, diameter: CAMERA_DIAMETER[size] };
 }
 
 // ---------- The lecture's own tracks ----------

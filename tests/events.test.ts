@@ -291,7 +291,7 @@ describe('the format', () => {
     const old = JSON.parse(JSON.stringify(sampleProject().project)) as { version: number };
     old.version = 5;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(6);
+    expect(FORMAT_VERSION).toBe(7);
   });
 
   it('places the clips of the tracks in the lecture, fastened to their slides', () => {

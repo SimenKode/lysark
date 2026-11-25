@@ -12,8 +12,14 @@ import { appendSound, continueSound, replaceSound } from '../../shared/audio/edi
 import { addTrackClip } from '../../shared/audio/tracks';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
-import type { Element, Project, SceneEvent, TrackName } from '../../shared/format/schema';
-import { formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
+import type {
+  CameraPlace,
+  Element,
+  Project,
+  SceneEvent,
+  TrackName,
+} from '../../shared/format/schema';
+import { cameraPlaceAt, formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
@@ -196,12 +202,23 @@ export function hasFfmpeg(): Promise<boolean> {
  * from the start of this recording. With `keepBefore`, the slide's sound
  * before that time is kept and the recording follows it.
  */
+/** The film of the lecturer's face that was taken while a slide was read in. */
+export interface CameraTake {
+  /** The film as it was recorded; null when nothing was taken. */
+  film: Promise<Uint8Array | null>;
+  /** How many seconds into the sound the film's first picture belongs. */
+  offset: number;
+  /** Where the camera circle stood when the reading began, and its size. */
+  place: CameraPlace;
+}
+
 export async function saveRecording(
   sceneId: string,
   samples: Float32Array,
   stepAts: ReadonlyArray<number | undefined>,
   keepBefore?: number,
   events: ReadonlyArray<SceneEvent> = [],
+  camera?: CameraTake,
 ): Promise<boolean> {
   const { dir, project } = useStore.getState();
   const index = project?.scenes.findIndex((s) => s.id === sceneId) ?? -1;
@@ -210,15 +227,45 @@ export async function saveRecording(
   const added = await guard(() => api().addRecording(dir, wav, `Opptak lysark ${index + 1}`));
   if (!added) return false;
   rememberSamples(added.asset.file, wavSamples(wav));
+  // The sound is kept even when the film cannot be: the owner is told, and
+  // the slide is then simply without the camera circle.
+  const taken = camera ? await camera.film : null;
+  const film =
+    camera && taken
+      ? await guard(() => api().addCameraFilm(dir, taken, `Kamera lysark ${index + 1}`))
+      : undefined;
   useStore.getState().update((draft) => {
     const scene = draft.scenes.find((s) => s.id === sceneId);
     if (!scene) return;
     draft.assets[added.id] = added.asset;
     const id = (): string => newId('c');
-    if (keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0) {
-      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id, events);
+    const goesOn = keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0;
+    let all = events;
+    if (camera && film) {
+      draft.assets[film.id] = film.asset;
+      draft.assets[added.id] = {
+        ...added.asset,
+        camera: { asset: film.id, offset: camera.offset },
+      };
+      if (goesOn && scene.camera) {
+        // The part that is kept has its own place for the circle. Where the
+        // new part starts with the circle somewhere else, that is a move.
+        const was = cameraPlaceAt(scene, keepBefore);
+        if (Math.hypot(was.x - camera.place.x, was.y - camera.place.y) > 1) {
+          all = [
+            { id: newId('h'), at: 0, kind: 'camera-move', x: camera.place.x, y: camera.place.y },
+            ...events,
+          ];
+        }
+        scene.camera = { x: scene.camera.x, y: scene.camera.y, size: camera.place.size };
+      } else {
+        scene.camera = { ...camera.place };
+      }
+    }
+    if (goesOn) {
+      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id, all);
     } else {
-      replaceSound(scene, added.id, added.seconds, stepAts, id, events);
+      replaceSound(scene, added.id, added.seconds, stepAts, id, all);
     }
   });
   return true;

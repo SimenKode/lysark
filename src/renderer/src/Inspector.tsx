@@ -4,11 +4,13 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { hasLogo } from '../../shared/api';
 import { richText } from '../../shared/format/factory';
 import {
+  CAMERA_SIZES,
   SCENE_KINDS,
   SHAPE_GEOMETRIES,
   STROKE_WIDTH,
   SURFACES,
   TEXT_ROLES,
+  type CameraSize,
   type Element,
   type PaletteColor,
   type Scene,
@@ -17,6 +19,7 @@ import {
   type TextRole,
 } from '../../shared/format/schema';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
+import { cameraOnStage, defaultCameraPlace, hasCameraFilm } from '../../shared/render/clock';
 import { youtubeRef } from '../../shared/render/web';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../../shared/limits';
 import { allowedTextColors, isLargeText } from '../../shared/theme/contrast';
@@ -1016,6 +1019,47 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
             Velg logofiler
           </button>
         </p>
+      )}
+      {hasCameraFilm(scene, project.assets) && (
+        <div className="group">
+          <h3>Kamerasirkelen</h3>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={!scene.camera?.hidden}
+              onChange={(e) =>
+                updateScene((s) => {
+                  const place = s.camera ?? defaultCameraPlace();
+                  s.camera = { x: place.x, y: place.y, size: place.size };
+                  if (!e.target.checked) s.camera.hidden = true;
+                })
+              }
+            />
+            Vis kamerasirkelen på dette lysarket
+          </label>
+          <Field label="Størrelse">
+            <select
+              value={scene.camera?.size ?? defaultCameraPlace().size}
+              onChange={(e) =>
+                updateScene((s) => {
+                  const place = s.camera ?? defaultCameraPlace();
+                  const size = e.target.value as CameraSize;
+                  // A larger circle is kept wholly on the slide.
+                  s.camera = { ...place, ...cameraOnStage(place.x, place.y, size), size };
+                })
+              }
+            >
+              {CAMERA_SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {{ small: 'Liten', medium: 'Middels', large: 'Stor' }[size]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <p className="hint">
+            Dra sirkelen på lysarket for å flytte den. Den er med i videoen, ikke i HTML-fila.
+          </p>
+        </div>
       )}
       <div className="group">
         <button type="button" onClick={() => updateScene((s) => fitToGrid(s, theme))}>

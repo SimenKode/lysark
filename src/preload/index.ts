@@ -31,6 +31,7 @@ const api: LysarkApi = {
   },
   hasFfmpeg: () => call('lysark:has-ffmpeg'),
   addRecording: (dir, wav, name) => call('lysark:add-recording', dir, wav, name),
+  addCameraFilm: (dir, film, name) => call('lysark:add-camera-film', dir, film, name),
   importSound: (dir) => call('lysark:import-sound', dir),
   packProject: (dir) => call('lysark:pack', dir),
   unpackProject: () => call('lysark:unpack'),
