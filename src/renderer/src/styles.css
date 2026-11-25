@@ -2268,3 +2268,6 @@ legend {
   flex-direction: column;
   gap: 2px;
 }
+.look-dialog .dialog-actions {
+  gap: 8px;
+}
