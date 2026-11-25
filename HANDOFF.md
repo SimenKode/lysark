@@ -14,113 +14,130 @@ PowerPoint eller PDF, og får
 begge i USNs visuelle profil. Programmet skal kunne brukes av en
 foreleser uten opplæring. Det styrer ordvalg og knapper.
 
-## Nytt 25.11.2026
+## Nytt 25.11.2026, etter versjon 0.4.0 (ikke gitt ut)
 
-Startmeldingen din kom uten funn fra egen utprøving, men du ba om to
-ting i chatten. Begge er bygget, og i tillegg neste punkt på lista:
+Versjon 0.4.0 (kamerasirkelen, installasjonsfil for Windows, Openverse,
+ny forside) er gitt ut. Etter det er dette bygget; det ligger i koden
+til neste utgivelse.
 
-| Du ba om | Slik ble det |
+Du meldte sju ting etter å ha prøvd PDF-import og opptak med kamera, og
+svarte på fire spørsmål (historikken, 6.26 og 6.27). Slik ble det:
+
+| Du meldte | Slik ble det |
 | --- | --- |
-| Video av deg selv, i en sirkel som kan flyttes | Kryss av for «Kamera» når du leser inn. Ansiktet vises i en sirkel på lysarket. Dra den dit den ikke dekker noe, også mens du leser; flyttingen huskes med tidspunkt. Etterpå kan du flytte den, endre størrelsen eller skjule den per lysark. Sirkelen er med i **videoen**, ikke i HTML-fila (ditt valg) |
-| Smidig installering på Windows | En installasjonsfil: ett dobbeltklikk, ingen spørsmål om administrator, snarvei på skrivebordet, programmet starter selv. Prøvd i Windows-VM-en, også som oppgradering fra 0.3.0 |
-| En ren forside på GitHub | README er skrevet om: installasjon øverst, så bruk i fem trinn med bilder. Alt om utvikling er flyttet til `docs/utvikling.md` |
-| (Neste på lista) Flere bildekilder | Ny fane «Søk i Openverse» i mediedialogen: bilder fra Flickr, museer og andre samlinger, med samme lisensregler som Commons |
+| Kameraet fryser mellom lysark | Hele opptaket filmes nå som **én film**. Før startet en ny film på hvert lysark, og den var treg i starten |
+| Ingen knapp for å gå tilbake | **Pil venstre**, eller knappen «← Forrige steg» / «← Forrige lysark». Opptaket stanser ikke |
+| En sidemeny for å velge lysark | Knappen **«Velg lysark»** (eller tasten L) i innlesingsvinduet: en meny fra siden med alle lysarkene under kapitlene sine |
+| «Som et vanlig videoopptak» (svaret ditt) | Videoen viser lysarkene **i den rekkefølgen du viste dem**. Går du tilbake til lysark 3, vises det en gang til, og står i lysarklista som «Lysark 3 igjen» |
+| Kapitlene forsvinner | Seksjonene i PowerPoint og bokmerkene i PDF blir **kapitler**: i lysarklista, i sidemenyen, i «Innhold» hos studentene og i videofila |
+| PDF: et klikk velger hele siden | Tekst og bilder fra en PDF er nå **egne elementer** som kan velges, flyttes og redigeres. Resten av siden (farger, streker, tegninger) ligger bak som ett bilde |
+| PDF: lenker virker ikke | Lenker som lå på tekst, **følger med** og virker, også lenker til andre sider |
+| PDF: teksten er litt kornete | Teksten er **ekte tekst**, i Lysarks skrift, og er skarp |
+| Minivideo av noen få lysark | Fantes fra før: «Eksporter video» → «Fra lysark … til …» |
+| Velge USN-stil eller som i fila ved import | **Ikke bygget.** Trenger ett svar fra deg først, se under |
 
-Alt dette er **gitt ut som versjon 0.4.0** (du sa ja 25.11.2026).
-
-Etter utgivelsen er **merket bilde** bygget, det første stykket av
-figurer og bevegelser, slik du valgte: velg et bilde, trykk «Legg til
-merke», og skriv hva merket peker på. Merkene er enten tall med en
-forklaringsliste ved siden av, eller etiketter med strek; du velger per
-bilde. Hvert merke kan komme inn i et steg og ha «Lær mer». Dette er
-**ikke med i 0.4.0**; det ligger i koden til neste utgivelse.
-
-Kameraet var før uttrykkelig stengt i reglene. Nå står det i AGENTS.md
-at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
+Også fra før denne chatten, og ikke gitt ut: **merket bilde** (tall eller
+etiketter oppå et bilde).
 
 ## Dette kan du gjøre nå
 
 1. **Hente inn** en forelesning: PowerPoint, PDF, eller en HTML-fil du
-   har eksportert fra Lysark før.
-2. **Rette opp** lysarkene: flytte, skrive, legge inn steg.
+   har eksportert fra Lysark før. Kapitlene følger med.
+2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
+   i kapitler.
 3. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
-   Commons og Openverse, og **sette merker på et bilde** (ikke gitt ut
-   ennå).
-4. **Lese inn stemmen**, og nå også **ansiktet ditt i en sirkel**. Mens
-   du leser, kan du åpne «Lær mer», spille videoer og flytte sirkelen.
+   Commons og Openverse, og **sette merker på et bilde**.
+4. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
+   og hopp mellom lysarkene som du vil; opptaket går hele tiden. Mens du
+   leser, kan du åpne «Lær mer», spille videoer og flytte sirkelen.
 5. **Rette på lyden:** klippe, legge inn pauser, flytte steg, ta om.
    Filmen av ansiktet klippes sammen med lyden.
 6. **Legge musikk og lyd under forelesningen** i fanen «Tidslinje».
 7. **Avslutte med USNs logoanimasjon.**
-8. **Eksportere** HTML-fil, video (MP4) med teksting, og GIF.
+8. **Eksportere** HTML-fil, video (MP4) med teksting og kapitler, og
+   GIF. Også en video av bare noen få lysark.
 
-## Det du meldte 25.11.2026 (ikke rettet ennå)
+## Slik virker det nye opptaket
 
-Du prøvde PDF-import og opptak med kamera. Ordene dine står i
-historikken (6.26). Ingenting av dette er rettet; det står øverst på
-lista for neste chat.
-
-| Du fant | Slik jeg leser det |
-| --- | --- |
-| PDF: et klikk velger hele siden | Slik er PDF-importen laget i dag: hver side er ett bilde. Tekst og bilder må leses ut hver for seg. Det er nytt arbeid |
-| PDF: lenker virker ikke | Lenkene leses ikke ved import |
-| PDF: teksten er litt kornete | Siden lagres som et bilde med tap. Blir teksten ekte tekst, forsvinner det |
-| Kameraet fryser mellom lysark | Trolig fordi det tas opp én film per lysark, og den nye er treg i starten. Bør bli én sammenhengende film |
-| Ingen knapp for å gå tilbake under opptak | Stemmer. Bare «neste» finnes |
-| Vil ha en sidemeny som spretter ut, for å velge lysark | Lest som en meny i innlesingsvinduet |
-| Kapitlene i PPTX og PDF forsvinner | Stemmer. Importen leser dem ikke, og formatet har ikke plass til dem |
+- **Pil høyre** går videre, **pil venstre** går tilbake, og **«Velg
+  lysark»** (L) hopper hvor som helst. Du kan også hoppe mens opptaket
+  står på pause.
+- **Det du gjør, er det som vises.** Et lysark du kommer tilbake til,
+  vises igjen i videoen, slik du forlot det.
+- **Vil du ta om et lysark** i stedet for å vise det en gang til, starter
+  du opptaket på det lysarket, som før.
+- **Studentene blar som før** i HTML-fila, fra lysark til lysark. Bare
+  «Spill av» følger opptaket ditt.
+- Et «igjen»-lysark kan flyttes og slettes i lista. Innholdet endrer du
+  på lysarket selv; da endres det begge steder.
 
 ## Det jeg trenger fra deg
 
-1. **Svar på tre spørsmål** når neste chat stiller dem: hva som skal
-   skje med opptaket når du går tilbake til et lysark du har lest inn,
-   om sidemenyen også skal finnes for studentene, og hvor kapitlene
-   skal vises.
-2. **Se om munn og lyd følger hverandre** i en video med kamera. Det
-   kan jeg ikke måle.
-3. **Prøv installasjonsfila på en USN-PC**, og si hva Windows sier.
-4. **Openverse har bruksvilkår** (historikken, 6.24). Si fra om du ikke
-   vil ha kilden med.
-5. **Det som sto fra før:** egen mikrofon, musikk, merket bilde på dine
-   egne bilder, og Canvas (bare du, ingen KI). Sjekklista står nederst.
+1. **Ett svar om import.** Du vil kunne velge «USN-stil» eller «som i
+   fila» for både PDF og PowerPoint. For PDF kan begge lages. Lysark kan
+   ikke tegne PowerPoint-lysark selv, så «som i fila» for PowerPoint må
+   gå via en PDF: du lagrer presentasjonen som PDF i PowerPoint, og
+   Lysark henter utseendet fra PDF-en og manus og kapitler fra
+   PowerPoint-fila. **Jeg anbefaler det.** Er det greit?
+2. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
+   lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
+   Det kan jeg ikke måle.
+3. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
+   du ventet. Særlig: er det riktig at et lysark du bare blar forbi
+   (under et halvt sekund), ikke vises?
+4. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
+   burde vært tekst, blitt liggende i bakgrunnsbildet? Lysarkene med
+   «å ordne» i lista sier hvor importen selv var i tvil.
+5. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
+   til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
+   bilde på dine egne bilder, og Canvas (bare du, ingen KI). Sjekklista
+   står nederst.
 
 ## Neste steg, i rekkefølge
 
-1. **Opptaket:** kameraet skal ikke fryse mellom lysark, en knapp for å
-   gå tilbake, og en sidemeny for å velge lysark.
-2. **PDF-importen:** tekst og bilder som egne elementer, lenker som
-   virker, og skarp tekst.
-3. **Kapitler** fra PowerPoint og PDF.
-4. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
+1. **Det du melder** etter å ha prøvd opptaket og PDF-importen.
+2. **Valget «USN-stil eller som i fila»** ved import, når du har svart.
+3. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
    diagrammer og bevegelsene. Merket bilde er bygget.
-5. **Håndlaget stil** (leveranse 5).
+4. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (388) | Ja | – |
-| Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd |
-| Innlesing | Med prøvemikrofon | Med stille inndata |
-| Video (MP4), GIF, «Spill av» i HTML | Ja | Ja |
-| Tidslinje og musikk | Ja, også målt i videoen | Ja, for hånd. Lyden kan ikke høres i VM-en |
-| **Kamerasirkelen** | Ja, med prøvekamera, også målt i videoen | **Nei.** VM-en har ikke kamera |
-| **Installasjonsfila** | – | Ja, for hånd: installere, starte, avbryte, avinstallere |
-| **Openverse** | Ja, der testen svarer for Openverse | Nei |
-| **Merket bilde** (ikke gitt ut) | Ja, også målt i videoen | Nei |
+| Automatiske tester (450) | Ja | – |
+| Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
+| Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
+| Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
+| Tidslinje og musikk | Ja, også målt i videoen | Ja, for hånd (0.4.0) |
+| Kamerasirkelen | Ja, med prøvekamera, også målt i videoen | **Nei.** VM-en har ikke kamera |
+| **Fritt opptak, sidemeny, «igjen»-lysark** | Ja, også målt i videoen, og i den pakkede utgaven | **Nei** |
+| **Kapitler** | Ja, også i videofila og i spilleren | **Nei** |
+| **PDF-import med egne elementer** | Ja, også på to av dine egne PDF-er (26 og 94 sider) | **Nei** |
+| Installasjonsfila | – | Ja, for hånd (0.4.0) |
+| Openverse | Ja, der testen svarer for Openverse | Nei |
+| Merket bilde | Ja, også målt i videoen | Nei |
 
-**Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, selve
-Openverse-fanen mot det ekte nettstedet, en installasjonsfil lastet ned
-fra nettet (da kan Windows advare), en USN-styrt PC, og Canvas.
+**Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
+opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
+nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
+advare), en USN-styrt PC, og Canvas. **Ingenting av det som er nytt
+etter 0.4.0, er prøvd på Windows.**
 
 ## Kjente svakheter
 
-- **Kameraet fryser mellom lysark**, og under opptak kan du ikke gå
-  tilbake (meldt av deg 25.11.2026, ikke rettet).
-- **PDF-import gir ett bilde per side:** ingenting kan velges for seg,
-  lenkene virker ikke, og teksten er litt kornete (meldt av deg).
-- **Kapitler** i PowerPoint og PDF følger ikke med (meldt av deg).
+- **Hopper du framover over lysark** og kommer tilbake til dem senere,
+  står de også på sin vanlige plass i videoen, uten lyd (fem sekunder
+  hver).
+- **Det du sier på et «igjen»-lysark, får ikke teksting** av seg selv.
+  Skriv manus på stedet om du vil ha teksting der.
 - **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
+- **PDF-import:** skriften blir Lysarks egen, så linjer kan stå litt
+  annerledes enn i PDF-en. Formler, tekst på farget bunn i farger
+  Lysark ikke har, og bilder med noe tegnet oppå blir liggende i
+  bakgrunnsbildet. En lenke som ikke lå på tekst, følger ikke med
+  (importen sier fra). En skannet side er fortsatt ett bilde. 94 sider
+  tar omtrent 70 sekunder å importere.
 - **Kamerasirkelen er ikke i HTML-fila** (ditt valg; kan bygges senere).
 - **Windows kan advare** første gang en nedlastet installasjonsfil
   kjøres, fordi programmet ikke er signert.
@@ -131,7 +148,7 @@ fra nettet (da kan Windows advare), en USN-styrt PC, og Canvas.
 - **Tekstingen er beregnet** ut fra manusets lengde, ikke lyttet fram.
 - **Tabeller, formler, SmartArt og diagrammer** fra PowerPoint kommer
   ikke alltid med slik de var.
-- **Opptak du har tatt om, blir liggende** i prosjektmappa, nå også
+- **Opptak du har tatt om, blir liggende** i prosjektmappa, også
   filmene.
 
 Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
@@ -152,22 +169,24 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 1. Last opp HTML-fila under Filer og åpne den. Vises forelesningen?
 2. Virker den innebygd i en Canvas-side, og i egen fane?
-3. Piltaster, de runde pilene, innholdsoversikten og fullskjerm.
+3. Piltaster, de runde pilene, innholdsoversikten (med kapitlene) og
+   fullskjerm.
 4. «+»-merkene, «Lær mer»-panelet, «Utvid» og «Bildekilder».
 5. YouTube: spiller videoen inne i lysarket?
 6. Lenker ut av forelesningen.
-7. «Spill av»: følger steg og lysark stemmen din? Åpner boksen seg og
-   spiller videoen der du gjorde det? Høres musikken?
+7. «Spill av»: følger steg og lysark stemmen din? Vises et lysark igjen
+   der du gikk tilbake til det? Åpner boksen seg og spiller videoen der
+   du gjorde det? Høres musikken?
 8. Hvor stor fil godtar emnet? (Stål er 23 MB.)
 9. En forelesning med stor video: følger mappa ved siden av med?
-10. Videoen (MP4, med kamerasirkelen) og tekstingen (.vtt): tar Canvas
-    imot begge?
+10. Videoen (MP4, med kamerasirkelen og kapitler) og tekstingen (.vtt):
+    tar Canvas imot begge? Viser Canvas kapitlene?
 11. På mobil, i Canvas-appen.
 
 ## Startmelding til neste chat
 
 Lim dette inn i en ny chat i mappa `~/Forelesningsverktoy/lysark`, og
-fyll inn de to stedene:
+fyll inn de tre stedene:
 
 ```text
 Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
@@ -175,14 +194,10 @@ forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
-ut (25.11.2026), med kamerasirkelen (ansiktet mitt i videoen), en
-installasjonsfil for Windows, søk i Openverse og en ny forside. Etter
-det er merket bilde bygget (tall eller etiketter oppå et bilde), det
-første stykket av leveranse 4; det er ikke gitt ut.
-
-Jeg har prøvd PDF-import og opptak med kamera og meldt sju ting
-(HANDOFF.md, «Det du meldte 25.11.2026», og docs/historikk.md 6.26).
-Ingen av dem er rettet. De står først i «Neste steg».
+ut (25.11.2026). Etter det er dette bygget, og ikke gitt ut: merket
+bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
+film for hele opptaket), kapitler, og PDF-import der tekst, bilder og
+lenker er egne elementer.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -204,20 +219,24 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Mer jeg har funnet siden sist (kamera, mikrofon, musikk,
-installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
+Svaret mitt på spørsmålet om import («som i fila» for PowerPoint via en
+PDF av presentasjonen, HANDOFF.md «Det jeg trenger fra deg»):
+(skriv her)
+
+Det jeg har funnet siden sist (opptak med ekte kamera, fram og tilbake
+under opptak, PDF-import, kapitler, mikrofon, musikk, installasjonsfila
+på USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
 Innspill til produktet:
 (skriv her)
 
 Gjør dette:
-1. Skriv det jeg har funnet siden sist, og innspillene mine, inn i
+1. Skriv svaret mitt, det jeg har funnet og innspillene mine inn i
    docs/historikk.md.
-2. Still spørsmålene som må avklares før de sju meldte tingene rettes
-   (docs/historikk.md 6.26), samlet og med én anbefaling hver.
-3. Rett det jeg har meldt, og ta innspillene mine.
-4. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
+2. Rett det jeg har meldt, og ta innspillene mine. Still spørsmål
+   samlet, med én anbefaling hver, før du bygger noe som trenger det.
+3. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
 
 Rapporter ærlig: hva som er prøvd, på hvilket system, og hva som ikke
 er prøvd.

@@ -225,9 +225,9 @@ Større:
 9. **Tekstingen er beregnet, ikke lyttet fram** (se
    [docs/plan.md](plan.md)). Snakker du fritt i stedet for å lese
    manuset, stemmer den dårlig.
-10. **PDF-import gir bilder, ikke redigerbart innhold**, og en tittel
-    som går over to linjer i PDF-en, blir bare første linje
-    («Materialegenskaper og»). Tittelen kan rettes i fanen Lysark.
+10. ~~PDF-import gir bilder, ikke redigerbart innhold.~~ Rettet
+    25.11.2026 (6.29): tekst, bilder og lenker er egne elementer. Det
+    som ikke kan løftes ut, ligger i bakgrunnsbildet og er merket.
 
 Mindre:
 
@@ -2053,8 +2053,8 @@ Prosjektformatet er nå versjon 9; eldre prosjekter åpnes som før.
   i bildet. Det kan jeg ikke måle uten et ekte kamera.
 
 **Prøvd** på Linux Mint, automatisk, uten vindu, med prøvemikrofon og
-prøvekamera, uten nett: 19 nye enhetstester (`tests/repeats.test.ts`) og
-fem nye ende-til-ende-tester (`tests/e2e-free.test.ts`): fram, to steg,
+prøvekamera, uten nett: 20 nye enhetstester (`tests/repeats.test.ts`) og
+seks nye ende-til-ende-tester (`tests/e2e-free.test.ts`): fram, to steg,
 neste lysark, tilbake, sidemeny med kapitler, hopp, et lysark som bare
 blas forbi, «Ferdig»; så lysarklista, visningen av «igjen»-lysarket,
 videoen (målt i bildene: lysark A vises igjen der jeg gikk tilbake, med
@@ -2062,11 +2062,101 @@ begge stegene fra start; kapitlene ligger i fila med riktige navn og
 tider) og spilleren (blar forbi gjentakelsen for hånd, «Spill av» viser
 den). De gamle testene for opptak, kamera og «Lær mer» under innlesing
 er kjørt på nytt og går gjennom; kameratesten er skrevet om til én film
-for hele opptaket. Hele testsettet: 413 tester går gjennom, én er
-hoppet over (den trenger en egen innstilling).
+for hele opptaket. En sjette ende-til-ende-test går gjennom pause, hopp
+med sidemenyen mens opptaket står på pause, «Ta om dette lysarket» og
+«Avbryt», med prøvekamera på, og måler at filmen sto stille i pausen og
+under nedtellingen. Opptaks-, kamera- og lydtestene (19 tester) er også
+kjørt mot den **pakkede utgaven** på Linux (pakket til en midlertidig
+mappe; utgivelsesfilene i `release/` er ikke rørt). Hele testsettet
+etter at PDF-importen var flettet inn (6.29): 450 tester går gjennom, én
+er hoppet over (den lager bare bilder når den blir bedt om det).
 
 **Ikke prøvd:** ekte kamera og ekte mikrofon, en lang forelesning (45
-minutter) i ett opptak, Windows, og den pakkede utgaven.
+minutter) i ett opptak, og Windows (verken for hånd eller pakket).
+
+### 6.29 PDF-import med tekst, bilder og lenker som egne elementer (25.11.2026)
+
+Retter de tre tingene han meldte om PDF (6.26, punkt 1 til 3) og
+kapitlene for PDF (punkt 7). Han valgte ikke bare anbefalingen «som i
+PDF-en», men ba om et valg (6.27). Det som er bygget, er «som i
+PDF-en»; valget står igjen (se nederst). **Ikke gitt ut.**
+
+Selve importen ble bygget av en hjelpeagent i en egen arbeidskopi inne i
+prosjektmappa (grenen `pdf-elements`, som ligger bare lokalt), etter en
+skriftlig bestilling fra meg, og flettet inn i `main` etter at jeg hadde
+kjørt testene og sett på resultatet selv.
+
+**Hva som er nytt.**
+
+- **Tekst er ekte tekst.** Tekstbitene i PDF-en settes sammen til linjer,
+  avsnitt og blokker, med punktmerker, nivåer, fet, kursiv, hevet og
+  senket skrift. Hver blokk blir ett tekstelement der teksten sto, som
+  kan velges, flyttes og redigeres. Hver linje brytes der den brøt.
+- **Skriften er Lysarks egen.** Skriftene i en PDF kan ikke tas med.
+  Størrelsen tilpasses så linjene får plass der de sto. Fargen er den
+  nærmeste i Lysarks palett.
+- **Bilder er egne bildeelementer**, slik de så ut på siden (beskåret og
+  dreid som der).
+- **Lenker** som lå på tekst, ligger nå på de samme ordene. Lenker til en
+  annen side i PDF-en blir lenker til det lysarket.
+- **Resten av siden** (fargefelt, streker, tegninger) ligger bak som ett
+  bakgrunnsbilde, uten teksten og bildene som er løftet ut.
+- **Kapitler** fra bokmerkene i PDF-en. PowerPoint skriver ett bokmerke
+  per seksjon. En PDF der bokmerkene bare er en liste over sidene, får
+  ingen kapitler.
+- **Det som ikke kan løftes ut trygt, blir stående i bakgrunnsbildet**,
+  og lysarket merkes «å ordne» med en forklaring: formler, tekst på
+  farget bunn i en farge Lysark ikke har for tekst, tekst som er
+  gjennomsiktig, speilvendt eller loddrett, og bilder med noe tegnet
+  oppå. En side uten tekst som kan hentes ut (en skannet side), er ett
+  bilde som før.
+
+**Sett med egne øyne og målt på hans egne filer** (innholdet er hans og
+gjengis ikke her):
+
+| Fil | Sider | Tid | Tekstelementer | Bilder | Lenker | Lysark «å ordne» | Bilder i alt |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Stål | 26 | 19 s | 149 | 59 | 5 | 5 | 3,8 MB |
+| Betong | 94 | 71 s | 330 | 260 | 8 | 7 | 22,6 MB |
+
+Kapitlene kom riktig i begge («Forside», fem kapitler, «Avslutningsside»,
+på samme lysark som seksjonene i PowerPoint-fila). Jeg har sett på
+lysark 3 og 5 av «Stål»: tittel, punktliste, fotografier og en innlimt
+tabell står der de skal. I «Betong» fulgte én lenke ikke med, fordi den
+ikke lå på tekst; importen sa fra. Ett lysark der er fortsatt ett bilde
+(siden har ingen tekst).
+
+**Begrensninger, sagt rett ut.**
+
+- Liberation-skriftene er ikke like brede som skriftene i PDF-en, så
+  teksten kan stå litt annerledes, særlig i tette oppsett.
+- En tabell i en PDF blir ikke en tabell i Lysark.
+- Hver side tegnes flere ganger, så importen tar tid (tallene over).
+  Hvor lang tid den gamle importen brukte på de samme filene, har jeg
+  ikke målt selv.
+- En lenke som lå på et bilde eller et tomt felt, følger ikke med.
+- Jeg har ikke gått gjennom alle sidene i noen av filene hans, bare et
+  utvalg.
+
+**Prøvd** på Linux Mint, automatisk og uten vindu: enhetstestene for de
+rene delene (`tests/importer-pdf.test.ts`), ende-til-ende-testene
+(`tests/e2e-pdf.test.ts`: tekst på plass, bilde som eget element,
+lenker, bakgrunn uten tekst, sider som blir ett bilde), importen av alle
+filene i `eksempler/` (`tests/real-files.test.ts`), og en test av regelen
+for kapitler fra bokmerker. **Ikke prøvd:** Windows, og PDF-er fra andre
+programmer enn PowerPoint utover prøvefilene testene lager selv.
+
+**Valget «USN-stil eller som i fila» er ikke bygget.** Slik står det:
+
+- *PDF:* «som i fila» er det som nå er bygget. «USN-stil» kan lages
+  oppå det: samme elementer, men med temaets skrifter og farger og uten
+  bakgrunnsbildet.
+- *PowerPoint:* «USN-stil» er dagens import. «Som i fila» kan ikke lages
+  direkte, fordi Lysark ikke kan tegne PowerPoint-lysark, og innholdet i
+  et prosjekt viser til temaets roller, ikke til egne farger og
+  skrifter. Anbefalingen min er å gå via en PDF av presentasjonen:
+  utseendet fra PDF-en, manus (notatene) og kapitler fra
+  PowerPoint-fila. Det trenger hans ja før det bygges.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

@@ -374,6 +374,13 @@ videoopptak». **Bygget 25.11.2026** (historikk.md 6.28):
 - **Minivideo av noen få lysark:** «Eksporter video» → «Fra lysark … til
   …» (fantes fra før).
 
+- **PDF-import** der tekst, bilder og lenker er egne elementer
+  (historikk.md 6.29). Det som ikke kan løftes ut trygt, ligger i et
+  bakgrunnsbilde og er merket.
+
+Ikke bygget, venter på eierens svar: valget «USN-stil eller som i fila»
+ved import (historikk.md 6.29, nederst).
+
 Utenfor, med vilje: å vise et lysark *før* sin plass i rekkefølgen uten
 at det også står på plassen sin, og teksting av det som sies på en
 gjentakelse uten at det er skrevet manus der.
@@ -582,9 +589,9 @@ Rettet i økt 3:
 Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 2 og 3 er bygget. Det som står for tur:
 
-1. **Det eieren melder** etter å ha prøvd mikrofon, kamera, video,
-   musikk, installasjonsfila og Canvas. Kamerasirkelen og
-   installasjonsfila for Windows, som han ba om 25.11.2026, er bygget.
+1. **Det eieren melder** etter å ha prøvd det nye opptaket og
+   PDF-importen (historikk.md 6.28 og 6.29), og valget «USN-stil eller
+   som i fila» ved import når han har svart.
 2. ~~Flere bildekilder, Openverse først.~~ Openverse er bygget
    25.11.2026 (historikk.md 6.24). Flere kilder tas når eieren savner
    noe.
