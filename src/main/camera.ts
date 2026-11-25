@@ -1,12 +1,20 @@
 // The camera circle in the main process: storing the film of the lecturer's
-// face that was taken while a slide was read in, and handing its pictures to
-// the video export one by one.
+// face that was taken while the lecture was read in, and handing its
+// pictures to the video export one by one.
 //
 // A film is stored in the project folder, like the recordings, and sent
 // nowhere. FFmpeg makes it even (square, 30 pictures a second, a full
 // picture every half second) so that any moment of it can be found exactly.
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddedMedia } from '../shared/api';
@@ -19,24 +27,68 @@ import { mediaPath } from './projectIo';
 
 const MAX_FILM_BYTES = 1024 * 1024 * 1024;
 
+/** A film that is being taken: what the interface has handed over so far. */
+interface OpenFilm {
+  dir: string;
+  work: string;
+  source: string;
+  bytes: number;
+}
+
+const openFilms = new Map<string, OpenFilm>();
+
 /**
- * Stores a film taken by the camera while a slide was read in. `data` is
- * what the interface recorded (WebM); it is made into the project's own
- * form: square, without sound, with even time from the first picture.
+ * Begins a film of a recording. The interface hands it over a piece at a
+ * time while the lecturer reads (a long lecture is far too much to hold in
+ * memory), into a file outside the project folder. Returns the name the
+ * pieces are sent under.
  */
-export async function addCameraFilm(
-  dir: string,
-  data: Uint8Array,
-  name: string,
-): Promise<AddedMedia> {
-  if (!(data instanceof Uint8Array) || data.byteLength === 0 || data.byteLength > MAX_FILM_BYTES) {
-    throw new Error('Kameraopptaket kan ikke lagres.');
-  }
+export function beginCameraFilm(dir: string): string {
   const work = mkdtempSync(join(tmpdir(), 'lysark-kamera-'));
-  const source = join(work, 'inn.webm');
+  const id = newId('k');
+  openFilms.set(id, { dir, work, source: join(work, 'inn.ivf'), bytes: 0 });
+  return id;
+}
+
+export function appendCameraFilm(id: string, data: Uint8Array): void {
+  const film = openFilms.get(id);
+  if (!film) throw new Error('Kameraopptaket er ikke i gang.');
+  if (!(data instanceof Uint8Array) || film.bytes + data.byteLength > MAX_FILM_BYTES) {
+    dropCameraFilm(id);
+    throw new Error('Kameraopptaket ble for stort og kan ikke lagres.');
+  }
+  appendFileSync(film.source, data);
+  film.bytes += data.byteLength;
+}
+
+/** Throws away a film that is being taken. */
+export function dropCameraFilm(id: string): void {
+  const film = openFilms.get(id);
+  if (!film) return;
+  openFilms.delete(id);
+  rmSync(film.work, { recursive: true, force: true });
+}
+
+/** Throws away every film that is being taken (the window was closed). */
+export function dropCameraFilms(): void {
+  for (const id of [...openFilms.keys()]) dropCameraFilm(id);
+}
+
+/**
+ * Ends a film and stores it in the project folder, in the project's own
+ * form: square, without sound, 30 pictures a second, with the time the
+ * interface gave every picture (the recording's own time, from 0). Resolves
+ * with null when the film has no pictures.
+ */
+export async function endCameraFilm(id: string, name: string): Promise<AddedMedia | null> {
+  const film = openFilms.get(id);
+  if (!film) throw new Error('Kameraopptaket er ikke i gang.');
+  openFilms.delete(id);
+  const { dir, work, source } = film;
   const made = join(work, 'ut.mp4');
   try {
-    writeFileSync(source, data);
+    // The head of the file alone is no film.
+    if (film.bytes <= 32) return null;
     const side = CAMERA_FILM_SIZE;
     await runFfmpeg([
       '-y',
@@ -63,19 +115,19 @@ export async function addCameraFilm(
       '-1',
       made,
     ]).done;
-    const film = new Uint8Array(readFileSync(made));
-    const hash = createHash('sha256').update(film).digest('hex').slice(0, 16);
+    const data = new Uint8Array(readFileSync(made));
+    const hash = createHash('sha256').update(data).digest('hex').slice(0, 16);
     const file = `media/kamera-${hash}.mp4`;
     mkdirSync(join(dir, 'media'), { recursive: true });
     const target = mediaPath(dir, file);
-    if (!existsSync(target)) writeFileSync(target, film);
+    if (!existsSync(target)) writeFileSync(target, data);
     return {
       id: newId('a'),
       asset: {
         kind: 'camera',
         file,
         mime: 'video/mp4',
-        bytes: film.byteLength,
+        bytes: data.byteLength,
         name: name.replace(/[^\p{L}\p{N} ._-]/gu, '').slice(0, 80) || 'Kamera',
       },
     };

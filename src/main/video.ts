@@ -14,7 +14,13 @@ import { join } from 'node:path';
 import type { LogoStatus, VideoProgress, VideoRequest, VideoSummary } from '../shared/api';
 import type { Project, Scene } from '../shared/format/schema';
 import { cameraMask, drawCamera } from '../shared/render/cameraDraw';
-import { creditScenes, lectureCues, toWebVtt } from '../shared/render/captions';
+import {
+  chapterMarks,
+  creditScenes,
+  lectureCues,
+  toFfmetadata,
+  toWebVtt,
+} from '../shared/render/captions';
 import {
   GIF_FPS,
   GIF_MAX_SECONDS,
@@ -141,6 +147,19 @@ export function exportVideo(options: Options): VideoJob {
   // A GIF is made in two goes: first a video without loss worth mentioning,
   // then the GIF from it, with colours chosen for exactly these pictures.
   const videoFile = gif ? join(work, 'mellom.mp4') : outFile;
+  // The chapters of the lecture become chapters of the video file, which
+  // most players show and let the viewer jump between.
+  const last = project.scenes.length - 1;
+  const firstScene = Math.max(0, Math.min(last, Math.floor(request.from)));
+  const lastScene = Math.max(firstScene, Math.min(last, Math.floor(request.to)));
+  const marks = gif
+    ? []
+    : chapterMarks(project.scenes, plan, firstScene, lastScene, {
+        lecture: project.meta.title.trim() || 'Forelesning',
+        credits: CREDIT_TEXTS[project.meta.language].heading,
+      });
+  const chapterFile = join(work, 'kapitler.txt');
+  if (marks.length > 0) writeFileSync(chapterFile, toFfmetadata(marks), 'utf8');
 
   const run = async (): Promise<VideoSummary | null> => {
     options.onProgress({ phase: 'sound', frame: 0, frames: totalFrames });
@@ -226,6 +245,11 @@ export function exportVideo(options: Options): VideoJob {
             '1',
             '-i',
             soundFile,
+            ...(marks.length > 0 ? ['-f', 'ffmetadata', '-i', chapterFile] : []),
+            '-map',
+            '0:v',
+            '-map',
+            '1:a',
             '-c:v',
             'libx264',
             '-preset',
@@ -245,8 +269,12 @@ export function exportVideo(options: Options): VideoJob {
               : []),
             '-movflags',
             '+faststart',
-            '-map_metadata',
+            // Nothing is taken along from the files the video is made from,
+            // but the names of the chapters must be (`:g`: the rest only).
+            '-map_metadata:g',
             '-1',
+            '-map_chapters',
+            marks.length > 0 ? '2' : '-1',
             '-metadata',
             `title=${project.meta.title}`,
             '-frames:v',

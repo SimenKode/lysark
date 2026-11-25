@@ -54,7 +54,7 @@ export function hasSound(scene: Pick<Scene, 'audio'>): boolean {
 
 /** What the clock needs to know about a slide. */
 export type Timed = Pick<Scene, 'audio' | 'timeline'> &
-  Partial<Pick<Scene, 'closingAnimation' | 'events'>>;
+  Partial<Pick<Scene, 'closingAnimation' | 'events' | 'repeat'>>;
 
 /** How long the last picture of the closing animation stands after the film has ended. */
 export const CLOSING_HOLD_SECONDS = 2;
@@ -69,19 +69,43 @@ export function sceneDuration(scene: Timed): number {
 }
 
 /**
+ * When each step of a slide happens, as the clock itself counts: seconds
+ * from the start of the slide, the times never going backwards.
+ *
+ * - A step with a time keeps it (inside the slide); on a slide that is not
+ *   a repeat, steps without one are spread evenly.
+ * - A recording shows what the lecturer did. A step the lecturer never
+ *   came to before leaving the slide has its time at the very end of the
+ *   slide's sound, and is never shown: `Infinity`. So is a step without a
+ *   time on a slide that is shown once more.
+ * - On a slide that is shown once more, the steps that were already there
+ *   when the lecturer came back are there from before the start:
+ *   `-Infinity`.
+ */
+function stepClock(scene: Timed): number[] {
+  const duration = sceneDuration(scene);
+  const count = scene.timeline.length;
+  const before = scene.repeat ? new Set(scene.repeat.shown) : undefined;
+  const recorded = trackDuration(scene.audio) > 0;
+  let previous = -Infinity;
+  return scene.timeline.map((step: Step, index) => {
+    if (before?.has(step.id)) return previous;
+    const own = step.at ?? (before ? duration : (duration * (index + 1)) / (count + 1));
+    const never = previous === Infinity || (recorded && own >= duration - 1e-6);
+    previous = never ? Infinity : Math.max(previous, Math.min(duration, Math.max(0, own)));
+    return previous;
+  });
+}
+
+/**
  * When each step of a slide happens, in seconds from the start of the
- * slide. A step with a time keeps it (inside the slide); steps without one
- * are spread evenly. The times never go backwards.
+ * slide, for showing and moving the steps in the sound: a step that was
+ * there from before stands at the start, and one that is never shown
+ * stands at the end. The times never go backwards.
  */
 export function stepTimes(scene: Timed): number[] {
   const duration = sceneDuration(scene);
-  const count = scene.timeline.length;
-  let previous = 0;
-  return scene.timeline.map((step: Step, index) => {
-    const own = step.at ?? (duration * (index + 1)) / (count + 1);
-    previous = Math.max(previous, Math.min(duration, Math.max(0, own)));
-    return previous;
-  });
+  return stepClock(scene).map((at) => Math.max(0, Math.min(duration, at)));
 }
 
 function easeOutCubic(t: number): number {
@@ -91,7 +115,12 @@ function easeOutCubic(t: number): number {
 
 /** How many steps have been triggered `t` seconds into the slide. */
 export function stepsShownAt(scene: Timed, t: number): number {
-  return stepTimes(scene).filter((at) => at <= t).length;
+  return stepClock(scene).filter((at) => at <= t).length;
+}
+
+/** How many steps are on the slide from before it begins (a slide that is shown once more). */
+export function stepsShownBefore(scene: Timed): number {
+  return stepClock(scene).filter((at) => at === -Infinity).length;
 }
 
 /**
@@ -99,11 +128,8 @@ export function stepsShownAt(scene: Timed, t: number): number {
  * seconds into the slide. The same rule as stepping by hand
  * (`sceneState`), but every step runs from its own time.
  */
-export function sceneStateAt(
-  scene: Pick<Scene, 'audio' | 'timeline'>,
-  t: number,
-): Map<string, number> {
-  const times = stepTimes(scene);
+export function sceneStateAt(scene: Timed, t: number): Map<string, number> {
+  const times = stepClock(scene);
   const state = new Map<string, number>();
   scene.timeline.forEach((step, index) => {
     const since = t - times[index]!;
@@ -112,7 +138,8 @@ export function sceneStateAt(
       let opacity: number;
       const local = since - (action.delay ?? 0);
       if (since < 0 || local < 0) opacity = 0;
-      else if (action.effect === 'appear' || action.duration <= 0) opacity = 1;
+      else if (since === Infinity || action.effect === 'appear' || action.duration <= 0)
+        opacity = 1;
       else opacity = easeOutCubic(Math.min(1, local / action.duration));
       state.set(action.target, opacity);
     }
@@ -249,7 +276,7 @@ export function isAnimatingAt(scene: Timed, t: number): boolean {
   const open = moreAt(scene, t);
   if (open && open.since < POP_SECONDS + 1 / VIDEO_FPS) return true;
   for (const video of videosAt(scene, t).values()) if (video.playing) return true;
-  const times = stepTimes(scene);
+  const times = stepClock(scene);
   return scene.timeline.some((step, index) => {
     const since = t - times[index]!;
     return since >= 0 && since < stepDuration(step);
@@ -323,8 +350,8 @@ export function stillUntil(
   const scene = scenes[state.index];
   if (!entry || !scene || state.fade || isAnimatingAt(scene, state.t)) return time;
   let until = entry.start + entry.duration;
-  for (const at of stepTimes(scene)) {
-    if (at > state.t) {
+  for (const at of stepClock(scene)) {
+    if (at > state.t && at !== Infinity) {
       until = Math.min(until, entry.start + at);
       break;
     }

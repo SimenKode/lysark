@@ -1,8 +1,10 @@
 // The camera in the recording window. It is opened only when the owner has
 // switched it on there, and closed with the window. What it sees is shown
-// in the camera circle and, while a slide is read in, kept as a film of
-// that slide. Pictures only: the sound comes from the microphone.
+// in the camera circle and, while the lecturer reads, kept as one film of
+// the whole recording. Pictures only: the sound comes from the microphone.
 import { CAMERA_FILM_SIZE, CAMERA_FPS } from '../../../shared/render/clock';
+import type { FilmMessage, FilmReply } from './filmWorker';
+import FilmWorker from './filmWorker?worker';
 
 export interface CameraChoice {
   deviceId: string;
@@ -56,60 +58,90 @@ export async function openCamera(deviceId: string): Promise<MediaStream> {
   }
 }
 
-/** The film of one slide while it is being taken. */
-export interface FilmTake {
-  /** Holds the film still while the reading is paused. */
-  pause(): void;
-  resume(): void;
+/** The film of a recording while it is being taken. */
+export interface Film {
+  /** Pictures are kept from now on, or (while the reading is paused) left out. */
+  keep(on: boolean): void;
   /**
-   * Ends the take. Resolves with the film as it was recorded, or with null
-   * when nothing was taken.
+   * How many seconds of film have been kept so far: the moment of the film
+   * that is being taken right now.
    */
-  stop(): Promise<Uint8Array | null>;
+  time(): number;
+  /**
+   * Ends the film. Resolves, when every piece has been handed over, with the
+   * number of pictures it got.
+   */
+  end(): Promise<number>;
 }
 
+/** Chromium's way of reading a camera picture by picture; not yet in TypeScript's own list. */
+declare const MediaStreamTrackProcessor:
+  (new (init: { track: MediaStreamTrack }) => { readable: ReadableStream<VideoFrame> }) | undefined;
+
 /**
- * Starts filming what the camera sees. `onStart` is called when the first
- * picture is on its way, so the caller can note how far the sound had come.
+ * Starts the film of a recording. Nothing is kept until `keep(true)`. The
+ * film is made in a thread of its own (filmWorker.ts) and handed to `sink`
+ * a piece at a time, in order. One film runs through the whole recording,
+ * however the lecturer moves between the slides: the pictures never stop
+ * where a slide ends.
  */
-export function startFilm(stream: MediaStream, onStart: () => void): FilmTake | null {
-  if (typeof MediaRecorder === 'undefined') return null;
-  const type = ['video/webm;codecs=vp8', 'video/webm'].find((t) =>
-    MediaRecorder.isTypeSupported(t),
-  );
-  if (!type) return null;
-  let recorder: MediaRecorder;
+export function startFilm(
+  stream: MediaStream,
+  sink: (piece: Uint8Array) => Promise<void>,
+): Film | null {
+  const track = stream.getVideoTracks()[0];
+  if (!track || typeof MediaStreamTrackProcessor === 'undefined') return null;
+  if (typeof VideoEncoder === 'undefined') return null;
+  let worker: Worker;
   try {
-    recorder = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 2_000_000 });
+    const processor = new MediaStreamTrackProcessor({ track });
+    worker = new FilmWorker();
+    const open: FilmMessage = { type: 'open', readable: processor.readable };
+    worker.postMessage(open, [processor.readable]);
   } catch {
     return null;
   }
-  const parts: Blob[] = [];
-  recorder.ondataavailable = (event) => {
-    if (event.data.size > 0) parts.push(event.data);
+  const say = (message: FilmMessage): void => worker.postMessage(message);
+  const now = (): number => performance.timeOrigin + performance.now();
+  // The same count as the worker keeps, from the same moments.
+  let keeping = false;
+  let keptBefore = 0;
+  let since = 0;
+  let handed = Promise.resolve();
+  let frames = 0;
+  let finish: (() => void) | null = null;
+  const done = new Promise<void>((resolve) => (finish = resolve));
+  worker.onmessage = (event: MessageEvent<FilmReply>) => {
+    const reply = event.data;
+    if (reply.type === 'data') {
+      const piece = new Uint8Array(reply.bytes);
+      // A piece that cannot be stored ends the film; the sound is kept all the same.
+      handed = handed.then(() => sink(piece)).catch(() => undefined);
+    } else {
+      if (reply.type === 'done') frames = reply.frames;
+      finish?.();
+    }
   };
-  recorder.onstart = onStart;
-  const ended = new Promise<void>((resolve) => {
-    recorder.onstop = () => resolve();
-    recorder.onerror = () => resolve();
-  });
-  try {
-    recorder.start(1000);
-  } catch {
-    return null;
-  }
+  worker.onerror = () => finish?.();
   return {
-    pause() {
-      if (recorder.state === 'recording') recorder.pause();
+    keep(on) {
+      if (on === keeping) return;
+      const at = now();
+      if (on) since = at;
+      else keptBefore += Math.max(0, at - since);
+      keeping = on;
+      say({ type: 'keep', on, at });
     },
-    resume() {
-      if (recorder.state === 'paused') recorder.resume();
+    time() {
+      return (keptBefore + (keeping ? Math.max(0, now() - since) : 0)) / 1000;
     },
-    async stop() {
-      if (recorder.state !== 'inactive') recorder.stop();
-      await ended;
-      if (parts.length === 0) return null;
-      return new Uint8Array(await new Blob(parts, { type }).arrayBuffer());
+    async end() {
+      this.keep(false);
+      say({ type: 'end' });
+      await done;
+      await handed;
+      worker.terminate();
+      return frames;
     },
   };
 }

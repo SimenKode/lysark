@@ -2,6 +2,7 @@
 // there are, what will come out, and how far the export has come.
 import { useEffect, useRef, useState } from 'react';
 import type { VideoRequest } from '../../shared/api';
+import { slideCount, slideNumbers, slideSpan } from '../../shared/layout/slides';
 import { collectCredits } from '../../shared/render/more';
 import {
   GIF_FPS,
@@ -33,15 +34,19 @@ export function VideoDialog() {
   const [ffmpeg, setFfmpeg] = useState<boolean | null>(null);
   /** From the press on the button until the export has ended, also while the file is being chosen. */
   const [busy, setBusy] = useState(false);
-  const count = project.scenes.length;
+  // Slides are counted as the lecturer counts them: one that is shown once
+  // more in the recording has no number of its own, and follows its place.
+  const count = slideCount(project.scenes);
+  const last = project.scenes.length - 1;
   const current = Math.max(
     0,
     project.scenes.findIndex((s) => s.id === sceneId),
   );
+  const currentNumber = slideNumbers(project.scenes)[current] ?? 1;
   const [format, setFormat] = useState<VideoRequest['format']>('mp4');
   const [range, setRange] = useState<Range>('all');
-  const [fromText, setFromText] = useState(String(current + 1));
-  const [toText, setToText] = useState(String(current + 1));
+  const [fromText, setFromText] = useState(String(currentNumber));
+  const [toText, setToText] = useState(String(currentNumber));
   const [gifWidth, setGifWidth] = useState<number>(640);
   const running = progress !== null;
   const locked = running || busy;
@@ -62,15 +67,15 @@ export function VideoDialog() {
   const toN = parseSlide(toText, count);
   const span: [number, number] | null =
     range === 'all'
-      ? [0, count - 1]
+      ? [0, last]
       : range === 'current'
         ? [current, current]
         : fromN !== undefined && toN !== undefined && fromN <= toN
-          ? [fromN - 1, toN - 1]
+          ? (slideSpan(project.scenes, fromN, toN) ?? null)
           : null;
   const chosen = span ? project.scenes.slice(span[0], span[1] + 1) : [];
   const seconds = schedule(chosen).total;
-  const whole = span !== null && span[0] === 0 && span[1] === count - 1;
+  const whole = span !== null && span[0] === 0 && span[1] === last;
   const gif = format === 'gif';
   const tooLong = gif && seconds > GIF_MAX_SECONDS + 0.5;
 
@@ -80,7 +85,11 @@ export function VideoDialog() {
   const hasVideoElements = chosen.some((s) => s.elements.some((e) => e.type === 'video'));
   const done = progress ? Math.round((progress.frame / Math.max(1, progress.frames)) * 100) : 0;
   const gifHeight = Math.round((gifWidth * VIDEO_SIZE.height) / VIDEO_SIZE.width);
-  const slides = chosen.length === 1 ? '1 lysark' : `${chosen.length} lysark`;
+  const again = chosen.filter((s) => s.repeat).length;
+  const own = chosen.length - again;
+  const slides =
+    (own === 1 ? '1 lysark' : `${own} lysark`) +
+    (again === 0 ? '' : again === 1 ? ' og ett som vises igjen' : ` og ${again} som vises igjen`);
 
   return (
     <dialog
@@ -126,7 +135,9 @@ export function VideoDialog() {
               disabled={locked}
               onChange={() => setRange('current')}
             />
-            Bare dette lysarket (nr. {current + 1})
+            {project.scenes[current]?.repeat
+              ? `Bare dette stedet (lysark ${currentNumber} igjen)`
+              : `Bare dette lysarket (nr. ${currentNumber})`}
           </label>
           <label className="check">
             <input

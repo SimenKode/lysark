@@ -1,6 +1,7 @@
 // Renders "Lær mer" content: the panel a student opens from an element.
 // The player and the builder's preview both use this, so the owner sees
 // exactly what the student will see.
+import { slideNumbers } from '../layout/slides';
 import type { Credit, More, MoreBlock, Project, TableCell } from '../format/schema';
 import { renderRichText } from './richtext';
 import { renderEmbed, renderVideo, type RenderContext, type SceneStrings } from './scene';
@@ -269,21 +270,25 @@ export function collectCredits(project: Project): CreditEntry[] {
     if (!entry.scenes.includes(scene)) entry.scenes.push(scene);
     if (cropped) entry.cropped = true;
   };
+  // A slide that is shown once more has the number of the slide it shows.
+  const numbers = slideNumbers(project.scenes);
   project.scenes.forEach((scene, index) => {
+    const number = numbers[index]!;
+    if (scene.repeat || number === 0) return;
     for (const element of scene.elements) {
-      if (element.type === 'image') note(element.asset, index + 1, !!element.crop);
+      if (element.type === 'image') note(element.asset, number, !!element.crop);
       else if (element.type === 'video') {
-        if (element.source.kind === 'asset') note(element.source.asset, index + 1, false);
-        if (element.poster) note(element.poster, index + 1, false);
+        if (element.source.kind === 'asset') note(element.source.asset, number, false);
+        if (element.poster) note(element.poster, number, false);
       }
-      for (const id of moreAssets(element.more)) note(id, index + 1, false);
+      for (const id of moreAssets(element.more)) note(id, number, false);
     }
   });
   // Music and other sound on the lecture's own tracks, by the slide each clip starts on.
   for (const track of ['music', 'sound'] as const) {
     for (const clip of project.tracks?.[track] ?? []) {
       const index = project.scenes.findIndex((scene) => scene.id === clip.scene);
-      if (index >= 0) note(clip.asset, index + 1, false);
+      if (index >= 0 && numbers[index]! > 0) note(clip.asset, numbers[index]!, false);
     }
   }
   return [...entries.values()];

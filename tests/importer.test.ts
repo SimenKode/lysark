@@ -111,6 +111,31 @@ describe('presentation', () => {
     expect(result.report.slides).toBe(3);
   });
 
+  it('makes the sections of the presentation into chapters', () => {
+    const slides = ['A', 'B', 'C', 'D'].map((name) => ({ shapes: titleSp(name) }));
+    const result = load({
+      slides,
+      sections: [
+        { name: 'En', slides: [0] },
+        { name: 'Tom', slides: [] },
+        { name: 'To', slides: [1, 2] },
+        { name: 'Tre', slides: [3] },
+      ],
+    });
+    expect(result.project.scenes.map((scene) => scene.chapter)).toEqual([
+      'En',
+      'To',
+      undefined,
+      'Tre',
+    ]);
+    // One section from end to end divides nothing.
+    const whole = load({ slides, sections: [{ name: 'Alt', slides: [0, 1, 2, 3] }] });
+    expect(whole.project.scenes.every((scene) => scene.chapter === undefined)).toBe(true);
+    expect(load({ slides }).project.scenes.every((scene) => scene.chapter === undefined)).toBe(
+      true,
+    );
+  });
+
   it('names scenes without a title by their number', () => {
     const result = load({ slides: [{ shapes: titleSp('A') }, { shapes: '' }] });
     expect(result.project.scenes.map((scene) => scene.title)).toEqual(['A', 'Lysark 2']);

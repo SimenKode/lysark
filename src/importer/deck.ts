@@ -3,7 +3,7 @@
 import { readColorScheme } from './color';
 import { stageMapFor, type StageMap } from './geometry';
 import { PptxPackage } from './package';
-import { attr, child, descend, intAttr, type XmlNode } from './xml';
+import { attr, child, children, descend, findDescendant, intAttr, type XmlNode } from './xml';
 
 /** A placeholder shape on a layout or master. */
 export interface Placeholder {
@@ -99,6 +99,12 @@ export class Deck {
   readonly stage: StageMap;
   /** Slide parts in presentation order. */
   readonly slideParts: string[] = [];
+  /**
+   * The sections the presentation is divided into, in order: the name of
+   * each, and which slide (counted from 0 in `slideParts`) it begins on.
+   * Sections without slides are left out.
+   */
+  readonly sections: Array<{ name: string; first: number }> = [];
   /** p:defaultTextStyle of the presentation. */
   readonly defaultTextStyle?: XmlNode;
   private readonly layouts = new Map<string, LayoutPart>();
@@ -126,11 +132,26 @@ export class Deck {
     this.defaultTextStyle = child(root, 'p:defaultTextStyle');
 
     const rels = this.pkg.rels(presentationPart);
+    /** Where each slide is in the order, by the id sections know it by. */
+    const places = new Map<string, number>();
     for (const entry of child(root, 'p:sldIdLst')?.children ?? []) {
       if (entry.name !== 'p:sldId') continue;
       const rel = rels.get(attr(entry, 'r:id') ?? '');
-      if (rel && !rel.external) this.slideParts.push(rel.target);
+      if (!rel || rel.external) continue;
+      const id = attr(entry, 'id');
+      if (id !== undefined) places.set(id, this.slideParts.length);
+      this.slideParts.push(rel.target);
     }
+
+    const sectionList = findDescendant(child(root, 'p:extLst'), new Set(['p14:sectionLst']));
+    for (const section of children(sectionList, 'p14:section')) {
+      const slides = children(child(section, 'p14:sldIdLst'), 'p14:sldId')
+        .map((slide) => places.get(attr(slide, 'id') ?? ''))
+        .filter((place): place is number => place !== undefined);
+      if (slides.length === 0) continue;
+      this.sections.push({ name: attr(section, 'name') ?? '', first: Math.min(...slides) });
+    }
+    this.sections.sort((a, b) => a.first - b.first);
   }
 
   layout(part: string | undefined): LayoutPart | undefined {

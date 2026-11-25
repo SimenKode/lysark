@@ -31,7 +31,13 @@ import { webPictureUrl } from '../shared/api';
 import { FETCHED_PICTURE_LIMIT_BYTES, PDF_LIMIT_BYTES } from '../shared/limits';
 import { extensionForMime, type CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
-import { addCameraFilm } from './camera';
+import {
+  appendCameraFilm,
+  beginCameraFilm,
+  dropCameraFilm,
+  dropCameraFilms,
+  endCameraFilm,
+} from './camera';
 import { buildPreview, exportHtml } from './exportHtml';
 import { adoptClosingAnimation } from './closing';
 import { ffmpegPath, mediaSeconds } from './ffmpeg';
@@ -711,15 +717,19 @@ function registerHandlers(): void {
     return addRecording(dir, wav, String(name ?? ''));
   });
 
-  handle(
-    'lysark:add-camera-film',
-    (dir: string, film: Uint8Array, name: string): Promise<AddedMedia> => {
-      if (!currentDir || resolve(dir) !== resolve(currentDir)) {
-        throw new Error('Opptaket hører ikke til prosjektet som er åpent.');
-      }
-      return addCameraFilm(dir, film, String(name ?? ''));
-    },
+  handle('lysark:camera-film-begin', (dir: string): string => {
+    if (!currentDir || resolve(dir) !== resolve(currentDir)) {
+      throw new Error('Opptaket hører ikke til prosjektet som er åpent.');
+    }
+    return beginCameraFilm(dir);
+  });
+  handle('lysark:camera-film-append', (film: string, piece: Uint8Array): void =>
+    appendCameraFilm(String(film), piece),
   );
+  handle('lysark:camera-film-end', (film: string, name: string): Promise<AddedMedia | null> =>
+    endCameraFilm(String(film), String(name ?? '')),
+  );
+  handle('lysark:camera-film-drop', (film: string): void => dropCameraFilm(String(film)));
 
   handle('lysark:import-sound', async (dir: string): Promise<AddedSound | null> => {
     if (!mainWindow) return null;
@@ -979,7 +989,11 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   // An export that is running when the program closes is stopped, FFmpeg included.
-  app.on('before-quit', () => videoJob?.cancel());
+  app.on('before-quit', () => {
+    videoJob?.cancel();
+    // A film that was being taken when the program was closed is not kept.
+    dropCameraFilms();
+  });
 
   app.on('window-all-closed', () => {
     videoJob?.cancel();

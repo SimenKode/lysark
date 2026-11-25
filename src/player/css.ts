@@ -59,6 +59,8 @@ body { background: ${C.indigo}; }
   font-weight: 400; font-size: 1.7rem; line-height: 1.15; color: ${C.lilla};
 }
 .lp-toc ol { list-style: none; margin: 0; padding: 0; }
+.lp-toc-chapter h3 { margin: 14px 8px 4px; font-size: 0.95rem; color: ${C.indigo}; }
+.lp-toc-chapter:first-child h3 { margin-top: 0; }
 .lp-toc-item {
   display: flex; gap: 10px; width: 100%; padding: 8px 12px; margin: 2px 0;
   border: 0; border-radius: 18px; background: transparent; color: ${C.sort};

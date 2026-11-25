@@ -5,6 +5,7 @@
 // dragged into place, drawn shorter at its ends, divided, faded and given
 // its own loudness. Drawing the edge of a slide makes it stand longer or
 // shorter, by the pause at its end. The voice itself is cut under "Lyd".
+import { slideNumbers } from '../../shared/layout/slides';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   assetSeconds,
@@ -129,6 +130,7 @@ export function Timeline() {
   const update = useStore((s) => s.update);
   const setScene = useStore((s) => s.setScene);
   const plan: Schedule = schedule(project.scenes);
+  const numbers = slideNumbers(project.scenes);
   const placed = placeTracks(project, plan);
   const total = Math.max(plan.total, 0.1);
   // A clip can run on past the end of the lecture. The timeline reaches as far as
@@ -401,7 +403,10 @@ export function Timeline() {
             <div className="tl-row tl-slides" role="group" aria-label="Lysarkene i forelesningen">
               {plan.entries.map((entry) => {
                 const scene = project.scenes[entry.index]!;
-                const name = scene.title.trim() || `Lysark ${entry.index + 1}`;
+                // A slide that is shown once more has the number of the slide it shows.
+                const number = numbers[entry.index]!;
+                const label = scene.repeat ? `Lysark ${number} igjen` : `Lysark ${number}`;
+                const name = scene.title.trim() || `Lysark ${number}`;
                 return (
                   <div
                     key={scene.id}
@@ -412,19 +417,19 @@ export function Timeline() {
                       type="button"
                       className="tl-slide"
                       aria-current={scene.id === sceneId ? 'true' : undefined}
-                      aria-label={`Lysark ${entry.index + 1}: ${name}, ${formatTime(entry.duration)}`}
-                      title={`${entry.index + 1}. ${name} – ${formatTime(entry.duration)}`}
+                      aria-label={`${label}: ${name}, ${formatTime(entry.duration)}`}
+                      title={`${label}: ${name} – ${formatTime(entry.duration)}`}
                       onClick={() => {
                         setScene(scene.id);
                         seek(entry.start);
                       }}
                     >
-                      <b>{entry.index + 1}</b> <span>{name}</span>
+                      <b>{scene.repeat ? '↩' : number}</b> <span>{name}</span>
                     </button>
                     <button
                       type="button"
                       className="tl-edge"
-                      aria-label={`Lengden på lysark ${entry.index + 1}: ${preciseTime(entry.duration)}. Piltaster endrer den.`}
+                      aria-label={`Lengden på lysark ${number}: ${preciseTime(entry.duration)}. Piltaster endrer den.`}
                       title="Dra for å la lysarket stå lenger eller kortere (pausen på slutten endres)"
                       onPointerDown={(e) => startDrag(e, 'slide', scene.id, entry.duration)}
                       onPointerMove={onDragMove}

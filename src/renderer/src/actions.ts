@@ -3,6 +3,7 @@
 import {
   mediaUrl,
   type AddedMedia,
+  type AddedSound,
   type CommonsPicture,
   type CommonsResult,
   type LysarkApi,
@@ -10,19 +11,14 @@ import {
   type PictureBytes,
   type VideoRequest,
 } from '../../shared/api';
-import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
+import { appendSound } from '../../shared/audio/edit';
+import { applyRecording, type Applied, type Take } from '../../shared/audio/session';
 import { addTrackClip } from '../../shared/audio/tracks';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
 import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
-import type {
-  CameraPlace,
-  Element,
-  Project,
-  SceneEvent,
-  TrackName,
-} from '../../shared/format/schema';
-import { cameraPlaceAt, formatTime, trackDuration, videoOptions } from '../../shared/render/clock';
+import type { CameraPlace, Element, Project, TrackName } from '../../shared/format/schema';
+import { formatTime, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
@@ -199,79 +195,94 @@ export function hasFfmpeg(): Promise<boolean> {
     .catch(() => false);
 }
 
-/**
- * Stores what was recorded for one slide and makes it the slide's sound.
- * `stepAts` are the times the owner pressed on to each step, in seconds
- * from the start of this recording. With `keepBefore`, the slide's sound
- * before that time is kept and the recording follows it.
- */
-/** The film of the lecturer's face that was taken while a slide was read in. */
-export interface CameraTake {
-  /** The film as it was recorded; null when nothing was taken. */
-  film: Promise<Uint8Array | null>;
-  /** How many seconds into the sound the film's first picture belongs. */
-  offset: number;
-  /** Where the camera circle stood when the reading began, and its size. */
-  place: CameraPlace;
+/** One stretch of a recording, as the recording window hands it over. */
+export interface RecordedTake extends Omit<Take, 'asset' | 'seconds' | 'camera'> {
+  /** The sound of the stretch, being stored; undefined when it could not be. */
+  sound: Promise<AddedSound | undefined>;
+  /**
+   * When the camera was on: where the circle stood when the stretch began,
+   * and which moment of the recording's film that was, in seconds.
+   */
+  camera?: { place: CameraPlace; filmAt: number };
 }
 
-export async function saveRecording(
-  sceneId: string,
+/** Stores the sound of one stretch of a recording in the project folder. */
+export async function storeTakeSound(
   samples: Float32Array,
-  stepAts: ReadonlyArray<number | undefined>,
-  keepBefore?: number,
-  events: ReadonlyArray<SceneEvent> = [],
-  camera?: CameraTake,
-): Promise<boolean> {
-  const { dir, project } = useStore.getState();
-  const index = project?.scenes.findIndex((s) => s.id === sceneId) ?? -1;
-  if (!dir || !project || index < 0) return false;
+  name: string,
+): Promise<AddedSound | undefined> {
+  const { dir } = useStore.getState();
+  if (!dir) return undefined;
   const wav = encodeWav(samples);
-  const added = await guard(() => api().addRecording(dir, wav, `Opptak lysark ${index + 1}`));
-  if (!added) return false;
-  rememberSamples(added.asset.file, wavSamples(wav));
-  // The sound is kept even when the film cannot be: the owner is told, and
-  // the slide is then simply without the camera circle.
-  const taken = camera ? await camera.film : null;
-  const film =
-    camera && taken
-      ? await guard(() => api().addCameraFilm(dir, taken, `Kamera lysark ${index + 1}`))
-      : undefined;
+  const added = await guard(() => api().addRecording(dir, wav, name));
+  if (added) rememberSamples(added.asset.file, wavSamples(wav));
+  return added;
+}
+
+/**
+ * The film of a recording, on its way to the project folder: `write` takes
+ * it a piece at a time while the lecturer reads, `end` stores it (undefined
+ * when there was nothing to store, or it could not be stored), and `drop`
+ * throws it away.
+ */
+export interface FilmStore {
+  write(piece: Uint8Array): Promise<void>;
+  end(): Promise<AddedMedia | undefined>;
+  drop(): void;
+}
+
+export function openFilmStore(): FilmStore | null {
+  const { dir } = useStore.getState();
+  if (!dir) return null;
+  const film = api().beginCameraFilm(dir);
+  return {
+    async write(piece) {
+      await api().appendCameraFilm(await film, piece);
+    },
+    async end() {
+      // The sound is kept even when the film cannot be: the owner is told,
+      // and the slides are then simply without the camera circle.
+      return (await guard(async () => api().endCameraFilm(await film, 'Kamera'))) ?? undefined;
+    },
+    drop() {
+      void film.then((id) => api().dropCameraFilm(id)).catch(() => undefined);
+    },
+  };
+}
+
+/**
+ * Puts a recording into the lecture: the sound of every stretch, the film
+ * when the camera was on, and slides shown once more where the lecturer
+ * went back. All of it is one change, so one undo takes the recording away.
+ */
+export async function saveRecording(
+  takes: ReadonlyArray<RecordedTake>,
+  film: AddedMedia | undefined,
+): Promise<Applied | null> {
+  const sounds = await Promise.all(takes.map((take) => take.sound));
+  let applied: Applied | null = null;
   useStore.getState().update((draft) => {
-    const scene = draft.scenes.find((s) => s.id === sceneId);
-    if (!scene) return;
-    draft.assets[added.id] = added.asset;
-    const id = (): string => newId('c');
-    const goesOn = keepBefore !== undefined && keepBefore > 0 && trackDuration(scene.audio) > 0;
-    let all = events;
-    if (camera && film) {
-      draft.assets[film.id] = film.asset;
-      draft.assets[added.id] = {
-        ...added.asset,
-        camera: { asset: film.id, offset: camera.offset },
-      };
-      if (goesOn && scene.camera) {
-        // The part that is kept has its own place for the circle. Where the
-        // new part starts with the circle somewhere else, that is a move.
-        const was = cameraPlaceAt(scene, keepBefore);
-        if (Math.hypot(was.x - camera.place.x, was.y - camera.place.y) > 1) {
-          all = [
-            { id: newId('h'), at: 0, kind: 'camera-move', x: camera.place.x, y: camera.place.y },
-            ...events,
-          ];
-        }
-        scene.camera = { x: scene.camera.x, y: scene.camera.y, size: camera.place.size };
-      } else {
-        scene.camera = { ...camera.place };
-      }
-    }
-    if (goesOn) {
-      continueSound(scene, keepBefore, added.id, added.seconds, stepAts, id, all);
-    } else {
-      replaceSound(scene, added.id, added.seconds, stepAts, id, all);
-    }
+    if (film) draft.assets[film.id] = film.asset;
+    const ready: Take[] = [];
+    takes.forEach((take, index) => {
+      const sound = sounds[index];
+      if (!sound) return;
+      const filmed = film && take.camera;
+      draft.assets[sound.id] = filmed
+        ? // The film has the recording's own time: this stretch began `filmAt` into it.
+          { ...sound.asset, camera: { asset: film.id, offset: -take.camera!.filmAt } }
+        : sound.asset;
+      const { sound: _sound, camera: _camera, ...rest } = take;
+      ready.push({
+        ...rest,
+        asset: sound.id,
+        seconds: sound.seconds,
+        ...(filmed ? { camera: take.camera!.place } : {}),
+      });
+    });
+    applied = applyRecording(draft, ready, newId);
   });
-  return true;
+  return applied;
 }
 
 /** Lets the owner pick a sound file and puts it at the end of the current slide's sound. */
@@ -500,7 +511,7 @@ export async function insertImage(): Promise<void> {
   const size = await guard(() => imageSize(mediaUrl(file)));
   const state = useStore.getState();
   const scene = currentScene(state);
-  if (!size || !state.project || !scene) return;
+  if (!size || !state.project || !scene || scene.repeat) return;
   const fitted = fitInside(size, 900, 620);
   addElement({
     id: newId('e'),
@@ -533,7 +544,7 @@ export async function insertVideoFile(): Promise<void> {
   const size = await videoSize(mediaUrl(file));
   const state = useStore.getState();
   const scene = currentScene(state);
-  if (!state.project || !scene) return;
+  if (!state.project || !scene || scene.repeat) return;
   const fitted = fitInside({ w: size.w * 100, h: size.h * 100 }, 960, 540);
   addElement({
     id: newId('e'),
@@ -547,7 +558,7 @@ export async function insertVideoFile(): Promise<void> {
 export function insertVideoLink(): void {
   const state = useStore.getState();
   const scene = currentScene(state);
-  if (!state.project || !scene) return;
+  if (!state.project || !scene || scene.repeat) return;
   addElement({
     id: newId('e'),
     type: 'video',

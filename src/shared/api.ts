@@ -198,10 +198,15 @@ export interface LysarkApi {
   /** Stores a recording (a WAV file: mono, 48 kHz, 16 bit) in the project folder. */
   addRecording(dir: string, wav: Uint8Array, name: string): Promise<AddedSound>;
   /**
-   * Stores the film the camera took while a slide was read in (as the
-   * interface recorded it) in the project folder, in the project's own form.
+   * The film the camera takes while the lecture is read in. It is handed
+   * over a piece at a time (as the interface makes it), and stored in the
+   * project folder, in the project's own form, when it ends. `endCameraFilm`
+   * resolves with null when the film has no pictures.
    */
-  addCameraFilm(dir: string, film: Uint8Array, name: string): Promise<AddedMedia>;
+  beginCameraFilm(dir: string): Promise<string>;
+  appendCameraFilm(film: string, piece: Uint8Array): Promise<void>;
+  endCameraFilm(film: string, name: string): Promise<AddedMedia | null>;
+  dropCameraFilm(film: string): Promise<void>;
   /** Lets the owner pick a sound file; it is converted and stored in the project folder. */
   importSound(dir: string): Promise<AddedSound | null>;
   /** Packs the saved project folder into one zip file. */

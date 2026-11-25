@@ -131,6 +131,15 @@ export function importPptx(bytes: Uint8Array, options: { fileName: string }): Im
     }
   });
 
+  // The sections of the presentation become chapters. A presentation that is
+  // one section from end to end is not divided into anything.
+  if (deck.sections.length > 1) {
+    for (const section of deck.sections) {
+      const scene = project.scenes[section.first];
+      if (scene && scene.chapter === undefined) scene.chapter = section.name.trim();
+    }
+  }
+
   // Without a title of its own, the lecture is named by its title slide.
   if (documentTitle(deck.pkg.xml(corePart)) === undefined) {
     const front = project.scenes.find(

@@ -349,6 +349,8 @@ export interface DeckSpec {
   size?: { width: number; height: number };
   /** Order of the slides in p:sldIdLst, as indices into `slides`. Default: as listed. */
   order?: number[];
+  /** Sections: a name, and the slides in it as places in the order (from 0). */
+  sections?: Array<{ name: string; slides: number[] }>;
   layouts?: LayoutSpec[];
   masterShapes?: string;
   /** Content of p:txStyles. */
@@ -498,11 +500,25 @@ export function buildPptx(spec: DeckSpec): Uint8Array {
   const slideIds = order
     .map((slideIndex, i) => `<p:sldId id="${256 + i}" r:id="rIdSlide${slideIndex + 1}"/>`)
     .join('');
+  // PowerPoint keeps sections in an extension list, by the ids of the slides.
+  const sections = spec.sections
+    ? '<p:extLst><p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"><p14:sectionLst>' +
+      spec.sections
+        .map(
+          (section, i) =>
+            `<p14:section name="${escapeXml(section.name)}" id="{00000000-0000-0000-0000-00000000000${i}}"><p14:sldIdLst>` +
+            section.slides.map((place) => `<p14:sldId id="${256 + place}"/>`).join('') +
+            '</p14:sldIdLst></p14:section>',
+        )
+        .join('') +
+      '</p14:sectionLst></p:ext></p:extLst>'
+    : '';
   add(
     'ppt/presentation.xml',
     `${XML_HEADER}<p:presentation ${ROOT_NS}><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>` +
       `<p:sldIdLst>${slideIds}</p:sldIdLst><p:sldSz cx="${size.width}" cy="${size.height}"/><p:notesSz cx="6858000" cy="9144000"/>` +
-      `${spec.defaultTextStyle !== undefined ? `<p:defaultTextStyle>${spec.defaultTextStyle}</p:defaultTextStyle>` : ''}</p:presentation>`,
+      `${spec.defaultTextStyle !== undefined ? `<p:defaultTextStyle>${spec.defaultTextStyle}</p:defaultTextStyle>` : ''}` +
+      `${sections}</p:presentation>`,
   );
   add('ppt/_rels/presentation.xml.rels', relationships(presentationRels));
 

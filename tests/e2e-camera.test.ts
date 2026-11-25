@@ -199,29 +199,38 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the camera circle, end to end', 
     expect(Math.abs(b!.camera!.y - MOVED.y)).toBeLessThan(6);
     expect((b!.events ?? []).length).toBe(0);
 
-    // Each recording has its film: a file in the project folder, square and even.
-    for (const scene of [a!, b!]) {
+    // The whole recording has one film, which runs on where the slide changes:
+    // a file in the project folder, square and even. Each slide's sound says
+    // which moment of the film it began at.
+    const lengths = [a!, b!].map((scene) => {
       const clip = scene.audio!.clips[0]!;
-      const recording = project.assets[clip.kind === 'sound' ? clip.asset : '']!;
-      expect(recording.camera).toBeDefined();
-      // A window that is not shown is slow to get the first picture out; the
-      // film says how far the sound had come by then, so the two still agree.
-      expect(recording.camera!.offset).toBeGreaterThanOrEqual(0);
-      expect(recording.camera!.offset).toBeLessThan(2);
-      const film = project.assets[recording.camera!.asset]!;
-      expect(film.kind).toBe('camera');
-      expect(film.file).toMatch(/^media\/kamera-[0-9a-f]{16}\.mp4$/);
-      const said = spawnSync(ffmpeg, ['-hide_banner', '-i', join(projectDir, film.file)], {
-        encoding: 'utf8',
-      }).stderr;
-      expect(said).toMatch(/Video: h264/);
-      expect(said).toMatch(/480x480/);
-      expect(said).toMatch(/\b30 fps/);
-      expect(said).not.toMatch(/Audio:/);
-      const seconds = /Duration: 00:00:(\d+\.\d+)/.exec(said);
-      const length = clip.kind === 'sound' ? clip.to - clip.from : 0;
-      expect(Math.abs(Number(seconds?.[1]) + recording.camera!.offset - length)).toBeLessThan(0.5);
-    }
+      return clip.kind === 'sound' ? clip.to - clip.from : 0;
+    });
+    const recordings = [a!, b!].map((scene) => {
+      const clip = scene.audio!.clips[0]!;
+      return project.assets[clip.kind === 'sound' ? clip.asset : '']!;
+    });
+    expect(recordings[0]!.camera).toBeDefined();
+    expect(recordings[1]!.camera).toBeDefined();
+    expect(recordings[1]!.camera!.asset).toBe(recordings[0]!.camera!.asset);
+    // The first slide began with the film, the second where the first ended.
+    expect(Math.abs(recordings[0]!.camera!.offset)).toBeLessThan(0.05);
+    expect(Math.abs(recordings[1]!.camera!.offset + lengths[0]!)).toBeLessThan(0.3);
+    const film = project.assets[recordings[0]!.camera!.asset]!;
+    expect(film.kind).toBe('camera');
+    expect(film.file).toMatch(/^media\/kamera-[0-9a-f]{16}\.mp4$/);
+    expect(Object.values(project.assets).filter((asset) => asset.kind === 'camera')).toHaveLength(
+      1,
+    );
+    const said = spawnSync(ffmpeg, ['-hide_banner', '-i', join(projectDir, film.file)], {
+      encoding: 'utf8',
+    }).stderr;
+    expect(said).toMatch(/Video: h264/);
+    expect(said).toMatch(/480x480/);
+    expect(said).toMatch(/\b30 fps/);
+    expect(said).not.toMatch(/Audio:/);
+    const seconds = /Duration: 00:00:(\d+\.\d+)/.exec(said);
+    expect(Math.abs(Number(seconds?.[1]) - (lengths[0]! + lengths[1]!))).toBeLessThan(0.5);
   }, 150_000);
 
   it('shows the circle in the editor, where it can be moved, made smaller and hidden', async () => {

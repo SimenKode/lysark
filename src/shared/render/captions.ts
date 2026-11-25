@@ -1,5 +1,6 @@
-// Captions for the video, made from the manuscript of each slide, and the
-// slides that list picture credits at the end of a video. Pure functions.
+// Captions for the video, made from the manuscript of each slide, the
+// chapters of the video file, and the slides that list picture credits at
+// the end of a video. Pure functions.
 //
 // Lysark does not listen to the recording. The captions of a slide are its
 // manuscript, cut into short pieces and spread over the time the slide has
@@ -7,6 +8,7 @@
 // keeps an even pace; it is an estimate, not a transcript.
 import { STAGE } from '../format/constants';
 import type { Project, Scene } from '../format/schema';
+import { chapters } from '../layout/slides';
 import { clipDuration, sceneDuration, type Schedule } from './clock';
 import { collectCredits, creditText } from './more';
 import type { SceneStrings } from './scene';
@@ -204,4 +206,66 @@ export function creditScenes(
     });
   }
   return scenes;
+}
+
+// ---------- Chapters in the video file ----------
+
+/** A chapter of a video: its name, and when it starts and ends, in seconds. */
+export interface ChapterMark {
+  title: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * The chapters of a video that holds the scenes `from` to `to` of the
+ * lecture (and, after them, `extra` seconds of picture credits, when there
+ * are any). A video that starts in the middle of a chapter starts with that
+ * chapter. The slides before the first chapter go by the lecture's title.
+ * Empty when the lecture has no chapters, or the video lies inside one.
+ */
+export function chapterMarks(
+  scenes: ReadonlyArray<Pick<Scene, 'chapter' | 'repeat'>>,
+  plan: Schedule,
+  from: number,
+  to: number,
+  names: { lecture: string; credits?: string },
+): ChapterMark[] {
+  const marks: ChapterMark[] = [];
+  for (const chapter of chapters(scenes)) {
+    const first = Math.max(chapter.first, from);
+    const last = Math.min(chapter.last, to);
+    if (first > last) continue;
+    const head = plan.entries[first - from];
+    const tail = plan.entries[last - from];
+    if (!head || !tail) continue;
+    marks.push({
+      title: chapter.name.trim() || names.lecture,
+      start: head.start,
+      end: tail.start + tail.duration,
+    });
+  }
+  if (marks.length < 2) return [];
+  const end = marks[marks.length - 1]!.end;
+  if (names.credits && plan.total > end + 1e-6) {
+    marks.push({ title: names.credits, start: end, end: plan.total });
+  }
+  return marks;
+}
+
+/** The chapters as FFmpeg reads them ("ffmetadata"), with times in milliseconds. */
+export function toFfmetadata(marks: readonly ChapterMark[]): string {
+  // These five mean something in the format and are written with a backslash before them.
+  const safe = (text: string): string => text.replace(/[=;#\\\n]/g, (c) => `\\${c}`);
+  const lines = [';FFMETADATA1'];
+  for (const mark of marks) {
+    lines.push(
+      '[CHAPTER]',
+      'TIMEBASE=1/1000',
+      `START=${Math.round(mark.start * 1000)}`,
+      `END=${Math.round(mark.end * 1000)}`,
+      `title=${safe(mark.title)}`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }

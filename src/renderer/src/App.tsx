@@ -13,6 +13,7 @@ import { Inspector } from './Inspector';
 import { MediaDialog } from './MediaDialog';
 import { MoreBuilder } from './MoreBuilder';
 import { Recorder } from './Recorder';
+import { RepeatInspector, RepeatStage } from './RepeatStage';
 import { VideoDialog } from './VideoDialog';
 import { SceneList } from './SceneList';
 import { Stage } from './Stage';
@@ -438,6 +439,8 @@ export function App() {
   const recorder = useStore((s) => s.recorder);
   const videoDialog = useStore((s) => s.videoDialog);
   const pdfProgress = useStore((s) => s.pdfProgress);
+  /** The current slide is another slide shown once more: nothing on it is edited here. */
+  const repeat = useStore((s) => currentScene(s)?.repeat !== undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -485,7 +488,8 @@ export function App() {
         case 'record':
           if (state.project && currentScene(state) && !state.builder && !state.videoProgress) {
             state.setBottomTab('sound');
-            state.openRecorder({});
+            // A slide that is shown once more is read in from the slide itself.
+            if (!currentScene(state)!.repeat) state.openRecorder({});
           }
           return;
         case 'settings':
@@ -544,11 +548,17 @@ export function App() {
           <div className="workspace">
             <SceneList />
             <div className="centre">
-              <InsertBar />
-              <Stage />
+              {repeat ? (
+                <RepeatStage />
+              ) : (
+                <>
+                  <InsertBar />
+                  <Stage />
+                </>
+              )}
               <BottomPanel />
             </div>
-            <Inspector onLogo={() => setSettingsOpen(true)} />
+            {repeat ? <RepeatInspector /> : <Inspector onLogo={() => setSettingsOpen(true)} />}
           </div>
         </div>
       ) : (

@@ -1,6 +1,7 @@
 // The sound panel under the slide: the whole lecture as a strip of slides,
 // and the current slide's sound as a track that can be played and edited.
 // Every edit is one undo step; recordings themselves are never changed.
+import { slideNumbers } from '../../shared/layout/slides';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   MIN_PAUSE,
@@ -51,12 +52,16 @@ function parseSeconds(text: string): number | undefined {
 function LectureStrip({ project, sceneId }: { project: Project; sceneId: string }) {
   const setScene = useStore((s) => s.setScene);
   const plan = schedule(project.scenes);
+  const numbers = slideNumbers(project.scenes);
   return (
     <div className="lecture-strip" role="group" aria-label="Hele forelesningen">
       <div className="lecture-blocks">
         {plan.entries.map((entry) => {
           const scene = project.scenes[entry.index]!;
-          const name = scene.title.trim() || `Lysark ${entry.index + 1}`;
+          // A slide that is shown once more has the number of the slide it shows.
+          const number = numbers[entry.index]!;
+          const label = scene.repeat ? `Lysark ${number} igjen` : `Lysark ${number}`;
+          const name = scene.title.trim() || `Lysark ${number}`;
           return (
             <button
               key={scene.id}
@@ -64,11 +69,11 @@ function LectureStrip({ project, sceneId }: { project: Project; sceneId: string 
               className={`lecture-block${hasSound(scene) ? ' has-sound' : ''}`}
               style={{ flexGrow: Math.max(0.2, entry.duration) }}
               aria-current={scene.id === sceneId ? 'true' : undefined}
-              aria-label={`Lysark ${entry.index + 1}: ${name}, ${formatTime(entry.duration)}${hasSound(scene) ? '' : ', uten lyd'}`}
-              title={`${entry.index + 1}. ${name} – ${formatTime(entry.duration)}${hasSound(scene) ? '' : ' (uten lyd)'}`}
+              aria-label={`${label}: ${name}, ${formatTime(entry.duration)}${hasSound(scene) ? '' : ', uten lyd'}`}
+              title={`${label}: ${name} – ${formatTime(entry.duration)}${hasSound(scene) ? '' : ' (uten lyd)'}`}
               onClick={() => setScene(scene.id)}
             >
-              {entry.index + 1}
+              {scene.repeat ? '↩' : number}
             </button>
           );
         })}
@@ -442,6 +447,7 @@ export function AudioPanel() {
   const duration = sceneDuration(scene);
   const track = trackDuration(scene.audio);
   const sound = hasSound(scene);
+  const repeat = scene.repeat !== undefined;
   const spans = clipSpans(scene);
   const pause = spans.find((s) => s.clip.id === selectedPause && s.clip.kind === 'pause');
   const gain = scene.audio?.gain ?? 0;
@@ -518,16 +524,21 @@ export function AudioPanel() {
         <button
           type="button"
           className="with-icon"
+          disabled={repeat}
           onClick={() => {
             stop();
             useStore.getState().openRecorder({});
           }}
-          title="Les inn stemmen, fra dette lysarket og utover (Ctrl+R)"
+          title={
+            repeat
+              ? 'Her vises et lysark igjen. Gå til lysarket selv for å lese inn fra det.'
+              : 'Les inn stemmen, fra dette lysarket og utover (Ctrl+R)'
+          }
         >
           <Icon name="mic" />
           Les inn
         </button>
-        {sound && playhead > 0.05 && playhead < track - 0.05 && (
+        {sound && !repeat && playhead > 0.05 && playhead < track - 0.05 && (
           <button
             type="button"
             className="with-icon"

@@ -1,13 +1,18 @@
-// The recording window. The owner reads the manuscript aloud and presses
-// the right arrow to go on: to the next step, which gets its time from the
-// press, or to the next slide, where the recording is divided. A whole
-// lecture can be read in one go and still be edited slide by slide.
+// The recording window. The owner reads the manuscript aloud and moves as
+// in any presentation: the right arrow goes on to the next step or the next
+// slide, the left arrow goes back, and the slide menu jumps to any slide.
+// The recording never stops for that. It is a film of what the lecturer
+// did: every stretch on a slide is kept with its sound, and a slide the
+// lecturer comes back to is shown once more in video and "Spill av"
+// (src/shared/audio/session.ts). A whole lecture can be read in one go and
+// still be edited slide by slide.
 // While reading, the owner can open a "Lær mer" box and play a video on the
 // slide; the program remembers when, like it does for the steps, and the
 // video and "Spill av" do the same at the same times.
 // When the owner switches the camera on, their face is filmed too and shown
 // in a circle on the slide, which can be dragged about while reading; where
-// it stood, and when it was moved, is remembered like the rest.
+// it stood, and when it was moved, is remembered like the rest. The film is
+// one, from the start of the recording to its end.
 // Everything is stored in the project folder and sent nowhere.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { newId } from '../../shared/format/factory';
@@ -24,21 +29,29 @@ import {
   cameraPlaceAt,
   defaultCameraPlace,
   formatTime,
+  hasSound,
   moreAt,
   stepsShownAt,
   videoKey,
   videosAt,
 } from '../../shared/render/clock';
+import { chapters, ownIndex, slideCount, slideNumbers } from '../../shared/layout/slides';
 import { createPopover, type SlidePopover } from '../../shared/render/popover';
 import { moreOf } from '../../shared/render/scene';
-import { saveRecording } from './actions';
+import {
+  openFilmStore,
+  saveRecording,
+  storeTakeSound,
+  type FilmStore,
+  type RecordedTake,
+} from './actions';
 import {
   CameraError,
   listCameras,
   openCamera,
   startFilm,
   type CameraChoice,
-  type FilmTake,
+  type Film,
 } from './audio/camera';
 import {
   MicrophoneError,
@@ -50,14 +63,42 @@ import {
   type MicrophoneChoice,
 } from './audio/capture';
 import { CameraCircle } from './CameraCircle';
+import { Icon } from './Icon';
 import { SceneView, renderContext } from './SceneView';
 import { useStore } from './store';
 
 type Phase = 'setup' | 'countdown' | 'recording' | 'paused' | 'saving';
 
 const SETTINGS_KEY = 'lysark.mikrofon';
-/** A slide where less than this was recorded keeps the sound it had. */
-const MIN_RECORDING_SECONDS = 0.3;
+/**
+ * A slide that was shown for less than this was only passed on the way to
+ * another one. It is not a showing of its own: what was said meanwhile is
+ * heard on the slide before it.
+ */
+const MIN_STRETCH_SECONDS = 0.5;
+
+/** One stretch of the recording: a slide, from the lecturer came to it until they left it. */
+interface Stretch {
+  index: number;
+  sceneId: string;
+  /** The slide's steps, in order. */
+  steps: string[];
+  /** How many of them were on the slide when the stretch began, and how many are now. */
+  shownAtStart: number;
+  stepsShown: number;
+  /** When each further step was shown, in seconds from the start of the stretch. */
+  stepAts: Record<string, number>;
+  /** What was opened, played and moved meanwhile. */
+  events: SceneEvent[];
+  blocks: Float32Array[];
+  samples: number;
+  /** Where the camera circle stood when the stretch began. */
+  circleStart: { x: number; y: number };
+  /** Which moment of the recording's film the stretch began at, when it is filmed. */
+  filmAt?: number;
+  /** The stretch goes on from this point in the sound the slide already has. */
+  keepBefore?: number;
+}
 
 interface MicSettings {
   deviceId: string;
@@ -166,13 +207,110 @@ function FittedScene({
   );
 }
 
+/** The slide menu: every slide of the lecture, by chapter, to jump to. */
+function SlideMenu({
+  current,
+  read,
+  onPick,
+  onClose,
+}: {
+  current: number;
+  /** The slides that have been read in so far in this recording. */
+  read: ReadonlySet<string>;
+  onPick: (index: number) => void;
+  onClose: () => void;
+}) {
+  const scenes = useStore((s) => s.project)!.scenes;
+  const numbers = slideNumbers(scenes);
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const here = list.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    here?.scrollIntoView({ block: 'center' });
+    here?.focus();
+  }, []);
+  const parts = chapters(scenes);
+  const groups = parts.length > 0 ? parts : [{ name: '', first: 0, last: scenes.length - 1 }];
+  const onKeyDown = (event: React.KeyboardEvent): void => {
+    // The keys belong to the menu while it is open, not to the recording.
+    event.stopPropagation();
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
+    if (!step && event.key !== 'Home' && event.key !== 'End') return;
+    event.preventDefault();
+    const items = Array.from(list.current?.querySelectorAll<HTMLElement>('button') ?? []);
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    const to =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? items.length - 1
+          : Math.max(0, Math.min(items.length - 1, at + step!));
+    items[to]?.focus();
+  };
+  return (
+    <aside className="recorder-menu" aria-label="Velg lysark" onKeyDown={onKeyDown}>
+      <div className="recorder-menu-head">
+        <h3>Velg lysark</h3>
+        <button type="button" onClick={onClose}>
+          Lukk
+        </button>
+      </div>
+      <div className="recorder-menu-list" ref={list}>
+        {groups.map((group) => (
+          <section key={group.first}>
+            {group.name.trim() !== '' && <h4>{group.name}</h4>}
+            <ol>
+              {scenes.slice(group.first, group.last + 1).map((scene, offset) => {
+                const index = group.first + offset;
+                // A slide that is shown once more is not a slide to go to: go to the slide itself.
+                if (scene.repeat) return null;
+                return (
+                  <li key={scene.id}>
+                    <button
+                      type="button"
+                      className="recorder-menu-item"
+                      aria-current={index === current ? 'true' : undefined}
+                      onClick={() => onPick(index)}
+                    >
+                      <span className="recorder-menu-number">{numbers[index]}</span>
+                      <span className="recorder-menu-title">
+                        {scene.title.trim() || 'Uten navn'}
+                      </span>
+                      {(read.has(scene.id) || hasSound(scene)) && (
+                        <span className="recorder-menu-read">
+                          {read.has(scene.id) ? 'lest inn nå' : 'har lyd'}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const project = useStore((s) => s.project)!;
   const startId = useRef(useStore.getState().sceneId).current;
-  const startIndex = Math.max(
-    0,
-    project.scenes.findIndex((s) => s.id === startId),
-  );
+  // The recording begins on a slide itself, also when one of its repeats was open.
+  const startIndex = useRef(
+    (() => {
+      const at = Math.max(
+        0,
+        project.scenes.findIndex((s) => s.id === startId),
+      );
+      const own = ownIndex(project.scenes, at);
+      return own < 0 ? at : own;
+    })(),
+  ).current;
   const [index, setIndex] = useState(startIndex);
   const scene = project.scenes[index] ?? project.scenes[0]!;
   const firstSteps =
@@ -185,7 +323,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const [micError, setMicError] = useState<string | null>(null);
   const [micLabel, setMicLabel] = useState('');
   const [seconds, setSeconds] = useState(0);
-  const [recorded, setRecorded] = useState(0);
+  /** The slides that have been read in so far in this recording. */
+  const [read, setRead] = useState<ReadonlySet<string>>(() => new Set());
+  const [menuOpen, setMenuOpen] = useState(false);
   /** Said when something was pressed that cannot be played while reading in. */
   const [pressNote, setPressNote] = useState<string | null>(null);
   const [cameras, setCameras] = useState<CameraChoice[]>([]);
@@ -209,24 +349,29 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const live = useRef({
     capture: null as Capture | null,
     keeping: false,
-    blocks: [] as Float32Array[],
-    samples: 0,
-    stepAts: [] as Array<number | undefined>,
-    /** What was opened and played on the slide that is being read. */
-    events: [] as SceneEvent[],
     peak: 0,
-    saves: [] as Array<Promise<boolean>>,
+    /** Where the recording stands, or (before it has begun) where it will begin. */
     index: startIndex,
     stepsShown: firstSteps,
-    /** The camera, when it is on, and the film of the slide that is being read. */
+    /** The stretch that is being read; null until the recording has begun. */
+    now: null as Stretch | null,
+    /**
+     * The stretch before it. It is not stored yet: a slide that is only
+     * passed is heard on it, and the lecturer may come straight back to it.
+     */
+    waiting: null as Stretch | null,
+    /** The stretches before that, with their sound on its way to the project folder. */
+    takes: [] as RecordedTake[],
+    /** How many samples the stored stretches hold. */
+    stored: 0,
+    /** How many steps each slide showed when it was last left in this recording. */
+    left: new Map<number, number>(),
+    /** The camera, when it is on, and the film of the recording. */
     stream: null as MediaStream | null,
-    take: null as FilmTake | null,
-    /** How far the sound had come when the film's first picture was taken. */
-    filmOffset: 0,
+    film: null as Film | null,
+    filmStore: null as FilmStore | null,
     circle,
-    /** Where the circle stood when the reading of this slide began. */
-    circleStart: circle,
-    /** When the circle was taken hold of, in seconds of the slide's sound. */
+    /** When the circle was taken hold of, in seconds of the stretch's sound. */
     dragAt: 0,
     cameraSize: settings.cameraSize,
   });
@@ -264,6 +409,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     };
   }, [settings.camera, settings.cameraId]);
 
+  // A film that is still being taken when the window goes away is not kept.
+  useEffect(() => {
+    const state = live.current;
+    return () => {
+      void state.film?.end().catch(() => undefined);
+      state.filmStore?.drop();
+      state.film = null;
+      state.filmStore = null;
+    };
+  }, []);
+
   // The circle is kept wholly on the slide, also when its size is changed.
   useEffect(() => {
     setCircle((at) => {
@@ -272,24 +428,6 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       return next.x === at.x && next.y === at.y ? at : next;
     });
   }, [settings.cameraSize]);
-
-  /** Starts filming the slide that is about to be read, when the camera is on. */
-  const startTake = (): void => {
-    const state = live.current;
-    state.filmOffset = 0;
-    state.circleStart = state.circle;
-    state.take = state.stream
-      ? startFilm(state.stream, () => {
-          state.filmOffset = state.samples / SAMPLE_RATE;
-        })
-      : null;
-  };
-
-  /** Drops the film of the slide that was being read. */
-  const dropTake = (): void => {
-    void live.current.take?.stop();
-    live.current.take = null;
-  };
 
   // The microphone is open while the window is, so the level can be seen before recording.
   useEffect(() => {
@@ -308,9 +446,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
         capture.onSamples = (block) => {
           const state = live.current;
           state.peak = Math.max(state.peak, blockPeak(block));
-          if (state.keeping) {
-            state.blocks.push(block);
-            state.samples += block.length;
+          if (state.keeping && state.now) {
+            state.now.blocks.push(block);
+            state.now.samples += block.length;
           }
         };
         setMicrophones(await listMicrophones());
@@ -337,7 +475,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     }
   }, [settings]);
 
-  // The level meter and the clock.
+  // The level meter and the clock, which shows how long the whole recording is.
   useEffect(() => {
     let frame = 0;
     const tick = (): void => {
@@ -349,7 +487,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
         meter.current.dataset.hot = db > -3 ? 'true' : 'false';
       }
       state.peak *= 0.86;
-      setSeconds(state.samples / SAMPLE_RATE);
+      const samples = state.stored + (state.waiting?.samples ?? 0) + (state.now?.samples ?? 0);
+      setSeconds(samples / SAMPLE_RATE);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -360,12 +499,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     root.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
   }, []);
 
-  // 3, 2, 1, and then the samples are kept.
+  // 3, 2, 1, and then the samples and the pictures are kept.
   useEffect(() => {
     if (phase !== 'countdown') return;
     if (count <= 0) {
-      if (!live.current.take) startTake();
-      live.current.keeping = true;
+      const state = live.current;
+      if (state.now) {
+        state.now.circleStart = state.circle;
+        if (state.film) state.now.filmAt = state.film.time();
+      }
+      state.film?.keep(true);
+      state.keeping = true;
       setPhase('recording');
       return;
     }
@@ -374,7 +518,14 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   }, [phase, count]);
 
   // ---------- "Lær mer" and video on the slide ----------
-  const now = (): number => live.current.samples / SAMPLE_RATE;
+  /** How far the stretch that is being read has come, in seconds. */
+  const now = (): number => (live.current.now?.samples ?? 0) / SAMPLE_RATE;
+
+  /** Remembers something that was done on the slide, when the reading is running. */
+  const remember = (event: SceneEvent): void => {
+    const state = live.current;
+    if (state.keeping && state.now) state.now.events.push(event);
+  };
 
   /** Every video on the slide and in the open box that is a file in the project. */
   const videos = (): HTMLVideoElement[] =>
@@ -396,7 +547,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     video.closest('.ls-video')?.classList.toggle('is-playing', playing);
   };
 
-  const stopVideo = (video: HTMLVideoElement, remember: boolean): void => {
+  const stopVideo = (video: HTMLVideoElement, keep: boolean): void => {
     if (video.paused || video.ended) {
       showPlaying(video, false);
       return;
@@ -404,9 +555,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     video.pause();
     showPlaying(video, false);
     const which = whichVideo(video);
-    if (remember && which && live.current.keeping) {
-      live.current.events.push({ id: newId('h'), at: now(), kind: 'video-pause', ...which });
-    }
+    if (keep && which) remember({ id: newId('h'), at: now(), kind: 'video-pause', ...which });
   };
 
   const toggleVideo = (video: HTMLVideoElement): void => {
@@ -420,7 +569,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     if (video.ended || video.currentTime >= video.duration - 0.05) video.currentTime = 0;
     video.muted = !settings.videoSound;
     video.onended = () => showPlaying(video, false);
-    live.current.events.push({
+    remember({
       id: newId('h'),
       at: now(),
       kind: 'video-play',
@@ -432,19 +581,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     void video.play().catch(() => showPlaying(video, false));
   };
 
-  /** Puts the open box away. With `remember`, the video and "Spill av" do the same at this time. */
-  const closeBox = (remember: boolean): void => {
+  /** Puts the open box away. With `keep`, the video and "Spill av" do the same at this time. */
+  const closeBox = (keep: boolean): void => {
     const open = box.current;
     if (!open) return;
     for (const video of Array.from(open.layer.querySelectorAll('video'))) video.pause();
     open.layer.remove();
     box.current = null;
-    if (remember && live.current.keeping) {
-      live.current.events.push({ id: newId('h'), at: now(), kind: 'more-close' });
-    }
+    if (keep) remember({ id: newId('h'), at: now(), kind: 'more-close' });
   };
 
-  const openBox = (elementId: string, remember: boolean): void => {
+  const openBox = (elementId: string, keep: boolean): void => {
     const state = useStore.getState();
     const current = state.project?.scenes[live.current.index];
     const element = current?.elements.find((e) => e.id === elementId);
@@ -465,14 +612,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     }
     made.panel.classList.add('ls-pop-in');
     box.current = made;
-    if (remember && live.current.keeping) {
-      live.current.events.push({
-        id: newId('h'),
-        at: now(),
-        kind: 'more-open',
-        element: elementId,
-      });
-    }
+    if (keep) remember({ id: newId('h'), at: now(), kind: 'more-open', element: elementId });
   };
 
   /** Stops what plays and puts the box away, when the slide is left or read again. */
@@ -545,74 +685,215 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     }
   };
 
+  // ---------- The stretches of the recording ----------
+  const sceneAt = (at: number): Scene | undefined => useStore.getState().project?.scenes[at];
+
+  /** A new stretch on a slide, with `shown` of its steps already there. */
+  const newStretch = (at: number, shown: number): Stretch | null => {
+    const state = live.current;
+    const target = sceneAt(at);
+    if (!target) return null;
+    return {
+      index: at,
+      sceneId: target.id,
+      steps: target.timeline.map((step) => step.id),
+      shownAtStart: shown,
+      stepsShown: shown,
+      stepAts: {},
+      events: [],
+      blocks: [],
+      samples: 0,
+      circleStart: state.circle,
+      ...(state.film ? { filmAt: state.film.time() } : {}),
+    };
+  };
+
+  /** Hands a finished stretch on: its sound is stored in the background. */
+  const store = (stretch: Stretch): void => {
+    const state = live.current;
+    const numbers = slideNumbers(useStore.getState().project?.scenes ?? []);
+    state.takes.push({
+      scene: stretch.sceneId,
+      sound: storeTakeSound(
+        joinBlocks(stretch.blocks),
+        `Opptak lysark ${numbers[stretch.index] ?? stretch.index + 1}`,
+      ),
+      shown: stretch.steps.slice(0, stretch.shownAtStart),
+      stepAts: stretch.stepAts,
+      events: stretch.events,
+      ...(stretch.filmAt === undefined
+        ? {}
+        : {
+            camera: {
+              place: { ...stretch.circleStart, size: state.cameraSize },
+              filmAt: stretch.filmAt,
+            },
+          }),
+      ...(stretch.keepBefore === undefined ? {} : { keepBefore: stretch.keepBefore }),
+    });
+    state.stored += stretch.samples;
+    stretch.blocks = [];
+  };
+
+  /** The stretch that is being read ends here: the lecturer goes elsewhere, or is done. */
+  const leave = (): void => {
+    const state = live.current;
+    const stretch = state.now;
+    if (!stretch) return;
+    state.now = null;
+    state.left.set(stretch.index, stretch.stepsShown);
+    if (stretch.samples < SAMPLE_RATE * MIN_STRETCH_SECONDS) {
+      // The slide was only passed. What was said meanwhile is heard on the
+      // slide before it, and a move of the camera circle is kept; when there
+      // is no slide before it, the little that was said is not kept.
+      const before = state.waiting;
+      if (before && stretch.samples > 0) {
+        const offset = before.samples / SAMPLE_RATE;
+        before.blocks.push(...stretch.blocks);
+        before.samples += stretch.samples;
+        for (const event of stretch.events) {
+          if (event.kind === 'camera-move') before.events.push({ ...event, at: event.at + offset });
+        }
+      }
+      return;
+    }
+    if (state.waiting) store(state.waiting);
+    state.waiting = stretch;
+    setRead((was) => (was.has(stretch.sceneId) ? was : new Set(was).add(stretch.sceneId)));
+  };
+
+  /**
+   * Goes to a slide, with `shown` of its steps there. The recording goes on
+   * without a stop: the stretch on the slide that is left ends at this
+   * moment, and the stretch on the new slide begins. Before the recording
+   * has begun, this is where it will begin.
+   */
+  const goTo = (to: number, shown: number): void => {
+    const state = live.current;
+    const target = sceneAt(to);
+    if (!target) return;
+    const steps = Math.max(0, Math.min(target.timeline.length, shown));
+    if (state.now) {
+      leave();
+      clearSlide();
+      const before = state.waiting;
+      if (before && before.index === to && before.stepsShown === steps) {
+        // Straight back to the slide that was just left, as it was left: the same stretch goes on.
+        state.waiting = null;
+        state.now = before;
+      } else {
+        state.now = newStretch(to, steps);
+      }
+    }
+    state.index = to;
+    state.stepsShown = steps;
+    setIndex(to);
+    setStepsShown(steps);
+  };
+
+  /** The slide after or before a slide, the ones that are shown once more not counted. */
+  const neighbour = (from: number, direction: 1 | -1): number => {
+    const scenes = useStore.getState().project?.scenes ?? [];
+    for (let at = from + direction; at >= 0 && at < scenes.length; at += direction) {
+      if (!scenes[at]!.repeat) return at;
+    }
+    return -1;
+  };
+
+  /** True while the recording is running or paused: the slide can be changed. */
+  const moving = (): boolean => live.current.now !== null && phaseRef.current !== 'countdown';
+
+  /** The right arrow: the next step, or the next slide. */
+  const advance = (): void => {
+    const state = live.current;
+    const stretch = state.now;
+    if (!stretch || !moving()) return;
+    if (stretch.stepsShown < stretch.steps.length) {
+      stretch.stepAts[stretch.steps[stretch.stepsShown]!] = stretch.samples / SAMPLE_RATE;
+      stretch.stepsShown += 1;
+      state.stepsShown = stretch.stepsShown;
+      setStepsShown(stretch.stepsShown);
+      return;
+    }
+    const to = neighbour(stretch.index, 1);
+    // A slide that has been shown in this recording comes back as it was left.
+    if (to >= 0) goTo(to, state.left.get(to) ?? 0);
+  };
+
+  /**
+   * The left arrow: back one step, or back to the slide before, which is
+   * shown as it was left (with all its steps, when it has not been shown in
+   * this recording).
+   */
+  const back = (): void => {
+    const state = live.current;
+    const stretch = state.now;
+    if (!stretch || !moving()) return;
+    if (stretch.stepsShown > 0) {
+      goTo(stretch.index, stretch.stepsShown - 1);
+      return;
+    }
+    const to = neighbour(stretch.index, -1);
+    if (to >= 0) goTo(to, state.left.get(to) ?? sceneAt(to)?.timeline.length ?? 0);
+  };
+
+  /** A slide picked in the slide menu. */
+  const pick = (to: number): void => {
+    const state = live.current;
+    setMenuOpen(false);
+    root.current?.focus();
+    if (to === state.index) return;
+    if (!state.now) {
+      goTo(to, to === startIndex ? firstSteps : 0);
+      return;
+    }
+    if (phaseRef.current === 'countdown') return;
+    goTo(to, state.left.get(to) ?? 0);
+  };
+
   const begin = (): void => {
-    if (live.current.index === startIndex) restoreKept();
+    const state = live.current;
+    if (!state.now) {
+      if (state.stream && !state.film) {
+        const filmStore = openFilmStore();
+        const film = filmStore && startFilm(state.stream, (piece) => filmStore.write(piece));
+        if (film) {
+          state.film = film;
+          state.filmStore = filmStore;
+        } else {
+          filmStore?.drop();
+          setCameraError('Kameraet kan ikke filmes på denne maskinen.');
+        }
+      }
+      state.now = newStretch(state.index, state.stepsShown);
+      if (state.now && state.index === startIndex && keepBefore !== undefined) {
+        state.now.keepBefore = keepBefore;
+        restoreKept();
+      }
+    }
+    setMenuOpen(false);
     setCount(3);
     setPhase('countdown');
     root.current?.focus();
   };
 
-  /** Stores what was read for the slide that is being left, in the background. */
-  const finishSlide = useCallback((): void => {
-    const state = live.current;
-    const samples = joinBlocks(state.blocks);
-    const sceneId = useStore.getState().project?.scenes[state.index]?.id;
-    const keep = state.index === startIndex ? keepBefore : undefined;
-    const stepAts = state.stepAts.slice();
-    const events = state.events.slice();
-    const take = state.take;
-    const camera = take
-      ? {
-          film: take.stop(),
-          offset: state.filmOffset,
-          place: { ...state.circleStart, size: state.cameraSize },
-        }
-      : undefined;
-    state.take = null;
-    state.blocks = [];
-    state.samples = 0;
-    state.stepAts = [];
-    state.events = [];
-    clearSlide();
-    if (!sceneId || samples.length < SAMPLE_RATE * MIN_RECORDING_SECONDS) return;
-    state.saves.push(saveRecording(sceneId, samples, stepAts, keep, events, camera));
-    setRecorded((n) => n + 1);
-  }, [keepBefore, startIndex, clearSlide]);
-
-  /** The right arrow: the next step, or the next slide. */
-  const advance = useCallback((): void => {
-    const state = live.current;
-    if (!state.keeping) return;
-    const scenes = useStore.getState().project?.scenes ?? [];
-    const current = scenes[state.index];
-    if (!current) return;
-    if (state.stepsShown < current.timeline.length) {
-      state.stepAts[state.stepsShown] = state.samples / SAMPLE_RATE;
-      state.stepsShown += 1;
-      setStepsShown(state.stepsShown);
-    } else if (state.index < scenes.length - 1) {
-      finishSlide();
-      state.index += 1;
-      state.stepsShown = 0;
-      setIndex(state.index);
-      setStepsShown(0);
-      // The next slide is read from this moment, and filmed from it.
-      startTake();
-    }
-  }, [finishSlide]);
-
+  /** Reads the slide anew from where the lecturer came to it. The recording before it stands. */
   const retake = (): void => {
     const state = live.current;
+    const stretch = state.now;
+    if (!stretch) return;
     state.keeping = false;
-    state.blocks = [];
-    state.samples = 0;
-    state.stepAts = [];
-    state.events = [];
-    dropTake();
+    state.film?.keep(false);
+    stretch.blocks = [];
+    stretch.samples = 0;
+    stretch.stepAts = {};
+    stretch.events = [];
+    stretch.stepsShown = stretch.shownAtStart;
+    state.stepsShown = stretch.shownAtStart;
     clearSlide();
     for (const video of videos()) video.currentTime = 0;
-    state.stepsShown = state.index === startIndex ? firstSteps : 0;
-    setStepsShown(state.stepsShown);
+    setStepsShown(stretch.shownAtStart);
+    if (stretch.keepBefore !== undefined) restoreKept();
     begin();
   };
 
@@ -622,11 +903,11 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       // A film that plays stops with the reading; it is started again by hand.
       for (const video of videos()) stopVideo(video, true);
       state.keeping = false;
-      state.take?.pause();
+      state.film?.keep(false);
       setPhase('paused');
     } else if (phase === 'paused') {
+      state.film?.keep(true);
       state.keeping = true;
-      state.take?.resume();
       setPhase('recording');
     }
   };
@@ -634,32 +915,47 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const close = async (keepCurrent: boolean): Promise<void> => {
     const state = live.current;
     state.keeping = false;
-    if (keepCurrent) finishSlide();
-    else {
-      dropTake();
-      clearSlide();
+    state.film?.keep(false);
+    setMenuOpen(false);
+    if (keepCurrent) leave();
+    state.now = null;
+    clearSlide();
+    if (state.waiting) {
+      store(state.waiting);
+      state.waiting = null;
     }
     setPhase('saving');
-    const results = await Promise.all(state.saves);
-    const saved = results.filter(Boolean).length;
-    const store = useStore.getState();
-    const last = store.project?.scenes[state.index];
-    if (last && saved > 0) {
-      store.setScene(last.id);
-      store.setBottomTab('sound');
-      store.setNotice({
-        kind: 'info',
-        text:
-          saved === 1
-            ? 'Opptaket er lagt på lysarket. Husk å lagre prosjektet.'
-            : `Opptaket er lagt på ${saved} lysark. Husk å lagre prosjektet.`,
-      });
+    const takes = state.takes;
+    let film: Awaited<ReturnType<FilmStore['end']>>;
+    if (state.film && state.filmStore) {
+      const pictures = await state.film.end().catch(() => 0);
+      if (takes.length > 0 && pictures > 0) film = await state.filmStore.end();
+      else state.filmStore.drop();
+      state.film = null;
+      state.filmStore = null;
     }
-    store.openRecorder(null);
+    const applied = takes.length > 0 ? await saveRecording(takes, film) : null;
+    const app = useStore.getState();
+    if (applied && applied.last && applied.slides + applied.repeats > 0) {
+      app.setScene(applied.last);
+      app.setBottomTab('sound');
+      const where =
+        applied.slides === 1
+          ? 'Opptaket er lagt på lysarket.'
+          : `Opptaket er lagt på ${applied.slides} lysark.`;
+      const again =
+        applied.repeats === 0
+          ? ''
+          : applied.repeats === 1
+            ? ' Ett sted gikk du tilbake til et lysark; det står i lista som «igjen».'
+            : ` ${applied.repeats} steder gikk du tilbake til et lysark; de står i lista som «igjen».`;
+      app.setNotice({ kind: 'info', text: `${where}${again} Husk å lagre prosjektet.` });
+    }
+    app.openRecorder(null);
   };
 
   const cancel = (): void => {
-    const unsaved = live.current.samples > SAMPLE_RATE * MIN_RECORDING_SECONDS;
+    const unsaved = (live.current.now?.samples ?? 0) > SAMPLE_RATE * MIN_STRETCH_SECONDS;
     if (
       unsaved &&
       !window.confirm('Avbryte? Det som er lest inn på dette lysarket, blir ikke tatt vare på.')
@@ -684,41 +980,60 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     state.circle = at;
     setCircle(at);
     if (part !== 'end') return;
-    if (state.take) {
-      state.events.push({
-        id: newId('h'),
-        at: state.keeping ? state.dragAt : now(),
-        kind: 'camera-move',
-        x: at.x,
-        y: at.y,
-      });
+    const stretch = state.now;
+    if (stretch && state.film) {
+      if (!state.keeping && stretch.samples === 0) {
+        // Nothing of the stretch is read yet: this is where the circle stands from its start.
+        stretch.circleStart = at;
+      } else {
+        stretch.events.push({
+          id: newId('h'),
+          at: state.keeping ? state.dragAt : now(),
+          kind: 'camera-move',
+          x: at.x,
+          y: at.y,
+        });
+      }
     }
     // The arrow keys must go on meaning "next step".
     root.current?.focus();
   };
 
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
   const onKeyDown = (event: React.KeyboardEvent): void => {
     const tag = (event.target as HTMLElement).tagName;
     if (event.key === 'Escape') {
       event.preventDefault();
-      cancel();
+      if (menuOpen) setMenuOpen(false);
+      else cancel();
       return;
     }
     if (tag === 'SELECT' || tag === 'INPUT') return;
     const forward = ['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(event.key);
-    if (forward && (phase === 'recording' || phase === 'paused')) {
+    const backward = ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key);
+    if ((forward || backward) && (phase === 'recording' || phase === 'paused')) {
       // A button that has the focus must not also be pressed by the space bar.
       event.preventDefault();
-      if (phase === 'recording') advance();
+      if (forward) advance();
+      else back();
+    } else if (event.key.toLowerCase() === 'l' && phase !== 'countdown' && phase !== 'saving') {
+      event.preventDefault();
+      setMenuOpen((open) => !open);
     }
   };
 
-  const total = project.scenes.length;
-  const lastSlide = index >= total - 1;
+  const numbers = slideNumbers(project.scenes);
+  const total = slideCount(project.scenes);
   const stepsLeft = scene.timeline.length - stepsShown;
   const lines = scene.script.split(/\n+/).filter((line) => line.trim() !== '');
-  const next = project.scenes[index + 1];
+  const nextIndex = neighbour(index, 1);
+  const next = nextIndex >= 0 ? project.scenes[nextIndex] : undefined;
+  const lastSlide = nextIndex < 0;
+  const firstSlide = neighbour(index, -1) < 0;
   const active = phase === 'recording' || phase === 'paused' || phase === 'countdown';
+  const canMove = phase === 'recording' || phase === 'paused';
 
   return (
     <div
@@ -732,8 +1047,19 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     >
       <header className="recorder-head">
         <h2 id="recorder-title">Les inn stemme</h2>
+        <button
+          type="button"
+          className="recorder-pick with-icon"
+          aria-expanded={menuOpen}
+          disabled={phase === 'countdown' || phase === 'saving'}
+          title="Velg lysark (L)"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <Icon name="list" />
+          Velg lysark
+        </button>
         <span className="recorder-where">
-          Lysark {index + 1} av {total}
+          Lysark {numbers[index]} av {total}
           {scene.title.trim() ? `: ${scene.title.trim()}` : ''}
         </span>
         <span className="gap" />
@@ -771,6 +1097,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
               )}
             </div>
           )}
+          {menuOpen && (
+            <SlideMenu
+              current={index}
+              read={read}
+              onPick={pick}
+              onClose={() => {
+                setMenuOpen(false);
+                root.current?.focus();
+              }}
+            />
+          )}
         </div>
         <aside className="recorder-side">
           <h3>Manus</h3>
@@ -787,6 +1124,10 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
               : lastSlide
                 ? 'Dette er siste lysark. Trykk «Ferdig» når du er ferdig.'
                 : `Pil høyre: neste lysark${next?.title.trim() ? ` («${next.title.trim()}»)` : ''}.`}
+          </p>
+          <p className="recorder-move">
+            Pil venstre går tilbake, og «Velg lysark» (L) hopper til et hvilket som helst lysark.
+            Opptaket går hele tiden: videoen viser lysarkene i den rekkefølgen du viser dem.
           </p>
           {canInteract(scene, project) && (
             <p className="recorder-press">
@@ -930,7 +1271,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
                 disabled={!!micError}
                 onClick={begin}
               >
-                {keepBefore !== undefined ? 'Start opptak herfra' : 'Start opptak'}
+                {keepBefore !== undefined && index === startIndex
+                  ? 'Start opptak herfra'
+                  : 'Start opptak'}
               </button>
             </>
           )}
@@ -947,7 +1290,14 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
               </button>
               <button
                 type="button"
-                disabled={phase !== 'recording' || (stepsLeft <= 0 && lastSlide)}
+                disabled={!canMove || (stepsShown <= 0 && firstSlide)}
+                onClick={back}
+              >
+                {stepsShown > 0 ? '← Forrige steg' : '← Forrige lysark'}
+              </button>
+              <button
+                type="button"
+                disabled={!canMove || (stepsLeft <= 0 && lastSlide)}
                 onClick={advance}
               >
                 {stepsLeft > 0 ? 'Neste steg →' : 'Neste lysark →'}
@@ -979,12 +1329,14 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
           {pressNote
             ? pressNote
             : phase === 'setup'
-              ? keepBefore !== undefined
+              ? keepBefore !== undefined && index === startIndex
                 ? `Lyden fram til ${formatTime(keepBefore)} beholdes. Det du leser inn nå, kommer etter. Si noe og se at nivået rører seg før du starter.`
                 : 'Si noe og se at nivået rører seg før du starter. Lysark som har lyd fra før, får den nye i stedet; det kan angres.'
-              : recorded > 0
-                ? `${recorded} lysark er lest inn så langt.`
-                : 'Opptaket deles automatisk når du går til neste lysark.'}
+              : read.size > 0
+                ? read.size === 1
+                  ? '1 lysark er lest inn så langt.'
+                  : `${read.size} lysark er lest inn så langt.`
+                : 'Gå fram og tilbake som du vil. Opptaket stanser ikke når du bytter lysark.'}
         </p>
       )}
     </div>

@@ -19,7 +19,7 @@ export const FORMAT_NAME = 'lysark';
  * 8: a picture can carry marks (numbered points with a legend, or labels
  *    with a line to what they point at).
  */
-export const FORMAT_VERSION = 8;
+export const FORMAT_VERSION = 9;
 
 export { STAGE } from './constants';
 
@@ -604,6 +604,23 @@ export const Scene = z.object({
   events: z.array(SceneEvent).optional(),
   /** Where the camera circle stands on this slide, when a recording of it has a film. */
   camera: CameraPlace.optional(),
+  /**
+   * A chapter begins on this slide, and this is its name. Chapters come from
+   * the sections of a PowerPoint file and the bookmarks of a PDF, and the
+   * owner can make, rename and remove them.
+   */
+  chapter: z.string().optional(),
+  /**
+   * The slide is another slide shown once more: while recording, the
+   * lecturer went back to it. It stands in the list where that happened, so
+   * video and "Spill av" show what the lecturer did, in that order. What it
+   * shows (elements, steps, surface) is always that of the slide it repeats
+   * (`followRepeats` in src/shared/layout/repeats.ts); its sound, the times
+   * of its steps, its events, its manuscript and the place of the camera
+   * circle are its own. `shown` holds the steps that were already on the
+   * slide when the lecturer came back to it.
+   */
+  repeat: z.object({ of: z.string().min(1), shown: z.array(z.string()) }).optional(),
   imported: z
     .object({ slide: z.number().int().min(1), warnings: z.array(ImportWarning) })
     .optional(),

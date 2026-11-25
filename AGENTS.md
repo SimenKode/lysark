@@ -180,8 +180,38 @@ instead of choosing silently.
   films are stored in the project folder and sent nowhere. Tests record
   from Chromium's built-in fake microphone and fake camera, never from
   real ones.
-- The camera circle is the lecturer's face in a circle on the slide. The
-  film belongs to the recording it was taken with (`Asset.camera`), so
+- A recording is a film of what the lecturer did (the owner, 25.11.2026:
+  "som et vanlig videoopptak"). In the recording window the lecturer goes
+  on, back and to any slide, and the recording never stops for it. Each
+  stretch on a slide is a take with its own sound file
+  (`src/shared/audio/session.ts`). A take on a slide further on than the
+  recording has been is that slide's own sound. A take on a slide the
+  recording has already passed becomes a **repeat**: a scene of its own in
+  the list (`Scene.repeat`), standing where it happened, so video and
+  "Spill av" show the slides in the order they were shown. A repeat has
+  its own sound, step times, events, manuscript and camera place, but
+  what it shows is always that of the slide it repeats: `followRepeats`
+  (`src/shared/layout/repeats.ts`) is called from the store's `update`
+  after every change, and the editor never lets a repeat's content be
+  changed (`RepeatStage.tsx`). A repeat is not a slide to the lecturer or
+  the student: slides are counted with `slideNumbers`
+  (`src/shared/layout/slides.ts`), never by their index, and in the HTML
+  player nobody turns to a repeat by hand; only "Spill av" shows it. The
+  clock knows which steps were already on a slide when the lecturer came
+  back to it, and never shows a step the lecturer did not come to
+  (`stepClock` in `src/shared/render/clock.ts`).
+- Chapters are a name on the slide a chapter begins on (`Scene.chapter`).
+  They come from the sections of a PowerPoint file and the bookmarks of a
+  PDF, and are shown in the list of slides, the slide menu of the
+  recording window, the contents list of the HTML player and as chapters
+  of the video file (`chapters` in `src/shared/layout/slides.ts`).
+- The camera circle is the lecturer's face in a circle on the slide. One
+  film runs through a whole recording, however the lecturer moves between
+  the slides: it is made in a thread of its own
+  (`src/renderer/src/audio/filmWorker.ts`), every picture is given the
+  recording's own time, and it is handed to the main process a piece at a
+  time. The sound of each take points into that film (`Asset.camera`,
+  whose `offset` is negative for every take but the first), so
   whatever cuts the sound cuts the film with it; where the circle stands
   belongs to the slide (`Scene.camera`), and a move made while reading is
   an event with a time (`camera-move`). The clock says which picture of

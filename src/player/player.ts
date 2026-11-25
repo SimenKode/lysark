@@ -26,8 +26,10 @@ import {
   sceneStateAt,
   stepTimes,
   stepsShownAt,
+  stepsShownBefore,
   videosAt,
 } from '../shared/render/clock';
+import { chapters, ownIndex, slideCount, slideNumbers, slideSpan } from '../shared/layout/slides';
 import { applySceneState, sceneState, stepDuration } from '../shared/render/timeline';
 import { PLAYER_STRINGS } from './strings';
 
@@ -130,8 +132,20 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     );
   }
 
+  // A slide that is shown once more in the recording is played by "Spill
+  // av", where the lecturer went back to it. It is not a slide of its own:
+  // it has the number of the slide it shows, and nobody goes to it by hand.
+  const numbers = slideNumbers(scenes);
+  const slides = slideCount(scenes);
   const sceneTitle = (scene: Scene, index: number): string =>
-    scene.title.trim() || t.untitled(index + 1);
+    scene.title.trim() || t.untitled(numbers[index] ?? index + 1);
+  /** The slide after or before a scene, repeats not counted; -1 when there is none. */
+  const neighbour = (from: number, direction: 1 | -1): number => {
+    for (let at = from + direction; at >= 0 && at < scenes.length; at += direction) {
+      if (!scenes[at]!.repeat) return at;
+    }
+    return -1;
+  };
 
   // ---------- State ----------
   let index = 0;
@@ -201,20 +215,42 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     h('h2', {}, t.contents),
     tocList,
   );
-  const tocButtons = scenes.map((scene, i) => {
-    const button = h(
-      'button',
-      { class: 'lp-toc-item', type: 'button' },
-      h('span', { class: 'lp-toc-num' }, `${i + 1}`),
-      h('span', {}, sceneTitle(scene, i)),
-    );
-    button.addEventListener('click', () => {
-      show(i, 0, false);
-      if (window.matchMedia('(max-width: 900px)').matches) toggleToc(false);
-    });
-    tocList.appendChild(h('li', {}, button));
-    return button;
-  });
+  /** One button for every slide; none for a slide that is shown once more. */
+  const tocButtons: Array<HTMLButtonElement | null> = scenes.map(() => null);
+  const tocParts = chapters(scenes);
+  for (const part of tocParts.length > 0
+    ? tocParts
+    : [{ name: '', first: 0, last: scenes.length - 1 }]) {
+    // Each chapter is a heading with its slides under it.
+    let list = tocList;
+    if (tocParts.length > 0) {
+      list = h('ol');
+      tocList.appendChild(
+        h(
+          'li',
+          { class: 'lp-toc-chapter' },
+          part.name.trim() ? h('h3', {}, part.name) : h('span', {}),
+          list,
+        ),
+      );
+    }
+    for (let i = part.first; i <= part.last; i++) {
+      const scene = scenes[i]!;
+      if (scene.repeat) continue;
+      const button = h(
+        'button',
+        { class: 'lp-toc-item', type: 'button' },
+        h('span', { class: 'lp-toc-num' }, `${numbers[i]}`),
+        h('span', {}, sceneTitle(scene, i)),
+      );
+      button.addEventListener('click', () => {
+        show(i, 0, false);
+        if (window.matchMedia('(max-width: 900px)').matches) toggleToc(false);
+      });
+      list.appendChild(h('li', {}, button));
+      tocButtons[i] = button;
+    }
+  }
 
   const panelTitle = h('h2', { id: 'lp-panel-title', tabindex: '-1' });
   const panelClose = h('button', { class: 'lp-btn lp-btn-light', type: 'button' }, t.close);
@@ -490,20 +526,21 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       viewport.style.background = PALETTE[sceneSurface(theme, scene)];
       viewport.setAttribute(
         'aria-label',
-        t.announce(index + 1, scenes.length, sceneTitle(scene, index)),
+        t.announce(numbers[index]!, slides, sceneTitle(scene, index)),
       );
-      live.textContent = t.announce(index + 1, scenes.length, sceneTitle(scene, index));
+      live.textContent = t.announce(numbers[index]!, slides, sceneTitle(scene, index));
       scriptText.replaceChildren();
       const lines = scene.script.split(/\n+/).filter((line) => line.trim() !== '');
       if (lines.length === 0) scriptText.append(h('p', {}, t.noScript));
       for (const line of lines) scriptText.append(h('p', {}, line));
       scriptPanel.scrollTop = 0;
+      const own = ownIndex(scenes, index);
       tocButtons.forEach((button, i) => {
-        if (i === index) button.setAttribute('aria-current', 'true');
-        else button.removeAttribute('aria-current');
+        if (i === own) button?.setAttribute('aria-current', 'true');
+        else button?.removeAttribute('aria-current');
       });
       try {
-        history.replaceState(null, '', `#${index + 1}`);
+        history.replaceState(null, '', `#${numbers[index]}`);
       } catch {
         // Some embedding frames do not allow changing the address.
       }
@@ -523,14 +560,14 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
 
   function updateChrome(): void {
     const scene = scenes[index]!;
-    counter.textContent = t.sceneOf(index + 1, scenes.length);
+    counter.textContent = t.sceneOf(numbers[index]!, slides);
     const within = scene.timeline.length ? stepsShown / (scene.timeline.length + 1) : 0;
     const percent = Math.round(((index + within) / Math.max(1, scenes.length - 1)) * 100);
     const clamped = Math.max(0, Math.min(100, scenes.length === 1 ? 100 : percent));
     progressFill.style.width = `${clamped}%`;
     progress.setAttribute('aria-valuenow', String(clamped));
-    prevButton.disabled = index === 0 && stepsShown === 0;
-    nextButton.disabled = index === scenes.length - 1 && stepsShown === scene.timeline.length;
+    prevButton.disabled = neighbour(index, -1) < 0 && stepsShown === 0;
+    nextButton.disabled = neighbour(index, 1) < 0 && stepsShown === scene.timeline.length;
   }
 
   // ---------- "Spill av": the voice, with steps and slides at the recorded times ----------
@@ -628,7 +665,9 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const done = hasSound(scene) ? voice.ended || now >= duration : now >= duration;
     if (done) {
       if (index < scenes.length - 1) {
-        show(index + 1, 0, false); // goes on with the voice of the next slide
+        // Goes on with the voice of the next slide. Where the lecturer came
+        // back to a slide, the steps that were there are there from the start.
+        show(index + 1, stepsShownBefore(scenes[index + 1]!), false);
       } else {
         stepsShown = scene.timeline.length;
         applySceneState(el, sceneState(scene, stepsShown, Infinity));
@@ -675,13 +714,16 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   function next(): void {
     const scene = scenes[index];
     if (!scene) return;
+    // By hand one goes from slide to slide; only "Spill av" shows a slide once more.
+    const to = neighbour(index, 1);
     if (stepsShown < scene.timeline.length) show(index, stepsShown + 1, true);
-    else if (index < scenes.length - 1) show(index + 1, 0, false);
+    else if (to >= 0) show(to, 0, false);
   }
 
   function previous(): void {
+    const to = neighbour(index, -1);
     if (stepsShown > 0) show(index, stepsShown - 1, false);
-    else if (index > 0) show(index - 1, scenes[index - 1]!.timeline.length, false);
+    else if (to >= 0) show(to, scenes[to]!.timeline.length, false);
   }
 
   // ---------- Panels ----------
@@ -893,7 +935,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         break;
       case 'End':
         if (inReader) return;
-        show(scenes.length - 1, 0, false);
+        show(Math.max(0, neighbour(scenes.length, -1)), 0, false);
         break;
       case 'i':
       case 'I':
@@ -952,6 +994,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   window.addEventListener('beforeprint', () => {
     if (printArea.childElementCount > 0) return;
     scenes.forEach((scene) => {
+      // On paper each slide is there once.
+      if (scene.repeat) return;
       const el = renderScene(ctx, scene);
       const page = h('div', { class: 'lp-print-page' }, h('div', { class: 'lp-print-scene' }, el));
       if (project.export.showScript && scene.script.trim()) {
@@ -975,6 +1019,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   }
   fit();
 
+  // The address carries the number of a slide, as the viewer counts them.
   const fromHash = parseInt(location.hash.replace('#', ''), 10);
-  show(Number.isFinite(fromHash) ? fromHash - 1 : 0, 0, false);
+  const span = Number.isFinite(fromHash) ? slideSpan(scenes, fromHash, fromHash) : undefined;
+  show(span ? span[0] : 0, 0, false);
 }
