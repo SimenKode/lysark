@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 6), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 10), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -50,6 +50,44 @@ brukt for håndskrift).
 En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
+
+## Format 10: grupper, og linjer som er festet
+
+En fri figur er ikke en egen type element. Den er vanlige elementer
+(former, tekst, bilder) som er gruppert, og linjer og piler som er
+festet til dem.
+
+- **En gruppe** er elementer på samme lysark med samme verdi i `group`.
+  Gruppen velges, flyttes, kopieres og endrer størrelse samlet i
+  redigeringsprogrammet, men hver del er fortsatt et eget element, så
+  den kan komme inn i sitt eget steg og ha «Lær mer». En gruppe har minst
+  to deler, og grupper ligger ikke inni grupper. Merker og
+  forklaringslister er aldri deler av en gruppe; de følger bildet sitt.
+- **En festet ende.** En linje eller pil (`geometry` er `line` eller
+  `arrow`) kan ha `startAt` og `endAt`: id-en til elementet hver ende er
+  festet til. Spissen på en pil er i slutten. En festet ende ligger på
+  kanten av elementet (en ellipse har rund kant), på den siden som
+  vender mot linjas andre ende. Er begge endene festet, går linja mellom
+  de to elementene slik midtpunktene deres ligger.
+- **Linja er fortsatt en vanlig linje med en boks.** Boksen regnes ut på
+  nytt etter hver endring (`followFigures` i
+  `src/shared/layout/groups.ts`). Det som tegner lysarket (i
+  redigeringsprogrammet, i HTML-spilleren og i videoen), ser derfor aldri
+  på `group`, `startAt` eller `endAt`, og er ikke endret.
+- Slettes elementet en ende er festet til, løsner enden og linja blir
+  liggende der den lå. En linje som flyttes alene, løsner; en som
+  flyttes sammen med det den er festet til, sitter.
+
+Et prosjekt i format 9 leses som det er.
+
+## Format 9: kapitler, og lysark som vises igjen
+
+Et lysark kan begynne et kapittel (`chapter` er navnet). Et lysark kan
+også være et annet lysark vist en gang til (`repeat`), slik at video og
+«Spill av» viser lysarkene i den rekkefølgen foreleseren viste dem under
+opptaket. Det har sin egen lyd, sine egne tider og sitt eget manus, men
+viser alltid det lysarket det gjentar viser (`followRepeats` i
+`src/shared/layout/repeats.ts`).
 
 ## Format 8: merker på et bilde
 

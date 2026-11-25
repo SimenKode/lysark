@@ -404,17 +404,35 @@ bygget 25.11.2026** (historikk.md 6.25):
   sammen med merket sitt.
 - Merkene er med i HTML-fila og i videoen.
 
-Det som gjenstår av leveranse 4, er lista under.
+**Fri figur er bygget 26.11.2026** (historikk.md 6.32), slik eieren
+valgte 25.11.2026: rett i lysarket, av formene som fantes fra før.
 
-- En figur er statisk til delene får steg; samme bygger for begge.
-- Maler med skjema: merket bilde, prosess, lagvis oppbygging,
-  sammenligning, tidslinje, søyle- og linjediagram. Venndiagram og
-  årsak-virkning etterpå ved behov. Malene starter tomme.
-- Fri figur: bokser, ellipser, piler, koblingslinjer og etiketter som
-  holdes sammen som ett element.
-- Bevegelser: tone inn, gli inn, tegne strek, vokse, markere, telle opp,
-  forsvinne, og zoome inn på et utsnitt.
-- Figurer kan brukes i lysark, i «Lær mer» (egen byggestein) og i video.
+- **«Grupper»** gjør flere elementer til én gruppe som velges, flyttes,
+  kopieres og endrer størrelse samlet. «Del opp gruppen» løser den opp.
+  Et klikk til på en del velger bare den.
+- **En pil eller linje fester seg** når en ende dras inn på en boks, og
+  følger boksen når den flyttes. «Sett pil mellom dem» lager en festet
+  pil mellom to valgte elementer.
+- **«Ett steg per del»** lar delene i en gruppe komme inn én etter én;
+  en pil kommer sammen med det den peker på.
+- Tegnekoden er ikke endret, så figurene er med i HTML-fila og i videoen
+  som alle andre former.
+
+Det som gjenstår av leveranse 4, i denne rekkefølgen:
+
+1. **Maler med skjema:** prosess, lagvis oppbygging, sammenligning,
+   tidslinje, søyle- og linjediagram. Venndiagram og årsak-virkning
+   etterpå ved behov. Malene starter tomme. Eieren valgte 25.11.2026 at
+   **skjemaet styrer**: figuren tegner seg selv fra skjemaet, og «Gjør om
+   til fri figur» slipper den løs for godt (som SmartArt i PowerPoint).
+2. **Figur i «Lær mer»** (egen del i byggeren): eieren valgte 25.11.2026
+   at figuren **hentes fra et lysark**. Den lages på et lysark, og i
+   byggeren velger man «Figur» og peker på den; en kopi legges i boksen.
+3. **Bevegelser:** tone inn, gli inn, tegne strek, vokse, markere, telle
+   opp, forsvinne, og zoome inn på et utsnitt.
+
+Ikke laget for fri figur: grupper og koblingslinjer fra PowerPoint
+kommer inn som løse former, som før, og en linje kan ikke ha knekk.
 
 ## Leveranse 5: Håndlaget stil
 

@@ -290,6 +290,18 @@ instead of choosing silently.
   depends on other elements than themselves (the number, the picture's
   choice of marks, the marks a legend lists), so the editor never
   reuses their drawn nodes (`canReuse` in `SceneView.tsx`).
+- A free figure is not a kind of element. It is ordinary elements that
+  are grouped (`Element.group`), and lines and arrows whose ends are
+  fastened to other elements (`startAt`, `endAt` on a shape). The owner
+  chose this on 25.11.2026: a figure is made on the slide itself, of the
+  shapes that were there already, not in a window of its own. Each part
+  is still an element, so it can come in at a step and have "Lær mer"
+  content. A fastened line is still an ordinary line with a box; one
+  function lays it right after every change (`followFigures` in
+  `src/shared/layout/groups.ts`, called from the store's `update`), so
+  the render code, the HTML player and the video export never look at
+  groups or at what a line is fastened to. In the interface the word is
+  "Grupper" and "Del opp gruppen" (the owner's choice, as in PowerPoint).
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

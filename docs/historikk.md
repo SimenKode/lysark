@@ -83,8 +83,9 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 - **FFmpeg** følger med som eget program.
 - **Format 4**, med automatisk løft av eldre prosjekter.
 
-Ikke påbegynt: leveranse 4 (figurer og bevegelser) og 5 (håndlaget
-stil).
+Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
+fri figur (6.32) er bygget. Malene, figur i «Lær mer» og bevegelsene
+gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2269,6 +2270,107 @@ hadde da 6.29 ble skrevet; tallene er dens egne målinger, ikke mine):
 - Ikke laget: tabeller som tabeller, nummererte lister som lister, og
   lenker på bilder (formatet har ikke plass til det).
 - Bare PDF-er laget av PowerPoint er prøvd på ekte filer.
+
+### 6.32 Fri figur: grupper, og piler som fester seg (26.11.2026)
+
+**Startmeldingen.** Feltene «Det jeg har funnet siden sist» og «Innspill
+til produktet» sto tomme («(skriv her)»), så det var ingenting å rette
+og ingen innspill å føre inn. Eieren spurte først hva planen for økta
+var, fikk den, og svarte: «Gå på leveranse 4». Det som sto under «Det
+jeg trenger fra deg» i HANDOFF.md, er altså fortsatt ikke prøvd av ham.
+
+**Fire spørsmål, stilt samlet før noe ble bygget, og svarene hans
+(25.11.2026):**
+
+1. *Hvordan skal du lage en fri figur?* Anbefaling: rett i lysarket, av
+   formene som finnes, med piler som fester seg og «samle til én».
+   Alternativet var et eget figurvindu. **Svar: rett i lysarket.**
+2. *Hva skal en mal være etter at skjemaet er fylt ut?* Anbefaling:
+   skjemaet styrer, og figuren tegner seg selv; «Gjør om til fri figur»
+   slipper den løs for godt. Alternativet var en fri figur med en gang.
+   **Svar: skjemaet styrer.**
+3. *Hvordan skal en figur komme inn i en «Lær mer»-boks?* Anbefaling:
+   hentes fra et lysark (en kopi legges i boksen). Alternativene var en
+   egen tegneflate i byggeren, eller å vente. **Svar: hentes fra et
+   lysark.**
+4. *Hva skal det hete å gjøre flere deler til én figur?* Anbefaling:
+   «Samle til figur» og «Løs opp figuren». **Svar: «Grupper»** (og «Del
+   opp gruppen»), som i PowerPoint. Her valgte han altså ikke
+   anbefalingen.
+
+**Hva som er nytt.**
+
+- **En pil eller linje fester seg.** Når en ende dras inn på et element
+  og slippes der, festes den til det. Enden legger seg på kanten av
+  elementet, på den siden som vender mot den andre enden, og følger
+  elementet når det flyttes eller endrer størrelse. Er begge endene
+  festet, går pila korteste vei mellom de to. En ellipse møtes på den
+  runde kanten. Med Alt nede festes ikke enden.
+- **Løsne:** dra enden bort, eller trykk «Løsne» under «Festet til» i
+  egenskapene. En pil som flyttes alene, løsner; flyttes den sammen med
+  det den er festet til, sitter den. Slettes boksen, blir pila liggende.
+- **Det synes at en ende er festet:** håndtaket er lilla, og det den er
+  festet til, har en stiplet ring mens pila er valgt.
+- **«Sett pil mellom dem»** i egenskapene når to elementer er valgt.
+  Pila går fra det som ble valgt først, til det som ble valgt sist.
+- **«Grupper»** (egenskapene eller høyreklikk) gjør to eller flere
+  elementer til en gruppe. Et klikk på en del velger hele gruppen. Den
+  flyttes, kopieres og slettes samlet. Et klikk til på en del velger bare
+  den; dobbeltklikk skriver i den. «Velg hele gruppen» fører tilbake.
+  «Del opp gruppen» løser den opp. En gruppe i en gruppe blir én gruppe.
+- **Flere valgte elementer har én ramme** med håndtak, og endrer
+  størrelse samlet. Det gjelder også når de ikke er gruppert. Er det
+  bilder eller video blant dem, holdes forholdet mellom bredde og høyde.
+- **«Ett steg per del»** for en gruppe: delene kommer inn i leseretning,
+  og en festet pil kommer inn sammen med det den peker på.
+- **I HTML-fila og i videoen** er figurene vanlige former. Koden som
+  tegner lysarket, er ikke endret: en festet pil er en vanlig pil med en
+  boks, som legges riktig etter hver endring. Prosjektformatet er nå
+  versjon 10; eldre prosjekter åpnes som før.
+
+**En gammel feil, funnet underveis og rettet:** «Lag kopi» av et lysark
+mistet merkene og forklaringslista på bildene. Kopien av merket pekte på
+bildet i det gamle lysarket, så oppryddingen fjernet det. Feilen har
+vært der siden merket bilde ble bygget (6.25). Bekreftet ved å kjøre den
+nye testen mot den gamle koden (5 elementer i kopien i stedet for 7).
+
+**Begrensninger, sagt rett ut.**
+
+- Teksten i boksene endrer ikke størrelse når en gruppe gjøres større
+  eller mindre. Bare boksene gjør det.
+- Du velger ikke selv hvor på kanten en pil fester seg, og en pil kan
+  ikke ha knekk.
+- En ende festes ikke til noe som dekker mer enn halve lysarket. Det er
+  med vilje: ellers ville hver pil festet seg til bakgrunnsbildet på et
+  lysark fra en PDF.
+- Når flere elementer endrer størrelse samlet, hopper piler som er
+  festet mellom dem, på plass når du slipper.
+- En gruppe kan ikke dreies samlet.
+- Grupper og koblingslinjer i en PowerPoint-fil kommer fortsatt inn som
+  løse former. Importen er ikke rørt.
+- Det finnes ingen hurtigtast for «Grupper» (Ctrl+G er rutenettet).
+
+**Prøvd** på Linux Mint, automatisk og uten vindu: 17 enhetstester
+(`tests/groups.test.ts`) og fire ende-til-ende-tester som starter hele
+programmet (`tests/e2e-groups.test.ts`): sette pil mellom to bokser, dra
+en boks og se pila følge, angre, feste en ende ved å dra den inn på en
+ellipse, løsne den på tre måter, gruppere, velge og dra gruppen, endre
+størrelse med rammen, gå inn i gruppen, skrive i en del, ett steg per
+del, se stegene i forhåndsvisningen slik en student ser dem, dele opp,
+og gruppere fra høyreklikkmenyen. To skjermbilder fra testen er sett på.
+Innholdet i testene er prøveinnhold («A», «B», «C»).
+
+Hele testsamlingen (479 tester i 33 filer, én hoppes over som før) er
+kjørt tre ganger. To ganger besto alt. Én gang feilet to tidsmålinger i
+testen for fritt opptak (`tests/e2e-free.test.ts`: lyden til et lysark
+var kortere enn ventet), mens maskinen var tungt belastet av annet
+arbeid. Den testen besto alene rett etterpå, og koden den prøver, er
+ikke rørt i denne økta. Den er altså følsom for belastning; det er
+ikke undersøkt nærmere.
+
+**Ikke prøvd:** Windows, den pakkede utgaven, dine egne lysark, og
+video med en figur i (tegnekoden er uendret, men det er ikke målt).
+Ingen har prøvd dette for hånd med mus; alt er kjørt av testene.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

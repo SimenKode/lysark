@@ -1,6 +1,6 @@
 # Lysark: status og veien videre
 
-Sist oppdatert 25.11.2026. Denne fila er kort med vilje. Alt som er
+Sist oppdatert 26.11.2026. Denne fila er kort med vilje. Alt som er
 gjort og prøvd i detalj, står i [docs/historikk.md](docs/historikk.md).
 
 ## Hva Lysark er
@@ -13,6 +13,28 @@ PowerPoint eller PDF, og får
 
 begge i USNs visuelle profil. Programmet skal kunne brukes av en
 foreleser uten opplæring. Det styrer ordvalg og knapper.
+
+## Nytt 26.11.2026: fri figur (ikke gitt ut)
+
+Du svarte på fire spørsmål (historikken, 6.32): figurer lages **rett i
+lysarket**, i malene **styrer skjemaet**, figurer i «Lær mer» **hentes
+fra et lysark**, og ordet er **«Grupper»**. Første del er bygget:
+
+- **Piler som fester seg.** Dra enden av en pil eller linje inn på en
+  boks. Da fester den seg, og følger boksen når du flytter den. Dra
+  enden bort igjen for å løsne den (eller hold Alt for å la være å
+  feste).
+- **«Sett pil mellom dem».** Velg to bokser (klikk, så Shift-klikk), og
+  trykk knappen i egenskapene. Pila går fra den første til den andre.
+- **«Grupper».** Velg flere ting og trykk «Grupper» (i egenskapene, eller
+  høyreklikk). Gruppen flyttes, kopieres og endrer størrelse samlet.
+  Klikk en gang til på en del for å velge bare den; dobbeltklikk for å
+  skrive i den. «Del opp gruppen» løser den opp.
+- **«Ett steg per del».** Delene i gruppen kommer inn én etter én. En pil
+  kommer sammen med boksen den peker på.
+
+Rettet i samme slengen: **«Lag kopi» av et lysark mistet merkene på
+bildene.** Nå følger de med.
 
 ## Nytt 25.11.2026, etter versjon 0.4.0 (ikke gitt ut)
 
@@ -46,16 +68,18 @@ etiketter oppå et bilde).
    utseendet eller gjøres om til USN-stil. Kapitlene følger med.
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
    i kapitler.
-3. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
+3. **Tegne figurer** av bokser, ellipser og piler som henger sammen, og
+   gruppere dem.
+4. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
    Commons og Openverse, og **sette merker på et bilde**.
-4. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
+5. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
    og hopp mellom lysarkene som du vil; opptaket går hele tiden. Mens du
    leser, kan du åpne «Lær mer», spille videoer og flytte sirkelen.
-5. **Rette på lyden:** klippe, legge inn pauser, flytte steg, ta om.
+6. **Rette på lyden:** klippe, legge inn pauser, flytte steg, ta om.
    Filmen av ansiktet klippes sammen med lyden.
-6. **Legge musikk og lyd under forelesningen** i fanen «Tidslinje».
-7. **Avslutte med USNs logoanimasjon.**
-8. **Eksportere** HTML-fil, video (MP4) med teksting og kapitler, og
+7. **Legge musikk og lyd under forelesningen** i fanen «Tidslinje».
+8. **Avslutte med USNs logoanimasjon.**
+9. **Eksportere** HTML-fil, video (MP4) med teksting og kapitler, og
    GIF. Også en video av bare noen få lysark.
 
 ## Slik virker det nye opptaket
@@ -91,36 +115,45 @@ etiketter oppå et bilde).
 
 ## Det jeg trenger fra deg
 
-1. **Prøv «Behold utseendet» for en PowerPoint-fil på Windows.** Der
+Startmeldingen til denne chatten hadde ingen funn eller innspill, så
+punktene fra sist står fortsatt.
+
+1. **Prøv fri figur** på et av dine egne lysark: tegn tre bokser, sett
+   piler mellom dem, flytt en boks, grupper, og gi delene steg. Si hva
+   som er tungvint eller uventet.
+2. **Prøv «Behold utseendet» for en PowerPoint-fil på Windows.** Der
    skal PowerPoint lage en PDF-kopi i bakgrunnen. Den veien har jeg ikke
    kunnet prøve (jeg har ikke PowerPoint). Si hva som skjer.
-2. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
+3. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
    lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
    Det kan jeg ikke måle.
-3. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
+4. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
    du ventet. Særlig: er det riktig at et lysark du bare blar forbi
    (under et halvt sekund), ikke vises?
-4. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
+5. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
    burde vært tekst, blitt liggende i bakgrunnsbildet? Lysarkene med
    «å ordne» i lista sier hvor importen selv var i tvil.
-5. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
+6. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
    til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
    bilde på dine egne bilder, og Canvas (bare du, ingen KI). Sjekklista
    står nederst.
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd opptaket, importen og valget av
-   utseende.
-2. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
-   diagrammer og bevegelsene. Merket bilde er bygget.
-3. **Håndlaget stil** (leveranse 5).
+1. **Det du melder** etter å ha prøvd fri figur, opptaket, importen og
+   valget av utseende.
+2. **Malene** (leveranse 4): prosess, lagvis oppbygging, sammenligning,
+   tidslinje, søyle- og linjediagram. Skjemaet styrer figuren.
+3. **Figur i «Lær mer»**, hentet fra et lysark.
+4. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
+   opp, forsvinne og zoome inn på et utsnitt.
+5. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (458) | Ja | – |
+| Automatiske tester (479) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -133,6 +166,7 @@ etiketter oppå et bilde).
 | Installasjonsfila | – | Ja, for hånd (0.4.0) |
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
+| **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
@@ -142,6 +176,11 @@ etter 0.4.0, er prøvd på Windows.**
 
 ## Kjente svakheter
 
+- **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
+  gruppe større eller mindre. En pil går alltid korteste vei mellom to
+  bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
+  ikke ha knekk. Grupper og koblingslinjer fra PowerPoint kommer inn som
+  løse former. Det finnes ingen hurtigtast for «Grupper».
 - **Hopper du framover over lysark** og kommer tilbake til dem senere,
   står de også på sin vanlige plass i videoen, uten lyd (fem sekunder
   hver).
@@ -220,8 +259,9 @@ og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
 ut (25.11.2026). Etter det er dette bygget, og ikke gitt ut: merket
 bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
 film for hele opptaket), kapitler, PDF-import der tekst, bilder og
-lenker er egne elementer, og fritt valg ved import mellom «Behold
-utseendet» og «Gjør om til USN-stil».
+lenker er egne elementer, fritt valg ved import mellom «Behold
+utseendet» og «Gjør om til USN-stil», og fri figur (grupper, og piler
+som fester seg til bokser).
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -243,10 +283,10 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (opptak med ekte kamera, fram og tilbake
-under opptak, import med «Behold utseendet» og «USN-stil», særlig
-PowerPoint på Windows, kapitler, mikrofon, musikk, installasjonsfila på
-USN-PC, Openverse, merket bilde, Canvas):
+Det jeg har funnet siden sist (fri figur, opptak med ekte kamera, fram
+og tilbake under opptak, import med «Behold utseendet» og «USN-stil»,
+særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
+installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
 Innspill til produktet:
