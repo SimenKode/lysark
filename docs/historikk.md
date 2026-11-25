@@ -1908,6 +1908,56 @@ skal skje med opptaket når han går tilbake til et lysark som allerede
 er lest inn. Tas det om fra det punktet, eller fortsetter opptaket som
 én lang innlesing der samme lysark kan vises flere ganger?
 
+### 6.27 Eierens svar på spørsmålene om det han meldte (25.11.2026)
+
+Startmeldingen til denne chatten kom **uten nye funn og uten innspill**:
+begge stedene sto det «(skriv her)». Det er altså ikke meldt noe nytt om
+kamera, mikrofon, musikk, installasjonsfila på USN-PC, Openverse, merket
+bilde eller Canvas. De punktene står fortsatt som ikke prøvd.
+
+Fire spørsmål ble stilt samlet, hvert med én anbefaling, før noe ble
+rettet. Svarene hans, ordrett:
+
+1. **Hva skal skje med opptaket når du går tilbake til et lysark som er
+   lest inn?** (Anbefalt: les det inn på nytt.) Han valgte ikke
+   anbefalingen:
+
+   > Det må være svært fritt, da vi må ta høyde for at forelesere noen
+   > ganger vil gå frem og tilbake mellom slides. Sørg for at det blir
+   > smooth. Skal være som et vanlig videoopptak. Fortsatt fint å kunne
+   > ekstrahere f.eks to lysark blant 15 som en egen eksport, hvis man
+   > vil ha minivideoer som forklarer en spesifikk ting i en lang
+   > forelesning.
+
+2. **Hvor skal sidemenyen finnes?** Han valgte anbefalingen: i
+   innlesingsvinduet. Studentene beholder «Innhold» i HTML-fila, som får
+   kapitlene.
+
+3. **Hvor skal kapitlene vises?** Han valgte anbefalingen: overalt. Som
+   overskrifter i lysarklista (der de kan få nytt navn, lages og
+   fjernes), i sidemenyen under opptak, i «Innhold» hos studentene, og
+   som kapitler i videofila.
+
+4. **Hvordan skal et lysark fra en PDF se ut?** (Anbefalt: som i
+   PDF-en.) Han vil ha et valg, og for PowerPoint også:
+
+   > Man kan velge? Tenker at det kan være fint for både pdf og pptx å
+   > kunne velge om det skal konverteres til USN stil eller ikke. Noen
+   > vil bare bruke verktøyet for å ta opp forelesningen sin i en gammel
+   > pptx.
+
+Slik er svarene lest:
+
+- **Opptaket er en film av det foreleseren gjør.** Det går uten stans, og
+  videoen viser lysarkene i den rekkefølgen han faktisk gikk, også
+  tilbake. Et lysark kan altså vises flere ganger. Det gamle prinsippet
+  (ett lydspor per lysark, hvert lysark vist én gang) holder ikke lenger
+  alene.
+- **Eksport av noen få lysark** som egen video er et nytt ønske.
+- **Valget «USN-stil eller som i fila»** gjelder begge filtyper og tas
+  ved import. For PowerPoint er «som i fila» nytt arbeid: importen har
+  til nå alltid lagt innholdet over i USN-malen.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
