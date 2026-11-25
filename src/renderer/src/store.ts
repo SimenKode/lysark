@@ -1,6 +1,7 @@
 // Program state: the open project, what is selected, and undo history.
 import { produce } from 'immer';
 import { followFigures } from '../../shared/layout/groups';
+import { followTemplates } from '../../shared/layout/templates';
 import { followMarks } from '../../shared/layout/marks';
 import { followRepeats } from '../../shared/layout/repeats';
 import { create } from 'zustand';
@@ -199,6 +200,8 @@ export const useStore = create<State>((set, get) => ({
         for (const scene of draft.scenes) {
           // Marks and legends go where their pictures go,
           followMarks(scene);
+          // A figure with a form is what its form says,
+          followTemplates(scene);
           // and a fastened line goes where what it is fastened to goes.
           followFigures(scene);
         }

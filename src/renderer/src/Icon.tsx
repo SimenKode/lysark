@@ -27,6 +27,7 @@ const PATHS = {
   text: 'M5 6h14M12 6v13M9 19h6',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9.5h.01',
   shape: 'M3 12h9v9H3zM21 8.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z',
+  figure: 'M2 9h6v6H2zM16 9h6v6h-6zM8 12h7M12.5 9.5 15 12l-2.5 2.5',
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
   mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6',
   play: 'M7 4l13 8-13 8z',

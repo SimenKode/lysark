@@ -204,6 +204,13 @@ button.ls-mark { cursor: pointer; font-family: inherit; }
   font-size: 22px; font-weight: 700; line-height: 1;
 }
 .ls-legend-text { padding-top: 4px; overflow-wrap: anywhere; }
+/* The frame of a figure that draws itself from a form: nothing to see, and nothing to press. */
+.ls-el-figure { pointer-events: none; }
+.ls-figure { width: 100%; height: 100%; }
+.ls-figure-empty {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border: 3px dashed currentColor; opacity: 0.55; font-size: 28px; font-style: italic;
+}
 `;
 
 /**

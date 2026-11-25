@@ -12,6 +12,7 @@ import {
   TEXT_ROLES,
   type CameraSize,
   type Element,
+  type FigureElement,
   type PaletteColor,
   type Scene,
   type SceneKind,
@@ -38,6 +39,15 @@ import {
   setMarkStyle,
   stepPerMark,
 } from '../../shared/layout/marks';
+import {
+  figureOf,
+  moveItem,
+  partsOf,
+  releaseFigure,
+  setDirection,
+  stepPerItem,
+  wholeFigure,
+} from '../../shared/layout/templates';
 import { cameraOnStage, defaultCameraPlace, hasCameraFilm } from '../../shared/render/clock';
 import { youtubeRef } from '../../shared/render/web';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../../shared/limits';
@@ -45,12 +55,15 @@ import { allowedTextColors, isLargeText } from '../../shared/theme/contrast';
 import { COLOR_NAMES, PALETTE, SERIES_ORDER } from '../../shared/theme/palette';
 import { SHAPE_PAIRS } from '../../shared/theme/shapes';
 import { getTheme, roleFontSize, sceneSurface } from '../../shared/theme/theme';
+import { Icon } from './Icon';
 import { CreditFields } from './MediaDialog';
 import { addAsset, fetchYouTubeStill, megabytes, replaceImage } from './actions';
 import {
   GEOMETRY_NAMES,
+  ITEM_NAMES,
   KIND_NAMES,
   ROLE_NAMES,
+  TEMPLATE_NAMES,
   addStep,
   addToStep,
   cloneElements,
@@ -667,6 +680,185 @@ function GroupFields({ scene, selected }: { scene: Scene; selected: Element[] })
   );
 }
 
+/** The form of a figure that draws itself: its rows, and how the figure is to look. */
+function FigureFields({ figure }: { figure: FigureElement }) {
+  const updateScene = useStore((s) => s.updateScene);
+  const [added, setAdded] = useState<string | null>(null);
+  const change = (recipe: (f: FigureElement) => void, coalesce?: string): void => {
+    updateScene(
+      (s) => {
+        const f = s.elements.find((e) => e.id === figure.id);
+        if (f?.type === 'figure') recipe(f);
+      },
+      coalesce ? `${coalesce}-${figure.id}` : undefined,
+    );
+    // The figure may have got parts, or lost some: the whole of it is still what is chosen.
+    const state = useStore.getState();
+    const scene = currentScene(state);
+    if (!scene) return;
+    const all = [figure.id, ...partsOf(scene, figure.id).map((el) => el.id)];
+    const now = state.selection;
+    if (all.length !== now.length || all.some((id) => !now.includes(id))) state.select(all);
+  };
+  const name = ITEM_NAMES[figure.template];
+  const comparison = figure.template === 'comparison';
+  const release = (): void => {
+    const state = useStore.getState();
+    const parts = partsOf(currentScene(state)!, figure.id).map((el) => el.id);
+    state.updateScene((s) => releaseFigure(s, figure.id));
+    state.select(parts);
+  };
+  return (
+    <div className="group">
+      <p className="hint">
+        Figuren tegner seg selv fra det du skriver her. Dra i rammen rundt den for å flytte den
+        eller endre størrelsen.
+      </p>
+      <ol className="figure-form">
+        {figure.items.map((item, index) => (
+          <li key={item.id}>
+            <span className="mark-list-number" aria-hidden="true">
+              {index + 1}
+            </span>
+            <div className="figure-form-fields">
+              <input
+                type="text"
+                aria-label={`${comparison ? 'Overskrift i' : 'Tekst i'} ${name} ${index + 1}`}
+                placeholder={comparison ? 'Overskrift' : 'Tekst'}
+                value={item.text}
+                autoFocus={item.id === added}
+                onChange={(e) =>
+                  change((f) => {
+                    f.items[index]!.text = e.target.value;
+                  }, `item-text-${item.id}`)
+                }
+              />
+              {comparison && (
+                <textarea
+                  rows={3}
+                  aria-label={`Punkter i kolonne ${index + 1}`}
+                  placeholder="Punkter, ett på hver linje"
+                  value={item.detail ?? ''}
+                  onChange={(e) =>
+                    change((f) => {
+                      if (e.target.value) f.items[index]!.detail = e.target.value;
+                      else delete f.items[index]!.detail;
+                    }, `item-detail-${item.id}`)
+                  }
+                />
+              )}
+            </div>
+            <div className="figure-form-buttons">
+              <button
+                type="button"
+                className="icon-only"
+                disabled={index === 0}
+                aria-label={`Flytt ${name} ${index + 1} opp`}
+                title="Flytt opp"
+                onClick={() => change((f) => moveItem(f, index, index - 1))}
+              >
+                <Icon name="up" />
+              </button>
+              <button
+                type="button"
+                className="icon-only"
+                disabled={index === figure.items.length - 1}
+                aria-label={`Flytt ${name} ${index + 1} ned`}
+                title="Flytt ned"
+                onClick={() => change((f) => moveItem(f, index, index + 1))}
+              >
+                <Icon name="down" />
+              </button>
+              <button
+                type="button"
+                className="danger"
+                aria-label={`Fjern ${name} ${index + 1}`}
+                onClick={() =>
+                  change((f) => {
+                    f.items.splice(index, 1);
+                  })
+                }
+              >
+                Fjern
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="button-row">
+        <button
+          type="button"
+          className="strong"
+          onClick={() => {
+            const id = newId('e');
+            change((f) => {
+              f.items.push({ id, text: '' });
+            });
+            setAdded(id);
+          }}
+        >
+          Legg til {name}
+        </button>
+        {figure.items.length > 1 && (
+          <button
+            type="button"
+            title={
+              figure.template === 'process'
+                ? 'Boksene kommer inn én etter én, hver sammen med pila som leder til den.'
+                : undefined
+            }
+            onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep))}
+          >
+            Ett steg per {name}
+          </button>
+        )}
+      </div>
+      {figure.template === 'process' && (
+        <Segmented
+          label="Retning"
+          options={[
+            ['across', 'Bortover'],
+            ['down', 'Nedover'],
+          ]}
+          value={figure.direction ?? 'across'}
+          onChange={(value) => change((f) => setDirection(f, value))}
+        />
+      )}
+      <Swatches
+        label="Farge"
+        colors={SERIES_ORDER}
+        value={figure.color}
+        noneLabel="Malens"
+        onChange={(value) =>
+          change((f) => {
+            if (value) f.color = value;
+            else delete f.color;
+          })
+        }
+      />
+      <NumberField
+        label="Skriftstørrelse"
+        value={figure.fontSize ?? 30}
+        min={10}
+        max={200}
+        onChange={(value) =>
+          change((f) => {
+            f.fontSize = value;
+          }, 'figure-size')
+        }
+      />
+      <div className="button-row">
+        <button type="button" onClick={release}>
+          Gjør om til fri figur
+        </button>
+      </div>
+      <p className="hint">
+        En fri figur kan du flytte og endre del for del. Skjemaet blir da borte for godt.
+      </p>
+    </div>
+  );
+}
+
 function TableFields({ el }: { el: Extract<Element, { type: 'table' }> }) {
   const update = useElementUpdate(el.id);
   const columns = el.columns.length;
@@ -1141,6 +1333,56 @@ function ElementPanel({ scene }: { scene: Scene }) {
       <p className="hint panel-empty">
         Klikk på noe i lysarket for å endre det. Dobbeltklikk for å skrive.
       </p>
+    );
+  }
+  // A figure that draws itself from a form is changed in the form, whatever part of it is chosen.
+  const ids = selected.map((el) => el.id);
+  const figure =
+    wholeFigure(scene, ids) ?? (selected.length === 1 ? figureOf(scene, selected[0]!) : undefined);
+  if (figure && (selected.length > 1 || selected[0]!.type === 'figure')) {
+    return (
+      <div className="panel-body">
+        <h3>{describeElement(figure)}</h3>
+        <FigureFields figure={figure} />
+        <div className="button-row">
+          <button type="button" onClick={duplicate}>
+            Lag kopi
+          </button>
+          <button type="button" className="danger" onClick={remove}>
+            Slett
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (figure) {
+    const part = selected[0]!;
+    return (
+      <div className="panel-body">
+        <h3>{describeElement(part)}</h3>
+        <p className="hint">
+          Dette er en del av en figur ({TEMPLATE_NAMES[figure.template].toLowerCase()}). Tekst,
+          farge og plass styres av skjemaet til figuren. «Lær mer» og steg er delens egne.
+        </p>
+        <div className="button-row">
+          <button
+            type="button"
+            onClick={() =>
+              useStore
+                .getState()
+                .select([figure.id, ...partsOf(scene, figure.id).map((el) => el.id)])
+            }
+          >
+            Vis skjemaet
+          </button>
+        </div>
+        <MoreFields el={part} />
+        <div className="button-row">
+          <button type="button" className="danger" onClick={remove}>
+            Slett
+          </button>
+        </div>
+      </div>
     );
   }
   if (selected.length > 1) {

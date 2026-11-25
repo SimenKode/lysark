@@ -222,6 +222,6 @@ describe('the format', () => {
     const old = JSON.parse(JSON.stringify(newProject('B'))) as { version: number };
     old.version = 6;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(10);
+    expect(FORMAT_VERSION).toBe(11);
   });
 });

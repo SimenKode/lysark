@@ -21,8 +21,9 @@ export const FORMAT_NAME = 'lysark';
  * 9: a slide can begin a chapter, and can be another slide shown once more.
  * 10: elements can be grouped, and the ends of a line or an arrow can be
  *    fastened to other elements.
+ * 11: figures that draw themselves from a form (process, layers, comparison).
  */
-export const FORMAT_VERSION = 10;
+export const FORMAT_VERSION = 11;
 
 export { STAGE } from './constants';
 
@@ -180,6 +181,14 @@ const elementBase = {
    * members, and groups do not lie inside groups (src/shared/layout/groups.ts).
    */
   group: z.string().min(1).optional(),
+  /**
+   * The element is a part of a figure that draws itself from its form: the
+   * figure it belongs to, and which part of it this is. What such a part
+   * looks like and where it stands is worked out from the form after every
+   * change (`followTemplates` in src/shared/layout/templates.ts); its step
+   * and its "Lær mer" content are its own.
+   */
+  of: z.object({ figure: z.string().min(1), part: z.string().min(1) }).optional(),
 };
 
 /**
@@ -384,6 +393,40 @@ export const VideoElement = z.object({
 });
 export type VideoElement = z.infer<typeof VideoElement>;
 
+export const FIGURE_TEMPLATES = ['process', 'layers', 'comparison'] as const;
+export type FigureTemplate = (typeof FIGURE_TEMPLATES)[number];
+
+/** One row of a figure's form: a step of a process, a layer, a column of a comparison. */
+export const FigureItem = z.object({
+  id: z.string().min(1),
+  text: z.string(),
+  /** For a comparison: the points under the heading, one on each line. */
+  detail: z.string().optional(),
+});
+export type FigureItem = z.infer<typeof FigureItem>;
+
+/**
+ * A figure that draws itself from a form the lecturer fills in. The element
+ * holds the form and the frame the figure fills; it shows nothing itself.
+ * What is seen are ordinary shapes, each an element of its own that carries
+ * `of`, grouped with this one. They are made, laid out and taken away as
+ * the form says, so they cannot be moved by hand until the figure is made
+ * into a free one: then this element goes, and the shapes stay as a group.
+ */
+export const FigureElement = z.object({
+  ...elementBase,
+  type: z.literal('figure'),
+  template: z.enum(FIGURE_TEMPLATES),
+  items: z.array(FigureItem),
+  /** For a process: the steps run across the frame, or down it. Across when absent. */
+  direction: z.enum(['across', 'down']).optional(),
+  /** The colour of the parts. The template's own when absent. */
+  color: PaletteColor.optional(),
+  /** Stage pixels. The template's own size when absent. */
+  fontSize: z.number().positive().optional(),
+});
+export type FigureElement = z.infer<typeof FigureElement>;
+
 /**
  * The "+ Lær mer" button: an element whose only job is to open its `more`
  * content. The simple way in; any other element can carry `more` too.
@@ -405,6 +448,7 @@ export const Element = z.discriminatedUnion('type', [
   DeepDiveElement,
   MarkElement,
   LegendElement,
+  FigureElement,
 ]);
 export type Element = z.infer<typeof Element>;
 export type ElementType = Element['type'];

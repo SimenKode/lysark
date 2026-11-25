@@ -17,6 +17,7 @@ import {
   unionBox,
 } from '../../shared/layout/groups';
 import { markStyle, pictureOf } from '../../shared/layout/marks';
+import { wholeFigure, writePart } from '../../shared/layout/templates';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
 import { StageCamera } from './StageCamera';
@@ -240,7 +241,9 @@ export function Stage() {
           else if (changed) el.content = next;
         } else if (el.type === 'shape') {
           if (empty) delete el.content;
-          else if (changed) el.content = next;
+          else if (changed && !el.of) el.content = next;
+          // What is written in a part of a figure with a form goes into the form.
+          if (changed) writePart(s, el, next);
         } else if (el.type === 'table' && target.cell && changed) {
           const [r, c] = target.cell.split(':').map(Number);
           const cell = el.rows[r!]?.[c!];
@@ -868,7 +871,7 @@ export function Stage() {
               Grupper
             </button>
           )}
-          {selected.some((el) => el.group) && (
+          {selected.some((el) => el.group) && !wholeFigure(scene, selection) && (
             <button
               type="button"
               role="menuitem"

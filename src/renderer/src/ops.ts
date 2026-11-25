@@ -3,6 +3,7 @@ import { newId, plainText, richText } from '../../shared/format/factory';
 import type {
   Box,
   Element,
+  FigureTemplate,
   More,
   MoreBlock,
   MoreBlockKind,
@@ -12,6 +13,7 @@ import type {
   Step,
   TextRole,
 } from '../../shared/format/schema';
+import { forgetParts } from '../../shared/layout/templates';
 import { pruneTimeline } from '../../shared/render/timeline';
 import { columnEdges, type Theme } from '../../shared/theme/theme';
 
@@ -42,6 +44,20 @@ export function playClosingAnimation(scene: Scene, seconds: number): void {
   scene.showLogo = false;
   scene.decoration = false;
 }
+
+/** The figures that draw themselves from a form, as the lecturer knows them. */
+export const TEMPLATE_NAMES: Record<FigureTemplate, string> = {
+  process: 'Prosess',
+  layers: 'Lagvis oppbygging',
+  comparison: 'Sammenligning',
+};
+
+/** What one row of a figure's form is called: a box of a process, a layer, a column. */
+export const ITEM_NAMES: Record<FigureTemplate, string> = {
+  process: 'boks',
+  layers: 'lag',
+  comparison: 'kolonne',
+};
 
 export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {
   rect: 'Rektangel',
@@ -80,6 +96,8 @@ export function describeElement(el: Element): string {
       return el.text.trim() ? `Merke: ${shorten(el.text)}` : 'Merke';
     case 'legend':
       return 'Forklaring til merkene';
+    case 'figure':
+      return `Figur: ${TEMPLATE_NAMES[el.template]}`;
   }
 }
 
@@ -237,6 +255,12 @@ export function cloneElements(elements: Element[], offset: number): Element[] {
       box: { ...el.box, x: el.box.x + offset, y: el.box.y + offset },
     };
     if (copy.group) copy.group = groups.get(copy.group)!;
+    if (copy.of) {
+      // A part copied with its figure belongs to the copy; copied without it, it is a shape like any other.
+      const figure = ids.get(copy.of.figure);
+      if (figure) copy.of = { ...copy.of, figure };
+      else delete copy.of;
+    }
     if (copy.type === 'shape') {
       if (copy.startAt) {
         const to = ids.get(copy.startAt);
@@ -275,6 +299,7 @@ export function cloneScene(scene: Scene): Scene {
   for (const el of copy.elements) {
     // What points at another element of the slide points at the copy of it.
     if (el.type === 'mark' || el.type === 'legend') el.on = ids.get(el.on) ?? el.on;
+    if (el.of) el.of.figure = ids.get(el.of.figure) ?? el.of.figure;
     if (el.type === 'shape') {
       if (el.startAt) el.startAt = ids.get(el.startAt) ?? el.startAt;
       if (el.endAt) el.endAt = ids.get(el.endAt) ?? el.endAt;
@@ -288,6 +313,8 @@ export function cloneScene(scene: Scene): Scene {
 }
 
 export function deleteElements(scene: Scene, ids: string[]): void {
+  // A part of a figure with a form that is deleted takes its row out of the form.
+  forgetParts(scene, ids);
   scene.elements = scene.elements.filter((e) => !ids.includes(e.id));
   pruneTimeline(scene);
 }

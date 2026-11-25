@@ -2,7 +2,15 @@
 // and script panel.
 import { useEffect, useState } from 'react';
 import type { MenuCommand } from '../../shared/api';
-import type { ShapeElement, TextRole } from '../../shared/format/schema';
+import { newId } from '../../shared/format/factory';
+import {
+  FIGURE_TEMPLATES,
+  type FigureTemplate,
+  type ShapeElement,
+  type TextRole,
+} from '../../shared/format/schema';
+import { withGroups } from '../../shared/layout/groups';
+import { NEW_FIGURE_SIZE, newFigure } from '../../shared/layout/templates';
 import { getTheme } from '../../shared/theme/theme';
 import { formatTime, sceneDuration } from '../../shared/render/clock';
 import { Timeline } from './Timeline';
@@ -37,12 +45,14 @@ import {
 import {
   GEOMETRY_NAMES,
   ROLE_NAMES,
+  TEMPLATE_NAMES,
   cloneElements,
   deleteElements,
   newDeepDiveElement,
   newShapeElement,
   newTableElement,
   newTextElement,
+  placeNew,
 } from './ops';
 import { currentScene, isDirty, useStore } from './store';
 
@@ -203,7 +213,7 @@ function InsertBar() {
   const project = useStore((s) => s.project)!;
   const scene = useStore(currentScene);
   const showGrid = useStore((s) => s.showGrid);
-  const [menu, setMenu] = useState<'text' | 'shape' | 'video' | null>(null);
+  const [menu, setMenu] = useState<'text' | 'shape' | 'figure' | 'video' | null>(null);
   if (!scene) return null;
   const theme = getTheme(project);
   const add = (make: () => ReturnType<typeof newTextElement>, edit: boolean): void => {
@@ -214,6 +224,18 @@ function InsertBar() {
     });
     state.select([element.id]);
     if (edit) state.setEditing({ elementId: element.id });
+    setMenu(null);
+  };
+  /** A figure that draws itself from a form: put in with an empty form, and chosen as a whole. */
+  const addFigure = (template: FigureTemplate): void => {
+    const size = NEW_FIGURE_SIZE[template];
+    const figure = newFigure(template, placeNew(scene, theme, size.w, size.h), () => newId('e'));
+    const state = useStore.getState();
+    state.updateScene((s) => {
+      s.elements.push(figure);
+    });
+    const after = currentScene(useStore.getState());
+    if (after) state.select(withGroups(after, [figure.id]));
     setMenu(null);
   };
   const toggle = (name: typeof menu) => () => setMenu(menu === name ? null : name);
@@ -269,6 +291,32 @@ function InsertBar() {
                 onClick={() => add(() => newShapeElement(scene, theme, g), false)}
               >
                 {GEOMETRY_NAMES[g]}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="menu-anchor">
+        <button
+          type="button"
+          className="with-icon"
+          aria-expanded={menu === 'figure'}
+          onClick={toggle('figure')}
+          title="En figur som tegner seg selv fra et skjema du fyller ut"
+        >
+          <Icon name="figure" />
+          Figur
+        </button>
+        {menu === 'figure' && (
+          <div className="menu" role="menu">
+            {FIGURE_TEMPLATES.map((template) => (
+              <button
+                key={template}
+                type="button"
+                role="menuitem"
+                onClick={() => addFigure(template)}
+              >
+                {TEMPLATE_NAMES[template]}
               </button>
             ))}
           </div>

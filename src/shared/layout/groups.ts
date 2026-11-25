@@ -103,7 +103,8 @@ export function stepPerPart(
   group: string,
   newStep: (targets: string[]) => Step,
 ): void {
-  const members = membersOf(scene, group);
+  // The frame of a figure with a form shows nothing, so it has no step.
+  const members = membersOf(scene, group).filter((el) => el.type !== 'figure');
   const ids = new Set(members.map((el) => el.id));
   for (const step of scene.timeline) {
     step.actions = step.actions.filter((action) => !ids.has(action.target));
@@ -129,7 +130,8 @@ export function stepPerPart(
 
 /** True when a line can be fastened to the element. */
 export function canFasten(el: Element): boolean {
-  return el.type !== 'mark' && el.type !== 'legend' && !isLine(el);
+  // The frame of a figure with a form shows nothing; a line is fastened to its parts.
+  return el.type !== 'mark' && el.type !== 'legend' && el.type !== 'figure' && !isLine(el);
 }
 
 /** An element that fills most of the slide lies behind the rest; an end let go on it is not fastened. */

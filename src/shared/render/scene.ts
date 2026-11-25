@@ -5,6 +5,7 @@ import { STAGE } from '../format/constants';
 import {
   type DeepDiveElement,
   type Element as SceneElement,
+  type FigureElement,
   type ImageElement,
   type LegendElement,
   type MarkElement,
@@ -65,6 +66,8 @@ export interface SceneStrings {
   moreAbout: (title: string) => string;
   /** Shown in the editor in a mark that has no text yet. */
   markEmpty: string;
+  /** Shown in the editor in a figure whose form has no rows. */
+  figureEmpty: string;
   creditBy: string;
   creditSource: string;
   creditCropped: string;
@@ -851,8 +854,27 @@ function renderLegend(ctx: RenderContext, scene: Scene, el: LegendElement): Node
   return list;
 }
 
+/**
+ * A figure that draws itself from a form shows nothing itself: what is seen
+ * are its parts, which are shapes of their own. Only in the editor, and only
+ * when the form is empty, does it say where it is.
+ */
+function renderFigure(ctx: RenderContext, el: FigureElement): Node {
+  const frame = ctx.doc.createElement('div');
+  frame.className = 'ls-figure';
+  frame.setAttribute('aria-hidden', 'true');
+  if (ctx.mode === 'edit' && el.items.length === 0) {
+    frame.classList.add('ls-figure-empty');
+    frame.style.fontFamily = ctx.theme.fonts.body;
+    frame.textContent = ctx.strings.figureEmpty;
+  }
+  return frame;
+}
+
 function renderElement(ctx: RenderContext, scene: Scene, surface: Surface, el: SceneElement): Node {
   switch (el.type) {
+    case 'figure':
+      return renderFigure(ctx, el);
     case 'text':
       return renderText(ctx, scene, surface, el);
     case 'image':
@@ -1018,6 +1040,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     needsInternet: 'Krever nett',
     moreAbout: (title) => (title ? `Lær mer om: ${title}` : 'Lær mer'),
     markEmpty: 'Skriv hva merket peker på',
+    figureEmpty: 'Figuren er tom. Legg til i skjemaet.',
     creditBy: 'av',
     creditSource: 'Kilde',
     creditCropped: 'beskåret',
@@ -1043,6 +1066,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     needsInternet: 'Needs internet',
     moreAbout: (title) => (title ? `Learn more about: ${title}` : 'Learn more'),
     markEmpty: 'Write what the mark points at',
+    figureEmpty: 'The figure is empty. Add to it in the form.',
     creditBy: 'by',
     creditSource: 'Source',
     creditCropped: 'cropped',
