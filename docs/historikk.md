@@ -2158,6 +2158,21 @@ programmer enn PowerPoint utover prøvefilene testene lager selv.
   utseendet fra PDF-en, manus (notatene) og kapitler fra
   PowerPoint-fila. Det trenger hans ja før det bygges.
 
+### 6.30 Eieren presiserer valget ved import (25.11.2026)
+
+Jeg spurte, etter 6.29, om «som i fila» for PowerPoint skulle lages via
+en PDF av presentasjonen. Svaret hans, ordrett:
+
+> Nei, som i fila mente jeg at pptx eller pdfen beholder sitt
+> oprinnelige utseende, de skal bli tilbydt å få den over til USN stil,
+> men det skal være fritt valg.
+
+Slik er det lest: valget gjelder utseendet, ikke filtypen. Både en
+PowerPoint-fil og en PDF skal kunne **beholde utseendet de har**.
+Foreleseren **tilbys** å få forelesningen over i USN-stil, og velger
+fritt. Spørsmålet mitt var stilt for teknisk; det handlet om hvordan
+programmet får til det første for PowerPoint, ikke om hva valget er.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
