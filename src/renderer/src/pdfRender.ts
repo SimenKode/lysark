@@ -296,6 +296,9 @@ async function programMetrics(): Promise<TextMetrics> {
  */
 const PAINTED_OVER_INSET = 6;
 
+/** More things than this painted on one picture are not taken out one by one. */
+const MANY_ON_ONE_PICTURE = 60;
+
 /** What is remembered through the whole file. */
 interface ImportState {
   doc: PDFDocumentProxy;
@@ -958,14 +961,20 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
     for (const held of waiting) {
       stopIfCancelled();
       const area = held.box.w * held.box.h;
-      const covering = groups.filter((group) => {
-        const drawn = group.filter((m) => m.shape !== undefined && m.shape > held.index);
-        return (
-          !used.has(group) &&
-          drawn.length > 0 &&
-          shared(around(drawn.map((m) => m.box)), held.box) >= 0.6 * area
-        );
-      });
+      const over = groups
+        .filter((group) => !used.has(group))
+        .map((group) => {
+          const drawn = group.filter((m) => m.shape !== undefined && m.shape > held.index);
+          return {
+            group,
+            ground: drawn.length > 0 ? shared(around(drawn.map((m) => m.box)), held.box) : 0,
+          };
+        });
+      // Also when a great many things are drawn on it: a picture of a drawing, not a pile of pieces.
+      const many = over.filter((o) => o.ground > 0).length > MANY_ON_ONE_PICTURE;
+      const covering = over
+        .filter((o) => o.ground >= 0.6 * area || (many && o.ground > 0))
+        .map((o) => o.group);
       if (covering.length > 0) {
         for (const group of covering) used.add(group);
         const members = covering.flat();
