@@ -217,15 +217,38 @@ export function moveBlock(more: More, from: number, to: number): void {
   more.blocks.splice(clamped, 0, block!);
 }
 
-/** A copy with new ids, nudged so it does not hide the original. */
+/**
+ * A copy with new ids, nudged so it does not hide the original. What is
+ * copied together stays together: a mark belongs to the copy of its
+ * picture, a group that is copied becomes a group of its own, and a line
+ * stays fastened to the copies of what it was fastened to. A line whose
+ * element was not copied with it is let go there.
+ */
 export function cloneElements(elements: Element[], offset: number): Element[] {
   const ids = new Map(elements.map((el) => [el.id, newId('e')]));
+  const groups = new Map<string, string>();
+  for (const el of elements) {
+    if (el.group && !groups.has(el.group)) groups.set(el.group, newId('g'));
+  }
   return elements.map((el) => {
     const copy: Element = {
       ...structuredClone(el),
       id: ids.get(el.id)!,
       box: { ...el.box, x: el.box.x + offset, y: el.box.y + offset },
     };
+    if (copy.group) copy.group = groups.get(copy.group)!;
+    if (copy.type === 'shape') {
+      if (copy.startAt) {
+        const to = ids.get(copy.startAt);
+        if (to) copy.startAt = to;
+        else delete copy.startAt;
+      }
+      if (copy.endAt) {
+        const to = ids.get(copy.endAt);
+        if (to) copy.endAt = to;
+        else delete copy.endAt;
+      }
+    }
     if (copy.type === 'mark' || copy.type === 'legend') {
       // A mark that is copied with its picture belongs to the copy of the picture.
       copy.on = ids.get(copy.on) ?? copy.on;
@@ -248,6 +271,14 @@ export function cloneScene(scene: Scene): Scene {
     const id = newId('e');
     ids.set(el.id, id);
     el.id = id;
+  }
+  for (const el of copy.elements) {
+    // What points at another element of the slide points at the copy of it.
+    if (el.type === 'mark' || el.type === 'legend') el.on = ids.get(el.on) ?? el.on;
+    if (el.type === 'shape') {
+      if (el.startAt) el.startAt = ids.get(el.startAt) ?? el.startAt;
+      if (el.endAt) el.endAt = ids.get(el.endAt) ?? el.endAt;
+    }
   }
   for (const step of copy.timeline) {
     step.id = newId('t');

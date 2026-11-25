@@ -1,5 +1,6 @@
 // Program state: the open project, what is selected, and undo history.
 import { produce } from 'immer';
+import { followFigures } from '../../shared/layout/groups';
 import { followMarks } from '../../shared/layout/marks';
 import { followRepeats } from '../../shared/layout/repeats';
 import { create } from 'zustand';
@@ -93,10 +94,15 @@ interface State {
   close(): void;
   /**
    * Changes the project. Changes with the same `coalesce` key made shortly
-   * after each other become one undo step (typing, dragging).
+   * after each other become one undo step (typing, dragging). With `held`,
+   * however long after: a drag is one step even when the pointer rests in it.
    */
-  update(recipe: (draft: Project) => void, coalesce?: string): void;
-  updateScene(recipe: (scene: Scene, draft: Project) => void, coalesce?: string): void;
+  update(recipe: (draft: Project) => void, coalesce?: string, held?: boolean): void;
+  updateScene(
+    recipe: (scene: Scene, draft: Project) => void,
+    coalesce?: string,
+    held?: boolean,
+  ): void;
   undo(): void;
   redo(): void;
   markSaved(): void;
@@ -183,21 +189,28 @@ export const useStore = create<State>((set, get) => ({
     });
   },
 
-  update(recipe, coalesce) {
+  update(recipe, coalesce, held) {
     const { project, past, coalesce: last } = get();
     if (!project) return;
     // A slide that is shown once more shows what its slide shows, whatever was changed.
     const next = followRepeats(
       produce(project, (draft) => {
         recipe(draft);
-        // Marks and legends go where their pictures go.
-        for (const scene of draft.scenes) followMarks(scene);
+        for (const scene of draft.scenes) {
+          // Marks and legends go where their pictures go,
+          followMarks(scene);
+          // and a fastened line goes where what it is fastened to goes.
+          followFigures(scene);
+        }
       }),
     );
     if (next === project) return;
     const now = Date.now();
     const merge =
-      !!coalesce && !!last && last.key === coalesce && now - last.time < COALESCE_WINDOW;
+      !!coalesce &&
+      !!last &&
+      last.key === coalesce &&
+      (held === true || now - last.time < COALESCE_WINDOW);
     set({
       project: next,
       past: merge ? past : [...past, project].slice(-HISTORY_LIMIT),
@@ -206,12 +219,16 @@ export const useStore = create<State>((set, get) => ({
     });
   },
 
-  updateScene(recipe, coalesce) {
+  updateScene(recipe, coalesce, held) {
     const { sceneId } = get();
-    get().update((draft) => {
-      const scene = draft.scenes.find((s) => s.id === sceneId);
-      if (scene) recipe(scene, draft);
-    }, coalesce);
+    get().update(
+      (draft) => {
+        const scene = draft.scenes.find((s) => s.id === sceneId);
+        if (scene) recipe(scene, draft);
+      },
+      coalesce,
+      held,
+    );
   },
 
   undo() {

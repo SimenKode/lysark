@@ -20,6 +20,16 @@ import {
 } from '../../shared/format/schema';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
 import {
+  canFasten,
+  canGroup,
+  connect,
+  groupElements,
+  membersOf,
+  stepPerPart,
+  ungroupElements,
+  wholeGroup,
+} from '../../shared/layout/groups';
+import {
   addMark,
   markNumber,
   markStyle,
@@ -496,6 +506,7 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
           }
         />
       )}
+      {line && <LineEnds el={el} />}
       {!line && (
         <>
           <NumberField
@@ -513,6 +524,146 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
         </>
       )}
     </>
+  );
+}
+
+/** What the ends of a line or an arrow are fastened to, and how to let them go. */
+function LineEnds({ el }: { el: Extract<Element, { type: 'shape' }> }) {
+  const scene = useStore(currentScene);
+  const update = useElementUpdate(el.id);
+  const arrow = el.geometry === 'arrow';
+  const ends: Array<['startAt' | 'endAt', string]> = [
+    ['startAt', 'Starten'],
+    ['endAt', arrow ? 'Spissen' : 'Slutten'],
+  ];
+  const fastened = ends.filter(([key]) => el[key] !== undefined);
+  return (
+    <div className="group">
+      <h3>Festet til</h3>
+      {fastened.length === 0 ? (
+        <p className="hint">
+          Dra en ende av {arrow ? 'pila' : 'linja'} inn på en boks, så fester den seg og følger
+          boksen når du flytter den. Hold Alt nede for å la være.
+        </p>
+      ) : (
+        <ul className="fastened-list">
+          {fastened.map(([key, name]) => {
+            const target = scene?.elements.find((e) => e.id === el[key]);
+            return (
+              <li key={key}>
+                <span>
+                  {name}: {target ? describeElement(target) : 'ukjent'}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Løsne ${name.toLowerCase()}`}
+                  onClick={() =>
+                    update<typeof el>((s) => {
+                      delete s[key];
+                    })
+                  }
+                >
+                  Løsne
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** For one or more chosen elements: making a group of them, and breaking a group up. */
+function GroupFields({ scene, selected }: { scene: Scene; selected: Element[] }) {
+  const ids = selected.map((el) => el.id);
+  const whole = wholeGroup(scene, ids);
+  const grouped = selected.find((el) => el.group)?.group;
+  const single = selected.length === 1 ? selected[0]! : undefined;
+  // The order things were chosen in: an arrow goes from the first to the last.
+  const chosen = useStore((s) => s.selection);
+  const pair =
+    selected.length === 2 && selected.every(canFasten)
+      ? chosen.filter((id) => ids.includes(id))
+      : undefined;
+  const group = (): void => {
+    const state = useStore.getState();
+    let members: string[] = [];
+    state.updateScene((s) => {
+      members = groupElements(s, ids, () => newId('g'));
+    });
+    if (members.length) state.select(members);
+  };
+  const ungroup = (): void => useStore.getState().updateScene((s) => ungroupElements(s, ids));
+  const arrowBetween = (): void => {
+    if (!pair) return;
+    const state = useStore.getState();
+    let made: string | undefined;
+    state.updateScene((s) => {
+      made = connect(s, pair[0]!, pair[1]!, () => newId('e'))?.id;
+    });
+    if (made) state.select([made]);
+  };
+  const steps = (): void => {
+    if (!whole) return;
+    useStore.getState().updateScene((s) => stepPerPart(s, whole, newStep));
+  };
+  if (!canGroup(scene, ids) && !grouped && !pair) return null;
+  return (
+    <div className="group">
+      <h3>Gruppe</h3>
+      {single && grouped && (
+        <p className="hint">
+          Dette er en del av en gruppe med {membersOf(scene, grouped).length} deler.
+        </p>
+      )}
+      {!grouped && canGroup(scene, ids) && (
+        <p className="hint">
+          En gruppe flyttes, kopieres og endrer størrelse samlet. Hver del kan fortsatt komme inn i
+          sitt eget steg.
+        </p>
+      )}
+      <div className="button-row">
+        {canGroup(scene, ids) && (
+          <button type="button" onClick={group}>
+            Grupper
+          </button>
+        )}
+        {single && grouped && (
+          <button
+            type="button"
+            onClick={() =>
+              useStore.getState().select(membersOf(scene, grouped).map((member) => member.id))
+            }
+          >
+            Velg hele gruppen
+          </button>
+        )}
+        {grouped && (
+          <button type="button" onClick={ungroup}>
+            Del opp gruppen
+          </button>
+        )}
+        {whole && (
+          <button
+            type="button"
+            onClick={steps}
+            title="Delene kommer inn én etter én, i leseretning. En pil kommer sammen med det den peker på."
+          >
+            Ett steg per del
+          </button>
+        )}
+        {pair && (
+          <button
+            type="button"
+            onClick={arrowBetween}
+            title="Pila går fra det du valgte først, til det du valgte sist, og følger begge når de flyttes."
+          >
+            Sett pil mellom dem
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -993,9 +1144,23 @@ function ElementPanel({ scene }: { scene: Scene }) {
     );
   }
   if (selected.length > 1) {
+    const group = wholeGroup(
+      scene,
+      selected.map((el) => el.id),
+    );
     return (
       <div className="panel-body">
-        <h3>{selected.length} elementer valgt</h3>
+        <h3>
+          {group
+            ? `Gruppe med ${membersOf(scene, group).length} deler`
+            : `${selected.length} elementer valgt`}
+        </h3>
+        {group && (
+          <p className="hint">
+            Klikk en gang til på en del for å velge bare den. Dobbeltklikk for å skrive i den.
+          </p>
+        )}
+        <GroupFields scene={scene} selected={selected} />
         <div className="button-row">
           <button type="button" onClick={duplicate}>
             Lag kopi
@@ -1026,6 +1191,7 @@ function ElementPanel({ scene }: { scene: Scene }) {
       {el.type === 'table' && <TableFields el={el} />}
       {el.type === 'video' && <VideoFields el={el} />}
       <MoreFields el={el} />
+      <GroupFields scene={scene} selected={selected} />
       <BoxFields el={el} />
       <div className="button-row">
         <button type="button" onClick={duplicate}>

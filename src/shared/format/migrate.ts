@@ -82,5 +82,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 7) project.version = 8;
   // 8 -> 9 only added things (chapters, and slides shown once more).
   if (project.version === 8) project.version = 9;
+  // 9 -> 10 only added things (groups, and lines fastened to elements).
+  if (project.version === 9) project.version = 10;
   return project;
 }

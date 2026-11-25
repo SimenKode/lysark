@@ -6,10 +6,21 @@ import type { EditorState } from 'prosemirror-state';
 import { STAGE } from '../../shared/format/constants';
 import { isEmptyRichText, richText } from '../../shared/format/factory';
 import type { Box, Element, RichText } from '../../shared/format/schema';
+import {
+  canGroup,
+  fastenTargetAt,
+  groupElements,
+  letGoMoved,
+  membersOf,
+  scaleInto,
+  ungroupElements,
+  unionBox,
+} from '../../shared/layout/groups';
 import { markStyle, pictureOf } from '../../shared/layout/marks';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
 import { StageCamera } from './StageCamera';
+import { newId } from '../../shared/format/factory';
 import { cloneElements, deleteElements, stepOf } from './ops';
 import { createTextEditor, type TextEditor } from './richtext/editor';
 import { TextToolbar } from './TextToolbar';
@@ -19,11 +30,23 @@ type Point = { x: number; y: number };
 type Handle = { hx: -1 | 0 | 1; hy: -1 | 0 | 1 } | { end: 'start' | 'end' } | { point: true };
 
 interface Drag {
-  /** 'point' is what a label on a picture points at. */
-  kind: 'move' | 'resize' | 'endpoint' | 'point';
+  /**
+   * 'point' is what a label on a picture points at; 'resize-many' changes
+   * the size of everything that is chosen, as one.
+   */
+  kind: 'move' | 'resize' | 'resize-many' | 'endpoint' | 'point';
   start: Point;
   boxes: Map<string, Box>;
   handle?: Handle;
+  /** For 'resize-many': the frame round what is chosen, as the drag began. */
+  frame?: Box;
+  /**
+   * A line that is not itself dragged is fastened to something that is: the
+   * change is made as the pointer goes, so the line is seen to follow.
+   */
+  live: boolean;
+  /** The whole group was chosen already: a click that does not drag chooses this part of it. */
+  enter?: string;
   moved: boolean;
   seq: number;
 }
@@ -243,6 +266,44 @@ export function Stage() {
     setTransient(new Map(boxes));
   }
 
+  /** True when a line that is not among the ids is fastened to one of them. */
+  function pullsLines(ids: ReadonlySet<string> | ReadonlyMap<string, unknown>): boolean {
+    return (scene?.elements ?? []).some(
+      (e) =>
+        e.type === 'shape' &&
+        !ids.has(e.id) &&
+        ((e.startAt !== undefined && ids.has(e.startAt)) ||
+          (e.endAt !== undefined && ids.has(e.endAt))),
+    );
+  }
+
+  /** Shows the boxes a drag has come to: in the project when lines follow them, otherwise only on screen. */
+  function place(d: Drag, boxes: Map<string, Box>): void {
+    if (!d.live) {
+      applyTransient(boxes);
+      return;
+    }
+    useStore.getState().updateScene(
+      (s) => {
+        for (const [id, box] of boxes) {
+          const el = s.elements.find((e) => e.id === id);
+          if (el) el.box = box;
+        }
+        if (d.kind === 'move') letGoMoved(s, [...boxes.keys()]);
+      },
+      `drag-${d.seq}`,
+      true,
+    );
+  }
+
+  /** What changes size when everything that is chosen does: marks and legends follow their picture. */
+  function resizable(ids: string[]): Element[] {
+    return (scene?.elements ?? []).filter(
+      (e) =>
+        ids.includes(e.id) && !((e.type === 'mark' || e.type === 'legend') && ids.includes(e.on)),
+    );
+  }
+
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>): void {
     if (!scene || event.button !== 0) return;
     const state = useStore.getState();
@@ -257,6 +318,25 @@ export function Stage() {
     const p = toStage(event);
     const handleEl = target.closest<HTMLElement>('[data-handle]');
     const tolerance = 10 / scale;
+
+    if (handleEl?.dataset.handle?.startsWith('m:') && state.selection.length > 1) {
+      const [hx, hy] = handleEl.dataset.handle.slice(2).split(',').map(Number);
+      const members = resizable(state.selection);
+      const boxes = new Map(members.map((e) => [e.id, e.box]));
+      drag.current = {
+        kind: 'resize-many',
+        start: p,
+        boxes,
+        handle: { hx: hx as -1 | 0 | 1, hy: hy as -1 | 0 | 1 },
+        frame: unionBox(members.map((e) => e.box)),
+        live: pullsLines(boxes),
+        moved: false,
+        seq: ++dragSeq.current,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      return;
+    }
 
     if (handleEl && state.selection.length === 1) {
       const el = scene.elements.find((e) => e.id === state.selection[0]);
@@ -276,6 +356,7 @@ export function Stage() {
         start: p,
         boxes: new Map([[el.id, el.box]]),
         handle,
+        live: !('point' in handle) && !('end' in handle) && pullsLines(new Set([el.id])),
         moved: false,
         seq: ++dragSeq.current,
       };
@@ -297,26 +378,45 @@ export function Stage() {
       return;
     }
     let ids = state.selection;
-    if (event.shiftKey) {
+    let enter: string | undefined;
+    // A group is chosen as one. When some of it is chosen already (the owner
+    // has gone into it), its parts are chosen one by one like anything else.
+    const mates = hit.group ? membersOf(scene, hit.group).map((e) => e.id) : [];
+    const whole = mates.length > 0 && mates.every((id) => ids.includes(id));
+    const into = mates.length > 0 && !whole && mates.some((id) => ids.includes(id));
+    if (mates.length > 0 && !into) {
+      if (event.shiftKey) {
+        ids = whole
+          ? ids.filter((id) => !mates.includes(id))
+          : [...ids, ...mates.filter((id) => !ids.includes(id))];
+      } else if (!whole) {
+        ids = mates;
+      } else {
+        enter = hit.id;
+      }
+    } else if (event.shiftKey) {
       ids = ids.includes(hit.id) ? ids.filter((id) => id !== hit!.id) : [...ids, hit.id];
     } else if (!ids.includes(hit.id)) {
       ids = [hit.id];
     }
     state.select(ids);
     if (!ids.includes(hit.id)) return;
+    const boxes = new Map(
+      scene.elements
+        // What belongs to a picture that is moved (its marks, its legend) is seen to move with it.
+        .filter(
+          (e) =>
+            ids.includes(e.id) ||
+            ((e.type === 'mark' || e.type === 'legend') && ids.includes(e.on)),
+        )
+        .map((e) => [e.id, e.box]),
+    );
     drag.current = {
       kind: 'move',
       start: p,
-      boxes: new Map(
-        scene.elements
-          // What belongs to a picture that is moved (its marks, its legend) is seen to move with it.
-          .filter(
-            (e) =>
-              ids.includes(e.id) ||
-              ((e.type === 'mark' || e.type === 'legend') && ids.includes(e.on)),
-          )
-          .map((e) => [e.id, e.box]),
-      ),
+      boxes,
+      live: pullsLines(boxes),
+      enter,
       moved: false,
       seq: ++dragSeq.current,
     };
@@ -335,10 +435,14 @@ export function Stage() {
     if (d.kind === 'point') {
       // What a label points at follows the pointer; the line is drawn anew as it goes.
       const [id] = [...d.boxes.keys()];
-      useStore.getState().updateScene((s) => {
-        const mark = s.elements.find((e) => e.id === id);
-        if (mark?.type === 'mark') mark.point = { x: Math.round(p.x), y: Math.round(p.y) };
-      }, `point-${d.seq}`);
+      useStore.getState().updateScene(
+        (s) => {
+          const mark = s.elements.find((e) => e.id === id);
+          if (mark?.type === 'mark') mark.point = { x: Math.round(p.x), y: Math.round(p.y) };
+        },
+        `point-${d.seq}`,
+        true,
+      );
       return;
     }
     const snapping = !event.altKey;
@@ -386,7 +490,33 @@ export function Stage() {
       for (const [id, box] of d.boxes) {
         boxes.set(id, { ...box, x: Math.round(box.x + dx), y: Math.round(box.y + dy) });
       }
-      applyTransient(boxes);
+      place(d, boxes);
+    } else if (d.kind === 'resize-many' && d.handle && 'hx' in d.handle && d.frame) {
+      const { hx, hy } = d.handle;
+      const from = d.frame;
+      let w = Math.max(16, from.w + hx * dx);
+      let h = Math.max(16, from.h + hy * dy);
+      // With pictures or video among them, the corners keep the proportions; Shift turns it around.
+      const proportional = [...d.boxes.keys()].some((id) => {
+        const type = scene.elements.find((e) => e.id === id)?.type;
+        return type === 'image' || type === 'video';
+      });
+      if (hx !== 0 && hy !== 0 && proportional !== event.shiftKey) {
+        const k = Math.max(w / from.w, h / from.h);
+        w = from.w * k;
+        h = from.h * k;
+      }
+      // The opposite side stays where it is.
+      const to: Box = {
+        x: hx < 0 ? from.x + from.w - w : from.x,
+        y: hy < 0 ? from.y + from.h - h : from.y,
+        w,
+        h,
+        rotation: 0,
+      };
+      const boxes = new Map<string, Box>();
+      for (const [id, box] of d.boxes) boxes.set(id, scaleInto(box, from, to));
+      place(d, boxes);
     } else if (d.kind === 'resize' && d.handle && 'hx' in d.handle) {
       const [id, box] = [...d.boxes.entries()][0]!;
       const el = scene.elements.find((e) => e.id === id);
@@ -432,7 +562,7 @@ export function Stage() {
         h: Math.round(h),
         rotation: box.rotation,
       };
-      applyTransient(new Map([[id, next]]));
+      place(d, new Map([[id, next]]));
     } else if (d.kind === 'endpoint' && d.handle && 'end' in d.handle) {
       const id = [...d.boxes.keys()][0]!;
       const el = scene.elements.find((e) => e.id === id);
@@ -451,21 +581,33 @@ export function Stage() {
           moving = { x: fixed.x + Math.sign(ddx) * m, y: fixed.y + Math.sign(ddy) * m };
         }
       }
-      const start = d.handle.end === 'start' ? moving : fixed;
-      const end = d.handle.end === 'start' ? fixed : moving;
-      useStore.getState().updateScene((s) => {
-        const target = s.elements.find((e) => e.id === id);
-        if (!target || target.type !== 'shape') return;
-        target.box = {
-          x: Math.round(Math.min(start.x, end.x)),
-          y: Math.round(Math.min(start.y, end.y)),
-          w: Math.max(1, Math.round(Math.abs(end.x - start.x))),
-          h: Math.max(1, Math.round(Math.abs(end.y - start.y))),
-          rotation: 0,
-        };
-        target.flipH = start.x > end.x;
-        target.flipV = start.y > end.y;
-      }, `endpoint-${d.seq}`);
+      const which = d.handle.end;
+      const start = which === 'start' ? moving : fixed;
+      const end = which === 'start' ? fixed : moving;
+      const fasten = !event.altKey;
+      useStore.getState().updateScene(
+        (s) => {
+          const target = s.elements.find((e) => e.id === id);
+          if (!target || target.type !== 'shape') return;
+          // An end that is let go on an element is fastened to it, and follows it from then on.
+          const under = fasten ? fastenTargetAt(s, moving, id) : undefined;
+          const other = which === 'start' ? target.endAt : target.startAt;
+          const key = which === 'start' ? 'startAt' : 'endAt';
+          if (under && under.id !== other) target[key] = under.id;
+          else delete target[key];
+          target.box = {
+            x: Math.round(Math.min(start.x, end.x)),
+            y: Math.round(Math.min(start.y, end.y)),
+            w: Math.max(1, Math.round(Math.abs(end.x - start.x))),
+            h: Math.max(1, Math.round(Math.abs(end.y - start.y))),
+            rotation: 0,
+          };
+          target.flipH = start.x > end.x;
+          target.flipV = start.y > end.y;
+        },
+        `endpoint-${d.seq}`,
+        true,
+      );
     }
     setGuides(nextGuides);
   }
@@ -474,6 +616,7 @@ export function Stage() {
     const d = drag.current;
     drag.current = null;
     setGuides({});
+    if (d && !d.moved && d.enter) useStore.getState().select([d.enter]);
     if (!d || !d.moved || d.kind === 'endpoint' || d.kind === 'point') {
       setTransient(null);
       return;
@@ -486,6 +629,8 @@ export function Stage() {
         const el = s.elements.find((e) => e.id === id);
         if (el) el.box = box;
       }
+      // A line that was dragged away by itself is no longer fastened.
+      if (d.kind === 'move') letGoMoved(s, [...boxes.keys()]);
     });
   }
 
@@ -566,6 +711,7 @@ export function Stage() {
             el.box.y += dy;
           }
         }
+        letGoMoved(s, state.selection);
       }, 'nudge');
     };
     switch (event.key) {
@@ -651,6 +797,16 @@ export function Stage() {
     selection.length === 1 ? scene.elements.find((e) => e.id === selection[0]) : undefined;
 
   const menuElement = menu ? scene.elements.find((e) => e.id === menu.id) : undefined;
+  const selected = scene.elements.filter((e) => selection.includes(e.id));
+  // Several chosen elements get one frame round them all, and change size as one.
+  const many = selected.length > 1 && !editing ? resizable(selection) : [];
+  const frame = many.length > 1 ? unionBox(many.map(boxOf)) : undefined;
+  const framePictures = many.some((el) => el.type === 'image' || el.type === 'video');
+  // What the one chosen line is fastened to is shown, so it is seen why the line follows it.
+  const fastenedTo =
+    single?.type === 'shape' && isLine(single) && !editing
+      ? scene.elements.filter((e) => e.id === single.startAt || e.id === single.endAt)
+      : [];
 
   return (
     <div className="stage-column">
@@ -695,6 +851,36 @@ export function Stage() {
           >
             Lag kopi
           </button>
+          {canGroup(scene, selection) && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenu(null);
+                const state = useStore.getState();
+                let members: string[] = [];
+                state.updateScene((sc) => {
+                  members = groupElements(sc, state.selection, () => newId('g'));
+                });
+                if (members.length) state.select(members);
+              }}
+            >
+              Grupper
+            </button>
+          )}
+          {selected.some((el) => el.group) && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenu(null);
+                const state = useStore.getState();
+                state.updateScene((sc) => ungroupElements(sc, state.selection));
+              }}
+            >
+              Del opp gruppen
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -798,12 +984,64 @@ export function Stage() {
                   </div>
                 );
               })}
+              {fastenedTo.map((el) => {
+                const box = boxOf(el);
+                return (
+                  <div
+                    key={`fastened-${el.id}`}
+                    className="fasten-target"
+                    style={{
+                      left: box.x,
+                      top: box.y,
+                      width: box.w,
+                      height: box.h,
+                      outlineWidth: border,
+                      outlineOffset: border * 2,
+                      transform: box.rotation ? `rotate(${box.rotation}deg)` : undefined,
+                    }}
+                  />
+                );
+              })}
+              {frame && (
+                <div
+                  className="selection selection-many"
+                  style={{
+                    left: frame.x,
+                    top: frame.y,
+                    width: frame.w,
+                    height: frame.h,
+                    outlineWidth: border,
+                  }}
+                >
+                  {HANDLES.filter(
+                    (handle) => !framePictures || (handle.hx !== 0 && handle.hy !== 0),
+                  ).map((handle) => (
+                    <div
+                      key={`${handle.hx},${handle.hy}`}
+                      className="handle"
+                      data-handle={`m:${handle.hx},${handle.hy}`}
+                      style={{
+                        left: `calc(${((handle.hx + 1) / 2) * 100}% - ${handleSize / 2}px)`,
+                        top: `calc(${((handle.hy + 1) / 2) * 100}% - ${handleSize / 2}px)`,
+                        width: handleSize,
+                        height: handleSize,
+                        borderWidth: border,
+                        cursor: handle.cursor,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
               {scene.elements
                 .filter((el) => selection.includes(el.id))
                 .map((el) => {
                   const box = boxOf(el);
                   if (isLine(el)) {
                     const pts = lineEnds({ ...el, box } as Element);
+                    const fastened = {
+                      start: el.type === 'shape' && el.startAt !== undefined,
+                      end: el.type === 'shape' && el.endAt !== undefined,
+                    };
                     return (
                       <div key={el.id}>
                         {single &&
@@ -811,7 +1049,12 @@ export function Stage() {
                           (['start', 'end'] as const).map((which) => (
                             <div
                               key={which}
-                              className="handle"
+                              className={`handle${fastened[which] ? ' handle-fastened' : ''}`}
+                              title={
+                                fastened[which]
+                                  ? 'Enden er festet. Dra den bort for å løsne den.'
+                                  : 'Dra enden inn på en boks for å feste den.'
+                              }
                               data-handle={which}
                               style={{
                                 left: pts[which].x - handleSize / 2,

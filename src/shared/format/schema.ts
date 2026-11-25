@@ -18,8 +18,11 @@ export const FORMAT_NAME = 'lysark';
  *    circle); a slide says where the circle stands, and events can move it.
  * 8: a picture can carry marks (numbered points with a legend, or labels
  *    with a line to what they point at).
+ * 9: a slide can begin a chapter, and can be another slide shown once more.
+ * 10: elements can be grouped, and the ends of a line or an arrow can be
+ *    fastened to other elements.
  */
-export const FORMAT_VERSION = 9;
+export const FORMAT_VERSION = 10;
 
 export { STAGE } from './constants';
 
@@ -170,6 +173,13 @@ const elementBase = {
   name: z.string().optional(),
   /** "Lær mer" content attached to this element. Any element can have it. */
   more: More.optional(),
+  /**
+   * Elements of a slide that carry the same value here are a group: they
+   * are chosen, moved, resized and copied as one, and each is still an
+   * element of its own that can come in at a step. A group has at least two
+   * members, and groups do not lie inside groups (src/shared/layout/groups.ts).
+   */
+  group: z.string().min(1).optional(),
 };
 
 /**
@@ -328,6 +338,14 @@ export const ShapeElement = z.object({
   /** For line and arrow: which diagonal of the box, and the arrow direction. For sign: the point is on the left. */
   flipH: z.boolean().optional(),
   flipV: z.boolean().optional(),
+  /**
+   * For line and arrow: the element each end is fastened to. A fastened end
+   * lies on the edge of that element, on the side that faces the line's
+   * other end, and follows it wherever it goes (`followFigures` in
+   * src/shared/layout/groups.ts). The head of an arrow is at its end.
+   */
+  startAt: z.string().min(1).optional(),
+  endAt: z.string().min(1).optional(),
   content: RichText.optional(),
   fontSize: z.number().positive().optional(),
   levelScale: LevelScale.optional(),
