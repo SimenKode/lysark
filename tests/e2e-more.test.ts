@@ -146,6 +146,7 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
     await page.waitForSelector('dialog.media-dialog[open]');
     expect(await page.locator('.media-dialog').getByRole('tab').allTextContents()).toEqual([
       'Søk i Wikimedia Commons',
+      'Søk i Openverse',
       'Last opp',
       'I prosjektet',
     ]);

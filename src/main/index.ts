@@ -19,6 +19,8 @@ import type {
   MenuCommand,
   OpenedHtml,
   OpenedProject,
+  OpenverseResult,
+  PictureBytes,
   VideoProgress,
   VideoRequest,
   VideoSummary,
@@ -26,8 +28,8 @@ import type {
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
 import { webPictureUrl } from '../shared/api';
-import { PDF_LIMIT_BYTES } from '../shared/limits';
-import type { CommonsHit } from './commons';
+import { FETCHED_PICTURE_LIMIT_BYTES, PDF_LIMIT_BYTES } from '../shared/limits';
+import { extensionForMime, type CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
 import { addCameraFilm } from './camera';
 import { buildPreview, exportHtml } from './exportHtml';
@@ -35,7 +37,15 @@ import { adoptClosingAnimation } from './closing';
 import { ffmpegPath, mediaSeconds } from './ffmpeg';
 import { exportVideo, type VideoJob } from './video';
 import { isPreviewUrl, servePreview, stopPreviewServer } from './previewServer';
-import { commonsPreview, downloadCommons, proxyPicture, searchCommons, youtubeStill } from './web';
+import {
+  commonsPreview,
+  downloadCommons,
+  downloadOpenverse,
+  proxyPicture,
+  searchCommons,
+  searchOpenverse,
+  youtubeStill,
+} from './web';
 import {
   MEDIA_EXTENSIONS,
   PROJECT_FILE,
@@ -283,7 +293,8 @@ function showAbout(): void {
       'lenke til kildekoden ligger i den mappa. Lisenstekstene til alt som er bygd inn i ' +
       'Lysark, ligger i mappa «licenses» samme sted.\n\n' +
       'Programmet samler ingenting. Det kontakter nettet bare når du selv søker etter et bilde i ' +
-      'Wikimedia Commons eller henter et forhåndsbilde fra YouTube, og sender da bare søkeordene. ' +
+      'Wikimedia Commons eller Openverse, eller henter et forhåndsbilde fra YouTube, og sender da ' +
+      'bare søkeordene. Lysark bruker Openverse, men er ikke godkjent eller støttet av Openverse. ' +
       'Mikrofonen brukes bare når du leser inn, og kameraet bare når du har slått det på der; ' +
       'opptakene lagres i prosjektmappa og sendes ingen steder.',
     buttons: ['Lukk'],
@@ -567,6 +578,58 @@ function registerHandlers(): void {
     const picture = await downloadCommons(String(title));
     return addMediaBytes(dir, picture.data, picture.extension, {
       name: picture.hit.title.replace(/^[^:]+:/, ''),
+      credit: picture.hit.credit,
+    });
+  });
+
+  handle(
+    'lysark:openverse-search',
+    async (query: string, page: number): Promise<OpenverseResult> => {
+      const result = await searchOpenverse(String(query ?? ''), Number(page) || 1);
+      return {
+        hits: result.hits.map((hit) => ({
+          id: hit.id,
+          thumbUrl: webPictureUrl(hit.thumbUrl),
+          credit: hit.credit,
+        })),
+        ...(result.next ? { next: result.next } : {}),
+      };
+    },
+  );
+
+  // The picture the owner has chosen in Openverse is fetched first and put
+  // into the project afterwards: in between, the interface looks at how
+  // wide it is, and makes it smaller when it is wider than the stage.
+  let fetchedOpenverse: Awaited<ReturnType<typeof downloadOpenverse>> | null = null;
+
+  handle('lysark:openverse-fetch', async (id: string): Promise<PictureBytes> => {
+    fetchedOpenverse = null;
+    const picture = await downloadOpenverse(String(id));
+    fetchedOpenverse = picture;
+    return { data: picture.data, mime: picture.mime };
+  });
+
+  handle('lysark:openverse-add', (dir: string, id: string, scaled?: PictureBytes): AddedMedia => {
+    const picture = fetchedOpenverse;
+    fetchedOpenverse = null;
+    if (!picture || picture.hit.id !== id) throw new Error('Bildet må hentes på nytt.');
+    if (!currentDir || resolve(dir) !== resolve(currentDir)) {
+      throw new Error('Bildet hører ikke til prosjektet som er åpent.');
+    }
+    let { data, extension } = picture;
+    if (scaled) {
+      const scaledExtension = extensionForMime(String(scaled.mime));
+      const fits =
+        scaled.data instanceof Uint8Array &&
+        scaled.data.byteLength > 0 &&
+        scaled.data.byteLength <= FETCHED_PICTURE_LIMIT_BYTES;
+      if (!scaledExtension || !fits) throw new Error('Bildet kunne ikke gjøres mindre.');
+      data = scaled.data;
+      extension = scaledExtension;
+    }
+    // The credit is the one the main process read from Openverse, never one the interface hands in.
+    return addMediaBytes(dir, data, extension, {
+      name: picture.hit.name,
       credit: picture.hit.credit,
     });
   });

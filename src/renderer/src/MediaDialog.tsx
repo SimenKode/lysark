@@ -1,21 +1,23 @@
-// The media dialog: three ways to a picture or a video. Search in Wikimedia
-// Commons (pictures only), upload a file, or reuse what the project already
-// has. Whatever is chosen comes back as an asset in the project.
+// The media dialog: the ways to a picture or a video. Search in Wikimedia
+// Commons or in Openverse (pictures only), upload a file, or reuse what the
+// project already has. Whatever is chosen comes back as an asset in the project.
 import { useEffect, useRef, useState } from 'react';
-import { mediaUrl, type AddedMedia, type CommonsPicture } from '../../shared/api';
+import { mediaUrl, type AddedMedia } from '../../shared/api';
 import type { Asset, Credit } from '../../shared/format/schema';
-import { creditText, hasCredit } from '../../shared/render/more';
+import { creditText, hasCredit, safeWebUrl } from '../../shared/render/more';
 import { SCENE_STRINGS } from '../../shared/render/scene';
 import {
   commonsPreview,
   downloadCommonsPicture,
+  downloadOpenversePicture,
   megabytes,
   searchCommons,
+  searchOpenverse,
   uploadMedia,
 } from './actions';
 import { useStore, type MediaRequest } from './store';
 
-type Tab = 'commons' | 'upload' | 'project';
+type Tab = 'commons' | 'openverse' | 'upload' | 'project';
 
 const STRINGS = SCENE_STRINGS.nb;
 
@@ -99,33 +101,114 @@ export function CreditFields(props: {
   );
 }
 
-// ---------- Search in Wikimedia Commons ----------
+// ---------- Search for pictures on the web ----------
 
-function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
+/** A picture found by a search, whatever source it came from. */
+interface Found {
+  /** What the source calls the picture. */
+  key: string;
+  thumbUrl: string;
+  credit: Credit;
+  /** Size of the original in pixels, when the source says. */
+  width?: number;
+  height?: number;
+}
+
+/** A place to search for pictures that may be used. Each has its own tab. */
+interface PictureSource {
+  /** The name of the tab, and of the search field. */
+  label: string;
+  hint: React.ReactNode;
+  /** Sends the search words. `next` is what the search before said comes next. */
+  search(words: string, next?: number): Promise<{ hits: Found[]; next?: number }>;
+  /** A larger picture for a closer look, where the source has one. */
+  larger?(hit: Found): Promise<string>;
+  insert(hit: Found): Promise<AddedMedia>;
+  /** Let the owner open the page the picture comes from, to look at its terms. */
+  linkToSource?: boolean;
+}
+
+const COMMONS: PictureSource = {
+  label: 'Søk i Wikimedia Commons',
+  hint: (
+    <>
+      Søket sendes til Wikimedia Commons. Bare søkeordene følger med, ingenting om deg eller
+      prosjektet. Du får bare treff som kan brukes fritt eller med navngivelse (CC BY og CC BY-SA);
+      Lysark setter inn navngivelsen for deg.
+    </>
+  ),
+  async search(words, next) {
+    const result = await searchCommons(words, next ?? 0);
+    return {
+      hits: result.hits.map((hit) => ({
+        key: hit.title,
+        thumbUrl: hit.thumbUrl,
+        credit: hit.credit,
+        width: hit.width,
+        height: hit.height,
+      })),
+      ...(result.next === undefined ? {} : { next: result.next }),
+    };
+  },
+  larger: async (hit) => (await commonsPreview(hit.key)).thumbUrl,
+  insert: (hit) => downloadCommonsPicture(hit.key),
+};
+
+const OPENVERSE: PictureSource = {
+  label: 'Søk i Openverse',
+  hint: (
+    <>
+      Søket sendes til Openverse, som leter i bilder med åpen lisens fra Flickr, museer og andre
+      samlinger. Bare søkeordene følger med, ingenting om deg eller prosjektet. Du får bare treff
+      som er merket for fri bruk eller navngivelse (CC BY og CC BY-SA); Lysark setter inn
+      navngivelsen for deg. Openverse kontrollerer ikke lisensene selv, så se på kilden før du
+      bruker et bilde. Lysark bruker Openverse, men er ikke godkjent eller støttet av Openverse.
+    </>
+  ),
+  async search(words, next) {
+    const result = await searchOpenverse(words, next ?? 1);
+    return {
+      hits: result.hits.map((hit) => ({ key: hit.id, thumbUrl: hit.thumbUrl, credit: hit.credit })),
+      ...(result.next === undefined ? {} : { next: result.next }),
+    };
+  },
+  insert: (hit) => downloadOpenversePicture(hit.key),
+  linkToSource: true,
+};
+
+function SearchTab({
+  source,
+  onInsert,
+}: {
+  source: PictureSource;
+  onInsert: (added: AddedMedia) => void;
+}) {
   const [query, setQuery] = useState('');
   const [searched, setSearched] = useState('');
-  const [hits, setHits] = useState<CommonsPicture[]>([]);
+  const [hits, setHits] = useState<Found[]>([]);
   const [next, setNext] = useState<number | undefined>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [selected, setSelected] = useState<CommonsPicture | null>(null);
-  const [large, setLarge] = useState<CommonsPicture | null>(null);
+  const [selected, setSelected] = useState<Found | null>(null);
+  const [large, setLarge] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
   const run = useRef(0);
 
-  const search = async (offset: number): Promise<void> => {
-    const words = offset === 0 ? query.trim() : searched;
+  /** A new search, or (with `more`) the next page of the last one. */
+  const search = async (more?: number): Promise<void> => {
+    const fresh = more === undefined;
+    const words = fresh ? query.trim() : searched;
     if (!words) return;
     const id = ++run.current;
     setBusy(true);
     setError('');
     try {
-      const result = await searchCommons(words, offset);
+      const result = await source.search(words, more);
       if (id !== run.current) return;
-      setHits(offset === 0 ? result.hits : [...hits, ...result.hits]);
+      setHits(fresh ? result.hits : [...hits, ...result.hits]);
       setNext(result.next);
       setSearched(words);
-      if (offset === 0) {
+      if (fresh) {
         setSelected(null);
         setLarge(null);
       }
@@ -137,14 +220,15 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
   };
 
   const chosen = useRef('');
-  const choose = (hit: CommonsPicture): void => {
-    chosen.current = hit.title;
+  const choose = (hit: Found): void => {
+    chosen.current = hit.key;
     setSelected(hit);
     setLarge(null);
     setError('');
-    void commonsPreview(hit.title).then(
+    if (!source.larger) return;
+    void source.larger(hit).then(
       (picture) => {
-        if (chosen.current === hit.title) setLarge(picture);
+        if (chosen.current === hit.key) setLarge(picture);
       },
       () => undefined, // the small picture stays; inserting reports any real problem
     );
@@ -155,7 +239,7 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
     setFetching(true);
     setError('');
     try {
-      onInsert(await downloadCommonsPicture(selected.title));
+      onInsert(await source.insert(selected));
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -163,24 +247,22 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
     }
   };
 
+  const title = (hit: Found): string => hit.credit.title ?? 'Uten tittel';
+
   return (
     <div className="media-tab">
-      <p className="hint">
-        Søket sendes til Wikimedia Commons. Bare søkeordene følger med, ingenting om deg eller
-        prosjektet. Du får bare treff som kan brukes fritt eller med navngivelse (CC BY og CC
-        BY-SA); Lysark setter inn navngivelsen for deg.
-      </p>
+      <p className="hint">{source.hint}</p>
       <form
         className="media-search"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
-          void search(0);
+          void search();
         }}
       >
         <input
           type="search"
-          aria-label="Søk i Wikimedia Commons"
+          aria-label={source.label}
           placeholder="Søk etter bilder"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -202,15 +284,15 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
           )}
           <ul className="media-grid" aria-label="Treff">
             {hits.map((hit) => (
-              <li key={hit.title}>
+              <li key={hit.key}>
                 <button
                   type="button"
                   className="media-tile"
-                  aria-pressed={selected?.title === hit.title}
+                  aria-pressed={selected?.key === hit.key}
                   onClick={() => choose(hit)}
-                  title={hit.credit.title}
+                  title={title(hit)}
                 >
-                  <img src={hit.thumbUrl} alt={hit.credit.title ?? hit.title} loading="lazy" />
+                  <img src={hit.thumbUrl} alt={title(hit)} loading="lazy" />
                   <span className="media-badge">{hit.credit.license || 'Fri bruk'}</span>
                 </button>
               </li>
@@ -224,19 +306,31 @@ function CommonsTab({ onInsert }: { onInsert: (added: AddedMedia) => void }) {
         </div>
         {selected && (
           <aside className="media-detail" aria-label="Valgt bilde">
-            <img src={(large ?? selected).thumbUrl} alt={selected.credit.title ?? selected.title} />
-            <h3>{selected.credit.title}</h3>
+            <img src={large ?? selected.thumbUrl} alt={title(selected)} />
+            <h3>{title(selected)}</h3>
             <dl>
               <dt>Opphavsperson</dt>
               <dd>{selected.credit.author || 'Ikke oppgitt'}</dd>
               <dt>Lisens</dt>
               <dd>{selected.credit.license || 'Fri bruk'}</dd>
-              <dt>Størrelse</dt>
-              <dd>
-                {selected.width} × {selected.height} px
-                {selected.width > 1920 ? ' (hentes i 1920 px bredde)' : ''}
-              </dd>
+              {selected.width !== undefined && selected.height !== undefined && (
+                <>
+                  <dt>Størrelse</dt>
+                  <dd>
+                    {selected.width} × {selected.height} px
+                    {selected.width > 1920 ? ' (hentes i 1920 px bredde)' : ''}
+                  </dd>
+                </>
+              )}
             </dl>
+            {source.linkToSource && safeWebUrl(selected.credit.sourceUrl) && (
+              <p>
+                <a href={selected.credit.sourceUrl} target="_blank" rel="noreferrer">
+                  Se bildet hos kilden
+                </a>{' '}
+                (åpnes i nettleseren)
+              </p>
+            )}
             <button
               type="button"
               className="strong"
@@ -410,7 +504,12 @@ export function MediaDialog({ request }: { request: MediaRequest }) {
   };
 
   const tabs: Array<[Tab, string]> = [
-    ...(image ? ([['commons', 'Søk i Wikimedia Commons']] as Array<[Tab, string]>) : []),
+    ...(image
+      ? ([
+          ['commons', COMMONS.label],
+          ['openverse', OPENVERSE.label],
+        ] as Array<[Tab, string]>)
+      : []),
     ['upload', 'Last opp'],
     ['project', 'I prosjektet'],
   ];
@@ -446,7 +545,10 @@ export function MediaDialog({ request }: { request: MediaRequest }) {
           </button>
         ))}
       </div>
-      {tab === 'commons' && image && <CommonsTab onInsert={insert} />}
+      {tab === 'commons' && image && <SearchTab key="commons" source={COMMONS} onInsert={insert} />}
+      {tab === 'openverse' && image && (
+        <SearchTab key="openverse" source={OPENVERSE} onInsert={insert} />
+      )}
       {tab === 'upload' && <UploadTab kind={request.kind} onInsert={insert} />}
       {tab === 'project' && <ProjectTab kind={request.kind} onPick={(id) => request.resolve(id)} />}
     </dialog>

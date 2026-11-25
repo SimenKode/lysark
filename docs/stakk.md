@@ -274,11 +274,11 @@ Det er ikke tatt inn noe ikonbibliotek.
 
 - Programmet samler ingenting.
 - **Nett bare når du ber om det** (valgt 22.11.2026, se
-  [AGENTS.md](../AGENTS.md)): et søk du sender til Wikimedia Commons,
-  nedlasting av bildet du velger, og forhåndsbildet til en YouTube-lenke
-  når du trykker «Hent forhåndsbilde». Vertene er
-  `commons.wikimedia.org`, `upload.wikimedia.org`, `thumb.wikimedia.org`
-  og `i.ytimg.com`.
+  [AGENTS.md](../AGENTS.md)): et søk du sender til Wikimedia Commons
+  eller Openverse, nedlasting av bildet du velger, og forhåndsbildet til
+  en YouTube-lenke når du trykker «Hent forhåndsbilde». Vertene er
+  `commons.wikimedia.org`, `upload.wikimedia.org`, `thumb.wikimedia.org`,
+  `i.ytimg.com` og (fra 25.11.2026) `api.openverse.org`.
 - **Slik håndheves det** (`src/main/web.ts`, `src/main/commons.ts`):
   - Grensesnittet når ikke nettet i det hele tatt. Alt det ber om over
     http(s), avvises i hovedprosessen.
@@ -326,6 +326,18 @@ Leveranse 3 tok inn pdf.js (bygd inn) og FFmpeg (eget program).
 
 ## Kjente vanskelige punkter
 
+- **Openverse** (lagt til 25.11.2026) er et søk på tvers av mange
+  samlinger med åpent lisensierte bilder. Lysark bruker det uten konto:
+  høyst 20 treff per side, 240 treff per søk, 100 søk i minuttet og 1000
+  i døgnet per nettadresse (målt mot tjenesten 25.11.2026; grensene er
+  Openverse sine og kan endres). Alt går gjennom `api.openverse.org`,
+  også selve bildet, så samlingene bildene ligger i, kontaktes aldri.
+  Bildet hentes i den størrelsen samlingen har det, og gjøres om til
+  1920 piksler bredde når det er bredere. Openverse sier selv at de
+  ikke kontrollerer lisensene, og vilkårene deres krever at et program
+  som bruker tjenesten, sier at det gjør det og at det ikke er godkjent
+  av Openverse. Begge deler står i fanen. Vilkårene:
+  <https://docs.openverse.org/terms_of_service.html>.
 - **Småbildene fra Wikimedia** leveres fra `thumb.wikimedia.org`. Den
   verten kom på lista 22.11.2026 etter eierens ja. Sporingsparametrene
   Wikimedia legger på bildeadressene, sendes ikke med.

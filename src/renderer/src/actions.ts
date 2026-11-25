@@ -6,12 +6,15 @@ import {
   type CommonsPicture,
   type CommonsResult,
   type LysarkApi,
+  type OpenverseResult,
+  type PictureBytes,
   type VideoRequest,
 } from '../../shared/api';
 import { appendSound, continueSound, replaceSound } from '../../shared/audio/edit';
 import { addTrackClip } from '../../shared/audio/tracks';
 import { encodeWav, wavSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
+import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
 import type {
   CameraPlace,
   Element,
@@ -585,6 +588,53 @@ export async function downloadCommonsPicture(title: string): Promise<AddedMedia>
   const { dir } = useStore.getState();
   if (!dir) throw new Error('Ingen prosjekt er åpent.');
   return api().addCommonsPicture(dir, title);
+}
+
+/** Sends the owner's search words to Openverse. `page` counts from 1. */
+export function searchOpenverse(query: string, page: number): Promise<OpenverseResult> {
+  return api().searchOpenverse(query, page);
+}
+
+/**
+ * The picture made smaller, when it is wider than the stage; undefined when
+ * it is fine as it is. Openverse hands pictures out in the size their
+ * collection has them, which can be many times what a slide can show.
+ */
+async function scaledDown(picture: PictureBytes): Promise<PictureBytes | undefined> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(new Blob([picture.data as BlobPart], { type: picture.mime }));
+  } catch {
+    throw new Error('Bildet kunne ikke leses.');
+  }
+  try {
+    if (bitmap.width <= FETCHED_PICTURE_MAX_WIDTH) return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = FETCHED_PICTURE_MAX_WIDTH;
+    canvas.height = Math.max(
+      1,
+      Math.round((bitmap.height * FETCHED_PICTURE_MAX_WIDTH) / bitmap.width),
+    );
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Bildet kunne ikke gjøres mindre.');
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    // A photo stays a JPEG; anything else may have see-through parts, which WebP keeps.
+    const mime = picture.mime === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
+    const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, mime, 0.9));
+    if (!blob) throw new Error('Bildet kunne ikke gjøres mindre.');
+    return { data: new Uint8Array(await blob.arrayBuffer()), mime };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** Fetches a picture from Openverse into the project folder, with its credit. */
+export async function downloadOpenversePicture(id: string): Promise<AddedMedia> {
+  const { dir } = useStore.getState();
+  if (!dir) throw new Error('Ingen prosjekt er åpent.');
+  const fetched = await api().fetchOpenversePicture(id);
+  return api().addOpenversePicture(dir, id, await scaledDown(fetched));
 }
 
 /** Fetches YouTube's still picture of a video and adds it to the project. Returns its asset id. */

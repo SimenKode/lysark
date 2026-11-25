@@ -12,6 +12,9 @@ export const ALLOWED_HOSTS = [
   // Where Wikimedia serves scaled pictures from (approved by the owner 22.11.2026).
   'thumb.wikimedia.org',
   'i.ytimg.com',
+  // Openverse: the search, the gallery and the picture itself all come from
+  // this one host (added 25.11.2026; see src/main/openverse.ts).
+  'api.openverse.org',
 ] as const;
 
 /** The hosts pictures from Wikimedia Commons are served from. */

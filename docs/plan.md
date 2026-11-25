@@ -82,8 +82,8 @@ den i et panel.
 - «Bildekilder»: oversikt over alle bilder med opphavsperson og lisens.
 
 **Medier**
-- Mediedialog med tre faner: «Søk i Wikimedia Commons», «Last opp» og
-  «I prosjektet».
+- Mediedialog med fanene «Søk i Wikimedia Commons», «Søk i Openverse»
+  (fra 25.11.2026), «Last opp» og «I prosjektet».
 - Søket viser bare bilder til fri bruk, CC BY og CC BY-SA. Tittel,
   opphavsperson, lisens og kilde lagres med bildet og vises under det og
   i «Bildekilder». Bildet lastes ned i høyst 2560 px bredde.
@@ -544,7 +544,9 @@ Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 1. **Det eieren melder** etter å ha prøvd mikrofon, kamera, video,
    musikk, installasjonsfila og Canvas. Kamerasirkelen og
    installasjonsfila for Windows, som han ba om 25.11.2026, er bygget.
-2. **Flere bildekilder**, Openverse først, når resten sitter.
+2. ~~Flere bildekilder, Openverse først.~~ Openverse er bygget
+   25.11.2026 (historikk.md 6.24). Flere kilder tas når eieren savner
+   noe.
 3. **Leveranse 4** (figurer og bevegelser), så **leveranse 5** (håndlaget
    stil).
 4. Uttrykket (historikk.md 6.1) godkjennes når eieren har sett på det;

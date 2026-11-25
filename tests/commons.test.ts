@@ -44,6 +44,8 @@ describe('the allow-list', () => {
       'upload.wikimedia.org',
       'thumb.wikimedia.org',
       'i.ytimg.com',
+      // Openverse, the second source of pictures (25.11.2026).
+      'api.openverse.org',
     ]);
   });
 

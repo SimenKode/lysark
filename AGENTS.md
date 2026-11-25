@@ -137,6 +137,14 @@ instead of choosing silently.
   - a search he types and sends to Wikimedia Commons, and the download of
     the picture he chooses (`commons.wikimedia.org`,
     `upload.wikimedia.org`, `thumb.wikimedia.org`);
+  - a search he types and sends to Openverse, and the download of the
+    picture he chooses (`api.openverse.org`, and that host only: the
+    search, the gallery and the picture itself all come from it, so the
+    collections Openverse searches are never contacted). Added
+    25.11.2026 under the leave below. Openverse's terms ask that the
+    program says it uses Openverse and is not endorsed by it, and they say
+    Openverse does not check the licences itself; the tab says both
+    (`src/main/openverse.ts`);
   - the still picture of a YouTube link, when he presses "Hent
     forhåndsbilde" (`i.ytimg.com`).
 

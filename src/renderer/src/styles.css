@@ -2021,3 +2021,9 @@ legend {
 .camera-circle.is-mirrored video {
   transform: scaleX(-1);
 }
+
+/* A link out of the media dialog (the page a picture comes from) looks like the program's other links. */
+.media-detail a {
+  color: var(--lilla);
+  text-decoration: underline;
+}

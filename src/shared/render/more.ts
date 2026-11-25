@@ -86,7 +86,7 @@ export function creditText(credit: Credit, strings: SceneStrings, cropped = fals
   return text;
 }
 
-function safeWebUrl(url: string | undefined): string | undefined {
+export function safeWebUrl(url: string | undefined): string | undefined {
   const clean = url?.trim();
   return clean && /^https?:\/\//i.test(clean) ? clean : undefined;
 }

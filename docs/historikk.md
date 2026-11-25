@@ -1681,6 +1681,67 @@ har ingenting av kameraet i seg.
 - **En lang forelesning med kamera** (hvor store filmene blir, og hvor
   lang tid videoen tar).
 
+**Openverse som bildekilde nummer to (bygget og prøvd 25.11.2026).**
+
+Dette sto som punkt 2 i «Neste steg», og du hadde svart «som anbefalt»
+på å ta Openverse først (6.14).
+
+- **Ny fane i mediedialogen: «Søk i Openverse».** Openverse leter i
+  bilder med åpen lisens fra Flickr, museer og andre samlinger. Fanen
+  virker som Commons-fanen: søk, velg, «Sett inn», og krediteringen
+  følger med.
+- **Samme lisensregler som for Commons:** bare fri bruk (CC0 og «public
+  domain») og navngivelse (CC BY og CC BY-SA). Det ber søket om, og
+  alt annet som likevel skulle komme i svaret, kastes. Bilder merket
+  som støtende kastes også.
+- **Én ny vert: `api.openverse.org`.** Søket, småbildene og selve bildet
+  kommer alle derfra. Samlingene bildene ligger i (Flickr og andre),
+  kontaktes aldri av programmet. Verten står på lista i AGENTS.md og i
+  koden. Som før sendes bare søkeordene og «Lysark/versjon», og bare
+  når du trykker «Søk».
+- **Treff fra Wikimedia er tatt ut av Openverse-søket**, siden de har
+  sin egen fane med fyldigere kreditering.
+- **Store bilder gjøres mindre.** Openverse gir bildet i den størrelsen
+  samlingen har det. Er det bredere enn 1920 piksler, gjøres det om til
+  1920 (JPEG forblir JPEG; andre blir WebP).
+- **«Se bildet hos kilden»** står ved det valgte bildet og åpner sida
+  bildet kommer fra, i nettleseren din.
+
+**To ting fra Openverse sine bruksvilkår som du bør vite om**
+(<https://docs.openverse.org/terms_of_service.html>, lest 25.11.2026):
+
+1. *Den som bruker Openverse, godtar vilkårene.* De sier blant annet at
+   man ikke skal omgå grensene for antall søk, og at et program som
+   bygger på Openverse, tydelig skal si at det bruker Openverse og ikke
+   er godkjent av dem. Det står nå i fanen og i «Om Lysark». Si fra om
+   du ikke vil godta vilkårene, så tar jeg kilden ut igjen.
+2. *Openverse kontrollerer ikke lisensene.* De samler inn det
+   samlingene selv oppgir, og sier at brukeren har ansvaret for å
+   sjekke. Det er en reell forskjell fra Commons. Fanen sier det, og
+   lenka til kilden er der for at du skal kunne se etter.
+
+Uten konto tillater Openverse 20 treff per side, 240 treff per søk, 100
+søk i minuttet og 1000 i døgnet per nettadresse (målt 25.11.2026). På
+USN deler mange samme adresse utad, så grensa per døgn kan i prinsippet
+nås av andre. Da sier fanen «Openverse tar ikke imot flere søk akkurat
+nå», og Commons virker som før.
+
+For å finne ut hvordan tjenesten faktisk svarer (dokumentasjonen oppga
+ikke grensene), sendte jeg sju søk og ett oppslag og hentet sju bilder
+med kommandolinja, med søkeordet «bridge» og ingenting om deg eller
+prosjektet. Det er de eneste gangene noe har kontaktet Openverse.
+
+Prøvd på Linux Mint, automatisk og uten nett: 8 enhetstester
+(`tests/openverse.test.ts`) og fire ende-til-ende-tester
+(`tests/e2e-openverse.test.ts`) der testen selv svarer for Openverse:
+fanen sender ingenting før du søker; bare bilder med brukbar lisens
+vises; krediteringen blir riktig og leses på nytt når bildet hentes;
+alt som sendes, går til den ene verten; et 2400 piksler bredt bilde
+lagres 1920 bredt; for mange søk gir en forståelig melding.
+
+**Ikke prøvd:** selve fanen mot det ekte Openverse (testene går aldri
+på nett), og Windows.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

@@ -1,7 +1,7 @@
 // The one place the program talks to the network, and only when the owner
-// asks for it in the media dialog: a search in Wikimedia Commons, the
-// download of the picture he chooses, and the still picture of a YouTube
-// link. Everything goes through one session whose requests are checked
+// asks for it in the media dialog: a search in Wikimedia Commons or in
+// Openverse, the download of the picture he chooses, and the still picture
+// of a YouTube link. Everything goes through one session whose requests are checked
 // against an allow-list, redirects included.
 import { app, session, type Session } from 'electron';
 import {
@@ -16,10 +16,20 @@ import {
   parseCommonsAnswer,
   type CommonsHit,
 } from './commons';
+import {
+  isOpenversePicture,
+  openverseDetailUrl,
+  openversePictureUrl,
+  openverseSearchUrl,
+  parseOpenverseAnswer,
+  parseOpenverseHit,
+  type OpenverseHit,
+} from './openverse';
+import { FETCHED_PICTURE_LIMIT_BYTES } from '../shared/limits';
 import { youtubeRef, youtubeStillUrl } from '../shared/render/web';
 
 const PARTITION = 'lysark-web'; // in memory: nothing is kept between runs
-const MAX_PICTURE_BYTES = 40 * 1024 * 1024;
+const MAX_PICTURE_BYTES = FETCHED_PICTURE_LIMIT_BYTES;
 
 let webSession: Session | null = null;
 
@@ -106,6 +116,44 @@ export async function downloadCommons(
   return { ...fetched, mime: fetched.mime.split(';')[0]!.trim().toLowerCase(), extension, hit };
 }
 
+async function openverseJson(address: string): Promise<unknown> {
+  const response = await fetchAllowed(address);
+  if (response.status === 429) {
+    throw new Error(
+      'Openverse tar ikke imot flere søk akkurat nå. Det er en grense for hvor mange som kan ' +
+        'gjøres på en dag. Prøv igjen om litt, eller søk i Wikimedia Commons.',
+    );
+  }
+  if (response.status === 404) throw new Error('Bildet finnes ikke lenger hos Openverse.');
+  if (!response.ok) throw new Error(`Openverse svarte med feil (${response.status}).`);
+  return response.json();
+}
+
+/** Sends the owner's search words to Openverse. `page` counts from 1. */
+export async function searchOpenverse(
+  query: string,
+  page: number,
+): Promise<{ hits: OpenverseHit[]; next?: number }> {
+  if (!query.trim()) return { hits: [] };
+  return parseOpenverseAnswer(await openverseJson(openverseSearchUrl(query, page)));
+}
+
+/**
+ * Fetches the chosen picture from Openverse, in the size its collection has
+ * it, with what its credit must say. The licence is read anew, not taken
+ * from the gallery.
+ */
+export async function downloadOpenverse(
+  id: string,
+): Promise<{ data: Uint8Array; mime: string; extension: string; hit: OpenverseHit }> {
+  const hit = parseOpenverseHit(await openverseJson(openverseDetailUrl(id)));
+  if (!hit) throw new Error('Bildet finnes ikke lenger, eller lisensen kan ikke brukes.');
+  const fetched = await fetchBytes(openversePictureUrl(id, true));
+  const extension = extensionForMime(fetched.mime);
+  if (!extension) throw new Error('Bildet er i et format som ikke kan vises.');
+  return { ...fetched, mime: fetched.mime.split(';')[0]!.trim().toLowerCase(), extension, hit };
+}
+
 /** YouTube's own still picture of a video; the large one when it exists. */
 export async function youtubeStill(address: string): Promise<{ data: Uint8Array; id: string }> {
   const ref = youtubeRef(address);
@@ -120,11 +168,12 @@ export async function youtubeStill(address: string): Promise<{ data: Uint8Array;
   throw new Error('YouTube har ikke noe forhåndsbilde for denne videoen.');
 }
 
-/** Passes a gallery picture from Commons on to the interface, which cannot reach the network itself. */
+/** Passes a gallery picture on to the interface, which cannot reach the network itself. */
 export async function proxyPicture(address: string): Promise<Response> {
-  if (!isAllowedUrl(address) || !PICTURE_HOSTS.includes(new URL(address).hostname)) {
-    return new Response(null, { status: 403 });
-  }
+  const picture =
+    isAllowedUrl(address) &&
+    (PICTURE_HOSTS.includes(new URL(address).hostname) || isOpenversePicture(address));
+  if (!picture) return new Response(null, { status: 403 });
   try {
     const response = await fetchAllowed(address);
     const type = response.headers.get('content-type') ?? '';

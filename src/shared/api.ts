@@ -54,6 +54,27 @@ export interface CommonsResult {
   next?: number;
 }
 
+/** A picture found in Openverse. */
+export interface OpenversePicture {
+  /** Openverse's own name for the picture. */
+  id: string;
+  /** Address of a picture the interface can show (handed out by the main process). */
+  thumbUrl: string;
+  credit: Credit;
+}
+
+export interface OpenverseResult {
+  hits: OpenversePicture[];
+  /** Number of the next page, when there is one. */
+  next?: number;
+}
+
+/** A picture as bytes, with its type. */
+export interface PictureBytes {
+  data: Uint8Array;
+  mime: string;
+}
+
 export interface ExportSummary {
   path: string;
   bytes: number;
@@ -150,6 +171,18 @@ export interface LysarkApi {
   commonsPreview(title: string): Promise<CommonsPicture>;
   /** Downloads the chosen picture into the project, with its credit. Contacts the network. */
   addCommonsPicture(dir: string, title: string): Promise<AddedMedia>;
+  /** Sends the owner's search words to Openverse. `page` counts from 1. Contacts the network. */
+  searchOpenverse(query: string, page: number): Promise<OpenverseResult>;
+  /**
+   * Fetches the chosen picture from Openverse and hands it over, so the
+   * interface can see how large it is. Contacts the network.
+   */
+  fetchOpenversePicture(id: string): Promise<PictureBytes>;
+  /**
+   * Puts the picture that was just fetched into the project, with its
+   * credit. `scaled` is the same picture made smaller, when it was too wide.
+   */
+  addOpenversePicture(dir: string, id: string, scaled?: PictureBytes): Promise<AddedMedia>;
   /** Fetches YouTube's still picture of a video into the project. Contacts the network. */
   addYouTubeStill(dir: string, url: string): Promise<AddedMedia>;
   exportHtml(dir: string, project: Project): Promise<ExportSummary | null>;
