@@ -17,13 +17,19 @@ Programmet er gratis og på norsk, og virker på Windows 11 og på Linux
 ### Windows
 
 1. Åpne [siste utgivelse](https://github.com/SimenKode/lysark/releases/latest).
-2. Last ned fila som slutter på `-win.zip`.
-3. Høyreklikk på fila og velg «Pakk ut alle».
-4. Åpne mappa og dobbeltklikk på `Lysark.exe`.
+2. Last ned fila som slutter på `-windows-installasjon.exe`.
+3. Dobbeltklikk på fila.
+
+Det er alt. Lysark installeres, legger seg på skrivebordet og i
+Start-menyen, og starter av seg selv. Du trenger ikke
+administratorrettigheter, og det tar et minutt eller to.
 
 Første gang kan Windows vise «Windows beskyttet PC-en din». Trykk «Mer
 informasjon» og så «Kjør likevel». Advarselen kommer fordi programmet
 ikke er signert, ikke fordi noe er galt med det.
+
+Vil du ikke installere noe, kan du i stedet laste ned fila som slutter
+på `-win.zip`, pakke den ut og dobbeltklikke på `Lysark.exe`.
 
 ### Linux
 
@@ -48,12 +54,18 @@ Klikk for å velge, dra for å flytte, dobbeltklikk for å skrive. Under
 
 Høyreklikk på hva som helst og velg «Legg til «Lær mer»» for å gi
 studentene mer stoff: tekst, bilder, video, tabeller og nettsider.
+Bilder kan du søke fram i Wikimedia Commons og Openverse, og Lysark
+setter inn hvem som har laget dem.
 Studenten trykker på «+», og en boks spretter ut ved siden av.
 
 ### 3. Les inn stemmen
 
 Trykk «Les inn» i fanen «Lyd». Manuset står ved siden av lysarket mens
 du snakker. Pil høyre går til neste steg eller neste lysark.
+
+Vil du være med i bildet, krysser du av for «Kamera». Da vises ansiktet
+ditt i en sirkel på lysarket, og blir med i videoen. Dra sirkelen dit
+den ikke dekker noe, også mens du leser inn.
 
 ![Innlesing: lysarket til venstre, manuset til høyre](docs/bilder/les-inn.png)
 
@@ -92,12 +104,15 @@ har lagt i «Lær mer».
   Sørøst-Norge (USN). USNs logo følger ikke med; har du logopakka fra
   USN, peker du på den under «Innstillinger».
 - **Nett.** Programmet kontakter nettet bare når du selv søker etter et
-  bilde i Wikimedia Commons eller henter et forhåndsbilde fra YouTube.
-  Da sendes bare søkeordene. Ingenting skjer i bakgrunnen.
-- **Mikrofon.** Brukes bare mens du leser inn. Opptakene lagres i
-  prosjektmappa og sendes ingen steder.
-- **Bilder fra Wikimedia Commons** får opphavsperson, lisens og kilde
-  med seg, og Lysark viser det for studentene.
+  bilde i Wikimedia Commons eller Openverse, eller henter et
+  forhåndsbilde fra YouTube. Da sendes bare søkeordene. Ingenting skjer
+  i bakgrunnen.
+- **Mikrofon og kamera.** Mikrofonen brukes bare mens du leser inn.
+  Kameraet brukes bare der, og bare når du selv har slått det på.
+  Opptakene lagres i prosjektmappa og sendes ingen steder.
+- **Bilder du søker fram** får opphavsperson, lisens og kilde med seg,
+  og Lysark viser det for studentene. Lysark bruker Openverse, men er
+  ikke godkjent eller støttet av Openverse.
 - **YouTube** spiller rett i lysarket hos studentene. I videofila står
   en YouTube-video som stillbilde.
 

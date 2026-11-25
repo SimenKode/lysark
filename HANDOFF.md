@@ -22,9 +22,11 @@ ting i chatten. Begge er bygget, og i tillegg neste punkt på lista:
 | Du ba om | Slik ble det |
 | --- | --- |
 | Video av deg selv, i en sirkel som kan flyttes | Kryss av for «Kamera» når du leser inn. Ansiktet vises i en sirkel på lysarket. Dra den dit den ikke dekker noe, også mens du leser; flyttingen huskes med tidspunkt. Etterpå kan du flytte den, endre størrelsen eller skjule den per lysark. Sirkelen er med i **videoen**, ikke i HTML-fila (ditt valg) |
-| Smidig installering på Windows | En installasjonsfil: ett dobbeltklikk, ingen spørsmål om administrator, snarvei på skrivebordet, programmet starter selv. Prøvd i Windows-VM-en |
+| Smidig installering på Windows | En installasjonsfil: ett dobbeltklikk, ingen spørsmål om administrator, snarvei på skrivebordet, programmet starter selv. Prøvd i Windows-VM-en, også som oppgradering fra 0.3.0 |
 | En ren forside på GitHub | README er skrevet om: installasjon øverst, så bruk i fem trinn med bilder. Alt om utvikling er flyttet til `docs/utvikling.md` |
 | (Neste på lista) Flere bildekilder | Ny fane «Søk i Openverse» i mediedialogen: bilder fra Flickr, museer og andre samlinger, med samme lisensregler som Commons |
+
+Alt dette er **gitt ut som versjon 0.4.0** (du sa ja 25.11.2026).
 
 Kameraet var før uttrykkelig stengt i reglene. Nå står det i AGENTS.md
 at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
@@ -63,8 +65,10 @@ at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd.
-2. **Figurer og bevegelser** (leveranse 4). Jeg stiller spørsmålene
-   først, slik reglene sier.
+2. **Figurer og bevegelser** (leveranse 4). Du valgte **merket bilde**
+   først: tall, piler og etiketter oppå et bilde, med nummererte punkter
+   eller etiketter med strek, valgt per bilde. Deretter fri figur, maler
+   og diagrammer.
 3. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
@@ -106,18 +110,13 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 | Hva | Hvor |
 | --- | --- |
-| Programmet slik det er gitt ut (0.3.0, uten det som er nytt i dag) | <https://github.com/SimenKode/lysark/releases/tag/v0.3.0> |
-| Installasjonsfila jeg prøvde i VM-en | `release/Lysark-0.3.0-windows-installasjon.exe` (versjon 0.3.0 pakket på ny måte; ikke gitt ut) |
+| Utgivelsen, gitt ut 25.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.4.0> |
+| Programmet, ferdig pakket | `release/Lysark-0.4.0-windows-installasjon.exe` og `release/Lysark-0.4.0-win.zip` (Windows), `release/Lysark-0.4.0.AppImage` (Linux) |
 | Koden | `~/Forelesningsverktoy/lysark`, offentlig på GitHub (<https://github.com/SimenKode/lysark>) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
 | Reglene for den som bygger | [AGENTS.md](AGENTS.md) |
-| I Windows-VM-en | Lysark 0.3.0 er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før |
-
-**Kamera, installasjonsfil og Openverse er ikke gitt ut ennå.** De
-ligger i koden. Forsiden på GitHub beskriver derfor fortsatt
-zip-utgaven for Windows og nevner ikke kameraet; teksten for det er
-klar og går ut sammen med en ny utgivelse, når du ber om den.
+| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før |
 
 ## Sjekkliste for Canvas
 
@@ -145,10 +144,9 @@ Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
 forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
-og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.3.0 er gitt
-ut. Etter det er kamerasirkelen (ansiktet mitt i videoen), en
-installasjonsfil for Windows, søk i Openverse og en ny forside bygget
-(25.11.2026), men ikke gitt ut.
+og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
+ut (25.11.2026), med kamerasirkelen (ansiktet mitt i videoen), en
+installasjonsfil for Windows, søk i Openverse og en ny forside.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.

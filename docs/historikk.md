@@ -1742,6 +1742,48 @@ lagres 1920 bredt; for mange søk gir en forståelig melding.
 **Ikke prøvd:** selve fanen mot det ekte Openverse (testene går aldri
 på nett), og Windows.
 
+**Tre spørsmål til, stilt da alt over var bygget, og svarene:**
+
+1. **Skal versjon 0.4.0 gis ut nå,** med kamerasirkelen,
+   installasjonsfila og Openverse? Anbefaling: ja; utgivelsesteksten
+   sier at kameraet bare er prøvd med prøvekamera.
+
+   Svar: ja, gi ut 0.4.0.
+
+2. **Hvilken del av figurer og bevegelser (leveranse 4) først,** som et
+   ferdig stykke for seg? Anbefaling: merket bilde (tall, piler og
+   etiketter oppå et bilde). De andre valgene var fri figur,
+   diagrammer, eller å vente.
+
+   Svar: merket bilde.
+
+3. **Hvordan skal merkene se ut?** Anbefaling: begge deler, valgt per
+   bilde: nummererte punkter med forklaringsliste, eller etiketter med
+   strek inn til punktet.
+
+   Svar: begge, valgt per bilde.
+
+**Versjon 0.4.0 er gitt ut 25.11.2026** (eieren: «Ja, gi ut 0.4.0»):
+<https://github.com/SimenKode/lysark/releases/tag/v0.4.0>.
+
+- Filene: `Lysark-0.4.0-windows-installasjon.exe` (161 MB),
+  `Lysark-0.4.0-win.zip` (222 MB), `Lysark-0.4.0.AppImage` (202 MB), og
+  de tre filene med FFmpegs kildekode, de samme som ved 0.3.0 (samme
+  FFmpeg-bygg).
+- Før utgivelsen: hele testsettet (370 tester) på Linux Mint, og de 73
+  ende-til-ende-testene en gang til mot det pakkede Linux-programmet
+  (utpakket, ikke selve AppImage-fila).
+- **Oppgradering prøvd i Windows 11-VM-en:** 0.4.0 installert rett over
+  0.3.0 med installasjonsfila. Programmet startet, «Om Lysark» viser
+  0.4.0, og de sist brukte prosjektene sto der som før.
+- Forsiden (README) beskriver fra nå installasjonsfila, kameraet og
+  Openverse. Regelen er skrevet inn i AGENTS.md: forsiden beskriver det
+  siste utgivelse inneholder, ikke det som bare ligger i koden.
+- Ikke prøvd i den utgitte utgaven: det samme som står over (ekte
+  kamera, nedlastet fil på Windows, USN-PC, Openverse mot ekte nett).
+  Kamera, innlesing og Openverse er ikke prøvd for hånd på Windows i
+  0.4.0; der er bare installasjon, start og «Om Lysark» sett på.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

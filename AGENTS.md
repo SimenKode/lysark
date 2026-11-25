@@ -311,10 +311,13 @@ instead of choosing silently.
   the owner opened it on 23.11.2026, after the history had been gone
   through and rewritten. Do not change its visibility, create other
   remote repositories or publish anything (releases, packages) unless
-  the owner asks. He asked for a release on 22.11.2026 (version 0.2.0)
-  and again on 23.11.2026 (version 0.3.0): each is a release with the
-  packaged program for Linux and Windows and FFmpeg's source. Make a new
-  release only when he asks for one.
+  the owner asks. He asked for a release on 22.11.2026 (version 0.2.0),
+  on 23.11.2026 (version 0.3.0) and on 25.11.2026 (version 0.4.0): each
+  is a release with the packaged program for Linux and Windows (from
+  0.4.0 the Windows installer too) and FFmpeg's source. The README
+  describes what the latest release holds, not what is only in the
+  code: what it says about a new feature goes out with the release that
+  has it. Make a new release only when he asks for one.
 - Commits use the owner's GitHub no-reply address, set in this
   repository's git configuration. Never put his private e-mail address in
   a commit, a file or a request.
