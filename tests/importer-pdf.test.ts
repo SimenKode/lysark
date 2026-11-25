@@ -22,6 +22,11 @@ import {
   isPagePicture,
   linkPieces,
   linkUnderlines,
+  placeShapes,
+  shapesOver,
+  groupTouching,
+  around,
+  touching,
   pageLines,
   pageTitle,
   paletteTextColor,
@@ -282,16 +287,64 @@ describe('what a PDF page draws', () => {
       ['constructPath', OPS.endPath, [], [0, 0, 400, 200]],
     ]);
     expect(sorted.paths).toEqual([
-      { index: 1, bounds: [210, 110, 370, 112] },
-      { index: 2, bounds: [10, 10, 810, 410] },
+      { index: 1, bounds: [210, 110, 370, 112], outline: false },
+      { index: 2, bounds: [10, 10, 810, 410], outline: false },
     ]);
     // On a page 540 high at one stage pixel a point, y turned: the line lies at y = 428 to 430.
     const toStage = [1, 0, 0, -1, 0, 540] as [number, number, number, number, number, number];
+    const shapes = placeShapes(sorted.paths, toStage);
+    expect(shapes).toEqual([
+      { index: 1, box: { x: 210, y: 428, w: 160, h: 2 }, outline: false },
+      { index: 2, box: { x: 10, y: 130, w: 800, h: 400 }, outline: false },
+    ]);
     const link = { x: 205, y: 400, w: 170, h: 34 };
-    expect(linkUnderlines(sorted.paths, [link], toStage)).toEqual([1]);
+    expect(linkUnderlines(shapes, [link])).toEqual([1]);
     // Not under a link that lies elsewhere, and not without links.
-    expect(linkUnderlines(sorted.paths, [{ ...link, y: 100 }], toStage)).toEqual([]);
-    expect(linkUnderlines(sorted.paths, [], toStage)).toEqual([]);
+    expect(linkUnderlines(shapes, [{ ...link, y: 100 }])).toEqual([]);
+    expect(linkUnderlines(shapes, [])).toEqual([]);
+  });
+
+  it('finds the shapes painted on top of a picture, with what belongs to them', () => {
+    const shape = (index: number, x: number, y: number, w: number, h: number, outline = false) => ({
+      index,
+      box: { x, y, w, h },
+      outline,
+    });
+    const picture = { x: 100, y: 100, w: 400, h: 300 };
+    const shapes = [
+      // Painted before the picture: under it.
+      shape(1, 150, 150, 50, 50),
+      // A sign that reaches into the picture, its edge, and the line from it to a word outside.
+      shape(6, 450, 80, 120, 60),
+      shape(7, 450, 80, 120, 60),
+      shape(8, 570, 110, 80, 2),
+      // The top of a frame around the picture, a frame drawn in one go, and something far away.
+      shape(9, 98, 98, 404, 4),
+      shape(10, 900, 900, 50, 50),
+      shape(11, 98, 98, 404, 304, true),
+    ];
+    expect(shapesOver(shapes, 5, picture, 6)).toEqual([6, 7, 8]);
+    // A sign that only reaches the rim of the picture, but lies on the sign that is on it, comes too.
+    expect(shapesOver([...shapes, shape(13, 440, 60, 65, 45)], 5, picture, 6)).toEqual([
+      6, 7, 8, 13,
+    ]);
+    expect(shapesOver([...shapes, shape(13, 60, 150, 44, 45)], 5, picture, 6)).toEqual([6, 7, 8]);
+    // Nothing lies on a picture that is painted last, or one that stands elsewhere.
+    expect(shapesOver(shapes, 11, picture, 6)).toEqual([]);
+    // A field that is filled covers the picture; the same shape as an outline goes round it.
+    expect(shapesOver([shape(12, 98, 98, 404, 304)], 5, picture, 6)).toEqual([12]);
+    expect(shapesOver(shapes, 5, { x: 100, y: 500, w: 100, h: 100 }, 6)).toEqual([]);
+    // Things that touch, directly or through others, are one group.
+    const groups = groupTouching([shapes[1]!, shapes[5]!, shapes[3]!, shapes[2]!]);
+    expect(groups.map((group) => group.map((member) => member.index))).toEqual([[6, 8, 7], [10]]);
+    expect(around(groups[0]!.map((member) => member.box))).toEqual({
+      x: 450,
+      y: 80,
+      w: 200,
+      h: 60,
+    });
+    expect(touching({ x: 0, y: 0, w: 10, h: 10 }, { x: 11, y: 0, w: 5, h: 5 })).toBe(false);
+    expect(touching({ x: 0, y: 0, w: 10, h: 10 }, { x: 11, y: 0, w: 5, h: 5 }, 2)).toBe(true);
   });
 
   it('follows saved and restored transformations, also through forms', () => {
@@ -949,6 +1002,23 @@ describe('a PDF as a project', () => {
     };
     const scene = pdfProject('Fil A', [page]).scenes[0]!;
     expect(scene.elements[0]).toMatchObject({ type: 'image', alt: 'F = ma\nPå skrå' });
+    // Text that has a picture of its own is spoken for by that picture, not by the background.
+    const apart = pdfProject('Fil A', [
+      {
+        ...page,
+        kept: [{ ...page.kept![0]!, apart: true }],
+        pictures: [
+          { ...stored(2), box: { x: 0, y: 0, w: 10, h: 10 }, alt: 'F = ma' },
+          { ...stored(3), box: { x: 0, y: 0, w: 10, h: 10 }, alt: '', decorative: true },
+        ],
+      },
+    ]).scenes[0]!;
+    expect(apart.elements.slice(0, 3)).toMatchObject([
+      { type: 'image', alt: '', decorative: true },
+      { type: 'image', alt: 'F = ma' },
+      { type: 'image', alt: '', decorative: true },
+    ]);
+    expect(apart.elements[1]).not.toHaveProperty('decorative');
     expect(scene.elements[0]).not.toHaveProperty('decorative');
     expect(scene.imported!.warnings.map((w) => w.code)).toEqual(['text', 'text', 'text']);
     expect(scene.imported!.warnings[0]!.message).toContain('formler');

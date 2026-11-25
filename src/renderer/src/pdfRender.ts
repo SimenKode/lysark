@@ -7,8 +7,9 @@
 // operations: everything (to see what the page looks like), only the text
 // (to see which colour each piece of text has, and that it shows), each
 // picture by itself (so it comes out as it appears: cut, turned and masked
-// as on the page), and everything but the text and the pictures (the
-// background). What the pieces become is decided in src/importer/pdf.ts.
+// as on the page), what is painted on top of the pictures (signs, arrows),
+// and everything else but the text (the background). What the pieces
+// become is decided in src/importer/pdf.ts.
 //
 // Everything pdf.js needs comes from the program's own files: its worker,
 // and the two decoders for picture formats the browser engine cannot read
@@ -40,8 +41,10 @@ import {
   PDF_PIXEL_DENSITY,
   PICTURE_LIMIT,
   PICTURE_MIN_SIDE,
+  around,
   documentTitle,
   fitPage,
+  groupTouching,
   isGarbled,
   linkPieces,
   linkUnderlines,
@@ -53,8 +56,11 @@ import {
   pictureDensity,
   pictureFrame,
   pictureRegion,
+  placeShapes,
   planText,
+  shapesOver,
   sortOperations,
+  touching,
   type Matrix,
   type PageFit,
   type PageOperations,
@@ -674,7 +680,8 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
     });
     const linked = linkPieces(pieces, links, state.metrics);
     const onText = links.filter((link) => !linked.loose.includes(link)).map((link) => link.rect);
-    for (const index of linkUnderlines(operations.paths, onText, toStage)) kinds[index] = OP_TEXT;
+    const shapes = placeShapes(operations.paths, toStage);
+    for (const index of linkUnderlines(shapes, onText)) kinds[index] = OP_TEXT;
 
     // Only the text, to see its colours and whether it shows.
     const textLayer = layer(fit.pixelWidth, fit.pixelHeight);
@@ -701,23 +708,31 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
     // The pictures, each drawn by itself.
     const pageRect: Rect = { ...origin, w: fit.box.w, h: fit.box.h };
     const taken = new Set<number>();
-    const pictures: NonNullable<PdfPage['pictures']> = [];
+    /** Pictures and what lies on top of them, with the operation that says where in the pile each lies. */
+    const pile: Array<
+      NonNullable<PdfPage['pictures']>[number] & { order: number; picture?: boolean }
+    > = [];
+    /** Pictures with shapes painted on them, not stored until it is known what becomes of the shapes. */
+    const waiting: Array<{ index: number; box: Rect; canvas: HTMLCanvasElement }> = [];
+    const signed = new Set<number>();
+    /** Shapes painted on top of a picture that is taken out. They are taken out too, to lie on top of it. */
+    const lifted = new Set<number>();
     /** What is painted on top of a picture later, by the first such operation. */
     const above = new Map<number, ImageData>();
     const paintedOver = async (index: number, box: Rect): Promise<boolean> => {
       let next = index + 1;
-      while (next < kinds.length && kinds[next] !== OP_OTHER) next += 1;
+      while (next < kinds.length && (kinds[next] !== OP_OTHER || lifted.has(next))) next += 1;
       if (next >= kinds.length) return false;
-      let later = above.get(next);
+      let later = lifted.size === 0 ? above.get(next) : undefined;
       if (later === undefined) {
         // Half the stage's resolution is enough to see whether something is there.
         const small = layer(fit.box.w / 2, fit.box.h / 2);
         await draw(page, small, page.getViewport({ scale: stageScale / 2 }), 'see-through', (i) => {
           const kind = kinds[i];
-          return kind === OP_SETUP || (kind === OP_OTHER && i >= next);
+          return kind === OP_SETUP || (kind === OP_OTHER && i >= next && !lifted.has(i));
         }).catch(failed);
         later = small.ctx.getImageData(0, 0, small.canvas.width, small.canvas.height);
-        above.set(next, later);
+        if (lifted.size === 0) above.set(next, later);
       }
       const inset = PAINTED_OVER_INSET;
       const x0 = Math.max(0, Math.ceil((box.x - origin.x + inset) / 2));
@@ -733,20 +748,33 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       return painted > 8;
     };
     /**
+     * True when something that stays in the page is painted on top of a
+     * picture. Shapes painted on top of it (a sign, an arrow, a bar) do not
+     * stay: they are taken out with it, unless they are most of the page.
+     */
+    const coveredByWhatStays = async (index: number, box: Rect): Promise<boolean> => {
+      if (!(await paintedOver(index, box))) return false;
+      const over = shapesOver(shapes, index, box, PAINTED_OVER_INSET).filter(
+        (i) => kinds[i] === OP_OTHER && !lifted.has(i),
+      );
+      if (over.length === 0) return true;
+      const reach = around(shapes.filter((shape) => over.includes(shape.index)).map((s) => s.box));
+      if (reach.w * reach.h > 0.5 * pageRect.w * pageRect.h) return true;
+      for (const i of over) lifted.add(i);
+      if (!(await paintedOver(index, box))) {
+        signed.add(index);
+        return false;
+      }
+      // Something else lies on it too, which cannot be taken out.
+      for (const i of over) lifted.delete(i);
+      return true;
+    };
+    /**
      * Where pictures that stay in the page stand. A picture taken out lies
      * on top of the background, so nothing that stays may lie on top of it
      * in the PDF: the pictures are gone through from the top one down.
      */
     const staying: Rect[] = [];
-    const keptText = plan.kept.map((k) => k.area);
-    const touches = (box: Rect, others: Rect[], inset: number): boolean =>
-      others.some(
-        (other) =>
-          other.x < box.x + box.w - inset &&
-          other.x + other.w > box.x + inset &&
-          other.y < box.y + box.h - inset &&
-          other.y + other.h > box.y + inset,
-      );
     const candidates = operations.pictures.length <= PICTURE_LIMIT ? operations.pictures : [];
     for (const picture of [...candidates].reverse()) {
       stopIfCancelled();
@@ -754,11 +782,6 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       const region = pictureRegion(frame, pageRect);
       if (!region) {
         staying.push(frame.box);
-        continue;
-      }
-      // Text that stays in the background must not end up under a picture.
-      if (touches(region, keptText, 0)) {
-        staying.push(region);
         continue;
       }
       const scale = pictureDensity(frame);
@@ -786,20 +809,31 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       const x1 = edge(origin.x + (left + mark.x + mark.w) / scale, region.x + region.w);
       const y1 = edge(origin.y + (top + mark.y + mark.h) / scale, region.y + region.h);
       const box: Rect = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+      const inner: Rect = {
+        x: box.x + PAINTED_OVER_INSET,
+        y: box.y + PAINTED_OVER_INSET,
+        w: box.w - 2 * PAINTED_OVER_INSET,
+        h: box.h - 2 * PAINTED_OVER_INSET,
+      };
       const stays =
         box.w < PICTURE_MIN_SIDE ||
         box.h < PICTURE_MIN_SIDE ||
-        touches(box, staying, PAINTED_OVER_INSET) ||
-        (await paintedOver(picture.index, box));
+        staying.some((other) => touching(other, inner)) ||
+        (await coveredByWhatStays(picture.index, box));
       if (stays) {
         staying.push(box);
         continue;
       }
       const cut = layer(mark.w, mark.h);
       cut.ctx.drawImage(alone.canvas, -mark.x, -mark.y);
+      if (signed.has(picture.index)) {
+        waiting.push({ index: picture.index, box, canvas: cut.canvas });
+        taken.add(picture.index);
+        continue;
+      }
       try {
         const stored = await store(cut.canvas, cut.ctx.getImageData(0, 0, mark.w, mark.h));
-        pictures.unshift({ ...stored, box, alt: '' });
+        pile.push({ ...stored, box, alt: '', order: picture.index, picture: true });
         taken.add(picture.index);
       } catch {
         // A picture that cannot be stored by itself stays in the background picture.
@@ -807,22 +841,187 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
         staying.push(box);
       }
     }
+    // What lies on top of the pictures taken out: the shapes painted over
+    // them, and text that cannot be set as text (a white word on a dark
+    // photograph, the label of a sign). Each group of things that touch is
+    // a picture of its own, laid on top where it lay.
+    const out = [...pile.map((p) => ({ index: p.order, box: p.box })), ...waiting];
+    const boxes = out.map((p) => p.box);
+    type OnTop = { box: Rect; shape?: number; text?: NonNullable<PdfPage['kept']> };
+    // Shapes are gathered only with shapes painted between the same two
+    // pictures, so that every group has one place in the pile.
+    const between = (index: number): number => out.filter((p) => p.index < index).length;
+    const layers = new Map<number, OnTop[]>();
+    for (const shape of shapes) {
+      if (!lifted.has(shape.index)) continue;
+      const layerOf = between(shape.index);
+      layers.set(layerOf, [...(layers.get(layerOf) ?? []), { box: shape.box, shape: shape.index }]);
+    }
+    const groups: OnTop[][] = [...layers.entries()]
+      .sort((p, q) => p[0] - q[0])
+      .flatMap(([, members]) => groupTouching(members));
+    // Text that cannot be set as text goes with the sign it lies on (the one
+    // it shares most ground with, the topmost of equals); text that lies on
+    // a picture only is a picture by itself.
+    const shared = (a: Rect, b: Rect): number =>
+      Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) *
+      Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    const loose: OnTop[] = [];
+    for (const k of plan.kept) {
+      let sign: OnTop[] | undefined;
+      let most = 0;
+      for (const group of groups) {
+        const ground = Math.max(
+          0,
+          ...group.filter((m) => m.shape !== undefined).map((m) => shared(m.box, k.area)),
+        );
+        if (ground > 0 && ground >= most) {
+          most = ground;
+          sign = group;
+        }
+      }
+      if (!sign && !boxes.some((box) => touching(box, k.area))) continue;
+      k.apart = true;
+      if (sign) sign.push({ box: k.area, text: [k] });
+      else loose.push({ box: k.area, text: [k] });
+    }
+    groups.push(...groupTouching(loose));
+
+    /**
+     * Draws some operations of the page, and the text that goes with them,
+     * as one picture cut to what shows, and adds it to the pile.
+     */
+    const pictureOf = async (
+      ops: Set<number>,
+      said: NonNullable<PdfPage['kept']>,
+      reach: Rect,
+      order: number,
+      picture: boolean,
+    ): Promise<void> => {
+      // A stroke reaches half its width outside the shape it follows.
+      const pad = 12;
+      const x0 = Math.max(0, Math.floor((reach.x - origin.x - pad) * density));
+      const y0 = Math.max(0, Math.floor((reach.y - origin.y - pad) * density));
+      const x1 = Math.min(
+        fit.pixelWidth,
+        Math.ceil((reach.x + reach.w - origin.x + pad) * density),
+      );
+      const y1 = Math.min(
+        fit.pixelHeight,
+        Math.ceil((reach.y + reach.h - origin.y + pad) * density),
+      );
+      if (x1 <= x0 || y1 <= y0) return;
+      const alone = layer(x1 - x0, y1 - y0);
+      if (ops.size > 0) {
+        const view = page.getViewport({ scale: pixelScale, offsetX: -x0, offsetY: -y0 });
+        await draw(page, alone, view, 'see-through', (i) => {
+          return kinds[i] === OP_SETUP || ops.has(i);
+        }).catch(failed);
+      }
+      for (const k of said) {
+        const x = Math.max(x0, Math.floor((k.area.x - origin.x) * density) - 4);
+        const y = Math.max(y0, Math.floor((k.area.y - origin.y) * density) - 4);
+        const w = Math.min(x1 - x, Math.ceil(k.area.w * density) + 8);
+        const h = Math.min(y1 - y, Math.ceil(k.area.h * density) + 8);
+        if (w > 0 && h > 0) alone.ctx.drawImage(textLayer.canvas, x, y, w, h, x - x0, y - y0, w, h);
+      }
+      const mark = inked(alone.ctx.getImageData(0, 0, alone.canvas.width, alone.canvas.height));
+      if (!mark) return;
+      const cut = layer(mark.w, mark.h);
+      cut.ctx.drawImage(alone.canvas, -mark.x, -mark.y);
+      const stored = await store(cut.canvas, cut.ctx.getImageData(0, 0, mark.w, mark.h));
+      const alt = said.map((k) => k.text.replace(/\s+/g, ' ')).join('\n');
+      pile.push({
+        ...stored,
+        box: {
+          x: origin.x + (x0 + mark.x) / density,
+          y: origin.y + (y0 + mark.y) / density,
+          w: mark.w / density,
+          h: mark.h / density,
+        },
+        alt,
+        ...(alt || picture ? {} : { decorative: true }),
+        order,
+        ...(picture ? { picture } : {}),
+      });
+    };
+    const shapesOf = (group: OnTop[]): number[] =>
+      group.flatMap((member) => (member.shape === undefined ? [] : [member.shape]));
+    const textOf = (group: OnTop[]): NonNullable<PdfPage['kept']> =>
+      group.flatMap((member) => member.text ?? []);
+
+    // A picture that is mostly covered by what is drawn on it (a figure with
+    // a frame through it and labels on it) is one picture together with
+    // that: two pictures on top of each other would only be in the way of
+    // each other. The others are stored as they are.
+    const used = new Set<OnTop[]>();
+    for (const held of waiting) {
+      stopIfCancelled();
+      const area = held.box.w * held.box.h;
+      const covering = groups.filter((group) => {
+        const drawn = group.filter((m) => m.shape !== undefined && m.shape > held.index);
+        return (
+          !used.has(group) &&
+          drawn.length > 0 &&
+          shared(around(drawn.map((m) => m.box)), held.box) >= 0.6 * area
+        );
+      });
+      if (covering.length > 0) {
+        for (const group of covering) used.add(group);
+        const members = covering.flat();
+        await pictureOf(
+          new Set([held.index, ...shapesOf(members)]),
+          textOf(members),
+          around([held.box, ...members.map((member) => member.box)]),
+          held.index,
+          true,
+        );
+      } else {
+        const image = held.canvas
+          .getContext('2d')!
+          .getImageData(0, 0, held.canvas.width, held.canvas.height);
+        const stored = await store(held.canvas, image);
+        pile.push({ ...stored, box: held.box, alt: '', order: held.index, picture: true });
+      }
+    }
+    for (const group of groups) {
+      if (used.has(group)) continue;
+      stopIfCancelled();
+      const ops = shapesOf(group);
+      await pictureOf(
+        new Set(ops),
+        textOf(group),
+        around(group.map((member) => member.box)),
+        // Text by itself lies on top of everything; a sign lies where it was painted.
+        ops.length > 0 ? Math.min(...ops) : Number.MAX_SAFE_INTEGER,
+        false,
+      );
+    }
+    pile.sort((p, q) => p.order - q.order);
+    // The alternative texts PowerPoint wrote for the pictures, before what the labels on them say.
+    const pictures = pile.filter((p) => p.picture);
     pictureAlts(
       pictures.map((p) => p.box),
       plan.tiny,
     ).forEach((alt, i) => {
-      pictures[i]!.alt = alt;
+      const picture = pictures[i]!;
+      picture.alt = [alt, picture.alt].filter(Boolean).join('\n');
     });
 
-    // The rest of the page: everything but the text and the pictures taken out.
+    // The rest of the page: everything but the text and what has been taken out.
     stopIfCancelled();
     const rest = layer(fit.pixelWidth, fit.pixelHeight);
     await draw(page, rest, full, 'see-through', (i) => {
       const kind = kinds[i];
-      return kind === OP_SETUP || kind === OP_OTHER || (kind === OP_PICTURE && !taken.has(i));
+      return (
+        kind === OP_SETUP ||
+        (kind === OP_OTHER && !lifted.has(i)) ||
+        (kind === OP_PICTURE && !taken.has(i))
+      );
     }).catch(failed);
     // Text that could not be made into text elements is put back where it stood.
     for (const k of plan.kept) {
+      if (k.apart) continue;
       const pad = 4;
       const x = Math.max(0, Math.floor((k.area.x - origin.x) * density) - pad);
       const y = Math.max(0, Math.floor((k.area.y - origin.y) * density) - pad);
@@ -837,7 +1036,7 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       fit,
       lines: plan.lines,
       surface: plan.surface,
-      pictures,
+      pictures: pile.map(({ order: _order, picture: _picture, ...entry }) => entry),
       texts: plan.texts,
       kept: plan.kept,
       recoloured: plan.recoloured,

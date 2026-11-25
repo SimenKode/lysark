@@ -460,7 +460,7 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     expect(await page.locator('.stage-inner .ls-el-text').first().textContent()).toBe('B');
   });
 
-  it('leaves in the background what cannot be taken out safely, and says so', async () => {
+  it('takes out what is painted on a picture with it, and says which text is a picture', async () => {
     const pdf = join(work, 'Lagt oppå.pdf');
     writeFileSync(
       pdf,
@@ -469,14 +469,23 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
           {
             width: 720,
             height: 405,
-            // A dark field with a white letter on it, and an orange bar across the picture.
+            // A dark field with a white letter on it.
             rects: [{ x: 400, y: 250, w: 200, h: 80, color: [47 / 255, 11 / 255, 99 / 255] }],
             lines: [
               { text: 'Punkt A', x: 72, y: 300, size: 24 },
               { text: 'B', x: 480, y: 275, size: 40, color: [1, 1, 1] },
             ],
+            // A picture with an orange bar painted across its upper right part.
             pictures: ['jpeg2000'],
             cover: [{ x: 150, y: 150, w: 100, h: 20, color: [1, 98 / 255, 2 / 255] }],
+          },
+          {
+            width: 720,
+            height: 405,
+            // A white letter on the purple half of a picture.
+            lines: [{ text: 'Punkt C', x: 300, y: 300, size: 24 }],
+            pictures: ['jpeg2000'],
+            captions: [{ text: 'D', x: 115, y: 130, size: 40, color: [1, 1, 1] }],
           },
         ],
       }),
@@ -487,38 +496,65 @@ describe.skipIf(!built)('importing a PDF, end to end', () => {
     await expect.poll(() => existsSync(join(dir, 'prosjekt.json')), LONG).toBe(true);
     await expect
       .poll(() => page.locator('.notice').textContent(), LONG)
-      .toContain('Lysark 1 har merknader fra importen');
+      .toContain('Lysark 1 og 2 har merknader fra importen');
     const project = readProject(dir);
-    const [scene] = project.scenes;
-    // The black line is text. The white letter would not show on this slide's white surface in
-    // a colour text can have, and the picture has something painted over it: both stay.
-    expect(scene!.elements.map((e) => e.type)).toEqual(['image', 'text']);
-    const [background, line] = scene!.elements;
+    const [scene, other] = project.scenes;
+    const file = (element: (typeof scene)['elements'][number]): string => {
+      if (element.type !== 'image') throw new Error('not an image');
+      return join(dir, project.assets[element.asset]!.file);
+    };
+    const scale = 1920 / 720;
+
+    // The first page. The black line is text. The white letter would not show on this slide's
+    // white surface in a colour text can have: it stays in the background, on its field. The
+    // picture is taken out, and the bar that was painted across it lies on top of it.
+    expect(scene!.elements.map((e) => e.type)).toEqual(['image', 'image', 'image', 'text']);
+    const [background, picture, bar, line] = scene!.elements;
     expect(line).toMatchObject({ content: { paragraphs: [{ runs: [{ text: 'Punkt A' }] }] } });
     // The background speaks for the text that stays in it.
     expect(background).toMatchObject({ type: 'image', alt: 'B' });
     expect(background).not.toHaveProperty('decorative');
     expect(scene!.imported?.warnings).toEqual([
-      { code: 'text', message: expect.stringContaining('ligger igjen i bakgrunnsbildet') },
+      { code: 'text', message: expect.stringContaining('er lagt inn som bilde') },
     ]);
-    if (background!.type !== 'image') throw new Error('not an image');
-    const behind = await look(
-      join(dir, project.assets[background.asset]!.file),
-      { x: 380, y: 500, w: 420, h: 160 },
-      [
-        // The field, the stem of the letter on it, the picture's left half, and the bar across it.
-        [2240, 533],
-        [2587, 616],
-        [667, 1360],
-        [933, 1307],
-      ],
-    );
+    expect(picture!.box.x).toBeCloseTo(100 * scale, 0);
+    expect(picture!.box.w).toBeCloseTo(100 * scale, 0);
+    expect(bar).toMatchObject({ type: 'image', alt: '', decorative: true });
+    expect(bar!.box.x).toBeCloseTo(150 * scale, 0);
+    expect(bar!.box.y).toBeCloseTo((405 - 170) * scale, 0);
+    expect(bar!.box.w).toBeCloseTo(100 * scale, 0);
+    expect(bar!.box.h).toBeCloseTo(20 * scale, 0);
+    const behind = await look(file(background!), { x: 380, y: 500, w: 420, h: 160 }, [
+      // The field, the stem of the letter on it, and where the picture and the bar were.
+      [2240, 533],
+      [2587, 616],
+      [667, 1360],
+      [933, 1307],
+    ]);
     expect(near(behind.colours[0]!, [47, 11, 99])).toBe(true);
     expect(near(behind.colours[1]!, WHITE)).toBe(true);
-    expect(near(behind.colours[2]!, PURPLE)).toBe(true);
-    expect(near(behind.colours[3]!, ORANGE)).toBe(true);
+    expect(near(behind.colours[2]!, WHITE)).toBe(true);
+    expect(near(behind.colours[3]!, WHITE)).toBe(true);
     // The line that became text is not in the background too.
     expect(behind.ink).toBe(0);
+    const barPicture = await look(file(bar!), { x: 0, y: 0, w: 1, h: 1 }, [[20, 20]]);
+    expect(near(barPicture.colours[0]!, ORANGE)).toBe(true);
+
+    // The second page: the white letter lies on the picture. The picture is taken out, and the
+    // letter is a small picture of its own on top of it, which says what the letter says.
+    expect(other!.elements.map((e) => e.type)).toEqual(['image', 'image', 'text']);
+    const [under, letter] = other!.elements;
+    expect(under!.box.w).toBeCloseTo(100 * scale, 0);
+    expect(letter).toMatchObject({ type: 'image', alt: 'D' });
+    expect(letter).not.toHaveProperty('decorative');
+    // It stands where the letter stood: inside the left half of the picture.
+    expect(letter!.box.x).toBeGreaterThan(100 * scale);
+    expect(letter!.box.x + letter!.box.w).toBeLessThan(150 * scale);
+    expect(letter!.box.y).toBeGreaterThan((405 - 200) * scale);
+    expect(letter!.box.y + letter!.box.h).toBeLessThan((405 - 100) * scale);
+    expect(other!.imported?.warnings).toEqual([
+      { code: 'text', message: expect.stringContaining('er lagt inn som bilde') },
+    ]);
   });
 
   it('keeps pages without text that shows as one picture, and marks those that need a text', async () => {

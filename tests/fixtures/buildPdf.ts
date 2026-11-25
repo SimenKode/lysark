@@ -59,6 +59,8 @@ export interface TestPage {
   rects?: TestRect[];
   /** More lines of text, drawn after `text`. */
   lines?: TestLine[];
+  /** Lines of text drawn after the pictures, on top of them. */
+  captions?: TestLine[];
   /** Rectangles drawn after everything else, on top of text and pictures. */
   cover?: TestRect[];
   links?: TestLink[];
@@ -187,15 +189,15 @@ export function buildPdf(spec: TestPdf): Uint8Array {
     if (page.text !== undefined) {
       content += `BT /F1 96 Tf 72 ${page.height - 160} Td ${pdfString(page.text)} Tj ET\n`;
     }
-    for (const line of page.lines ?? []) {
-      content +=
-        `BT ${(line.color ?? [0, 0, 0]).join(' ')} rg ${line.invisible ? '3' : '0'} Tr ` +
-        `/${FONT_NAMES[line.font ?? 'plain']} ${line.size} Tf ${line.x} ${line.y} Td ` +
-        `${pdfString(line.text)} Tj ET\n`;
-    }
+    const write = (line: TestLine): string =>
+      `BT ${(line.color ?? [0, 0, 0]).join(' ')} rg ${line.invisible ? '3' : '0'} Tr ` +
+      `/${FONT_NAMES[line.font ?? 'plain']} ${line.size} Tf ${line.x} ${line.y} Td ` +
+      `${pdfString(line.text)} Tj ET\n`;
+    for (const line of page.lines ?? []) content += write(line);
     (page.pictures ?? []).forEach((kind, index) => {
       content += `q 100 0 0 100 ${100 + index * 120} 100 cm /${PICTURE_NAMES[kind]} Do Q\n`;
     });
+    for (const line of page.captions ?? []) content += write(line);
     for (const rect of page.cover ?? []) content += fill(rect);
     const stream = add('', Buffer.from(content, 'latin1'));
     const annotations: number[] = [];
