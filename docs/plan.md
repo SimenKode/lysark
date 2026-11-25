@@ -378,8 +378,11 @@ videoopptak». **Bygget 25.11.2026** (historikk.md 6.28):
   (historikk.md 6.29). Det som ikke kan løftes ut trygt, ligger i et
   bakgrunnsbilde og er merket.
 
-Ikke bygget, venter på eierens svar: valget «USN-stil eller som i fila»
-ved import (historikk.md 6.29, nederst).
+- **Fritt valg ved import** (historikk.md 6.30 og 6.31): lysarkene
+  beholder utseendet, eller gjøres om til USN-stil, for både PowerPoint
+  og PDF. En PowerPoint-fil som beholder utseendet, hentes inn via en PDF
+  som PowerPoint eller LibreOffice lager i bakgrunnen, eller som ligger
+  ved siden av. Veien gjennom PowerPoint på Windows er ikke prøvd.
 
 Utenfor, med vilje: å vise et lysark *før* sin plass i rekkefølgen uten
 at det også står på plassen sin, og teksting av det som sies på en
@@ -590,8 +593,7 @@ Eieren valgte anbefalingene 22.11.2026 (historikk.md 6.14). Leveranse 1,
 2 og 3 er bygget. Det som står for tur:
 
 1. **Det eieren melder** etter å ha prøvd det nye opptaket og
-   PDF-importen (historikk.md 6.28 og 6.29), og valget «USN-stil eller
-   som i fila» ved import når han har svart.
+   importen og valget av utseende (historikk.md 6.28 til 6.31).
 2. ~~Flere bildekilder, Openverse først.~~ Openverse er bygget
    25.11.2026 (historikk.md 6.24). Flere kilder tas når eieren savner
    noe.

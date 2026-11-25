@@ -2146,7 +2146,8 @@ filene i `eksempler/` (`tests/real-files.test.ts`), og en test av regelen
 for kapitler fra bokmerker. **Ikke prøvd:** Windows, og PDF-er fra andre
 programmer enn PowerPoint utover prøvefilene testene lager selv.
 
-**Valget «USN-stil eller som i fila» er ikke bygget.** Slik står det:
+**Valget «USN-stil eller som i fila» var ikke bygget da dette ble
+skrevet.** Det er bygget senere samme dag, se 6.31. Slik sto det:
 
 - *PDF:* «som i fila» er det som nå er bygget. «USN-stil» kan lages
   oppå det: samme elementer, men med temaets skrifter og farger og uten
@@ -2172,6 +2173,102 @@ PowerPoint-fil og en PDF skal kunne **beholde utseendet de har**.
 Foreleseren **tilbys** å få forelesningen over i USN-stil, og velger
 fritt. Spørsmålet mitt var stilt for teknisk; det handlet om hvordan
 programmet får til det første for PowerPoint, ikke om hva valget er.
+
+To spørsmål ble så stilt, hvert med én anbefaling. Han valgte begge
+anbefalingene:
+
+1. **Hvordan skal «Behold utseendet» virke for en PowerPoint-fil, når
+   Lysark ikke selv kan tegne et PowerPoint-lysark?** Svar: «Lysark
+   ordner det selv». Lysark ber PowerPoint (Windows) eller LibreOffice
+   lage en PDF-kopi i bakgrunnen, og henter manus og kapitler fra
+   PowerPoint-fila. Finnes ingen av programmene, ber Lysark om en PDF.
+2. **Skal teksten kunne redigeres når utseendet beholdes?** Svar:
+   «Redigerbar tekst», i Lysarks egen skrift, framfor et nøyaktig bilde
+   av siden som ikke kan endres.
+
+PowerPoint er ikke åpen kildekode. At Lysark får be en installert
+PowerPoint om en PDF, er hans valg og det ene unntaket fra regelen om
+åpen kildekode (AGENTS.md). Ingenting av PowerPoint tas inn eller følger
+med.
+
+### 6.31 Valget ved import er bygget, og mer om PDF-importen (25.11.2026)
+
+**Valget.** Når du har valgt en PowerPoint-fil eller en PDF, spør Lysark:
+«Hvordan skal lysarkene se ut?» med to valg og en forklaring til hvert.
+«Behold utseendet» er valgt til du velger noe annet.
+
+| | Behold utseendet | Gjør om til USN-stil |
+| --- | --- | --- |
+| **PDF** | Som bygget i 6.29: tekst og bilder er elementer, resten av siden ligger bak som bilde | Nytt: teksten og bildene på USN-stilens flate, i dens skrifter og farger, med logo. Streker, former og bakgrunn fra PDF-en følger ikke med. Største tekst øverst blir tittel |
+| **PowerPoint** | Nytt: importeres via en PDF av presentasjonen. Navn, manus og kapitler hentes fra PowerPoint-fila | Importen som har vært der hele tiden |
+
+**Hvor PDF-en av en PowerPoint-fil kommer fra**, i denne rekkefølgen:
+
+1. PowerPoint lager den i bakgrunnen, der PowerPoint er installert
+   (Windows).
+2. En PDF med samme navn som ligger ved siden av PowerPoint-fila, og som
+   ikke er eldre enn den.
+3. LibreOffice lager den i bakgrunnen.
+4. Finnes ingen av delene, ber Lysark deg velge en PDF av presentasjonen.
+
+Lysark sier fra i meldingen etter importen hvor utseendet kom fra. Punkt
+2 la jeg til etter å ha sett på resultatet: LibreOffice tegner ikke helt
+som PowerPoint. På denne maskinen finnes ikke skriften presentasjonene
+hans bruker, så linjer brøt annerledes, en tekst gikk ned i logoen, og
+profilformene på forsiden manglet. PDF-en han selv har lagret fra
+PowerPoint, er helt lik. Når LibreOffice er brukt, sier meldingen det, og
+hva han kan gjøre for å få det helt likt.
+
+Programmene arbeider på en kopi av fila, i en egen mappe, uten vindu.
+Et skjult lysark er ikke med, slik det heller ikke er i PDF-en;
+kapittelet som begynte på det, begynner på neste lysark.
+
+**Prøvd** på Linux Mint, automatisk og uten vindu: fire nye
+ende-til-ende-tester (`tests/e2e-look.test.ts`): PowerPoint med
+utseendet beholdt via LibreOffice (LibreOffice startet uten vindu), via
+en PDF ved siden av, via spørsmålet om en PDF når ingen programmer
+finnes, og en PDF gjort om til USN-stil; og tre nye enhetstester for
+hvordan lysarkene i PowerPoint-fila passes til sidene i PDF-en. «Stål»
+fra hans egen PowerPoint-fil, med utseendet beholdt: 26 lysark, riktige
+kapitler, 15 sekunder (via PDF-en ved siden av), og 6,5 sekunder for
+LibreOffice å lage PDF-en da jeg prøvde det for seg. Hele testsettet: 458
+tester går gjennom, én er hoppet over.
+
+**Ikke prøvd:** veien gjennom PowerPoint på Windows. Den er skrevet, men
+kan ikke kjøres her (ingen PowerPoint), så den er helt uprøvd. Heller
+ikke LibreOffice på Windows. USN-stil for en av hans egne PDF-er har jeg
+ikke sett på med egne øyne.
+
+**Begrensninger, sagt rett ut.**
+
+- En PowerPoint-fil som beholder utseendet, mister animasjonene (stegene)
+  og video inne i lysarkene. De finnes ikke i en PDF.
+- Skriften blir Lysarks egen, også når utseendet beholdes (valget hans).
+- USN-stil for en PDF tar ikke med noe annet enn tekst og bilder. Et
+  lysark som bestod av en tegning, blir da tomt for den. Har han
+  PowerPoint-fila, gir den en bedre USN-stil.
+- Valget tas ved import. Det kan ikke byttes etterpå uten å importere på
+  nytt.
+
+**Mer om PDF-importen, fra hjelpeagentens sluttrapport** (det jeg ikke
+hadde da 6.29 ble skrevet; tallene er dens egne målinger, ikke mine):
+
+- Etter 6.29 ble det lagt til at det som er tegnet oppå et bilde (skilt,
+  piler, ord), løftes ut sammen med bildet i stedet for å bli liggende i
+  bakgrunnen. «Betong» har etter det 383 bildeelementer og 18,8 MB
+  bilder, «Stål» 81 bildeelementer og 3,1 MB.
+- Den gamle importen brukte 157 sekunder på «Betong» og ga 38,2 MB; den
+  nye bruker 43 til 63 sekunder (71 da jeg målte, med annet arbeid på
+  maskinen). «Stål»: 49 sekunder og 8,4 MB før, 12 til 15 sekunder nå.
+- Den sammenlignet omtrent 35 sider fra sju av filene hans med PDF-en,
+  side om side. Det som fortsatt avviker: teksten er omtrent 10 % mindre
+  (Calibri er smalere enn Liberation), punktmerkene er Lysarks egne,
+  lenket tekst mister sin egen farge, overskriftsrader i tabeller (hvit
+  tekst på farge) ligger i bakgrunnen mens resten av tabellen er tekst,
+  og formler er bilder.
+- Ikke laget: tabeller som tabeller, nummererte lister som lister, og
+  lenker på bilder (formatet har ikke plass til det).
+- Bare PDF-er laget av PowerPoint er prøvd på ekte filer.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

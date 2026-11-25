@@ -34,7 +34,7 @@ svarte på fire spørsmål (historikken, 6.26 og 6.27). Slik ble det:
 | PDF: lenker virker ikke | Lenker som lå på tekst, **følger med** og virker, også lenker til andre sider |
 | PDF: teksten er litt kornete | Teksten er **ekte tekst**, i Lysarks skrift, og er skarp |
 | Minivideo av noen få lysark | Fantes fra før: «Eksporter video» → «Fra lysark … til …» |
-| Velge USN-stil eller som i fila ved import | **Ikke bygget.** Trenger ett svar fra deg først, se under |
+| Fritt valg ved import: behold utseendet, eller USN-stil | Etter at du har valgt fila, spør Lysark **«Hvordan skal lysarkene se ut?»**. Gjelder både PowerPoint og PDF. «Behold utseendet» er valgt til du velger noe annet |
 
 Også fra før denne chatten, og ikke gitt ut: **merket bilde** (tall eller
 etiketter oppå et bilde).
@@ -42,7 +42,8 @@ etiketter oppå et bilde).
 ## Dette kan du gjøre nå
 
 1. **Hente inn** en forelesning: PowerPoint, PDF, eller en HTML-fil du
-   har eksportert fra Lysark før. Kapitlene følger med.
+   har eksportert fra Lysark før. Du velger om lysarkene skal beholde
+   utseendet eller gjøres om til USN-stil. Kapitlene følger med.
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
    i kapitler.
 3. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
@@ -71,14 +72,28 @@ etiketter oppå et bilde).
 - Et «igjen»-lysark kan flyttes og slettes i lista. Innholdet endrer du
   på lysarket selv; da endres det begge steder.
 
+## Slik virker valget ved import
+
+- **Behold utseendet:** lysarkene ser ut som i fila. Tekst og bilder kan
+  flyttes og endres; skriften blir Lysarks egen.
+- **Gjør om til USN-stil:** for PowerPoint er det importen du kjenner.
+  For en PDF settes tekst og bilder på USN-stilens flate; streker,
+  former og bakgrunn følger ikke med.
+- **En PowerPoint-fil som beholder utseendet,** hentes inn via en PDF av
+  den. Lysark ordner det selv: PowerPoint lager den (Windows), eller
+  Lysark bruker en PDF med samme navn som ligger ved siden av, eller
+  LibreOffice lager den. Meldingen etter importen sier hvilken. Manus og
+  kapitler hentes fra PowerPoint-fila. Animasjoner og video i lysarkene
+  følger ikke med.
+- **Vil du ha det helt likt PowerPoint på Linux:** lagre presentasjonen
+  som PDF i PowerPoint, og legg PDF-en ved siden av med samme navn.
+  LibreOffice tegner ikke helt som PowerPoint.
+
 ## Det jeg trenger fra deg
 
-1. **Ett svar om import.** Du vil kunne velge «USN-stil» eller «som i
-   fila» for både PDF og PowerPoint. For PDF kan begge lages. Lysark kan
-   ikke tegne PowerPoint-lysark selv, så «som i fila» for PowerPoint må
-   gå via en PDF: du lagrer presentasjonen som PDF i PowerPoint, og
-   Lysark henter utseendet fra PDF-en og manus og kapitler fra
-   PowerPoint-fila. **Jeg anbefaler det.** Er det greit?
+1. **Prøv «Behold utseendet» for en PowerPoint-fil på Windows.** Der
+   skal PowerPoint lage en PDF-kopi i bakgrunnen. Den veien har jeg ikke
+   kunnet prøve (jeg har ikke PowerPoint). Si hva som skjer.
 2. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
    lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
    Det kan jeg ikke måle.
@@ -95,17 +110,17 @@ etiketter oppå et bilde).
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd opptaket og PDF-importen.
-2. **Valget «USN-stil eller som i fila»** ved import, når du har svart.
-3. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
+1. **Det du melder** etter å ha prøvd opptaket, importen og valget av
+   utseende.
+2. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
    diagrammer og bevegelsene. Merket bilde er bygget.
-4. **Håndlaget stil** (leveranse 5).
+3. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (450) | Ja | – |
+| Automatiske tester (458) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -114,6 +129,7 @@ etiketter oppå et bilde).
 | **Fritt opptak, sidemeny, «igjen»-lysark** | Ja, også målt i videoen, og i den pakkede utgaven | **Nei** |
 | **Kapitler** | Ja, også i videofila og i spilleren | **Nei** |
 | **PDF-import med egne elementer** | Ja, også på to av dine egne PDF-er (26 og 94 sider) | **Nei** |
+| **Valget av utseende ved import** | Ja: PDF begge veier, PowerPoint via LibreOffice og via PDF ved siden av | **Nei.** PowerPoint-veien er helt uprøvd |
 | Installasjonsfila | – | Ja, for hånd (0.4.0) |
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
@@ -132,12 +148,19 @@ etter 0.4.0, er prøvd på Windows.**
 - **Det du sier på et «igjen»-lysark, får ikke teksting** av seg selv.
   Skriv manus på stedet om du vil ha teksting der.
 - **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
+- **«Behold utseendet» for PowerPoint på Windows er uprøvd.** På Linux
+  uten en PDF ved siden av tegner LibreOffice lysarkene, og det blir
+  ikke helt likt PowerPoint.
+- **USN-stil for en PDF** tar bare med tekst og bilder. Har du
+  PowerPoint-fila, gir den en bedre USN-stil.
+- **Valget av utseende** kan ikke byttes etter importen; importer på
+  nytt.
 - **PDF-import:** skriften blir Lysarks egen, så linjer kan stå litt
-  annerledes enn i PDF-en. Formler, tekst på farget bunn i farger
-  Lysark ikke har, og bilder med noe tegnet oppå blir liggende i
-  bakgrunnsbildet. En lenke som ikke lå på tekst, følger ikke med
+  annerledes enn i PDF-en, og teksten er litt mindre. Formler og tekst
+  på farget bunn i farger Lysark ikke har, blir bilder. Tabeller blir
+  ikke tabeller. En lenke som ikke lå på tekst, følger ikke med
   (importen sier fra). En skannet side er fortsatt ett bilde. 94 sider
-  tar omtrent 70 sekunder å importere.
+  tar omtrent ett minutt å importere.
 - **Kamerasirkelen er ikke i HTML-fila** (ditt valg; kan bygges senere).
 - **Windows kan advare** første gang en nedlastet installasjonsfil
   kjøres, fordi programmet ikke er signert.
@@ -186,7 +209,7 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 ## Startmelding til neste chat
 
 Lim dette inn i en ny chat i mappa `~/Forelesningsverktoy/lysark`, og
-fyll inn de tre stedene:
+fyll inn de to stedene:
 
 ```text
 Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
@@ -196,8 +219,9 @@ Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
 ut (25.11.2026). Etter det er dette bygget, og ikke gitt ut: merket
 bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
-film for hele opptaket), kapitler, og PDF-import der tekst, bilder og
-lenker er egne elementer.
+film for hele opptaket), kapitler, PDF-import der tekst, bilder og
+lenker er egne elementer, og fritt valg ved import mellom «Behold
+utseendet» og «Gjør om til USN-stil».
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -219,20 +243,17 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Svaret mitt på spørsmålet om import («som i fila» for PowerPoint via en
-PDF av presentasjonen, HANDOFF.md «Det jeg trenger fra deg»):
-(skriv her)
-
 Det jeg har funnet siden sist (opptak med ekte kamera, fram og tilbake
-under opptak, PDF-import, kapitler, mikrofon, musikk, installasjonsfila
-på USN-PC, Openverse, merket bilde, Canvas):
+under opptak, import med «Behold utseendet» og «USN-stil», særlig
+PowerPoint på Windows, kapitler, mikrofon, musikk, installasjonsfila på
+USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
 Innspill til produktet:
 (skriv her)
 
 Gjør dette:
-1. Skriv svaret mitt, det jeg har funnet og innspillene mine inn i
+1. Skriv det jeg har funnet og innspillene mine inn i
    docs/historikk.md.
 2. Rett det jeg har meldt, og ta innspillene mine. Still spørsmål
    samlet, med én anbefaling hver, før du bygger noe som trenger det.
