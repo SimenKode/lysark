@@ -19,6 +19,7 @@ import type {
   CameraPlace,
   Element,
   Project,
+  Scene,
   SceneEvent,
   TrackName,
 } from '../../shared/format/schema';
@@ -350,9 +351,10 @@ function listed(numbers: number[]): string {
 }
 
 /**
- * Imports a PDF: every page becomes a scene with the page as a picture.
- * The pages are drawn here, in the interface; the main process picks the
- * file, makes the project folder and stores the pictures. Nothing is opened
+ * Imports a PDF: every page becomes a scene, with its text and pictures as
+ * elements of their own. The pages are read and drawn here, in the
+ * interface; the main process picks the file, makes the project folder and
+ * stores the pictures. Nothing is opened
  * until every page is in place, and an import that is stopped or fails
  * leaves nothing behind.
  */
@@ -367,7 +369,7 @@ export async function importPdf(): Promise<void> {
   setProgress({ name: picked.name, page: 0, pages: 0 });
   let finished = false;
   try {
-    const { importPdfPages } = await import('./pdfRender');
+    const { importPdfPages, isPagePicture } = await import('./pdfRender');
     const project = await importPdfPages(picked.data, {
       name: picked.name,
       signal: control.signal,
@@ -381,12 +383,29 @@ export async function importPdf(): Promise<void> {
     const state = useStore.getState();
     state.load(opened.dir, opened.project);
     const scenes = opened.project.scenes;
-    const noText = scenes.flatMap((scene, index) =>
-      scene.imported?.warnings.length ? [index + 1] : [],
+    const numbers = (wanted: (scene: Scene) => boolean): number[] =>
+      scenes.flatMap((scene, index) => (wanted(scene) ? [index + 1] : []));
+    const pictures = numbers(isPagePicture);
+    const noText = numbers(
+      (scene) =>
+        isPagePicture(scene) && scene.elements[0]?.type === 'image' && !scene.elements[0].alt,
     );
-    const parts = [
-      `${picked.name} er importert: ${scenes.length} lysark. Hver side er et bilde, med teksten på siden som alternativ tekst.`,
-    ];
+    const noted = numbers(
+      (scene) => !isPagePicture(scene) && (scene.imported?.warnings.length ?? 0) > 0,
+    );
+    const parts = [`${picked.name} er importert: ${scenes.length} lysark.`];
+    if (pictures.length === scenes.length) {
+      parts.push('Hver side er et bilde, med teksten på siden som alternativ tekst.');
+    } else {
+      parts.push('Tekst og bilder er egne elementer som kan flyttes og endres.');
+      if (pictures.length > 0) {
+        parts.push(
+          pictures.length <= 10
+            ? `Lysark ${listed(pictures)} er lagt inn som ett bilde av hele siden.`
+            : `${pictures.length} lysark er lagt inn som ett bilde av hele siden.`,
+        );
+      }
+    }
     if (noText.length > 0) {
       parts.push(
         noText.length === scenes.length
@@ -394,6 +413,13 @@ export async function importPdf(): Promise<void> {
           : noText.length <= 10
             ? `Lysark ${listed(noText)} har ingen tekst som kunne hentes ut; skriv alternativ tekst der.`
             : `${noText.length} lysark har ingen tekst som kunne hentes ut; de er merket i lista.`,
+      );
+    }
+    if (noted.length > 0) {
+      parts.push(
+        noted.length <= 10
+          ? `Lysark ${listed(noted)} har merknader fra importen; de står under «Fra importen» når lysarket er valgt.`
+          : `${noted.length} lysark har merknader fra importen; de er merket i lista.`,
       );
     }
     state.setNotice({ kind: 'info', text: parts.join(' ') });

@@ -2,6 +2,8 @@
 // eksempler/ through the program itself and saves a picture of every scene.
 // Runs only when asked for:
 //   LYSARK_SHOTS=<folder> LYSARK_PPTX="<file name>" npx vitest run tests/real-screens.test.ts
+// or, for a PDF:
+//   LYSARK_SHOTS=<folder> LYSARK_PDF="<file name>" npx vitest run tests/real-screens.test.ts
 // Optional LYSARK_SCENES="1-12" limits which scenes are pictured.
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,7 +14,8 @@ import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
 const shots = process.env.LYSARK_SHOTS;
-const name = process.env.LYSARK_PPTX;
+const pdf = process.env.LYSARK_PDF;
+const name = pdf ?? process.env.LYSARK_PPTX;
 const source = name ? join(root, 'eksempler', name) : '';
 const range = /^(\d+)-(\d+)$/.exec(process.env.LYSARK_SCENES ?? '');
 
@@ -51,9 +54,18 @@ describe.skipIf(!shots || !name || !existsSync(source))('pictures of a real lect
           dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pptx] });
         }, source);
       }
-      await page.getByRole('button', { name: 'Importer PowerPoint …' }).click();
-      await page.waitForSelector('dialog.dialog[open]', { timeout: 120_000 });
-      await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
+      if (pdf) {
+        // A PDF is imported from the File menu, and has no report to close.
+        await app.evaluate(({ Menu }) => {
+          const file = Menu.getApplicationMenu()!.items.find((item) => item.label === 'Fil')!;
+          file.submenu!.items.find((item) => item.label === 'Importer PDF …')!.click();
+        });
+        await page.waitForSelector('.scene-item', { timeout: 540_000 });
+      } else {
+        await page.getByRole('button', { name: 'Importer PowerPoint …' }).click();
+        await page.waitForSelector('dialog.dialog[open]', { timeout: 120_000 });
+        await page.locator('dialog.dialog').getByRole('button', { name: 'Lukk' }).click();
+      }
       const count = await page.locator('.scene-item').count();
       expect(count).toBeGreaterThan(0);
       const first = range ? Number(range[1]) : 1;

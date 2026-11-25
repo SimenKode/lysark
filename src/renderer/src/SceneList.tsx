@@ -185,7 +185,7 @@ export function SceneList() {
                 <span className="scene-caption">
                   <span className="scene-title">{scene.title.trim() || 'Uten navn'}</span>
                   {warnings > 0 && (
-                    <span className="scene-warning" title="Noe fra PowerPoint må lages på nytt">
+                    <span className="scene-warning" title="Merknader fra importen">
                       {warnings} å ordne
                     </span>
                   )}

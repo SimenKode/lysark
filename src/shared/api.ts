@@ -25,7 +25,7 @@ export interface OpenedHtml extends OpenedProject {
   notes: string[];
 }
 
-/** A PDF the owner has picked for import. Its pages are drawn in the interface. */
+/** A PDF the owner has picked for import. Its pages are read and drawn in the interface. */
 export interface PickedPdf {
   name: string;
   data: Uint8Array;
@@ -217,7 +217,11 @@ export interface LysarkApi {
    * folder. False when the owner cancels.
    */
   beginPdfImport(): Promise<boolean>;
-  /** Stores the picture (WebP) of one page in the folder of the import that is under way. */
+  /**
+   * Stores a picture (WebP) from one page in the folder of the import that is
+   * under way: a picture that stands on the page, what lies behind its text
+   * and pictures, or the whole page.
+   */
   addPdfPage(page: number, data: Uint8Array): Promise<AddedMedia>;
   /** Writes the project of the import that is under way, and opens it. */
   finishPdfImport(project: Project): Promise<OpenedProject>;
