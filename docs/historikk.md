@@ -1849,6 +1849,65 @@ Innholdet i testene er prøveinnhold («Del A», «Del B»).
 
 **Ikke prøvd:** dine egne bilder, Windows, og den pakkede utgaven.
 
+### 6.26 Eieren har prøvd PDF-import og opptak med kamera (25.11.2026)
+
+Meldt i chatten etter at 0.4.0 var gitt ut og merket bilde var bygget.
+Ordrett:
+
+> PDF importerer OK, men når jeg klikker på ting i lysarkene så velger
+> den hele siden. Det er som om den ikke registrerer bilder og tekst som
+> individuelle objekter. Samme med lenker, de fungerer ikke. Tekst ser
+> også noe dosent ut, litt kornete. Om opptak: Kamera fryser mellom
+> slides. Man må kunne hoppe effektivt frem og tilbake mellom slides
+> uten avbrudd. Savner derfor knapp for å gå tilbake. VIl også ha en
+> sidemeny som kan sprette ut for å velge lysark mer effektivt. Savner
+> også kapitlene i pptx/pdf som forsvinner. Oppdater handoff og gi meg i
+> denne chatten handoffprompten
+
+Han ba om at HANDOFF.md ble oppdatert og om startmeldingen, ikke om at
+noe ble rettet i denne chatten. **Ingenting av dette er rettet ennå.**
+
+Slik er det lest, punkt for punkt. Det som står om årsak, er lest ut av
+koden og ikke prøvd; det må bekreftes før det rettes.
+
+1. **PDF: hele siden er ett objekt.** Det er slik PDF-importen er laget
+   (leveranse 3): hver side tegnes som ett bilde, og teksten blir bare
+   bildets alternative tekst. Det står som kjent svakhet («PDF-import
+   gir bilder, ikke tekst du kan redigere»). Eieren vil ha tekst og
+   bilder som egne elementer som kan velges. Det er nytt arbeid, ikke en
+   feilretting: teksten og bildene må leses ut av PDF-en hver for seg.
+2. **PDF: lenker virker ikke.** Lenkene i PDF-en leses ikke i dag;
+   importen ser ikke etter dem.
+3. **PDF: teksten er litt kornete.** Sidene tegnes i dobbel oppløsning
+   og lagres som WebP med tap (`src/renderer/src/pdfRender.ts`). Det er
+   trolig der kornet kommer fra. Blir teksten ekte tekst (punkt 1),
+   forsvinner dette for tekstens del.
+4. **Opptak: kameraet fryser mellom lysark.** Ikke gjenskapt. Trolig
+   årsak: filmen tas opp som én film per lysark, og en ny startes ved
+   hvert skifte. I testen med prøvekamera kom første bilde i den nye
+   filmen opptil 0,7 sekunder etter at lyden var i gang, og så lenge
+   står ansiktet stille på første bilde. Det ble målt, men jeg regnet
+   det som noe et vindu uten skjerm gjør, og meldte det ikke som en
+   svakhet. Det var feil. Rettingen er trolig én sammenhengende film
+   for hele innlesingen, som lysarkene peker inn i, slik klippene peker
+   inn i et lydopptak.
+5. **Opptak: hoppe fram og tilbake uten avbrudd, og en knapp for å gå
+   tilbake.** I dag finnes bare «Neste steg» og «Neste lysark» (pil
+   høyre). Det er ingen vei tilbake uten å avbryte.
+6. **En sidemeny som spretter ut, for å velge lysark.** Lest som en meny
+   i innlesingsvinduet, siden den står sammen med ønsket om å hoppe
+   mellom lysark der. Om han også mener spilleren studentene ser, eller
+   redigeringsprogrammet, er ikke avklart.
+7. **Kapitlene i PPTX og PDF forsvinner.** Importen leser ikke
+   seksjonene i en PowerPoint-fil eller bokmerkene i en PDF, og formatet
+   har ikke noe sted å ha kapitler. Hvor de skal vises (lysarklista,
+   innholdsoversikten hos studenten, kapitler i videoen), må avklares.
+
+Punkt 5 og 6 reiser et spørsmål som må avklares før det bygges: hva
+skal skje med opptaket når han går tilbake til et lysark som allerede
+er lest inn. Tas det om fra det punktet, eller fortsetter opptaket som
+én lang innlesing der samme lysark kan vises flere ganger?
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

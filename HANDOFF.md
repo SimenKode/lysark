@@ -54,33 +54,46 @@ at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
 7. **Avslutte med USNs logoanimasjon.**
 8. **Eksportere** HTML-fil, video (MP4) med teksting, og GIF.
 
+## Det du meldte 25.11.2026 (ikke rettet ennå)
+
+Du prøvde PDF-import og opptak med kamera. Ordene dine står i
+historikken (6.26). Ingenting av dette er rettet; det står øverst på
+lista for neste chat.
+
+| Du fant | Slik jeg leser det |
+| --- | --- |
+| PDF: et klikk velger hele siden | Slik er PDF-importen laget i dag: hver side er ett bilde. Tekst og bilder må leses ut hver for seg. Det er nytt arbeid |
+| PDF: lenker virker ikke | Lenkene leses ikke ved import |
+| PDF: teksten er litt kornete | Siden lagres som et bilde med tap. Blir teksten ekte tekst, forsvinner det |
+| Kameraet fryser mellom lysark | Trolig fordi det tas opp én film per lysark, og den nye er treg i starten. Bør bli én sammenhengende film |
+| Ingen knapp for å gå tilbake under opptak | Stemmer. Bare «neste» finnes |
+| Vil ha en sidemeny som spretter ut, for å velge lysark | Lest som en meny i innlesingsvinduet |
+| Kapitlene i PPTX og PDF forsvinner | Stemmer. Importen leser dem ikke, og formatet har ikke plass til dem |
+
 ## Det jeg trenger fra deg
 
-1. **Prøv kameraet med ditt eget kamera.** Jeg har bare prøvd med et
-   prøvekamera (et grønt testbilde). Se særlig om **munn og lyd følger
-   hverandre** i videoen; det kan jeg ikke måle.
-2. **Prøv installasjonsfila på en USN-PC**, og si hva Windows sier. En
-   USN-styrt PC kan nekte et program som ikke er signert; det vet vi
-   ikke før du har prøvd. Signering koster penger og er utelukket.
-3. **Openverse har bruksvilkår.** De krever at programmet sier at det
-   bruker Openverse og ikke er godkjent av dem (det står i fanen), og
-   Openverse kontrollerer ikke lisensene selv. Si fra om du ikke vil ha
-   kilden med. Detaljene står i historikken, 6.24.
-4. **Prøv merket bilde på et av dine egne bilder** (fra kildekoden, med
-   `npm run dev`, eller vent til neste utgivelse). Si om merkene er
-   passe store, og om du savner noe.
-5. **Det som sto fra før:** les inn med egen mikrofon, legg på et
-   musikkstykke, og prøv i Canvas (bare du, ingen KI). Sjekklista står
-   nederst.
+1. **Svar på tre spørsmål** når neste chat stiller dem: hva som skal
+   skje med opptaket når du går tilbake til et lysark du har lest inn,
+   om sidemenyen også skal finnes for studentene, og hvor kapitlene
+   skal vises.
+2. **Se om munn og lyd følger hverandre** i en video med kamera. Det
+   kan jeg ikke måle.
+3. **Prøv installasjonsfila på en USN-PC**, og si hva Windows sier.
+4. **Openverse har bruksvilkår** (historikken, 6.24). Si fra om du ikke
+   vil ha kilden med.
+5. **Det som sto fra før:** egen mikrofon, musikk, merket bilde på dine
+   egne bilder, og Canvas (bare du, ingen KI). Sjekklista står nederst.
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd.
-2. **Resten av figurer og bevegelser** (leveranse 4). Merket bilde er
-   bygget. Så kommer fri figur, malene (prosess, lagvis oppbygging,
-   sammenligning, tidslinje), diagrammer og bevegelsene. Jeg spør om
-   rekkefølgen og det som må avklares, før jeg bygger.
-3. **Håndlaget stil** (leveranse 5).
+1. **Opptaket:** kameraet skal ikke fryse mellom lysark, en knapp for å
+   gå tilbake, og en sidemeny for å velge lysark.
+2. **PDF-importen:** tekst og bilder som egne elementer, lenker som
+   virker, og skarp tekst.
+3. **Kapitler** fra PowerPoint og PDF.
+4. **Resten av figurer og bevegelser** (leveranse 4): fri figur, malene,
+   diagrammer og bevegelsene. Merket bilde er bygget.
+5. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
 
@@ -102,6 +115,11 @@ fra nettet (da kan Windows advare), en USN-styrt PC, og Canvas.
 
 ## Kjente svakheter
 
+- **Kameraet fryser mellom lysark**, og under opptak kan du ikke gå
+  tilbake (meldt av deg 25.11.2026, ikke rettet).
+- **PDF-import gir ett bilde per side:** ingenting kan velges for seg,
+  lenkene virker ikke, og teksten er litt kornete (meldt av deg).
+- **Kapitler** i PowerPoint og PDF følger ikke med (meldt av deg).
 - **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
 - **Kamerasirkelen er ikke i HTML-fila** (ditt valg; kan bygges senere).
 - **Windows kan advare** første gang en nedlastet installasjonsfil
@@ -112,7 +130,7 @@ fra nettet (da kan Windows advare), en USN-styrt PC, og Canvas.
   går til neste lysark. I videoen er den sammenhengende.
 - **Tekstingen er beregnet** ut fra manusets lengde, ikke lyttet fram.
 - **Tabeller, formler, SmartArt og diagrammer** fra PowerPoint kommer
-  ikke alltid med slik de var. PDF-import gir bilder, ikke tekst.
+  ikke alltid med slik de var.
 - **Opptak du har tatt om, blir liggende** i prosjektmappa, nå også
   filmene.
 
@@ -162,6 +180,10 @@ installasjonsfil for Windows, søk i Openverse og en ny forside. Etter
 det er merket bilde bygget (tall eller etiketter oppå et bilde), det
 første stykket av leveranse 4; det er ikke gitt ut.
 
+Jeg har prøvd PDF-import og opptak med kamera og meldt sju ting
+(HANDOFF.md, «Det du meldte 25.11.2026», og docs/historikk.md 6.26).
+Ingen av dem er rettet. De står først i «Neste steg».
+
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
 2. Les HANDOFF.md. Den er kort, og sier hva som står for tur.
@@ -182,7 +204,7 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg fant da jeg prøvde selv (kamera, mikrofon, musikk,
+Mer jeg har funnet siden sist (kamera, mikrofon, musikk,
 installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
@@ -190,9 +212,12 @@ Innspill til produktet:
 (skriv her)
 
 Gjør dette:
-1. Skriv det jeg fant og innspillene mine inn i docs/historikk.md.
-2. Rett det jeg fant, og ta innspillene mine.
-3. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
+1. Skriv det jeg har funnet siden sist, og innspillene mine, inn i
+   docs/historikk.md.
+2. Still spørsmålene som må avklares før de sju meldte tingene rettes
+   (docs/historikk.md 6.26), samlet og med én anbefaling hver.
+3. Rett det jeg har meldt, og ta innspillene mine.
+4. Følg ellers «Neste steg» i HANDOFF.md, i den rekkefølgen.
 
 Rapporter ærlig: hva som er prøvd, på hvilket system, og hva som ikke
 er prøvd.
