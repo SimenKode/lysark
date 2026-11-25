@@ -324,10 +324,17 @@ instead of choosing silently.
   the owner asks. He asked for a release on 22.11.2026 (version 0.2.0),
   on 23.11.2026 (version 0.3.0) and on 25.11.2026 (version 0.4.0): each
   is a release with the packaged program for Linux and Windows (from
-  0.4.0 the Windows installer too) and FFmpeg's source. The README
-  describes what the latest release holds, not what is only in the
-  code: what it says about a new feature goes out with the release that
-  has it. Make a new release only when he asks for one.
+  0.4.0 the Windows installer too) and FFmpeg's source. Make a new
+  release only when he asks for one.
+- The README is the front page for lecturers (the owner, 25.11.2026):
+  installation first, then how the program is used, with pictures, in
+  plain words. Nothing about deliveries or development there; that
+  belongs in `docs/utvikling.md`. It describes what the latest release
+  holds, not what is only in the code: what it says about a new feature
+  goes out with the release that has it. Its pictures (`docs/bilder/`)
+  are taken by the tests, with test content, and never show USN's logo
+  (a test that finds the owner's logo package on the machine draws the
+  logo, so look at a picture before it is committed).
 - Commits use the owner's GitHub no-reply address, set in this
   repository's git configuration. Never put his private e-mail address in
   a commit, a file or a request.
