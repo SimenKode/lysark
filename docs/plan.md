@@ -353,6 +353,31 @@ videoen, og fri flytting underveis (historikk.md 6.24). **Bygget
 Utenfor, med vilje: sirkelen i HTML-fila (kan komme senere; fila vokser
 da med omtrent 1 MB per minutt), og annen form enn sirkel.
 
+### Fritt opptak, sidemeny og kapitler
+
+Meldt av eieren 25.11.2026 etter utprøving (historikk.md 6.26), og
+avklart samme dag (6.27): opptaket skal være «som et vanlig
+videoopptak». **Bygget 25.11.2026** (historikk.md 6.28):
+
+- **Tilbake** med pil venstre eller knapp, og en **sidemeny** («Velg
+  lysark», tasten L) som hopper til et hvilket som helst lysark.
+  Opptaket stanser ikke.
+- **Videoen viser det du gjorde.** Et lysark du går tilbake til, vises
+  en gang til, og står i lysarklista som «Lysark N igjen» der det
+  skjedde. Det viser alltid det samme som lysarket selv. Studentene
+  blar fra lysark til lysark som før; bare «Spill av» følger opptaket.
+- **Én film for hele opptaket**, så ansiktet ikke står stille der
+  lysarket skifter.
+- **Kapitler** fra seksjonene i PowerPoint og bokmerkene i PDF: i
+  lysarklista (der de får navn, lages og fjernes), i sidemenyen, i
+  «Innhold» hos studentene og som kapitler i videofila.
+- **Minivideo av noen få lysark:** «Eksporter video» → «Fra lysark … til
+  …» (fantes fra før).
+
+Utenfor, med vilje: å vise et lysark *før* sin plass i rekkefølgen uten
+at det også står på plassen sin, og teksting av det som sies på en
+gjentakelse uten at det er skrevet manus der.
+
 ## Leveranse 4: Figurer og bevegelser
 
 Eieren valgte 25.11.2026 å begynne med **merket bilde**, med begge

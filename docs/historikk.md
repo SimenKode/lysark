@@ -1958,6 +1958,116 @@ Slik er svarene lest:
   ved import. For PowerPoint er «som i fila» nytt arbeid: importen har
   til nå alltid lagt innholdet over i USN-malen.
 
+### 6.28 Fritt opptak, sidemeny og kapitler (25.11.2026)
+
+Bygget etter svarene i 6.27. Dette retter tre av de sju tingene han
+meldte (kameraet som fryser, knapp for å gå tilbake, sidemeny) og en
+fjerde for PowerPoint (kapitlene). **Ikke gitt ut;** det ligger i koden
+til neste utgivelse.
+
+**Opptaket er nå en film av det du gjør.**
+
+- **Tilbake.** Pil venstre (eller knappen «← Forrige steg» / «← Forrige
+  lysark») går ett steg tilbake, og fra første steg til lysarket før.
+  Opptaket stanser ikke.
+- **Sidemenyen.** Knappen «Velg lysark» øverst (eller tasten L) åpner en
+  meny fra venstre, oppå lysarket, med alle lysarkene under kapitlene
+  sine. Ett trykk hopper dit. Menyen viser hvilke lysark som er lest inn
+  i dette opptaket, og hvilke som har lyd fra før. Esc lukker menyen
+  uten å avbryte opptaket. Menyen kan også brukes før opptaket starter,
+  til å velge hvor det skal begynne, og mens opptaket står på pause.
+- **Det du gjør, er det som vises.** Går du tilbake til et lysark du har
+  vært på, vises det en gang til i videoen og i «Spill av», på det
+  stedet. I lysarklista står det da som «Lysark 3 igjen», litt
+  innrykket, der det skjedde. Det viser alltid det samme som lysark 3;
+  retter du en skrivefeil på lysark 3, er den rettet der også. Lyden,
+  manuset (for teksting) og kamerasirkelen er stedets egne. Det kan
+  flyttes i lista og slettes.
+- **Et lysark kommer tilbake slik du forlot det.** Stegene som var vist,
+  er vist. Går du ett steg tilbake, blir det en egen visning med ett
+  steg mindre.
+- **Et lysark du bare blar forbi** (under et halvt sekund) blir ikke en
+  egen visning. Det du sa imens, høres på lysarket før.
+- **Et steg du aldri kom til, vises ikke** i videoen. Før ble slike steg
+  fordelt utover lysarket av seg selv.
+- **Studentene blar som før.** I HTML-fila går pilene fra lysark til
+  lysark; ingen havner på en gjentakelse. Bare «Spill av» følger
+  opptaket.
+- **Hele opptaket er én angring.** Før var det én per lysark.
+- **Klokka i innlesingsvinduet** viser nå hvor langt hele opptaket er,
+  ikke bare lysarket.
+
+**Regelen for hva som blir «igjen».** Det første opptaket av et lysark
+som ligger lenger framme enn opptaket har vært, blir lysarkets egen lyd
+(og erstatter den det hadde). Alt annet (tilbake til et lysark opptaket
+har passert) blir en gjentakelse på stedet. Vil du ta om et lysark, ikke
+vise det en gang til, starter du opptaket på det lysarket, som før.
+
+**Kameraet fryser ikke lenger mellom lysark.** Årsaken var den jeg antok
+i 6.26: en ny film ble startet for hvert lysark, og den var treg i
+starten. Nå filmes hele opptaket som **én film**. Den lages i en egen
+tråd, så den går jevnt også mens vinduet tegner et nytt lysark, og hvert
+bilde får opptakets egen tid, så bildet ikke kan gli fra lyden utover i
+en lang forelesning. Filmen skrives til disk underveis, ikke først til
+slutt. Målt før jeg bygde, uten vindu og med prøvekamera: 81 bilder på
+fire sekunder (prøvekameraet gir 20 i sekundet) og aldri mer enn 51
+millisekunder mellom to bilder, også mens resten av vinduet sto helt
+stille i et halvt sekund.
+
+**Kapitler.**
+
+- **Fra PowerPoint:** seksjonene blir kapitler. Prøvd på «Stål»:
+  «Forside», «Stål som materiale», «Produksjon av stål», «Stål som
+  konstruksjonsmateriale», «Montasje av stål», «Stål og brann» og
+  «Avslutningsside» kom med, på riktige lysark.
+- **I lysarklista** er et kapittel en overskrift du skriver rett i.
+  «Fjern» tar bort kapittelet (lysarkene står). Nytt kapittel: «Nytt
+  lysark» → «Kapittel som begynner her».
+- **I sidemenyen** under opptak, **i «Innhold»** hos studentene, og
+  **som kapitler i videofila** (MP4), som de fleste avspillere viser.
+  En video av noen få lysark begynner med kapittelet de ligger i.
+- Sletter du lysarket et kapittel begynner på, begynner kapittelet på
+  neste lysark.
+
+**Minivideo av noen få lysark** fantes fra før, og finnes fortsatt:
+«Eksporter video» → «Fra lysark … til …». Tallene er lysarknumrene slik
+du teller dem; gjentakelser som følger etter siste lysark, er med.
+
+Prosjektformatet er nå versjon 9; eldre prosjekter åpnes som før.
+
+**Begrensninger, sagt rett ut.**
+
+- Hopper du *framover* over noen lysark og kommer tilbake til dem
+  senere, står de også på sin vanlige plass i videoen, uten lyd (fem
+  sekunder hver), slik lysark uten lyd alltid har gjort. Slett dem fra
+  videoen ved å eksportere et utvalg, eller les dem inn.
+- Det du sier på en gjentakelse, får ikke teksting av seg selv:
+  tekstingen lages av manuset, og en gjentakelse starter uten manus.
+  Skriv manus på stedet om du vil ha teksting der.
+- Et lysark som vises igjen, kan ikke leses inn for seg. Slett det, og
+  les inn fra lysarket før.
+- «Avbryt» under opptak forkaster bare lysarket du står på; det du har
+  lest inn før det, legges inn (som før).
+- Munn og lyd: hvert bilde stemples når det kommer fram til programmet.
+  Et kamera som er tregere enn mikrofonen, gir da et lite, fast etterslep
+  i bildet. Det kan jeg ikke måle uten et ekte kamera.
+
+**Prøvd** på Linux Mint, automatisk, uten vindu, med prøvemikrofon og
+prøvekamera, uten nett: 19 nye enhetstester (`tests/repeats.test.ts`) og
+fem nye ende-til-ende-tester (`tests/e2e-free.test.ts`): fram, to steg,
+neste lysark, tilbake, sidemeny med kapitler, hopp, et lysark som bare
+blas forbi, «Ferdig»; så lysarklista, visningen av «igjen»-lysarket,
+videoen (målt i bildene: lysark A vises igjen der jeg gikk tilbake, med
+begge stegene fra start; kapitlene ligger i fila med riktige navn og
+tider) og spilleren (blar forbi gjentakelsen for hånd, «Spill av» viser
+den). De gamle testene for opptak, kamera og «Lær mer» under innlesing
+er kjørt på nytt og går gjennom; kameratesten er skrevet om til én film
+for hele opptaket. Hele testsettet: 413 tester går gjennom, én er
+hoppet over (den trenger en egen innstilling).
+
+**Ikke prøvd:** ekte kamera og ekte mikrofon, en lang forelesning (45
+minutter) i ett opptak, Windows, og den pakkede utgaven.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
