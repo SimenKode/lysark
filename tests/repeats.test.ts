@@ -4,6 +4,7 @@
 // steps that were already there or never came, how a repeat follows its
 // slide, how slides are counted, and chapters. No window is used.
 import { describe, expect, it } from 'vitest';
+import { pdfChapters } from '../src/importer/pdfChapters';
 import { applyRecording, type Take } from '../src/shared/audio/session';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import {
@@ -413,6 +414,27 @@ describe('chapters', () => {
         '[CHAPTER]\nTIMEBASE=1/1000\nSTART=5000\nEND=15000\ntitle=En\n' +
         '[CHAPTER]\nTIMEBASE=1/1000\nSTART=15000\nEND=20000\ntitle=To\\; \\= \\#1\n',
     );
+  });
+
+  it('come from the bookmarks of a PDF, when those are chapters and not a list of pages', () => {
+    const sections = [
+      { title: 'En', page: 0, children: [0] },
+      { title: ' To  deler ', children: [1, 2] },
+      { title: 'Utenfor', page: 9, children: [] },
+      { title: 'Tre', page: 3, children: [3] },
+    ];
+    expect([...pdfChapters(sections, 4)]).toEqual([
+      [0, 'En'],
+      [1, 'To deler'],
+      [3, 'Tre'],
+    ]);
+    // One bookmark for every page is a list of the pages.
+    const pages = ['A', 'B', 'C', 'D'].map((title, page) => ({ title, page, children: [] }));
+    expect(pdfChapters(pages, 4).size).toBe(0);
+    // A few bookmarks in a long file are chapters, also without anything under them.
+    expect(pdfChapters(pages.slice(0, 2), 10).size).toBe(2);
+    expect(pdfChapters([sections[0]!], 4).size).toBe(0);
+    expect(pdfChapters([], 4).size).toBe(0);
   });
 
   it('move to the next slide when the slide they begin on is removed', () => {

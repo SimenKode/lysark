@@ -254,36 +254,39 @@ function Track(props: TrackProps) {
             }}
           />
         )}
-        {scene.timeline.map((step, i) => (
-          <button
-            key={step.id}
-            type="button"
-            className={`track-step${step.at === undefined ? ' is-auto' : ''}`}
-            style={{ left: percent(times[i]!) }}
-            aria-label={`Steg ${i + 1} ved ${preciseTime(times[i]!)}. Piltaster flytter det.`}
-            title={`Steg ${i + 1} ved ${preciseTime(times[i]!)}${step.at === undefined ? ' (fordelt jevnt)' : ''}. Dra for å flytte.`}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-              stepDrag.current = step.id;
-            }}
-            onPointerMove={(e) => {
-              if (stepDrag.current === step.id) moveStep(step.id, timeAt(e.clientX));
-            }}
-            onPointerUp={() => {
-              stepDrag.current = null;
-            }}
-            onKeyDown={(e) => {
-              const delta = e.key === 'ArrowLeft' ? -0.1 : e.key === 'ArrowRight' ? 0.1 : 0;
-              if (!delta) return;
-              e.preventDefault();
-              e.stopPropagation();
-              moveStep(step.id, times[i]! + delta * (e.shiftKey ? 10 : 1));
-            }}
-          >
-            {i + 1}
-          </button>
-        ))}
+        {scene.timeline.map((step, i) =>
+          // On a slide that is shown once more, the steps that were there from before have no time to move.
+          scene.repeat?.shown.includes(step.id) ? null : (
+            <button
+              key={step.id}
+              type="button"
+              className={`track-step${step.at === undefined ? ' is-auto' : ''}`}
+              style={{ left: percent(times[i]!) }}
+              aria-label={`Steg ${i + 1} ved ${preciseTime(times[i]!)}. Piltaster flytter det.`}
+              title={`Steg ${i + 1} ved ${preciseTime(times[i]!)}${step.at === undefined ? ' (fordelt jevnt)' : ''}. Dra for å flytte.`}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                stepDrag.current = step.id;
+              }}
+              onPointerMove={(e) => {
+                if (stepDrag.current === step.id) moveStep(step.id, timeAt(e.clientX));
+              }}
+              onPointerUp={() => {
+                stepDrag.current = null;
+              }}
+              onKeyDown={(e) => {
+                const delta = e.key === 'ArrowLeft' ? -0.1 : e.key === 'ArrowRight' ? 0.1 : 0;
+                if (!delta) return;
+                e.preventDefault();
+                e.stopPropagation();
+                moveStep(step.id, times[i]! + delta * (e.shiftKey ? 10 : 1));
+              }}
+            >
+              {i + 1}
+            </button>
+          ),
+        )}
         {events.map((event) => {
           const what = EVENT_TEXT[event.kind];
           return (
