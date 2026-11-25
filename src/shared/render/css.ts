@@ -1,6 +1,7 @@
 // Styles for a rendered scene. The same string is used by the editor and
 // is written into every exported HTML file.
 import { STAGE } from '../format/constants';
+import { PALETTE } from '../theme/palette';
 
 /** PowerPoint's default tab stop, one inch, in stage pixels (1920 px = 13.33 in). */
 const TAB_STOP = 144;
@@ -160,6 +161,49 @@ button.ls-more-badge { cursor: pointer; }
   object-fit: cover; pointer-events: none;
 }
 .ls-more-ring > .ls-image { outline: 6px solid var(--ls-more-ring); outline-offset: 0; }
+/* Marks on a picture: a numbered point, or a label with a line to what it points at. */
+.ls-mark { position: relative; box-sizing: border-box; width: 100%; height: 100%; margin: 0; }
+.ls-mark-number {
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  border: 4px solid #ffffff; border-radius: 50%;
+  background: ${PALETTE.oransje}; color: #000000;
+  font-size: 28px; font-weight: 700; line-height: 1;
+}
+.ls-mark-label {
+  display: flex; align-items: center; padding: 6px 16px; overflow: visible;
+  border: 3px solid ${PALETTE.indigo}; border-radius: 12px;
+  background: #ffffff; color: #000000;
+  font-size: 26px; line-height: 1.2; text-align: left;
+}
+.ls-mark-text { position: relative; overflow-wrap: anywhere; }
+.ls-mark-empty { opacity: 0.55; font-style: italic; }
+.ls-mark-line { position: absolute; left: -3px; top: -3px; overflow: visible; pointer-events: none; }
+.ls-mark-line-under { stroke: #ffffff; stroke-width: 10; stroke-linecap: round; }
+.ls-mark-line-over { stroke: ${PALETTE.indigo}; stroke-width: 4; stroke-linecap: round; }
+.ls-mark-dot { fill: ${PALETTE.indigo}; stroke: #ffffff; stroke-width: 3; }
+button.ls-mark { cursor: pointer; font-family: inherit; }
+/* A mark that has more to tell says so with a small "+", and a ring in the colour of
+   "Lær mer" outside its own edge (which stays, so the mark shows on a dark picture too). */
+.ls-mark-more { box-shadow: 0 0 0 4px ${PALETTE.lilla}; }
+.ls-mark-more::after {
+  content: '+'; position: absolute; right: -16px; top: -16px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #ffffff; border-radius: 50%;
+  background: ${PALETTE.lilla}; color: #ffffff;
+  font-size: 24px; font-weight: 400; font-style: normal; line-height: 1;
+}
+/* The list that explains the numbered marks. */
+.ls-legend {
+  box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 10px; font-size: 26px; line-height: 1.25;
+}
+.ls-legend li { display: flex; align-items: flex-start; gap: 14px; }
+.ls-legend-number {
+  flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: ${PALETTE.oransje}; color: #000000;
+  font-size: 22px; font-weight: 700; line-height: 1;
+}
+.ls-legend-text { padding-top: 4px; overflow-wrap: anywhere; }
 `;
 
 /**

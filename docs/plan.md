@@ -12,7 +12,7 @@ prøvd på både Linux Mint og Windows 11.
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
-| 4 | Figurer og bevegelser | Ikke påbegynt |
+| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde er bygget. Gjenstår: fri figur, malene, diagrammer og bevegelsene |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML
@@ -354,6 +354,22 @@ Utenfor, med vilje: sirkelen i HTML-fila (kan komme senere; fila vokser
 da med omtrent 1 MB per minutt), og annen form enn sirkel.
 
 ## Leveranse 4: Figurer og bevegelser
+
+Eieren valgte 25.11.2026 å begynne med **merket bilde**, med begge
+merketypene valgt per bilde (historikk.md 6.24). **Merket bilde er
+bygget 25.11.2026** (historikk.md 6.25):
+
+- **«Merker på bildet»** i egenskapene til et bilde: «Legg til merke»,
+  en liste der du skriver hva hvert merke peker på, og valget mellom
+  «Tall, med forklaring ved siden av» og «Etiketter med strek».
+- Merkene dras på plass i lysarket. De følger bildet når det flyttes
+  eller endrer størrelse, og forsvinner med det.
+- Hvert merke kan komme inn i et steg («Ett steg per merke» lager dem i
+  rekkefølge) og ha «Lær mer». Raden i forklaringslista kommer inn
+  sammen med merket sitt.
+- Merkene er med i HTML-fila og i videoen.
+
+Det som gjenstår av leveranse 4, er lista under.
 
 - En figur er statisk til delene får steg; samme bygger for begge.
 - Maler med skjema: merket bilde, prosess, lagvis oppbygging,

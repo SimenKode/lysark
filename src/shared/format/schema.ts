@@ -16,8 +16,10 @@ export const FORMAT_NAME = 'lysark';
  *    (events); the project has tracks for music and other sound.
  * 7: a recording can carry a film of the lecturer's face (the camera
  *    circle); a slide says where the circle stands, and events can move it.
+ * 8: a picture can carry marks (numbered points with a legend, or labels
+ *    with a line to what they point at).
  */
-export const FORMAT_VERSION = 7;
+export const FORMAT_VERSION = 8;
 
 export { STAGE } from './constants';
 
@@ -233,6 +235,9 @@ export type TextElement = z.infer<typeof TextElement>;
 export const Crop = z.object({ l: z.number(), t: z.number(), r: z.number(), b: z.number() });
 export type Crop = z.infer<typeof Crop>;
 
+export const MARK_STYLES = ['numbers', 'labels'] as const;
+export type MarkStyle = (typeof MARK_STYLES)[number];
+
 export const ImageElement = z.object({
   ...elementBase,
   type: z.literal('image'),
@@ -247,8 +252,59 @@ export const ImageElement = z.object({
    * draws ink from its pen and highlighter.
    */
   blend: z.literal('multiply').optional(),
+  /**
+   * How the marks on this picture are drawn: numbered points that a legend
+   * explains, or labels with a line to what they point at. Numbers when absent.
+   */
+  marks: z.enum(MARK_STYLES).optional(),
 });
 export type ImageElement = z.infer<typeof ImageElement>;
+
+/**
+ * A mark on a picture: something the lecturer points out in it. Marks are
+ * elements of their own, so each can come in at a step and have "Lær mer"
+ * content, but they belong to their picture: they follow it when it is
+ * moved or resized, and go when it goes (src/shared/layout/marks.ts).
+ *
+ * With numbers, the mark is a numbered point: its box is the round mark,
+ * `point` is its middle, and `text` is what the legend says about it. With
+ * labels, the box is the label that shows `text`, and a line runs from it
+ * to `point`.
+ */
+export const MarkElement = z.object({
+  ...elementBase,
+  type: z.literal('mark'),
+  /** The picture the mark belongs to. */
+  on: z.string(),
+  text: z.string(),
+  /** What the mark points at, in stage pixels. */
+  point: z.object({ x: z.number(), y: z.number() }),
+  /**
+   * The box of the picture when the mark was last put in place. When the
+   * picture's box is another, `point` is moved the same way, and the mark's
+   * own box is worked out from it anew.
+   */
+  anchor: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }),
+  /** For a label: how far the middle of the label lies from `point`. */
+  offset: z.object({ x: z.number(), y: z.number() }).optional(),
+});
+export type MarkElement = z.infer<typeof MarkElement>;
+
+/** The list that explains the numbered marks of a picture. It writes itself from the marks. */
+export const LegendElement = z.object({
+  ...elementBase,
+  type: z.literal('legend'),
+  /** The picture whose marks it explains. */
+  on: z.string(),
+  /**
+   * Where the picture's corner was when the legend was last put in place,
+   * and how far from that corner the legend lay. When the picture has been
+   * moved, the legend is put the same distance from it again.
+   */
+  anchor: z.object({ x: z.number(), y: z.number() }).optional(),
+  offset: z.object({ x: z.number(), y: z.number() }).optional(),
+});
+export type LegendElement = z.infer<typeof LegendElement>;
 
 /** The thinnest and thickest stroke a shape can be given. */
 export const STROKE_WIDTH = { min: 1, max: 60 } as const;
@@ -329,6 +385,8 @@ export const Element = z.discriminatedUnion('type', [
   TableElement,
   VideoElement,
   DeepDiveElement,
+  MarkElement,
+  LegendElement,
 ]);
 export type Element = z.infer<typeof Element>;
 export type ElementType = Element['type'];

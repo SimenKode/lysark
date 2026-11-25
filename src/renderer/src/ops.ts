@@ -76,6 +76,10 @@ export function describeElement(el: Element): string {
       return el.title ? `Video: ${shorten(el.title)}` : 'Video';
     case 'deepdive':
       return `Lær mer: ${shorten(el.label) || 'uten tittel'}`;
+    case 'mark':
+      return el.text.trim() ? `Merke: ${shorten(el.text)}` : 'Merke';
+    case 'legend':
+      return 'Forklaring til merkene';
   }
 }
 
@@ -215,11 +219,25 @@ export function moveBlock(more: More, from: number, to: number): void {
 
 /** A copy with new ids, nudged so it does not hide the original. */
 export function cloneElements(elements: Element[], offset: number): Element[] {
-  return elements.map((el) => ({
-    ...structuredClone(el),
-    id: newId('e'),
-    box: { ...el.box, x: el.box.x + offset, y: el.box.y + offset },
-  }));
+  const ids = new Map(elements.map((el) => [el.id, newId('e')]));
+  return elements.map((el) => {
+    const copy: Element = {
+      ...structuredClone(el),
+      id: ids.get(el.id)!,
+      box: { ...el.box, x: el.box.x + offset, y: el.box.y + offset },
+    };
+    if (copy.type === 'mark' || copy.type === 'legend') {
+      // A mark that is copied with its picture belongs to the copy of the picture.
+      copy.on = ids.get(copy.on) ?? copy.on;
+      if (copy.type === 'mark') {
+        copy.point = { x: copy.point.x + offset, y: copy.point.y + offset };
+        if (ids.has(el.type === 'mark' ? el.on : '')) {
+          copy.anchor = { ...copy.anchor, x: copy.anchor.x + offset, y: copy.anchor.y + offset };
+        }
+      }
+    }
+    return copy;
+  });
 }
 
 export function cloneScene(scene: Scene): Scene {

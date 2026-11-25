@@ -59,6 +59,8 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
   for (const el of scene.elements) {
     if (el === title || (isFront && el === subtitle)) continue;
     if (el.type === 'shape' && (el.geometry === 'line' || el.geometry === 'arrow')) continue;
+    // Marks and legends are placed in relation to their picture, and follow it.
+    if (el.type === 'mark' || el.type === 'legend') continue;
     snapElement(el, starts, ends, contentTop, bottom);
     if (el.type === 'text') {
       delete el.fontSize;

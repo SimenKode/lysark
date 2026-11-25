@@ -2,7 +2,7 @@
 // the scene's steps.
 import { useEffect, useState, type ReactNode } from 'react';
 import { hasLogo } from '../../shared/api';
-import { richText } from '../../shared/format/factory';
+import { newId, richText } from '../../shared/format/factory';
 import {
   CAMERA_SIZES,
   SCENE_KINDS,
@@ -19,6 +19,15 @@ import {
   type TextRole,
 } from '../../shared/format/schema';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
+import {
+  addMark,
+  markNumber,
+  markStyle,
+  marksOf,
+  pictureOf,
+  setMarkStyle,
+  stepPerMark,
+} from '../../shared/layout/marks';
 import { cameraOnStage, defaultCameraPlace, hasCameraFilm } from '../../shared/render/clock';
 import { youtubeRef } from '../../shared/render/web';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../../shared/limits';
@@ -36,6 +45,7 @@ import {
   addToStep,
   cloneElements,
   deleteElements,
+  newStep,
   describeElement,
   describeMore,
   playClosingAnimation,
@@ -735,6 +745,141 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
   );
 }
 
+/** The marks of a picture: how they are drawn, what each says, and a way to add one. */
+function ImageMarks({ el, scene }: { el: Extract<Element, { type: 'image' }>; scene: Scene }) {
+  const updateScene = useStore((s) => s.updateScene);
+  const marks = marksOf(scene, el.id);
+  const style = markStyle(el);
+  const [added, setAdded] = useState<string | null>(null);
+  const setText = (id: string, text: string): void =>
+    updateScene((s) => {
+      const mark = s.elements.find((e) => e.id === id);
+      if (mark?.type === 'mark') mark.text = text;
+    }, `mark-text-${id}`);
+  return (
+    <div className="group">
+      <h3>Merker på bildet</h3>
+      {marks.length === 0 && (
+        <p className="hint">
+          Pek ut det viktige i bildet. Hvert merke kan komme inn i et steg og ha «Lær mer».
+        </p>
+      )}
+      <Field label="Slik vises merkene">
+        <select
+          value={style}
+          onChange={(e) =>
+            updateScene((s) =>
+              setMarkStyle(s, el.id, e.target.value === 'labels' ? 'labels' : 'numbers', () =>
+                newId('e'),
+              ),
+            )
+          }
+        >
+          <option value="numbers">Tall, med forklaring ved siden av</option>
+          <option value="labels">Etiketter med strek</option>
+        </select>
+      </Field>
+      {marks.length > 0 && (
+        <ol className="mark-list">
+          {marks.map((mark, index) => (
+            <li key={mark.id}>
+              <span className="mark-list-number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <input
+                type="text"
+                aria-label={`Tekst til merke ${index + 1}`}
+                placeholder="Hva peker merket på?"
+                value={mark.text}
+                autoFocus={mark.id === added}
+                onChange={(e) => setText(mark.id, e.target.value)}
+              />
+              <button
+                type="button"
+                className="danger"
+                aria-label={`Fjern merke ${index + 1}`}
+                onClick={() => updateScene((s) => deleteElements(s, [mark.id]))}
+              >
+                Fjern
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      <div className="button-row">
+        <button
+          type="button"
+          className="strong"
+          onClick={() => {
+            let made: string | null = null;
+            updateScene((s) => {
+              made = addMark(s, el.id, () => newId('e'))?.id ?? null;
+            });
+            setAdded(made);
+          }}
+        >
+          Legg til merke
+        </button>
+        {marks.length > 1 && (
+          <button
+            type="button"
+            onClick={() => updateScene((s) => stepPerMark(s, el.id, (id) => newStep([id])))}
+          >
+            Ett steg per merke
+          </button>
+        )}
+      </div>
+      {marks.length > 0 && (
+        <p className="hint">
+          Dra merkene på plass i lysarket. Klikk på et merke for å gi det «Lær mer»
+          {style === 'labels'
+            ? ', og dra i den runde prikken for å flytte det etiketten peker på'
+            : ''}
+          .
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** One mark on a picture: what it says, and the way back to its picture. */
+function MarkFields({ el, scene }: { el: Extract<Element, { type: 'mark' }>; scene: Scene }) {
+  const update = useElementUpdate(el.id);
+  const select = useStore((s) => s.select);
+  const picture = pictureOf(scene, el);
+  const numbers = markStyle(picture) === 'numbers';
+  return (
+    <>
+      <Field
+        label={numbers ? `Forklaring til merke ${markNumber(scene, el)}` : 'Tekst på etiketten'}
+        hint={
+          numbers
+            ? 'Står i lista ved siden av bildet.'
+            : 'Dra i den runde prikken for å flytte det etiketten peker på.'
+        }
+      >
+        <input
+          type="text"
+          value={el.text}
+          placeholder="Hva peker merket på?"
+          onChange={(e) =>
+            update<typeof el>((m) => {
+              m.text = e.target.value;
+            }, 'text')
+          }
+        />
+      </Field>
+      {picture && (
+        <div className="button-row">
+          <button type="button" onClick={() => select([picture.id])}>
+            Velg bildet merket står på
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 /** "Lær mer" content of the selected element: what it holds, and the way into the builder. */
 function MoreFields({ el }: { el: Element }) {
   const openBuilder = useStore((s) => s.openBuilder);
@@ -868,7 +1013,15 @@ function ElementPanel({ scene }: { scene: Scene }) {
       <h3>{describeElement(el)}</h3>
       {el.type === 'text' && <TextFields el={el} scene={scene} />}
       {el.type === 'image' && <ImageFields el={el} />}
+      {el.type === 'image' && <ImageMarks el={el} scene={scene} />}
       {el.type === 'image' && <ImageCredit assetId={el.asset} />}
+      {el.type === 'mark' && <MarkFields el={el} scene={scene} />}
+      {el.type === 'legend' && (
+        <p className="hint">
+          Lista skriver seg selv fra merkene på bildet. Teksten endrer du på bildet eller på hvert
+          merke. Dra lista dit den skal stå.
+        </p>
+      )}
       {el.type === 'shape' && <ShapeFields el={el} />}
       {el.type === 'table' && <TableFields el={el} />}
       {el.type === 'video' && <VideoFields el={el} />}

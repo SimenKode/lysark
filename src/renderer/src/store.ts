@@ -1,5 +1,6 @@
 // Program state: the open project, what is selected, and undo history.
 import { produce } from 'immer';
+import { followMarks } from '../../shared/layout/marks';
 import { create } from 'zustand';
 import type { ImportReport, LogoStatus, VideoProgress } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
@@ -168,7 +169,11 @@ export const useStore = create<State>((set, get) => ({
   update(recipe, coalesce) {
     const { project, past, coalesce: last } = get();
     if (!project) return;
-    const next = produce(project, recipe);
+    const next = produce(project, (draft) => {
+      recipe(draft);
+      // Marks and legends go where their pictures go, whatever was changed.
+      for (const scene of draft.scenes) followMarks(scene);
+    });
     if (next === project) return;
     const now = Date.now();
     const merge =

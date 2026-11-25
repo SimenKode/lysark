@@ -52,8 +52,12 @@ export const STEP_RISE = 28;
  * partly see-through and glides up the last bit to its place.
  */
 export function applySceneState(sceneEl: Element, state: Map<string, number>): void {
-  for (const el of Array.from(sceneEl.querySelectorAll<HTMLElement>('[data-el]'))) {
-    const opacity = state.get(el.dataset.el!);
+  for (const el of Array.from(sceneEl.querySelectorAll<HTMLElement>('[data-el], [data-follows]'))) {
+    // A row of a legend follows its mark. What belongs to a picture (a mark,
+    // a legend) is never more visible than the picture.
+    const own = state.get(el.dataset.el ?? el.dataset.follows!);
+    const host = el.dataset.on === undefined ? undefined : state.get(el.dataset.on);
+    const opacity = own === undefined ? host : host === undefined ? own : Math.min(own, host);
     if (opacity === undefined || opacity >= 1) {
       el.style.opacity = '';
       el.style.visibility = '';

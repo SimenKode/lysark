@@ -222,6 +222,16 @@ instead of choosing silently.
   film stands at any time; the video export and "Spill av" follow it.
   Whatever cuts or stretches a slide's sound moves the events with the
   steps.
+- A mark on a picture (a numbered point with a legend, or a label with
+  a line) is an element of its own, so it can come in at a step and have
+  "Lær mer" content, but it belongs to its picture. One function keeps
+  them together after every change (`followMarks` in
+  `src/shared/layout/marks.ts`, called from the store's `update`): the
+  marks' places are always worked out from the picture, never moved
+  along by whoever moves the picture. How a mark and a legend look
+  depends on other elements than themselves (the number, the picture's
+  choice of marks, the marks a legend lists), so the editor never
+  reuses their drawn nodes (`canReuse` in `SceneView.tsx`).
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

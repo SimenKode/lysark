@@ -6,6 +6,8 @@ import {
   type DeepDiveElement,
   type Element as SceneElement,
   type ImageElement,
+  type LegendElement,
+  type MarkElement,
   type More,
   type PaletteColor,
   type Project,
@@ -30,6 +32,7 @@ import {
   sceneSurface,
   type Theme,
 } from '../theme/theme';
+import { labelLineStart, markNumber, markStyle, marksOf, pictureOf } from '../layout/marks';
 import { classifyLink, renderRichText } from './richtext';
 import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
 
@@ -60,6 +63,8 @@ export interface SceneStrings {
   needsInternet: string;
   /** Name of the "+" mark for screen readers. */
   moreAbout: (title: string) => string;
+  /** Shown in the editor in a mark that has no text yet. */
+  markEmpty: string;
   creditBy: string;
   creditSource: string;
   creditCropped: string;
@@ -766,6 +771,86 @@ function renderDeepDive(ctx: RenderContext, surface: Surface, el: DeepDiveElemen
   return button;
 }
 
+/**
+ * A mark on a picture: a numbered point, or a label with a line to what it
+ * points at. A mark with "Lær mer" content is itself what is pressed.
+ */
+function renderMark(ctx: RenderContext, scene: Scene, el: MarkElement): Node {
+  const { doc } = ctx;
+  const numbers = markStyle(pictureOf(scene, el)) === 'numbers';
+  const more = moreOf(el);
+  const pressed = ctx.mode === 'play' && !!more;
+  const node = doc.createElement(pressed ? 'button' : 'div');
+  node.className = `ls-mark ${numbers ? 'ls-mark-number' : 'ls-mark-label'}${more ? ' ls-mark-more' : ''}`;
+  node.style.fontFamily = ctx.theme.fonts.body;
+  const number = markNumber(scene, el);
+  const text = el.text.trim();
+  if (pressed) {
+    node.setAttribute('type', 'button');
+    node.dataset.more = el.id;
+    node.setAttribute('aria-haspopup', 'dialog');
+    node.setAttribute('aria-expanded', 'false');
+    node.setAttribute('aria-label', ctx.strings.moreAbout(text || more.title.trim()));
+  }
+  if (numbers) {
+    node.textContent = String(number);
+    return node;
+  }
+  // The line starts at the edge of the label and ends in a dot on what it
+  // points at. It is drawn twice, white under dark, so it shows on any picture.
+  const from = labelLineStart(el.box, el.point);
+  const line = svg(doc, 'svg', { width: 1, height: 1 });
+  line.setAttribute('class', 'ls-mark-line');
+  line.setAttribute('aria-hidden', 'true');
+  const ends = {
+    x1: from.x - el.box.x,
+    y1: from.y - el.box.y,
+    x2: el.point.x - el.box.x,
+    y2: el.point.y - el.box.y,
+  };
+  line.appendChild(svg(doc, 'line', { ...ends, class: 'ls-mark-line-under' }));
+  line.appendChild(svg(doc, 'line', { ...ends, class: 'ls-mark-line-over' }));
+  line.appendChild(svg(doc, 'circle', { cx: ends.x2, cy: ends.y2, r: 9, class: 'ls-mark-dot' }));
+  node.appendChild(line);
+  const label = doc.createElement('span');
+  label.className = 'ls-mark-text';
+  if (text) label.textContent = text;
+  else if (ctx.mode === 'edit') {
+    label.textContent = ctx.strings.markEmpty;
+    label.classList.add('ls-mark-empty');
+  }
+  node.appendChild(label);
+  return node;
+}
+
+/** The list that explains the numbered marks of a picture. */
+function renderLegend(ctx: RenderContext, scene: Scene, el: LegendElement): Node {
+  const { doc } = ctx;
+  const list = doc.createElement('ol');
+  list.className = 'ls-legend';
+  list.style.fontFamily = ctx.theme.fonts.body;
+  for (const mark of marksOf(scene, el.on)) {
+    const row = doc.createElement('li');
+    // A row comes in with its mark, when the mark comes in at a step.
+    row.dataset.follows = mark.id;
+    const number = doc.createElement('span');
+    number.className = 'ls-legend-number';
+    number.setAttribute('aria-hidden', 'true');
+    number.textContent = String(markNumber(scene, mark));
+    const text = doc.createElement('span');
+    text.className = 'ls-legend-text';
+    const said = mark.text.trim();
+    if (said) text.textContent = said;
+    else if (ctx.mode === 'edit') {
+      text.textContent = ctx.strings.markEmpty;
+      text.classList.add('ls-mark-empty');
+    }
+    row.append(number, text);
+    list.appendChild(row);
+  }
+  return list;
+}
+
 function renderElement(ctx: RenderContext, scene: Scene, surface: Surface, el: SceneElement): Node {
   switch (el.type) {
     case 'text':
@@ -780,6 +865,10 @@ function renderElement(ctx: RenderContext, scene: Scene, surface: Surface, el: S
       return renderVideo(ctx, surface, (el as VideoElement).source, el.title, el.poster);
     case 'deepdive':
       return renderDeepDive(ctx, surface, el);
+    case 'mark':
+      return renderMark(ctx, scene, el);
+    case 'legend':
+      return renderLegend(ctx, scene, el);
   }
 }
 
@@ -870,7 +959,13 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     if (el.type === 'image' && el.blend) wrap.style.mixBlendMode = el.blend;
     if (el.box.rotation) wrap.style.transform = `rotate(${el.box.rotation}deg)`;
     wrap.appendChild(renderElement(ctx, scene, surface, el));
-    const more = el.type === 'deepdive' ? undefined : moreOf(el);
+    if (el.type === 'mark' || el.type === 'legend') {
+      // What belongs to a picture is not shown before the picture is.
+      wrap.dataset.on = el.on;
+      if (el.type === 'mark' && moreOf(el)) wrap.classList.add('ls-has-more');
+    }
+    // A "+ Lær mer" button and a mark are themselves what is pressed; they get no "+" of their own.
+    const more = el.type === 'deepdive' || el.type === 'mark' ? undefined : moreOf(el);
     if (more) {
       // The mark comes right after the element, also in reading and tab order.
       wrap.classList.add('ls-has-more');
@@ -922,6 +1017,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     openInBrowser: 'Åpne i nettleseren',
     needsInternet: 'Krever nett',
     moreAbout: (title) => (title ? `Lær mer om: ${title}` : 'Lær mer'),
+    markEmpty: 'Skriv hva merket peker på',
     creditBy: 'av',
     creditSource: 'Kilde',
     creditCropped: 'beskåret',
@@ -946,6 +1042,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     openInBrowser: 'Open in the browser',
     needsInternet: 'Needs internet',
     moreAbout: (title) => (title ? `Learn more about: ${title}` : 'Learn more'),
+    markEmpty: 'Write what the mark points at',
     creditBy: 'by',
     creditSource: 'Source',
     creditCropped: 'cropped',

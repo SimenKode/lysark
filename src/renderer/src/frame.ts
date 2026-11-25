@@ -62,6 +62,8 @@ html, body { margin: 0; overflow: hidden; background: #000; }
 /* Nobody can open a panel in a video: no "+" marks, no rings and no "Lær mer"
    buttons, except on what the lecturer opened while reading the slide in. */
 [data-el]:not(.ls-more-live) > .ls-more-badge, .ls-el-deepdive:not(.ls-more-live) { display: none !important; }
+/* A mark on a picture is part of the slide and stays; only its "+" goes. */
+[data-el]:not(.ls-more-live) > .ls-mark-more::after { display: none !important; }
 .ls-more-ring:not(.ls-more-live) > .ls-image { outline: none !important; }
 /* The box shows what fits; nothing in a video can be scrolled. */
 .ls-pop { overflow: hidden; }

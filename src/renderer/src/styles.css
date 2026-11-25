@@ -2027,3 +2027,39 @@ legend {
   color: var(--lilla);
   text-decoration: underline;
 }
+
+/* ---------- Marks on a picture, in the properties of the picture ---------- */
+.mark-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mark-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mark-list input {
+  flex: 1;
+  min-width: 0;
+}
+.mark-list-number {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--oransje);
+  color: #000;
+  font-weight: 700;
+}
+/* The handle on what a label points at. */
+.point-handle {
+  background: var(--oransje);
+  border-color: #fff;
+}

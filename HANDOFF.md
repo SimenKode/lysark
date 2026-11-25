@@ -28,6 +28,13 @@ ting i chatten. Begge er bygget, og i tillegg neste punkt på lista:
 
 Alt dette er **gitt ut som versjon 0.4.0** (du sa ja 25.11.2026).
 
+Etter utgivelsen er **merket bilde** bygget, det første stykket av
+figurer og bevegelser, slik du valgte: velg et bilde, trykk «Legg til
+merke», og skriv hva merket peker på. Merkene er enten tall med en
+forklaringsliste ved siden av, eller etiketter med strek; du velger per
+bilde. Hvert merke kan komme inn i et steg og ha «Lær mer». Dette er
+**ikke med i 0.4.0**; det ligger i koden til neste utgivelse.
+
 Kameraet var før uttrykkelig stengt i reglene. Nå står det i AGENTS.md
 at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
 
@@ -37,7 +44,8 @@ at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
    har eksportert fra Lysark før.
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg.
 3. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
-   Commons og Openverse.
+   Commons og Openverse, og **sette merker på et bilde** (ikke gitt ut
+   ennå).
 4. **Lese inn stemmen**, og nå også **ansiktet ditt i en sirkel**. Mens
    du leser, kan du åpne «Lær mer», spille videoer og flytte sirkelen.
 5. **Rette på lyden:** klippe, legge inn pauser, flytte steg, ta om.
@@ -58,24 +66,27 @@ at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
    bruker Openverse og ikke er godkjent av dem (det står i fanen), og
    Openverse kontrollerer ikke lisensene selv. Si fra om du ikke vil ha
    kilden med. Detaljene står i historikken, 6.24.
-4. **Det som sto fra før:** les inn med egen mikrofon, legg på et
+4. **Prøv merket bilde på et av dine egne bilder** (fra kildekoden, med
+   `npm run dev`, eller vent til neste utgivelse). Si om merkene er
+   passe store, og om du savner noe.
+5. **Det som sto fra før:** les inn med egen mikrofon, legg på et
    musikkstykke, og prøv i Canvas (bare du, ingen KI). Sjekklista står
    nederst.
 
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd.
-2. **Figurer og bevegelser** (leveranse 4). Du valgte **merket bilde**
-   først: tall, piler og etiketter oppå et bilde, med nummererte punkter
-   eller etiketter med strek, valgt per bilde. Deretter fri figur, maler
-   og diagrammer.
+2. **Resten av figurer og bevegelser** (leveranse 4). Merket bilde er
+   bygget. Så kommer fri figur, malene (prosess, lagvis oppbygging,
+   sammenligning, tidslinje), diagrammer og bevegelsene. Jeg spør om
+   rekkefølgen og det som må avklares, før jeg bygger.
 3. **Håndlaget stil** (leveranse 5).
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (370) | Ja | – |
+| Automatiske tester (388) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd |
 | Innlesing | Med prøvemikrofon | Med stille inndata |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja |
@@ -83,6 +94,7 @@ at det bare brukes i innlesingsvinduet, og bare når du har slått det på.
 | **Kamerasirkelen** | Ja, med prøvekamera, også målt i videoen | **Nei.** VM-en har ikke kamera |
 | **Installasjonsfila** | – | Ja, for hånd: installere, starte, avbryte, avinstallere |
 | **Openverse** | Ja, der testen svarer for Openverse | Nei |
+| **Merket bilde** (ikke gitt ut) | Ja, også målt i videoen | Nei |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, selve
 Openverse-fanen mot det ekte nettstedet, en installasjonsfil lastet ned
@@ -146,7 +158,9 @@ interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
 ut (25.11.2026), med kamerasirkelen (ansiktet mitt i videoen), en
-installasjonsfil for Windows, søk i Openverse og en ny forside.
+installasjonsfil for Windows, søk i Openverse og en ny forside. Etter
+det er merket bilde bygget (tall eller etiketter oppå et bilde), det
+første stykket av leveranse 4; det er ikke gitt ut.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -169,7 +183,7 @@ Rammer:
   detalj, hører hjemme i docs/historikk.md.
 
 Det jeg fant da jeg prøvde selv (kamera, mikrofon, musikk,
-installasjonsfila på USN-PC, Openverse, Canvas):
+installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
 Innspill til produktet:

@@ -32,6 +32,9 @@ export function renderContext(project: Project, logo: LogoStatus): RenderContext
 
 /** True when the old node still shows the element correctly (only the box may differ). */
 function canReuse(before: Element, after: Element): boolean {
+  // A mark shows its number and follows its picture's choice of marks, and a
+  // legend lists the marks: how they look depends on other elements than themselves.
+  if (after.type === 'mark' || after.type === 'legend') return false;
   if (before === after) return true;
   if (before.type !== after.type || after.type === 'shape') return false;
   const a = before as unknown as Record<string, unknown>;

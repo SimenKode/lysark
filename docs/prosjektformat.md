@@ -51,6 +51,31 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Diagrammaler er ikke i formatet ennå (leveranse 4). Lyd kom i format 4.
 
+## Format 8: merker på et bilde
+
+Et bilde kan ha merker som peker ut det viktige i det. Bildet sier
+hvordan merkene vises (`marks`): `numbers` (nummererte punkter med en
+forklaringsliste; gjelder når feltet mangler) eller `labels` (etiketter
+med strek inn til punktet).
+
+- **Et merke er et eget element** (`type: "mark"`), så det kan komme inn
+  i et steg og ha «Lær mer» som alt annet. `on` er bildet det hører til,
+  `text` er forklaringen (i lista) eller teksten på etiketten, og
+  `point` er det merket peker på, i scenepiksler. Med tall er `box` selve
+  det runde merket, med midten i `point`. Med etiketter er `box`
+  etiketten, og streken går fra kanten av den til `point`.
+- **Forklaringslista** (`type: "legend"`, `on` er bildet) skriver seg
+  selv fra merkene, i den rekkefølgen de står i lysarket. Den lagrer
+  ingen tekst selv.
+- **Merkene følger bildet.** `anchor` på et merke er bildets boks da
+  merket sist ble plassert. Når bildet flyttes eller endrer størrelse,
+  flyttes `point` likt, og merkets egen boks regnes ut på nytt
+  (`followMarks` i `src/shared/layout/marks.ts`, som kjøres etter hver
+  endring). Slettes bildet, slettes merkene og lista. Nummeret til et
+  merke lagres ikke; det er plassen blant bildets merker.
+
+Et prosjekt i format 7 leses som det er.
+
 ## Format 7: kamerasirkelen
 
 Foreleseren kan filme ansiktet sitt mens et lysark leses inn. Det vises

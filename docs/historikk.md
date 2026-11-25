@@ -1784,6 +1784,71 @@ på nett), og Windows.
   Kamera, innlesing og Openverse er ikke prøvd for hånd på Windows i
   0.4.0; der er bare installasjon, start og «Om Lysark» sett på.
 
+### 6.25 Merket bilde, første del av leveranse 4 (25.11.2026)
+
+Eieren valgte merket bilde først, med begge merketypene valgt per bilde
+(6.24). Bygget samme dag, etter at 0.4.0 var gitt ut. **Det er ikke med
+i 0.4.0;** det ligger i koden til neste utgivelse.
+
+**Hva som er nytt.**
+
+- **«Merker på bildet»** står i egenskapene til et bilde (fanen
+  «Element»). «Legg til merke» setter et merke midt i bildet, og du
+  skriver hva det peker på i lista rett under. Bildet er fortsatt valgt,
+  så neste merke er ett trykk unna.
+- **To måter å vise merkene på, valgt per bilde:**
+  - *Tall, med forklaring ved siden av:* nummererte, runde merker på
+    bildet, og en forklaringsliste som skriver seg selv («1 …, 2 …»).
+    Lista er et eget element du kan dra dit du vil.
+  - *Etiketter med strek:* teksten står i en etikett ved siden av
+    bildet, med en strek inn til det den peker på. Etiketten dras fritt;
+    den runde prikken i enden av streken dras for seg.
+  Du kan bytte fram og tilbake; merkene beholder teksten og det de
+  peker på.
+- **Merkene følger bildet** når det flyttes eller endrer størrelse, og
+  forsvinner når bildet slettes. Et merke kan ikke dras utenfor bildet.
+- **Steg.** Hvert merke er et element, så det kan komme inn i et steg
+  som alt annet. «Ett steg per merke» lager stegene i rekkefølge. Raden
+  i forklaringslista kommer inn sammen med merket sitt, og ingen merker
+  vises før bildet de står på.
+- **«Lær mer»** kan legges på et merke. Da er merket selv det studenten
+  trykker på, med et lite «+» og en lilla ring.
+- **I HTML-fila og i videoen** vises merkene som i lysarket.
+  Prosjektformatet er nå versjon 8; eldre prosjekter åpnes som før.
+
+Fargene er valgt i paletten programmet har fra før: oransje merker med
+svart tall og hvit ring, og etiketter i hvitt med indigo kant og strek
+(hvit under, så streken synes på alle bilder).
+
+**En feil funnet av testen og rettet før noe ble sendt ut:**
+forklaringslista i redigeringsflaten ble ikke tegnet på nytt når et
+merke fikk tekst, fordi flaten gjenbruker det som ikke selv er endret.
+Merker og liste tegnes nå alltid på nytt. En svakhet i min egen første
+utgave ble også rettet: et bilde og merkene flyttet samtidig kunne ha
+flyttet merkene dobbelt; nå regnes merkene alltid ut fra bildet.
+
+**Begrensninger, sagt rett ut.**
+
+- Teksten til et merke skrives i egenskapene, ikke ved å dobbeltklikke
+  på merket i lysarket.
+- En etikett får ikke størrelse etter teksten av seg selv. Lang tekst
+  brytes; dra i håndtakene for å gjøre etiketten større.
+- Når du endrer størrelsen på bildet, hopper merkene på plass når du
+  slipper. Når du flytter bildet, følger de med underveis.
+- Merker på et bilde som er dreid, er ikke laget for det: de regner med
+  at bildet står rett.
+- Fargene på merkene kan ikke velges.
+
+**Prøvd** på Linux Mint, automatisk og uten vindu: 14 enhetstester
+(`tests/marks.test.ts`) og fire ende-til-ende-tester
+(`tests/e2e-marks.test.ts`): legge til merker og skrive tekst, dra et
+merke, dra bildet (merker og liste følger), ett steg per merke, bytte
+til etiketter, dra prikken, se merkene i forhåndsvisningen slik en
+student ser dem (steg og «Lær mer»), og måle dem i videofila.
+Innholdet i testene er prøveinnhold («Del A», «Del B»).
+
+**Ikke prøvd:** dine egne bilder, Windows, og den pakkede utgaven.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

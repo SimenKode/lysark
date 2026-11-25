@@ -6,6 +6,7 @@ import type { EditorState } from 'prosemirror-state';
 import { STAGE } from '../../shared/format/constants';
 import { isEmptyRichText, richText } from '../../shared/format/factory';
 import type { Box, Element, RichText } from '../../shared/format/schema';
+import { markStyle, pictureOf } from '../../shared/layout/marks';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
 import { StageCamera } from './StageCamera';
@@ -15,10 +16,11 @@ import { TextToolbar } from './TextToolbar';
 import { currentScene, useStore } from './store';
 
 type Point = { x: number; y: number };
-type Handle = { hx: -1 | 0 | 1; hy: -1 | 0 | 1 } | { end: 'start' | 'end' };
+type Handle = { hx: -1 | 0 | 1; hy: -1 | 0 | 1 } | { end: 'start' | 'end' } | { point: true };
 
 interface Drag {
-  kind: 'move' | 'resize' | 'endpoint';
+  /** 'point' is what a label on a picture points at. */
+  kind: 'move' | 'resize' | 'endpoint' | 'point';
   start: Point;
   boxes: Map<string, Box>;
   handle?: Handle;
@@ -261,14 +263,16 @@ export function Stage() {
       if (!el) return;
       const raw = handleEl.dataset.handle!;
       const handle: Handle =
-        raw === 'start' || raw === 'end'
-          ? { end: raw }
-          : {
-              hx: Number(raw.split(',')[0]) as -1 | 0 | 1,
-              hy: Number(raw.split(',')[1]) as -1 | 0 | 1,
-            };
+        raw === 'point'
+          ? { point: true }
+          : raw === 'start' || raw === 'end'
+            ? { end: raw }
+            : {
+                hx: Number(raw.split(',')[0]) as -1 | 0 | 1,
+                hy: Number(raw.split(',')[1]) as -1 | 0 | 1,
+              };
       drag.current = {
-        kind: 'end' in handle ? 'endpoint' : 'resize',
+        kind: 'point' in handle ? 'point' : 'end' in handle ? 'endpoint' : 'resize',
         start: p,
         boxes: new Map([[el.id, el.box]]),
         handle,
@@ -303,7 +307,16 @@ export function Stage() {
     drag.current = {
       kind: 'move',
       start: p,
-      boxes: new Map(scene.elements.filter((e) => ids.includes(e.id)).map((e) => [e.id, e.box])),
+      boxes: new Map(
+        scene.elements
+          // What belongs to a picture that is moved (its marks, its legend) is seen to move with it.
+          .filter(
+            (e) =>
+              ids.includes(e.id) ||
+              ((e.type === 'mark' || e.type === 'legend') && ids.includes(e.on)),
+          )
+          .map((e) => [e.id, e.box]),
+      ),
       moved: false,
       seq: ++dragSeq.current,
     };
@@ -319,6 +332,15 @@ export function Stage() {
     let dy = p.y - d.start.y;
     if (!d.moved && Math.hypot(dx, dy) * scale < 3) return;
     d.moved = true;
+    if (d.kind === 'point') {
+      // What a label points at follows the pointer; the line is drawn anew as it goes.
+      const [id] = [...d.boxes.keys()];
+      useStore.getState().updateScene((s) => {
+        const mark = s.elements.find((e) => e.id === id);
+        if (mark?.type === 'mark') mark.point = { x: Math.round(p.x), y: Math.round(p.y) };
+      }, `point-${d.seq}`);
+      return;
+    }
     const snapping = !event.altKey;
     const threshold = 8 / scale;
     const { starts, ends } = columnEdges(theme);
@@ -452,7 +474,7 @@ export function Stage() {
     const d = drag.current;
     drag.current = null;
     setGuides({});
-    if (!d || !d.moved || d.kind === 'endpoint') {
+    if (!d || !d.moved || d.kind === 'endpoint' || d.kind === 'point') {
       setTransient(null);
       return;
     }
@@ -804,6 +826,10 @@ export function Stage() {
                       </div>
                     );
                   }
+                  // A numbered mark has one size; a label has a handle on what it points at.
+                  const numbered =
+                    el.type === 'mark' && markStyle(pictureOf(scene, el)) === 'numbers';
+                  const pointed = el.type === 'mark' && !numbered;
                   return (
                     <div
                       key={el.id}
@@ -817,8 +843,24 @@ export function Stage() {
                         transform: box.rotation ? `rotate(${box.rotation}deg)` : undefined,
                       }}
                     >
+                      {single && !editing && pointed && el.type === 'mark' && (
+                        <div
+                          className="handle point-handle"
+                          data-handle="point"
+                          title="Dra for å flytte det merket peker på"
+                          style={{
+                            left: el.point.x - box.x - handleSize,
+                            top: el.point.y - box.y - handleSize,
+                            width: handleSize * 2,
+                            height: handleSize * 2,
+                            borderWidth: border,
+                            cursor: 'move',
+                          }}
+                        />
+                      )}
                       {single &&
                         !editing &&
+                        !numbered &&
                         HANDLES.map((handle) => (
                           <div
                             key={`${handle.hx},${handle.hy}`}
