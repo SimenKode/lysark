@@ -1538,6 +1538,48 @@ om det.
 repoet, `SimenKode/lysark-gammel`, er fortsatt privat. Fra nå er hver
 push en offentliggjøring.
 
+### 6.24 Eierens innspill 25.11.2026: kamera, installering og forsiden
+
+Startmeldingen kom med «(skriv her)» stående i begge feltene (funn fra
+egen utprøving, og innspill). Det er altså ikke meldt noe fra mikrofon,
+musikk, video eller Canvas ennå. Innspillene kom i chatten like etter:
+
+> To viktige ting. Vil at vi åpner for video (sånn sirkel med ansiktet
+> som man også skal kunne flytte rundt på skjermen etter behov. Vil også
+> at vi ser på installeringsmetoden slik at den blir smidig på
+> windowspcene på USN
+
+Jeg stilte tre spørsmål, hvert med en anbefaling. Svarene:
+
+1. **Hvor skal kamerasirkelen vises?** Anbefaling: bare i videoen
+   (MP4), så HTML-fila holder seg liten; kan utvides senere.
+
+   Svar: bare i videoen.
+
+2. **Hvordan skal sirkelen flyttes?** Anbefaling: én plass per lysark.
+   Det andre valget var fri flytting underveis: alt det første (dra den
+   på plass under innlesing eller etterpå, skjul på enkeltlysark, tre
+   størrelser), og i tillegg huskes hver flytting midt i et lysark med
+   tidspunkt og gjentas i videoen.
+
+   Svar: fri flytting underveis.
+
+3. **Hva vet du om hvordan Lysark oppfører seg på USN-PC-ene i dag?**
+
+   Svar, ordrett:
+
+   > Det må være svært enkelt å installere og github siden må forklare
+   > dette svært enkelt å forstå når man går inn på repoet. Det må også
+   > være mindre snakk om leveranser, utvikling og slikt, men en ren
+   > front for installasjon og bruk m/bilder
+
+   Om programmet får kjøre på en USN-styrt PC, er dermed fortsatt ikke
+   kjent.
+
+**Følger for reglene.** Kamera var til nå uttrykkelig stengt («aldri
+kameraet»). Med dette innspillet åpnes det, og regelen i AGENTS.md
+skrives om i samme trinn som kameraet bygges.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
