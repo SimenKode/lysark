@@ -9,7 +9,7 @@ prøvd på både Linux Mint og Windows 11.
 
 | Nr. | Leveranse | Status |
 | --- | --- | --- |
-| 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas, godkjenning av uttrykket, installasjonsfil |
+| 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
 | 4 | Figurer og bevegelser | Ikke påbegynt |
@@ -461,7 +461,8 @@ Gjenstår før leveransen er ferdig:
 1. **Canvas.** HTML-fila er ikke prøvd der.
 2. **Godkjenning av uttrykket** på dine egne lysark.
 3. **Restavvikene i importen** som står under «Kjente begrensninger».
-4. **Windows-installasjonsfil.** Bare zip-utgaven finnes.
+4. ~~Windows-installasjonsfil.~~ Laget 25.11.2026 (historikk.md 6.24);
+   kommer med i neste utgivelse.
 
 ### Prøvd på Windows 11
 

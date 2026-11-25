@@ -17,9 +17,8 @@
     "fetch:ffmpeg-source": "node tools/fetch-ffmpeg.mjs source",
     "licenses": "node tools/collect-licenses.mjs",
     "dist:linux": "npm run fetch:ffmpeg -- linux-x64 && npm run licenses && npm run build && electron-builder --linux",
-    "dist:win": "npm run fetch:ffmpeg -- win32-x64 && npm run licenses && npm run build && electron-builder --win zip",
-    "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/sound.test.ts tests/commons.test.ts tests/importer.test.ts tests/importer-html.test.ts tests/importer-pdf.test.ts tests/projectIo.test.ts",
-    "dist:win-installer": "npm run fetch:ffmpeg -- win32-x64 && npm run licenses && npm run build && electron-builder --win nsis"
+    "dist:win": "npm run fetch:ffmpeg -- win32-x64 && npm run licenses && npm run build && electron-builder --win && node tools/windows-installer.mjs",
+    "test:unit": "vitest run tests/shared.test.ts tests/more.test.ts tests/sound.test.ts tests/commons.test.ts tests/importer.test.ts tests/importer-html.test.ts tests/importer-pdf.test.ts tests/projectIo.test.ts"
   },
   "dependencies": {
     "fast-xml-parser": "^5.12.1",
@@ -95,7 +94,6 @@
         "zip"
       ],
       "icon": "build/icon.png",
-      "signAndEditExecutable": false,
       "extraResources": [
         {
           "from": "vendor/ffmpeg/win32-x64",
@@ -105,17 +103,8 @@
           "from": "build/licenses",
           "to": "licenses"
         }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerLanguages": [
-        "nb_NO"
       ],
-      "language": "1044",
-      "shortcutName": "Lysark"
+      "signExecutable": false
     }
   }
 }

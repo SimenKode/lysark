@@ -204,7 +204,8 @@ lydbehandling), uten bibliotek.
 | vite | 8.3.8 | MIT | Bygging |
 | electron-vite | 6.0.0 | MIT | Vite-oppsett for Electron |
 | @vitejs/plugin-react | 6.3.0 | MIT | React i Vite |
-| electron-builder | 26.18.0 | MIT | Installasjonsfiler for Windows og Linux |
+| electron-builder | 26.18.0 | MIT | Pakker programmet for Windows og Linux |
+| NSIS (makensis) | 3.09 | zlib/libpng | Lager installasjonsfila for Windows. Et eget program på byggemaskinen (`sudo apt install nsis`), ikke en npm-pakke og ikke bygd inn i Lysark |
 | vitest | 5.1.1 | MIT | Tester |
 | happy-dom | 21.0.4 | MIT | Nettleser-etterligning for tester av tegnekoden |
 | @playwright/test | 1.65.1 | Apache-2.0 | Tester som starter hele programmet |
@@ -249,16 +250,24 @@ Det er ikke tatt inn noe ikonbibliotek.
 ## Pakking og installasjon
 
 - Linux: AppImage (én fil som kjøres direkte).
-- Windows: en zip som pakkes ut, og der `Lysark.exe` kjøres uten
-  installasjon. Den kan lages på Linux. Installasjonsfila
-  (`npm run dist:win-installer`) må lages på en Windows-maskin, eller på
-  Linux med Wine installert; det er ikke gjort ennå.
+- Windows: **en installasjonsfil** (`Lysark-<versjon>-windows-installasjon.exe`)
+  og en zip som pakkes ut og kjøres uten installasjon. Begge lages på
+  Linux med `npm run dist:win`.
+- Installasjonsfila er ett dobbeltklikk: ingen valg, ingen spørsmål om
+  administrator. Den installerer for den som kjører den
+  (`%LOCALAPPDATA%\Programs\Lysark`), lager snarvei på skrivebordet og
+  i Start-menyen, fører Lysark opp blant installerte programmer (med
+  avinstallering), og starter programmet. En nyere utgave installeres
+  rett over den gamle; innstillinger og prosjekter røres ikke. Er Lysark
+  åpent, ber den deg lukke det.
+- Den lages med NSIS direkte (`tools/windows-installer.nsi` og
+  `tools/windows-installer.mjs`), ikke med electron-builders eget
+  installasjonsmål, som trenger Wine på Linux.
 - Programmet signeres ikke. Sertifikat for signering koster penger, og
-  det er utelukket. Windows vil derfor vise en advarsel første gang.
-- Windows-utgaven bygges på Linux. Da kan ikke ikonet skrives inn i
-  selve programfila, så den viser Electrons standardikon i Windows
-  (snarveien og installasjonsfila får Lysark-ikonet). Bygges programmet
-  på en Windows-maskin, blir ikonet riktig overalt.
+  det er utelukket. Windows kan derfor vise en advarsel («Windows
+  beskyttet PC-en din») første gang en nedlastet fil kjøres.
+- Programfila har Lysark-ikonet og riktig navn og versjon, også når den
+  bygges på Linux (fra 25.11.2026; før viste den Electrons ikon).
 - Ingen automatisk oppdatering; det ville krevd en server.
 
 ## Sikkerhet og personvern

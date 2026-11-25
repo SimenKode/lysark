@@ -203,10 +203,8 @@ Større:
    ikke redigeres og følger ikke temaets skrift. Ekte matematikk i
    teksten er ikke laget.
 2. **SmartArt, diagrammer og innebygde objekter** følger ikke med.
-3. **Windows-installasjonsfil** mangler. Den må bygges på Windows, eller
-   på Linux med Wine.
-4. **Windows-programfila har Electrons ikon**, fordi ikonet ikke kan
-   skrives inn når programmet bygges på Linux.
+3. ~~Windows-installasjonsfil mangler.~~ Laget 25.11.2026 (6.24).
+4. ~~Windows-programfila har Electrons ikon.~~ Rettet 25.11.2026 (6.24).
 5. **Radhøyder og justering i tabeller** følger temaet, og hele tabellen
    får én skriftstørrelse. Tette tabeller kan derfor bli høyere enn i
    PowerPoint og gå inn i det som står under eller ut av lysarket
@@ -1579,6 +1577,50 @@ Jeg stilte tre spørsmål, hvert med en anbefaling. Svarene:
 **Følger for reglene.** Kamera var til nå uttrykkelig stengt («aldri
 kameraet»). Med dette innspillet åpnes det, og regelen i AGENTS.md
 skrives om i samme trinn som kameraet bygges.
+
+**Installasjonsfil for Windows (bygget og prøvd 25.11.2026).**
+
+- `npm run dist:win` lager nå også
+  `release/Lysark-<versjon>-windows-installasjon.exe` (161 MB; zip-utgaven
+  er 212 MB). Ett dobbeltklikk: ingen valg og ingen spørsmål om
+  administrator. Den installerer for den som kjører den, i
+  `%LOCALAPPDATA%\Programs\Lysark`, lager snarvei på skrivebordet og i
+  Start-menyen, fører Lysark opp blant installerte programmer, og
+  starter programmet når den er ferdig.
+- electron-builders eget installasjonsmål ble prøvd først, men krever
+  Wine på Linux («spawn wine ENOENT»). Wine er ikke installert, og jeg
+  installerer ikke systemprogrammer. Maskinen har NSIS (makensis 3.09),
+  så installasjonsfila lages med det direkte
+  (`tools/windows-installer.nsi`).
+- Samtidig fikk programfila Lysark-ikonet og riktig navn og versjon.
+  Det viste seg at pakkeverktøyet kan skrive dem inn på Linux når bare
+  signeringen slås av (`signExecutable: false`), ikke hele redigeringen.
+- **Prøvd for hånd i Windows 11-VM-en** (fra et CD-bilde, engelsk
+  Windows): installasjonen gikk uten spørsmål og tok ett til to
+  minutter; snarveien kom på skrivebordet med Lysark-ikonet; programmet
+  startet av seg selv med innstillingene fra før (sist brukte prosjekter
+  sto der); tittellinja og oppgavelinja viser Lysark-ikonet. Kjørt en
+  gang til mens Lysark var åpent: meldingen «Lysark er åpent. Lukk
+  programmet, og prøv på nytt.» kom, og «Cancel» lukket
+  installasjonen uten å røre noe. Avinstalleringen (på norsk) fjernet
+  programmet og snarveien.
+- To småting funnet og rettet underveis: meldingen siterte knappen
+  «Prøv på nytt», som heter «Retry» på engelsk Windows, og etter
+  «Cancel» ble installasjonsvinduet stående og måtte lukkes med ett
+  klikk til.
+- **Ikke prøvd:** en fil som er lastet ned fra nettet (da kan Windows
+  vise «Windows beskyttet PC-en din», fordi programmet ikke er
+  signert), norsk Windows, og en USN-styrt PC. Om en USN-PC i det hele
+  tatt lar et usignert program kjøre, vet vi ikke før eieren har prøvd.
+- Lysark 0.3.0 står igjen installert i VM-en.
+
+**Forsiden (README) er skrevet om** slik eieren ba om: installasjon
+øverst, så bruk i fem trinn med bilder, og ingenting om leveranser. Det
+som handler om utvikling, er flyttet til `docs/utvikling.md`. Bildene
+(`docs/bilder/`) er tatt av testene, med prøveinnhold. Ett av testbildene
+viste USNs logo (testen bruker logopakka når den finnes på maskinen); det
+er ikke brukt. Installasjonsavsnittet for Windows beskriver zip-utgaven
+til en utgivelse med installasjonsfila finnes.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
