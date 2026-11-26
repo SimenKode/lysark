@@ -325,6 +325,24 @@ instead of choosing silently.
   the render code, the HTML player and the video export never look at
   groups or at what a line is fastened to. In the interface the word is
   "Grupper" and "Del opp gruppen" (the owner's choice, as in PowerPoint).
+- A line or an arrow can run through points between its ends (the
+  owner, 26.11.2026: "fritt kan plassere og forme streker mellom bokser
+  med snapping", and "feste strek til strek for å bygge nettverk med
+  t-kryss"). The whole path lies on the line as `points`, fractions of
+  its box, the way a curve's do; without them a line is the diagonal it
+  always was. An end is fastened to a box, by itself or at one of its
+  four fastening points, or to a place along another line (a
+  T-junction); a ring of lines fastened to each other is refused.
+  `followFigures` still lays everything right, lines that others are
+  fastened to first, and what is drawn still knows only the box and the
+  points. In the interface the words are "strek", "pil", "punkt" (on a
+  line) and "festepunkt" (on a box); never "node" for a point on a line.
+- The figure "Nettverk" is a figure with a form where **the form says
+  what there is, and the lecturer says where it is**: the form lists
+  nodes and connections, `followTemplates` makes and takes away their
+  shapes and lines, and never lays out anew where a node stands or how a
+  connection runs. Only "Ordne nodene" does that. A row is a "node" or a
+  "kobling".
 - A figure with a form (process, layers, comparison, time axis, bar
   diagram, line diagram) is drawn by its form, not by hand (the owner's choice, 25.11.2026: "skjemaet
   styrer"). The figure element (`type: 'figure'`) holds the form and a

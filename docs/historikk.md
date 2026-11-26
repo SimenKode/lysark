@@ -3566,6 +3566,59 @@ lysark (testene har ikke logofilene).
 to formene. På en mobil som holdes stående, står lysarket øverst, og de
 små pilene havner under det.
 
+### 6.56 Streker som kan formes og festes til hverandre, og figuren «Nettverk» (26.11.2026)
+
+Bygget av en Opus-agent etter designet mitt, og sett over av meg (tre
+av bildene er sett på). Prosjektformatet er nå 20.
+
+**Streker.** Gjelder alle streker og piler, også i fri figur.
+
+- En valgt strek har et håndtak i hver ende, ett på hvert punkt, og et
+  mindre, blekere midt på hvert strekk. **Dra i et midthåndtak** for å
+  lage et punkt og bøye streken. Dobbeltklikk på streken gir også et
+  punkt; dobbeltklikk på et punkt tar det bort. «Rett ut streken» står i
+  egenskapene.
+- Mens du drar en ende eller et punkt, **smetter det på plass**: på
+  boksenes fire festepunkter (fire prikker vises, og den som blir tatt,
+  er fylt), på en annen strek (streken lyser, og et merke viser stedet),
+  rett bortover eller rett opp fra nabopunktet, og på rutenettet når det
+  er på. Alt slår dette av.
+- **En ende kan festes til en annen strek.** Det gir T-kryss, og enden
+  følger med når den andre streken flyttes eller bøyes. «Festet til»
+  sier hvor: «festepunktet oppe», eller «et sted langs den».
+- Formen som het «Linje», heter nå «Strek» overalt.
+
+**«Nettverk»** står under «Sett inn → Figur». Skjemaet har «Noder»
+(tekst, opp, ned, «Fjern», «Legg til node») og «Koblinger» («Fra»,
+«Til», «Strek» eller «Pil», «Fjern», «Legg til kobling»). **Skjemaet
+sier hva som finnes; du sier hvor det står.** Du drar nodene på
+lysarket, og koblingene følger. Du bøyer og fester koblingene som andre
+streker. Drar du en ende inn på en annen kobling, sier skjemaet
+«Starten ligger på koblingen A til B.» «Ordne nodene» legger dem pent:
+i ring, eller i lag når pilene gir en rekkefølge. Ellers: form på
+nodene, farge, skriftstørrelse, «Ett steg per node» og «Gjør om til fri
+figur». For dem som ikke ser figuren, leses koblingene som en liste
+(«A til B»).
+
+**Prøvd på Linux Mint:** 34 enhetstester og to prøver i det bygde
+programmet uten vindu, hver på et liggende og et stående lysark: bøye
+ved å dra, feste til et festepunkt og til en annen strek, flytte boksen
+og streken og se at endene følger; et nettverk med tre noder og to
+koblinger, et T-kryss, «Forhåndsvis» og HTML-fila. I en kort video er
+den bøyde pila målt: mørk i knekken, og tomt der den rette pila gikk.
+
+**Ikke prøvd:** Windows. Video av et nettverk på et stående lysark.
+
+**Kjent:**
+
+- Punkter og festepunkter kan bare brukes med mus.
+- Når to ender ligger tett, kan håndtaket til den ene dekke den andre.
+  Midthåndtakene er bleke på et lyst lysark.
+- En ende festet oppe eller nede på en boks går tvers gjennom boksen når
+  streken fortsetter på den andre siden.
+- Tekst på en kobling er ikke laget (eieren valgte det ikke).
+- Endret skriftstørrelse gjør ikke nodene som finnes, større.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

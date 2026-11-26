@@ -50,6 +50,33 @@ og rullefeltet er sett på der (historikken, 6.49).
 
 Detaljene står i historikken, 6.25 til 6.48.
 
+## Nytt etter 0.5.0, bygget 26.11.2026 (ikke gitt ut)
+
+Du meldte ni ting etter utgivelsen og svarte på fire spørsmål
+(historikken, 6.50 og 6.51). Alt er bygget av Opus-agenter etter
+designet mitt. Detaljene står i historikken, 6.52 til 6.56.
+
+| Du meldte | Slik ble det |
+| --- | --- |
+| Kameraet fryser når jeg går til neste lysark | **Funnet og rettet.** Innlesingsvinduet stanset alle videoer på lysarket ved hvert skifte, og sirkelen med ansiktet ditt ble stanset sammen med dem. Videoen var aldri berørt |
+| Lagring av opptak bør gå i bakgrunnen | «Ferdig» lukker innlesingsvinduet med en gang. Øverst står «Lagrer opptaket», og du kan redigere imens. «Les inn» og eksportene venter til det er ferdig |
+| Stående PDF-er og stående video | Importdialogen spør **«Hvilken form skal lysarkene ha?»**: «Liggende (16:9)» eller «Stående (9:16)», med «Anbefalt» på formen sidene har. Videoen blir 1080 × 1920 |
+| Jeg sliter med grunntiden per lysark | Feltet **«Tid uten lyd»** i fanen «Lysark» og i fanen «Lyd», og knappen «Bruk på alle lysark uten lyd» |
+| Nettverk med noder og koblinger | Ny figur **«Nettverk»** under «Sett inn → Figur». Skjemaet sier hvilke noder og koblinger som finnes; du drar nodene dit du vil |
+| Forme streker fritt, og feste strek til strek | Dra i midten av en strek for å bøye den. En ende smetter på plass på boksenes **festepunkter** og på **andre streker** (T-kryss), og følger med når de flyttes |
+| Kjente feil må bare fikses | Tette tabeller fra PowerPoint holder seg på lysarket. Musikken i HTML-fila har ikke lenger opphold. Piltastene virker etter YouTube. Lagre-dialogene husker mappa. «Lær mer»-boksen ligger riktig under zoom. **«Fil → Rydd i prosjektmappa»** legger ubrukte filer i papirkurven |
+| Canvas er irrelevant | Tatt ut av planen og av denne fila |
+| Slett den gamle testprosessen | Stoppet |
+
+**To ting jeg valgte selv. Si fra om de er feil:**
+
+- **Lysark du hopper over under et opptak,** og som ikke har lyd, tas
+  ut av videoen. Meldingen etter opptaket sier hvilke. Haken «Ta med i
+  videoen og i «Spill av»» i fanen «Lysark» tar dem med igjen.
+- **Titler blir 5 prosent mindre** ved import fra en PowerPoint-fil satt
+  i Calibri, fordi Lysarks tittelskrift er litt bredere og siste
+  bokstav kunne bli dekket av et bilde.
+
 ## Dette kan du gjøre nå
 
 1. **Hente inn** en forelesning: PowerPoint, PDF, eller en HTML-fil du
@@ -57,7 +84,8 @@ Detaljene står i historikken, 6.25 til 6.48.
    utseendet eller gjøres om til USN-stil. Kapitlene følger med.
 2. **Rette opp** lysarkene: flytte, skrive, og dele inn i kapitler.
 3. **Lage figurer:** fra en mal med skjema, søyle- og linjediagram fra
-   en tabell med tall, eller fritt av bokser og piler som henger sammen.
+   en tabell med tall, et nettverk av noder og koblinger, eller fritt av
+   bokser og streker som henger sammen.
 4. **Lage steg med bevegelse:** ting kommer inn, markeres, tas bort,
    eller bildet zoomer inn på et utsnitt.
 5. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
@@ -104,45 +132,39 @@ Detaljene står i historikken, 6.25 til 6.48.
 
 ## Det jeg trenger fra deg
 
-Du har ikke meldt funn ennå, så lista fra sist står.
+Det nye er ikke gitt ut. Prøv det med `npm run dev` i mappa, eller be
+om en utgivelse, så ligger det i `release/`.
 
-**Først: prøv 0.5.0 fra `release/`.** Åpne «Lær mer» på noe med mye
-innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
-
-1. **Prøv bevegelsene.** Lag noen steg på et lysark med en pil, et
-   diagram og et stort tall, og se dem i «Forhåndsvis». Prøv «Marker»,
-   «Ta bort» og «Zoom inn». Er bevegelsene rolige nok? Er farten
-   riktig? Er den oransje rammen rundt det markerte slik du vil ha den?
-2. **Prøv figur i «Lær mer».** Lag en figur på et lysark, åpne «Lær mer»
-   på noe annet, og velg «Legg til → Figur». Er figuren stor nok i
-   boksen nå?
-3. **Prøv figurene** på et av dine egne lysark: en prosess, en tidsakse,
-   et diagram med tall limt inn fra Excel, og en fri figur.
-4. **Importer en av dine egne PowerPoint-filer med diagram**, med «Gjør
-   om til USN-stil». Det er prøvd på diagrammer PowerPoint laget i
-   VM-en, men ikke på et du har laget selv.
-5. **Prøv «Behold utseendet» på Windows** med en av dine egne
-   forelesninger. Det er bare prøvd med én liten prøvefil.
-6. **Prøv et opptak med ekte kamera**, og gå fram og tilbake underveis.
-   Fryser bildet mellom lysark? Følger munn og lyd hverandre? Er det
-   riktig at et lysark du bare blar forbi (under et halvt sekund), ikke
-   vises?
-7. **Prøv PDF-importen på nytt.** Står teksten der den sto?
-8. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
-   til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
-   bilde på dine egne bilder.
-9. **En gammel testprosess** fra 22.11 står og går på maskinen din
-   (historikken, 6.42). Si fra om jeg skal stoppe den.
+1. **Les inn med kameraet på, og bytt lysark.** Står sirkelen fortsatt
+   stille? Det er målt med prøvekamera, ikke med et ekte.
+2. **Trykk «Ferdig» etter et opptak,** og rediger et lysark mens det
+   står «Lagrer opptaket». Kommer opptaket på plass?
+3. **Importer en stående PDF** og lag en kort video. Er 9:16 riktig, og
+   ser tittellysarket bra ut stående?
+4. **Sett «Tid uten lyd»** på et par lysark, og prøv «Bruk på alle
+   lysark uten lyd». Er det lett å finne nå?
+5. **Lag et nettverk:** «Sett inn → Figur → Nettverk». Dra nodene, bøy
+   en kobling, og dra en ende inn på en annen kobling. Er håndtakene
+   lette nok å treffe?
+6. **Importer Stål, Trevirke og Praktisk HMS på nytt** og se på
+   tabellene (Stål 4, Trevirke 17 og 19, HMS 35).
+7. **Det som sto fra før:** bevegelsene, figur i «Lær mer», et diagram
+   fra en av dine egne PowerPoint-filer, «Behold utseendet» på Windows
+   med en egen forelesning, installasjonsfila på en USN-PC, vilkårene
+   til Openverse (historikken, 6.24), egen mikrofon og musikk.
 
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd.
-2. **Resten av Windows:** det meste av det nye er prøvd der nå
-   (historikken, 6.46). Gjenstår: å lage steg og dra zoom-rammen for
-   hånd, innlesing, fritt opptak, PDF-import og grupper.
-3. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
+2. **Windows:** ingenting av det som er bygget etter 0.5.0, er prøvd
+   der. Fra før gjenstår innlesing, fritt opptak, PDF-import og grupper.
+3. **Ny utgivelse** når du ber om det. Forsiden (README) og bildene må
+   da få med det nye.
+4. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
    tavle, og på spørsmål til deg før den bygges.
-4. **Ny utgivelse** når du ber om det.
+5. **Ikke bygget, fordi det er nye funksjoner:** ekte formler, SmartArt,
+   flere diagramtyper, venndiagram og årsak-virkning, tekst på
+   koblingene i et nettverk, og bytte av form etter import.
 
 ## Hva som er prøvd
 
@@ -169,6 +191,14 @@ innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
 | **Figur i «Lær mer»** | Ja, i programmet, i forhåndsvisningen og målt i en videofil: en prosess. Gruppe og bilde med merker bare i enhetstester | **Ja, 26.11:** byggeren, velgeren, et søylediagram hentet inn, og boksen hos studenten |
 | **Linjediagram med navn langs aksen** | Ja, i programmet, og importen på fila fra PowerPoint | **Ja, 26.11:** sett i programmet og etter import. Valget «Tall / Navn» er ikke prøvd der |
 | **Bevegelser, og steg som markerer, tar bort og zoomer** | Ja, i programmet, hos studenten, og målt i en videofil. Ikke i innlesingsvinduet, ikke «Spill av» i en nettleser | **Ja, 26.11:** sett steg for steg i forhåndsvisningen, og målt i en videofil laget der. Stegene var laget på forhånd, ikke for hånd der |
+| **Kamerasirkelen under lysarkskifte** (etter 0.5.0) | Ja, målt med prøvekamera: sirkelen får bilder hele tiden | **Nei** |
+| **Lagring av opptak i bakgrunnen** (etter 0.5.0) | Ja, i det bygde programmet uten vindu | **Nei** |
+| **«Tid uten lyd», og lysark utenfor videoen** (etter 0.5.0) | Ja, også et opptak som hopper over et lysark, og målt lengde på videoen | **Nei** |
+| **Stående lysark, 9:16** (etter 0.5.0) | Ja: import av en stående PDF, «Forhåndsvis», HTML-fila, og en video målt til 1080 × 1920. Ikke innlesingsvinduet, ikke GIF | **Nei** |
+| **Streker med punkter, festepunkter og T-kryss** (etter 0.5.0) | Ja, liggende og stående, i programmet og målt i en videofil | **Nei** |
+| **Figuren «Nettverk»** (etter 0.5.0) | Ja, liggende og stående, i programmet, «Forhåndsvis» og HTML-fila | **Nei** |
+| **Tabeller fra PowerPoint** (etter 0.5.0) | Ja, på alle forelesningene dine, og bilder mot PDF-ene | **Nei** |
+| **«Rydd i prosjektmappa»** (etter 0.5.0) | Ja, der testen svarer for papirkurven | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
@@ -198,20 +228,26 @@ festede piler er ikke prøvd der.
 - **Bevegelser:** «Ett steg per element» og «Fjern alle steg» fjerner
   også steg som markerer og zoomer. Bare det første tallet i en tekst
   teller opp. Bare linjer, piler og kurver kan tegnes. Zoom vises ikke
-  der du redigerer lysarket, bare rammen. En «Lær mer»-boks som åpnes
-  mens bildet er zoomet inn, legger seg der elementet står på det hele
-  lysarket.
+  der du redigerer lysarket, bare rammen.
 - **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
-  gruppe større eller mindre. En pil går alltid korteste vei mellom to
-  bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
-  ikke ha knekk. Grupper og koblingslinjer fra PowerPoint kommer inn som
-  løse former. Det finnes ingen hurtigtast for «Grupper».
-- **Hopper du framover over lysark** og kommer tilbake til dem senere,
-  står de også på sin vanlige plass i videoen, uten lyd (fem sekunder
-  hver).
+  gruppe større eller mindre. Grupper og koblingslinjer fra PowerPoint
+  kommer inn som løse former. Det finnes ingen hurtigtast for «Grupper».
+- **Streker og nettverk:** punkter på en strek og festepunkter kan bare
+  brukes med mus, ikke med tastatur. Håndtakene midt på en strek er
+  bleke, og når to ender ligger tett, kan det være vanskelig å treffe
+  den rette. En ende festet oppe eller nede på en boks kan gå tvers
+  gjennom boksen når streken fortsetter på den andre siden. Det kan ikke
+  stå tekst på en kobling. Endrer du skriftstørrelsen i et nettverk,
+  blir ikke nodene som finnes, større.
+- **Stående lysark:** formen kan ikke byttes etter importen, og det
+  finnes bare liggende 16:9 og stående 9:16. På en mobil som holdes
+  stående, står lysarket øverst, og de små pilene havner under det.
+- **Lagring av opptak:** «Lagre som én fil» og «Forhåndsvis» venter ikke
+  på at et opptak er ferdig lagret.
 - **Det du sier på et «igjen»-lysark, får ikke teksting** av seg selv.
   Skriv manus på stedet om du vil ha teksting der.
-- **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
+- **Munn og lyd** i videoen, og sirkelen under lysarkskifte, er ikke
+  kontrollert med ekte kamera.
 - **«Behold utseendet» for PowerPoint på Windows** er prøvd med én liten
   prøvefil, ikke med dine egne forelesninger. En PowerPoint-fil uten
   lysark kan PowerPoint ikke lage PDF av. På Linux
@@ -234,13 +270,12 @@ festede piler er ikke prøvd der.
   kjøres, fordi programmet ikke er signert.
 - **En video på et lysark står stille i videofila** hvis du ikke
   spilte den under innlesingen. En YouTube-video står alltid stille der.
-- **Musikk i HTML-fila** kan få et bitte lite opphold når «Spill av»
-  går til neste lysark. I videoen er den sammenhengende.
 - **Tekstingen er beregnet** ut fra manusets lengde, ikke lyttet fram.
-- **Tabeller, formler, SmartArt og diagrammer** fra PowerPoint kommer
-  ikke alltid med slik de var.
-- **Opptak du har tatt om, blir liggende** i prosjektmappa, også
-  filmene.
+- **Formler, SmartArt og diagrammer** fra PowerPoint kommer ikke alltid
+  med slik de var. Tabellstilen (rammer, annenhver rad farget) følger
+  ikke med.
+- **Opptak du har tatt om, blir liggende** i prosjektmappa til du
+  velger «Fil → Rydd i prosjektmappa».
 
 Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
@@ -268,10 +303,12 @@ forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
 og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.5.0 er gitt
-ut (26.11.2026), med figurer og diagrammer, steg med bevegelse, fritt
-opptak, kapitler, merket bilde, figur i «Lær mer», og valget mellom
-«Behold utseendet» og «Gjør om til USN-stil» ved import. Ingenting er
-bygget etter den.
+ut (26.11.2026). Etter det er dette bygget, og ikke gitt ut: lagring av
+opptak i bakgrunnen, kamerasirkelen som sto stille ved lysarkskifte
+(rettet), stående lysark 9:16 valgt ved import, «Tid uten lyd» på
+lysarket, lysark som kan stå utenfor videoen, streker med punkter,
+festepunkter og T-kryss, figuren «Nettverk», tabeller fra PowerPoint som
+holder seg på lysarket, og «Rydd i prosjektmappa».
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -292,8 +329,9 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (versjon 0.5.0 fra release/, rullefeltet
-i «Lær mer», bevegelsene, figur i «Lær mer», figurene
+Det jeg har funnet siden sist (kamerasirkelen når jeg bytter lysark,
+lagring i bakgrunnen, stående PDF og stående video, «Tid uten lyd»,
+nettverk og streker, tabellene, rullefeltet i «Lær mer», bevegelsene, figur i «Lær mer», figurene
 og diagrammene, en PowerPoint-fil med diagram, opptak med ekte kamera,
 fram og tilbake under opptak, import med «Behold utseendet» og
 «USN-stil», særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
