@@ -448,7 +448,9 @@ async function importPptxWithItsLook(name: string): Promise<void> {
         ? 'LibreOffice har tegnet lysarkene. Det kan avvike litt fra PowerPoint, særlig der skriftene ' +
           'i presentasjonen ikke finnes på maskinen. Vil du ha det helt likt, lagrer du presentasjonen ' +
           'som PDF i PowerPoint, legger PDF-fila ved siden av med samme navn, og importerer på nytt.'
-        : undefined;
+        : 'by' in pdf && pdf.by === 'powerpoint'
+          ? 'PowerPoint har tegnet lysarkene.'
+          : undefined;
   await importPickedPdf({ name, data: pdf.data }, control, { look: 'keep', slides, from });
 }
 

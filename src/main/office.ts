@@ -77,11 +77,12 @@ async function withLibreOffice(program: string, source: string, work: string): P
  * PowerPoint saves the copy as PDF, without a window. PowerPoint is left
  * running when the lecturer has other presentations open in it.
  *
- * The copy is closed whether or not the PDF was made. A PowerPoint that is
- * not signed in opens the file and then refuses to save it (tried in the
- * owner's Windows VM, 26.11.2026: "An error occurred while PowerPoint was
- * saving the file"); without the close it was left running, out of sight,
- * with the copy open.
+ * The copy is closed whether or not the PDF was made. PowerPoint can open a
+ * file and then refuse to save it: a presentation without slides gives "An
+ * error occurred while PowerPoint was saving the file" (found in the owner's
+ * Windows VM, 26.11.2026). Without the close PowerPoint was then left
+ * running, out of sight, with the copy open. With a presentation that has
+ * slides, this very request made the PDF there in under a second.
  */
 export const POWERPOINT_SCRIPT = [
   "$ErrorActionPreference = 'Stop'",
