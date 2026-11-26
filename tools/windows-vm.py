@@ -27,6 +27,12 @@ Things that bit the first time:
     over it; never press Enter on text you did not type.
   - Coordinates read off the 1280 wide .jpg must be multiplied by 1.5.
   - The first start of Lysark takes about half a minute.
+  - When the VM or the host is busy, a long line that is typed can come
+    out garbled: AltGr (used for $ { } [ ] @) is left hanging, and the rest
+    arrives as control characters. Look at the whole line before Enter. To
+    clear it: key KEY_RIGHTALT, then key KEY_ESC. For anything longer than
+    a short command, put a script on the CD image and type only
+    "powershell -ep bypass -file d:\\p.ps1" (no AltGr in it).
 """
 import json, subprocess, sys, time
 import os

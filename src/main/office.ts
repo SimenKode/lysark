@@ -76,17 +76,24 @@ async function withLibreOffice(program: string, source: string, work: string): P
 /**
  * PowerPoint saves the copy as PDF, without a window. PowerPoint is left
  * running when the lecturer has other presentations open in it.
+ *
+ * The copy is closed whether or not the PDF was made. A PowerPoint that is
+ * not signed in opens the file and then refuses to save it (tried in the
+ * owner's Windows VM, 26.11.2026: "An error occurred while PowerPoint was
+ * saving the file"); without the close it was left running, out of sight,
+ * with the copy open.
  */
-const POWERPOINT_SCRIPT = [
+export const POWERPOINT_SCRIPT = [
   "$ErrorActionPreference = 'Stop'",
   '$app = New-Object -ComObject PowerPoint.Application',
+  '$doc = $null',
   'try {',
   // Read-only, with its own name, without a window.
   '  $doc = $app.Presentations.Open($env:LYSARK_INN, -1, 0, 0)',
   // 32 is PowerPoint's number for PDF.
   '  $doc.SaveAs($env:LYSARK_UT, 32)',
-  '  $doc.Close()',
   '} finally {',
+  '  if ($doc) { $doc.Close() }',
   '  if ($app.Presentations.Count -eq 0) { $app.Quit() }',
   '}',
 ].join('\n');
@@ -157,6 +164,11 @@ export async function presentationToPdf(file: string): Promise<PresentationPdf |
     }
     return null;
   } finally {
-    rmSync(work, { recursive: true, force: true });
+    try {
+      rmSync(work, { recursive: true, force: true });
+    } catch {
+      // A program that still holds the copy keeps the folder for now. That
+      // is no reason to lose the PDF, or to keep the lecturer from the next way.
+    }
   }
 }
