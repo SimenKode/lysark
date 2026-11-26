@@ -1,10 +1,11 @@
-// Figures that draw themselves from a form: a process, layers, a comparison.
-// The figure element holds the form and a frame; what is seen are ordinary
-// shapes, each an element of its own (so it can come in at a step and have
-// "Lær mer" content) that carries `of`. One function makes, lays out and
-// takes away those shapes as the form says, after every change. Nothing here
-// draws anything: the render code sees only shapes. The functions change the
-// slide they are given.
+// Figures that draw themselves from a form: a process, layers, a comparison,
+// a time axis. The figure element holds the form and a frame; what is seen
+// are ordinary shapes (and, on a time axis, ordinary text boxes), each an
+// element of its own (so it can come in at a step and have "Lær mer"
+// content) that carries `of`. One function makes, lays out and takes away
+// those parts as the form says, after every change. Nothing here draws
+// anything: the render code sees only shapes and text boxes. The functions
+// change the slide they are given.
 import { STAGE } from '../format/constants';
 import { isEmptyRichText, paragraph, plainText, richText } from '../format/factory';
 import type {
@@ -18,19 +19,34 @@ import type {
   Scene,
   ShapeElement,
   Step,
+  TextElement,
 } from '../format/schema';
 import { edgePoint, setLineEnds } from './groups';
+import { partSource } from './rows';
+
+export { partSource };
 
 type Templated = Pick<Scene, 'elements' | 'timeline'>;
 
 /** How many rows the form of a new figure starts with. They are empty. */
-const NEW_ITEMS: Record<FigureTemplate, number> = { process: 3, layers: 3, comparison: 2 };
+const NEW_ITEMS: Record<FigureTemplate, number> = {
+  process: 3,
+  layers: 3,
+  comparison: 2,
+  timeAxis: 3,
+};
 /** The size a new figure starts with, in stage pixels. */
 export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> = {
   process: { w: 1500, h: 200 },
   layers: { w: 900, h: 480 },
   comparison: { w: 1500, h: 560 },
+  timeAxis: { w: 1500, h: 360 },
 };
+/** The one part of a time axis that belongs to no row: the line itself. */
+const AXIS = 'axis:line';
+/** How wide the points on a time axis are, and how thick its line is. */
+const AXIS_DOT = 26;
+const AXIS_WIDTH = 6;
 const FONT_SIZE = 30;
 /** The colours of layers that lie on each other, when the lecturer has chosen none. */
 const LAYER_COLORS: PaletteColor[] = ['indigo', 'lilla', 'mediumLilla', 'lysLilla', 'lysIndigo'];
@@ -69,16 +85,6 @@ export function wholeFigure(
   return all.length === chosen.length && all.every((id) => ids.includes(id)) ? figure : undefined;
 }
 
-/** Which row of the form a part shows, and what of it. An arrow leads to the row it names. */
-export function partSource(
-  part: string,
-): { kind: 'box' | 'head' | 'body' | 'arrow'; item: string } | undefined {
-  const at = part.indexOf(':');
-  const kind = part.slice(0, at);
-  if (kind !== 'box' && kind !== 'head' && kind !== 'body' && kind !== 'arrow') return undefined;
-  return { kind, item: part.slice(at + 1) };
-}
-
 /** A new figure with an empty form, to stand in the box given. */
 export function newFigure(template: FigureTemplate, box: Box, newId: () => string): FigureElement {
   return {
@@ -92,19 +98,24 @@ export function newFigure(template: FigureTemplate, box: Box, newId: () => strin
 
 // ---------- What a figure consists of ----------
 
-/** What a part is to look like. Everything named here is decided by the form. */
+/** What a part that is a shape is to look like. Everything named here is decided by the form. */
 type Look = Pick<
   ShapeElement,
   'geometry' | 'fill' | 'stroke' | 'strokeWidth' | 'content' | 'fontSize' | 'align' | 'valign'
 >;
+/** The same for a part that is text with nothing around it. */
+type Words = Pick<TextElement, 'content' | 'fontSize' | 'align' | 'valign'>;
 
 interface PartSpec {
   part: string;
-  look: Look;
+  /** A part is a shape with this look, or a text box with these words. */
+  look?: Look;
+  words?: Words;
   /** Where it stands. An arrow has none: it lies between the two parts it is fastened to. */
   box?: Box;
   between?: { start: string; end: string };
 }
+type Part = ShapeElement | TextElement;
 
 function lines(text: string): RichText | undefined {
   const rows = text.split('\n').map((row) => row.trim());
@@ -192,6 +203,71 @@ export function figureParts(figure: FigureElement): PartSpec[] {
     return specs;
   }
 
+  if (figure.template === 'timeAxis') {
+    // A line with a point on it for each event. When the event is stands in a
+    // box on one side of the line, and what it is as plain text on the other.
+    const down = figure.direction === 'down';
+    const color = figure.color ?? 'lilla';
+    const places = down ? split(y, h, n, 20) : split(x, w, n, 28);
+    const head = down
+      ? Math.round(clamp(w * 0.24, 120, Math.min(300, w / 2)))
+      : Math.round(clamp(h * 0.24, 56, Math.min(110, h / 2)));
+    // Where the line runs: its y across, its x down.
+    const at = Math.round((down ? x : y) + head + 16 + AXIS_DOT / 2);
+    const after = at + AXIS_DOT / 2 + (down ? 18 : 12);
+    specs.push({
+      part: AXIS,
+      look: { geometry: 'line', stroke: color, strokeWidth: AXIS_WIDTH },
+      box: down ? { x: at, y, w: 1, h, rotation: 0 } : { x, y: at, w, h: 1, rotation: 0 },
+    });
+    figure.items.forEach((item, i) => {
+      const [from, to] = places[i]!;
+      const mid = Math.round((from + to) / 2);
+      const tall = Math.min(to - from, Math.round(Math.max(56, size * 2.4)));
+      specs.push({
+        part: `dot:${item.id}`,
+        look: { geometry: 'ellipse', fill: color },
+        box: {
+          x: (down ? at : mid) - AXIS_DOT / 2,
+          y: (down ? mid : at) - AXIS_DOT / 2,
+          w: AXIS_DOT,
+          h: AXIS_DOT,
+          rotation: 0,
+        },
+      });
+      specs.push({
+        part: `head:${item.id}`,
+        look: { geometry: 'roundRect', fill: color, content: lines(item.text), fontSize: size },
+        box: down
+          ? { x, y: Math.round(mid - tall / 2), w: head, h: tall, rotation: 0 }
+          : { x: from, y, w: to - from, h: head, rotation: 0 },
+      });
+      // Text with nothing to say would be a box nobody can see: there is none then.
+      const content = lines(item.detail ?? '');
+      if (content) {
+        specs.push({
+          part: `body:${item.id}`,
+          words: {
+            content,
+            fontSize: Math.round(size * 0.87),
+            align: down ? 'left' : 'center',
+            valign: down ? 'middle' : 'top',
+          },
+          box: down
+            ? { x: after, y: from, w: Math.max(SMALLEST, x + w - after), h: to - from, rotation: 0 }
+            : {
+                x: from,
+                y: after,
+                w: to - from,
+                h: Math.max(SMALLEST, y + h - after),
+                rotation: 0,
+              },
+        });
+      }
+    });
+    return specs;
+  }
+
   // A comparison: columns side by side, each a heading over a box with its points.
   const places = split(x, w, n, 28);
   const head = Math.round(clamp(h * 0.2, 64, Math.min(120, h / 2)));
@@ -233,12 +309,10 @@ const LOOK_KEYS = [
   'valign',
 ] as const;
 
+const WORD_KEYS = ['content', 'fontSize', 'align', 'valign'] as const;
+
 /** Gives a field the value the form says. Returns true when that changed it. */
-function put<K extends keyof ShapeElement>(
-  el: ShapeElement,
-  key: K,
-  value: ShapeElement[K] | undefined,
-): boolean {
+function put<T extends object, K extends keyof T>(el: T, key: K, value: T[K] | undefined): boolean {
   const now = el[key];
   if (value === undefined) {
     if (now === undefined) return false;
@@ -263,7 +337,8 @@ function dropFromSteps(scene: Templated, gone: ReadonlySet<string>): void {
  *
  * - a part whose figure is gone is an ordinary shape from then on;
  * - a part the form no longer has is taken away, and one it has got is made,
- *   right in front of the rest of its figure;
+ *   right in front of the rest of its figure. When the rest of its row comes
+ *   in at a step, the new part comes in with it;
  * - every part looks and stands as the form says, inside the figure's
  *   frame, and is grouped with the figure. Its id, its step and its "Lær
  *   mer" content are left alone, so they follow a row that is moved in the
@@ -292,13 +367,17 @@ export function followTemplates(scene: Templated): boolean {
       changed = true;
     }
     const specs = figureParts(figure);
-    const wanted = new Set(specs.map((spec) => spec.part));
-    // What is there already, by which part it is. A part can only be a shape, and only once.
-    const have = new Map<string, ShapeElement>();
+    const wanted = new Map(specs.map((spec) => [spec.part, spec.words ? 'text' : 'shape']));
+    // What is there already, by which part it is. A part is of the kind the form says, and there once.
+    const have = new Map<string, Part>();
     const gone = new Set<string>();
     for (const el of scene.elements) {
       if (el.of?.figure !== figure.id) continue;
-      if (el.type === 'shape' && wanted.has(el.of.part) && !have.has(el.of.part)) {
+      if (
+        (el.type === 'shape' || el.type === 'text') &&
+        wanted.get(el.of.part) === el.type &&
+        !have.has(el.of.part)
+      ) {
         have.set(el.of.part, el);
       } else gone.add(el.id);
     }
@@ -313,7 +392,7 @@ export function followTemplates(scene: Templated): boolean {
     }
 
     const taken = new Set(scene.elements.map((el) => el.id));
-    const made: ShapeElement[] = [];
+    const made: Part[] = [];
     const boxes = new Map(specs.flatMap((spec) => (spec.box ? [[spec.part, spec.box]] : [])));
     for (const spec of specs) {
       let el = have.get(spec.part);
@@ -321,14 +400,12 @@ export function followTemplates(scene: Templated): boolean {
         let id = `${figure.id}_${spec.part.replace(/[^A-Za-z0-9]+/g, '_')}`;
         while (taken.has(id)) id += 'x';
         taken.add(id);
-        el = {
-          id,
-          type: 'shape',
-          geometry: spec.look.geometry,
-          of: { figure: figure.id, part: spec.part },
-          box: spec.box ?? { x: figure.box.x, y: figure.box.y, w: 1, h: 1, rotation: 0 },
-        };
-        if (spec.between) {
+        const of = { figure: figure.id, part: spec.part };
+        const box = spec.box ?? { x: figure.box.x, y: figure.box.y, w: 1, h: 1, rotation: 0 };
+        el = spec.words
+          ? { id, type: 'text', role: 'body', ...spec.words, of, box }
+          : { id, type: 'shape', geometry: spec.look!.geometry, of, box };
+        if (spec.between && el.type === 'shape') {
           // Laid where `followFigures` would lay it, so it is in place from the start.
           const from = boxes.get(spec.between.start);
           const to = boxes.get(spec.between.end);
@@ -354,24 +431,56 @@ export function followTemplates(scene: Templated): boolean {
         if (el.of?.figure === figure.id) last = Math.max(last, index);
       });
       scene.elements.splice(last + 1, 0, ...made);
+      // A part that is new in a row comes in when the rest of the row does.
+      const fresh = new Set(made.map((el) => el.id));
+      for (const el of made) {
+        const row = partSource(el.of!.part)?.item;
+        if (row === undefined) continue;
+        const mates = new Set(
+          scene.elements
+            .filter(
+              (other) =>
+                other.of?.figure === figure.id &&
+                !fresh.has(other.id) &&
+                partSource(other.of.part)?.item === row,
+            )
+            .map((other) => other.id),
+        );
+        for (const step of scene.timeline) {
+          const like = step.actions.find((action) => mates.has(action.target));
+          if (!like) continue;
+          step.actions.push({ ...like, target: el.id });
+          break;
+        }
+      }
     }
 
     for (const spec of specs) {
       // Read from the slide, so that what is changed is the slide's own element.
       const el = scene.elements.find(
-        (e): e is ShapeElement =>
-          e.type === 'shape' && e.of?.figure === figure.id && e.of.part === spec.part,
+        (e): e is Part =>
+          (e.type === 'shape' || e.type === 'text') &&
+          e.of?.figure === figure.id &&
+          e.of.part === spec.part,
       )!;
+      if (put(el, 'group', figure.group)) changed = true;
+      if (el.type === 'text') {
+        const words = spec.words!;
+        for (const key of WORD_KEYS) if (put(el, key, words[key] as never)) changed = true;
+        if (put(el, 'role', 'body')) changed = true;
+        if (put(el, 'box', spec.box)) changed = true;
+        continue;
+      }
+      const look = spec.look!;
       for (const key of LOOK_KEYS) {
         // A part being written in for the first time has an empty text; that is no text.
         const blank =
           key === 'content' &&
-          spec.look.content === undefined &&
+          look.content === undefined &&
           el.content !== undefined &&
           isEmptyRichText(el.content);
-        if (!blank && put(el, key, spec.look[key] as never)) changed = true;
+        if (!blank && put(el, key, look[key] as never)) changed = true;
       }
-      if (put(el, 'group', figure.group)) changed = true;
       if (spec.between) {
         if (put(el, 'startAt', have.get(spec.between.start)?.id)) changed = true;
         if (put(el, 'endAt', have.get(spec.between.end)?.id)) changed = true;
@@ -402,7 +511,9 @@ export function releaseFigure(scene: Templated, figureId: string): void {
 /**
  * Before elements are deleted: a part that is deleted by itself takes its
  * row out of the form, so it does not come back. (An arrow is not a row: it
- * is there as long as the two it joins are.)
+ * is there as long as the two it joins are. Nor is the line of a time axis.
+ * And the text of an event is only a field of its row: that field is emptied,
+ * and the event stays.)
  */
 export function forgetParts(scene: Pick<Scene, 'elements'>, ids: readonly string[]): void {
   for (const el of scene.elements) {
@@ -410,6 +521,10 @@ export function forgetParts(scene: Pick<Scene, 'elements'>, ids: readonly string
     const figure = figureOf(scene, el);
     const source = partSource(el.of.part);
     if (!figure || !source || source.kind === 'arrow') continue;
+    if (figure.template === 'timeAxis' && source.kind === 'body') {
+      delete figure.items.find((item) => item.id === source.item)?.detail;
+      continue;
+    }
     figure.items = figure.items.filter((item) => item.id !== source.item);
   }
 }
@@ -424,7 +539,7 @@ export function writePart(scene: Pick<Scene, 'elements'>, el: Element, content: 
   const figure = figureOf(scene, el);
   const source = partSource(el.of.part);
   const item = figure?.items.find((row) => row.id === source?.item);
-  if (!item || !source || source.kind === 'arrow') return false;
+  if (!item || !source || source.kind === 'arrow' || source.kind === 'dot') return false;
   const text = plainText(content)
     .split('\n')
     .map((row) => row.trim())
@@ -438,8 +553,9 @@ export function writePart(scene: Pick<Scene, 'elements'>, el: Element, content: 
 }
 
 /**
- * Turns a process to run across or down. The frame is given the shape that
- * suits the new way, where it stands, and is kept on the slide.
+ * Turns a process or a time axis to run across or down. The frame is given
+ * the shape that suits the new way, where it stands, and is kept on the
+ * slide.
  */
 export function setDirection(figure: FigureElement, direction: 'across' | 'down'): void {
   if ((figure.direction ?? 'across') === direction) return;
@@ -447,9 +563,11 @@ export function setDirection(figure: FigureElement, direction: 'across' | 'down'
   else delete figure.direction;
   const n = Math.max(1, figure.items.length);
   const size =
-    direction === 'down'
-      ? { w: 460, h: clamp(n * 130 + (n - 1) * 60, 200, 760) }
-      : NEW_FIGURE_SIZE.process;
+    direction !== 'down'
+      ? NEW_FIGURE_SIZE[figure.template]
+      : figure.template === 'timeAxis'
+        ? { w: 900, h: clamp(n * 110 + (n - 1) * 20, 240, 760) }
+        : { w: 460, h: clamp(n * 130 + (n - 1) * 60, 200, 760) };
   figure.box = {
     x: Math.round(clamp(figure.box.x, 0, STAGE.width - size.w)),
     y: Math.round(clamp(figure.box.y, 0, STAGE.height - size.h)),

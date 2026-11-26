@@ -34,6 +34,7 @@ import {
   type Theme,
 } from '../theme/theme';
 import { labelLineStart, markNumber, markStyle, marksOf, pictureOf } from '../layout/marks';
+import { rowOrder } from '../layout/rows';
 import { classifyLink, renderRichText } from './richtext';
 import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
 
@@ -922,14 +923,25 @@ function renderDecoration(ctx: RenderContext, scene: Scene, surface: Surface): S
   return root;
 }
 
-/** Reading order for assistive technology: titles first, then top to bottom. */
+/**
+ * Reading order for assistive technology: titles first, then top to bottom.
+ * The parts of a figure with a form are read where the figure stands, one
+ * row of the form at a time (this is the one thing here that knows of forms;
+ * what is drawn does not).
+ */
 function readingOrder(elements: SceneElement[]): SceneElement[] {
   const rank = (el: SceneElement): number => (el.type === 'text' && el.role === 'title' ? 0 : 1);
+  const rows = rowOrder(elements);
   return [...elements].sort((p, q) => {
     if (rank(p) !== rank(q)) return rank(p) - rank(q);
+    const a = rows.get(p.id);
+    const b = rows.get(q.id);
+    const from = a?.at ?? p.box;
+    const to = b?.at ?? q.box;
+    if (a && b && a.figure === b.figure) return a.turn - b.turn;
     const rowTolerance = 40;
-    if (Math.abs(p.box.y - q.box.y) > rowTolerance) return p.box.y - q.box.y;
-    return p.box.x - q.box.x;
+    if (Math.abs(from.y - to.y) > rowTolerance) return from.y - to.y;
+    return from.x - to.x;
   });
 }
 

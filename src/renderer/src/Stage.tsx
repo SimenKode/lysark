@@ -236,8 +236,12 @@ export function Stage() {
         const el = s?.elements.find((x) => x.id === target.elementId);
         if (!s || !el) return;
         if (el.type === 'text') {
+          if (el.of) {
+            // The text of a part of a figure with a form lives in the form.
+            if (changed) writePart(s, el, next);
+          }
           // A text box left empty is removed rather than kept as an invisible box.
-          if (empty) deleteElements(s, [el.id]);
+          else if (empty) deleteElements(s, [el.id]);
           else if (changed) el.content = next;
         } else if (el.type === 'shape') {
           if (empty) delete el.content;

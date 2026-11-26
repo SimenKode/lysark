@@ -50,13 +50,16 @@ export const TEMPLATE_NAMES: Record<FigureTemplate, string> = {
   process: 'Prosess',
   layers: 'Lagvis oppbygging',
   comparison: 'Sammenligning',
+  // Not "Tidslinje": that is the tab under the slide (the owner's choice, 26.11.2026).
+  timeAxis: 'Tidsakse',
 };
 
-/** What one row of a figure's form is called: a box of a process, a layer, a column. */
+/** What one row of a figure's form is called: a box of a process, a layer, a column, an event. */
 export const ITEM_NAMES: Record<FigureTemplate, string> = {
   process: 'boks',
   layers: 'lag',
   comparison: 'kolonne',
+  timeAxis: 'hendelse',
 };
 
 export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {

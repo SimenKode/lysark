@@ -23,7 +23,7 @@ export const FORMAT_NAME = 'lysark';
  *    fastened to other elements.
  * 11: figures that draw themselves from a form (process, layers, comparison).
  */
-export const FORMAT_VERSION = 11;
+export const FORMAT_VERSION = 12;
 
 export { STAGE } from './constants';
 
@@ -393,14 +393,21 @@ export const VideoElement = z.object({
 });
 export type VideoElement = z.infer<typeof VideoElement>;
 
-export const FIGURE_TEMPLATES = ['process', 'layers', 'comparison'] as const;
+export const FIGURE_TEMPLATES = ['process', 'layers', 'comparison', 'timeAxis'] as const;
 export type FigureTemplate = (typeof FIGURE_TEMPLATES)[number];
 
-/** One row of a figure's form: a step of a process, a layer, a column of a comparison. */
+/**
+ * One row of a figure's form: a box of a process, a layer, a column of a
+ * comparison, an event on a time axis.
+ */
 export const FigureItem = z.object({
   id: z.string().min(1),
+  /** For an event on a time axis: when it is. */
   text: z.string(),
-  /** For a comparison: the points under the heading, one on each line. */
+  /**
+   * For a comparison: the points under the heading, one on each line. For
+   * an event on a time axis: what it is.
+   */
   detail: z.string().optional(),
 });
 export type FigureItem = z.infer<typeof FigureItem>;
@@ -408,8 +415,8 @@ export type FigureItem = z.infer<typeof FigureItem>;
 /**
  * A figure that draws itself from a form the lecturer fills in. The element
  * holds the form and the frame the figure fills; it shows nothing itself.
- * What is seen are ordinary shapes, each an element of its own that carries
- * `of`, grouped with this one. They are made, laid out and taken away as
+ * What is seen are ordinary shapes (and, on a time axis, text boxes), each
+ * an element of its own that carries `of`, grouped with this one. They are made, laid out and taken away as
  * the form says, so they cannot be moved by hand until the figure is made
  * into a free one: then this element goes, and the shapes stay as a group.
  */
@@ -418,7 +425,7 @@ export const FigureElement = z.object({
   type: z.literal('figure'),
   template: z.enum(FIGURE_TEMPLATES),
   items: z.array(FigureItem),
-  /** For a process: the steps run across the frame, or down it. Across when absent. */
+  /** For a process and a time axis: it runs across the frame, or down it. Across when absent. */
   direction: z.enum(['across', 'down']).optional(),
   /** The colour of the parts. The template's own when absent. */
   color: PaletteColor.optional(),

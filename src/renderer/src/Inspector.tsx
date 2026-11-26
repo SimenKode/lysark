@@ -702,6 +702,18 @@ function FigureFields({ figure }: { figure: FigureElement }) {
   };
   const name = ITEM_NAMES[figure.template];
   const comparison = figure.template === 'comparison';
+  const axis = figure.template === 'timeAxis';
+  /** What the first field of a row is, and the second where the template has two. */
+  const first = comparison
+    ? { label: 'Overskrift i', hint: 'Overskrift' }
+    : axis
+      ? { label: 'Tidspunkt for', hint: 'Tidspunkt' }
+      : { label: 'Tekst i', hint: 'Tekst' };
+  const second = comparison
+    ? { label: 'Punkter i', hint: 'Punkter, ett på hver linje', rows: 3 }
+    : axis
+      ? { label: 'Tekst til', hint: 'Tekst', rows: 2 }
+      : undefined;
   const release = (): void => {
     const state = useStore.getState();
     const parts = partsOf(currentScene(state)!, figure.id).map((el) => el.id);
@@ -723,8 +735,8 @@ function FigureFields({ figure }: { figure: FigureElement }) {
             <div className="figure-form-fields">
               <input
                 type="text"
-                aria-label={`${comparison ? 'Overskrift i' : 'Tekst i'} ${name} ${index + 1}`}
-                placeholder={comparison ? 'Overskrift' : 'Tekst'}
+                aria-label={`${first.label} ${name} ${index + 1}`}
+                placeholder={first.hint}
                 value={item.text}
                 autoFocus={item.id === added}
                 onChange={(e) =>
@@ -733,11 +745,11 @@ function FigureFields({ figure }: { figure: FigureElement }) {
                   }, `item-text-${item.id}`)
                 }
               />
-              {comparison && (
+              {second && (
                 <textarea
-                  rows={3}
-                  aria-label={`Punkter i kolonne ${index + 1}`}
-                  placeholder="Punkter, ett på hver linje"
+                  rows={second.rows}
+                  aria-label={`${second.label} ${name} ${index + 1}`}
+                  placeholder={second.hint}
                   value={item.detail ?? ''}
                   onChange={(e) =>
                     change((f) => {
@@ -805,7 +817,9 @@ function FigureFields({ figure }: { figure: FigureElement }) {
             title={
               figure.template === 'process'
                 ? 'Boksene kommer inn én etter én, hver sammen med pila som leder til den.'
-                : undefined
+                : axis
+                  ? 'Hendelsene kommer inn én etter én. Selve aksen står der fra start.'
+                  : undefined
             }
             onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep))}
           >
@@ -813,7 +827,7 @@ function FigureFields({ figure }: { figure: FigureElement }) {
           </button>
         )}
       </div>
-      {figure.template === 'process' && (
+      {(figure.template === 'process' || axis) && (
         <Segmented
           label="Retning"
           options={[
