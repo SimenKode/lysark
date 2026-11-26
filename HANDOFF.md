@@ -136,9 +136,12 @@ punktene fra sist står fortsatt.
    eller uventet, og om farger og størrelser er som du vil ha dem.
    **Ett valg trengs:** hva skal malen for hendelser i rekkefølge hete?
    «Tidslinje» er allerede fanen under lysarket.
-2. **Prøv «Behold utseendet» for en PowerPoint-fil på Windows.** Der
-   skal PowerPoint lage en PDF-kopi i bakgrunnen. Den veien har jeg ikke
-   kunnet prøve (jeg har ikke PowerPoint). Si hva som skjer.
+2. **Logg inn i Office i VM-en**, så jeg kan prøve «Behold utseendet»
+   med PowerPoint på Windows. Popupvinduet («Sign in to get started») og
+   innloggingsvinduet tegnes riktig i VM-ens eget bilde, så glitchen du
+   ser, får jeg ikke fram (historikken, 6.34). Si hvordan den ser ut, så
+   kan jeg lete videre. Uten innlogging nekter PowerPoint å lagre; da går
+   Lysark videre til neste vei uten å henge.
 3. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
    lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
    Det kan jeg ikke måle.
@@ -177,7 +180,7 @@ punktene fra sist står fortsatt.
 | **Fritt opptak, sidemeny, «igjen»-lysark** | Ja, også målt i videoen, og i den pakkede utgaven | **Nei** |
 | **Kapitler** | Ja, også i videofila og i spilleren | **Nei** |
 | **PDF-import med egne elementer** | Ja, også på to av dine egne PDF-er (26 og 94 sider) | **Nei** |
-| **Valget av utseende ved import** | Ja: PDF begge veier, PowerPoint via LibreOffice og via PDF ved siden av | **Nei.** PowerPoint-veien er helt uprøvd |
+| **Valget av utseende ved import** | Ja: PDF begge veier, PowerPoint via LibreOffice og via PDF ved siden av | **Nei.** Bare forespørselen til PowerPoint er prøvd, og PowerPoint nektet fordi Office ikke er logget inn |
 | Installasjonsfila | – | Ja, for hånd (0.4.0) |
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
@@ -206,7 +209,9 @@ etter 0.4.0, er prøvd på Windows.**
 - **Det du sier på et «igjen»-lysark, får ikke teksting** av seg selv.
   Skriv manus på stedet om du vil ha teksting der.
 - **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
-- **«Behold utseendet» for PowerPoint på Windows er uprøvd.** På Linux
+- **«Behold utseendet» for PowerPoint på Windows er uprøvd med et
+  PowerPoint som er logget inn.** Uten innlogging nekter PowerPoint å
+  lagre (prøvd i VM-en). På Linux
   uten en PDF ved siden av tegner LibreOffice lysarkene, og det blir
   ikke helt likt PowerPoint.
 - **USN-stil for en PDF** tar bare med tekst og bilder. Har du

@@ -2447,6 +2447,53 @@ hoppes over som før.
 med en slik figur i (tegnekoden er uendret, men det er ikke målt).
 Ingen har prøvd dette for hånd med mus.
 
+### 6.34 PowerPoint i Windows-VM-en, uten innlogging (26.11.2026)
+
+Eieren skrev midt i økta: «Jeg har installert m365 på VM, men har
+trøbbel med en visuell glitch på et popupvindu som kommer når jeg
+starter et m365 program. Hvis du får fikset feilen på et eller annet
+vis, så kan du teste med powerpoint i winodows.» Senere: «Try again».
+
+**Det jeg fant.**
+
+- Popupvinduet er «Sign in to get started with PowerPoint», og vinduet
+  etter det er Microsofts innlogging. **Begge tegnes riktig i VM-ens eget
+  bilde** (skjermbilder tatt fra verten). Jeg får altså ikke fram
+  glitchen; den oppstår trolig i visningen mellom VM-en og skjermen
+  (SPICE, skjermkort «vga»). Jeg har ikke endret noe i VM-ens oppsett.
+- **Office er ikke logget inn.** Det er dette som stopper PowerPoint,
+  ikke glitchen i seg selv. Innloggingen krever eierens konto og
+  passord, og det skriver jeg ikke inn.
+- **Uten innlogging nekter PowerPoint å lagre.** Jeg sendte PowerPoint
+  den samme forespørselen som Lysark sender («Behold utseendet»: åpne en
+  kopi uten vindu, lagre som PDF), to ganger med omtrent tjue minutters
+  mellomrom. Begge ganger: fila åpnes, og lagringen feiler etter ett
+  sekund med «An error occurred while PowerPoint was saving the file».
+  Ingen PDF. Den henger ikke.
+- **For foreleseren betyr det:** har du PowerPoint som ikke er logget
+  inn, går Lysark videre til neste vei (en PDF ved siden av, så
+  LibreOffice, så spørsmål om en PDF), uten å vente.
+
+**En svakhet funnet og rettet:** når lagringen feilet, lukket ikke
+Lysark kopien i PowerPoint, så PowerPoint ble stående igjen skjult med
+fila åpen. Da kunne heller ikke arbeidsmappa slettes, og det kunne blitt
+til en feilmelding i stedet for neste vei. Nå lukkes kopien uansett, og
+en mappe som ikke lar seg slette, stopper ikke importen. Den rettede
+forespørselen er kjørt i VM-en: lagringen nektes som før, kopien lukkes,
+og ingen PowerPoint-prosess står igjen.
+
+**Ikke prøvd, fortsatt:** at PowerPoint faktisk lager PDF-en når Office
+er logget inn, og Lysark selv med «Behold utseendet» på Windows. Ingenting
+av det som er nytt etter 0.4.0, er prøvd i Lysark på Windows; det som er
+prøvd her, er bare forespørselen til PowerPoint, fra PowerShell.
+
+**Om VM-en.** Den var tungt belastet (99 % CPU), og lange linjer skrevet
+med tastetrykk ble forvrengt to ganger fordi AltGr ble hengende. Ingen
+forvrengt linje ble kjørt. Forespørselen ble til slutt lagt i en
+skriptfil på en CD-avbildning, som er tatt ut og slettet igjen. Igjen i
+VM-en ligger bare en kopi av prøvefila i brukerens midlertidige mappe
+(`lysark-inn.pptx`). Rådet er skrevet inn i `tools/windows-vm.py`.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
