@@ -14,81 +14,39 @@ PowerPoint eller PDF, og får
 begge i USNs visuelle profil. Programmet skal kunne brukes av en
 foreleser uten opplæring. Det styrer ordvalg og knapper.
 
-## Nytt 26.11.2026 (ikke gitt ut)
+## Versjon 0.5.0 er gitt ut (26.11.2026)
 
-Bygget i to økter denne dagen. Detaljene står i historikken, 6.32 til
-6.45.
+Du ba om en utgivelse, nye bilder på GitHub og et rullefelt som ikke
+stikker ut over den lilla kanten. Alt tre er gjort (historikken, 6.48).
 
-**Figurer**
+- **Utgivelsen:** <https://github.com/SimenKode/lysark/releases/tag/v0.5.0>
+- **Du kan prøve den nå.** Filene ligger i `release/`:
+  `Lysark-0.5.0.AppImage` (Linux), og
+  `Lysark-0.5.0-windows-installasjon.exe` og `Lysark-0.5.0-win.zip`
+  (Windows).
+- **Rullefeltet** i «Lær mer»-boksen er nå en smal lilla stripe som
+  holder seg innenfor de runde hjørnene. Det samme gjelder «Hjelp»,
+  «Bildekilder», boksen i byggeren og dialogene.
+- **Forsiden på GitHub** beskriver det 0.5.0 kan, med sju nye bilder
+  (to av dem er nye: et diagram og fanen «Steg»).
 
-- **«Sett inn → Figur»** gir **Prosess**, **Lagvis oppbygging**,
-  **Sammenligning**, **Tidsakse**, **Søylediagram** og **Linjediagram**.
-  Du fyller ut et skjema (eller en tabell med tall, som du også kan lime
-  inn fra Excel), og figuren tegner seg selv. Ingen tall er funnet på.
-- **Fri figur:** piler fester seg til bokser og følger dem, «Sett pil
-  mellom dem», «Grupper» og «Del opp gruppen».
-- **Linjediagram** har valget **«Langs den vannrette aksen: Tall /
-  Navn»**. Med tall står punktene der tallet sier; med navn står de med
-  lik avstand.
-- **Diagrammer i PowerPoint-fila** blir Lysark-diagram når du velger
-  «Gjør om til USN-stil»: stående søyler og linjer. Prøvd på 13
-  diagrammer PowerPoint selv laget i VM-en.
-- **Figur i «Lær mer»:** «Legg til → Figur» i byggeren henter en kopi av
-  en figur fra et lysark. Boksen blir bredere når den har en figur.
+**Dette er nytt i 0.5.0, siden 0.4.0:**
 
-**Bevegelser** (fanen «Steg»)
+- **Valg ved import:** «Behold utseendet» eller «Gjør om til USN-stil»,
+  for både PowerPoint og PDF.
+- **PDF-import** der tekst, bilder og lenker er egne elementer.
+- **Kapitler** fra seksjoner og bokmerker.
+- **Figurer:** prosess, lagvis oppbygging, sammenligning, tidsakse,
+  søylediagram og linjediagram fra et skjema, og fri figur med piler
+  som fester seg til bokser.
+- **Diagrammer fra PowerPoint** blir Lysark-diagram med USN-stil.
+- **Steg med bevegelse:** ting tegnes, vokser, teller opp eller toner
+  inn. Et steg kan også markere, ta bort og zoome.
+- **Fritt opptak:** pil venstre, «Velg lysark», og et lysark kan vises
+  igjen. Hele opptaket er én film.
+- **Merket bilde** og **figur i «Lær mer»**.
 
-- Når du lager et steg, **foreslår programmet** hvordan hvert element
-  kommer inn: en pil eller linje **tegnes**, søyler **vokser** fra
-  aksen, et stort tall **teller opp**, resten **toner inn** som før. Du
-  kan bytte i lista ved elementet, og velge **Rask, Vanlig eller
-  Langsom** for steget.
-- Et steg kan også **markere** noe (oransje ramme til neste steg),
-  **ta bort** noe, eller **zoome**. «Zoom inn» gir en ramme på lysarket
-  som du drar dit bildet skal zoome; «Zoom ut igjen» går tilbake.
-- Virker i HTML-fila, i «Spill av», i videoen og i innlesingsvinduet.
-- Steg du hadde fra før, er som de var.
-
-**Prøvd på Windows samme dag** (historikken, 6.46): figur i «Lær mer»,
-bevegelsene i forhåndsvisningen og i en videofil, linjediagram med navn,
-og import av diagrammer fra PowerPoint. Alt virket.
-
-**Rettet:** «Lag kopi» av et lysark mistet merkene på bildene. Lysark
-kunne gi en feilmelding hvis det ble lukket i samme øyeblikk som
-forhåndsvisningen. En knapp som var trykket inn, var uleselig så lenge
-pekeren sto over den. **På Windows kunne et prosjekt kopiert fra en CD
-ikke lagres** (fila var skrivebeskyttet); nå lagres det. Akselinjene i
-diagrammer var ujevne. Spørsmålet ved ulagrede endringer er nå **én
-dialog** med «Lagre», «Ikke lagre» og «Avbryt» (du valgte det 26.11).
-
-**Beklager:** under testingen 26.11 sto en feilboks («Error») på
-skjermen din fem ganger, til jeg stoppet den. Årsaken er rettet, og
-tester kan ikke lenger vise en slik boks (historikken, 6.42).
-
-## Nytt 25.11.2026, etter versjon 0.4.0 (ikke gitt ut)
-
-Versjon 0.4.0 (kamerasirkelen, installasjonsfil for Windows, Openverse,
-ny forside) er gitt ut. Etter det er dette bygget; det ligger i koden
-til neste utgivelse.
-
-Du meldte sju ting etter å ha prøvd PDF-import og opptak med kamera, og
-svarte på fire spørsmål (historikken, 6.26 og 6.27). Slik ble det:
-
-| Du meldte | Slik ble det |
-| --- | --- |
-| Kameraet fryser mellom lysark | Hele opptaket filmes nå som **én film**. Før startet en ny film på hvert lysark, og den var treg i starten |
-| Ingen knapp for å gå tilbake | **Pil venstre**, eller knappen «← Forrige steg» / «← Forrige lysark». Opptaket stanser ikke |
-| En sidemeny for å velge lysark | Knappen **«Velg lysark»** (eller tasten L) i innlesingsvinduet: en meny fra siden med alle lysarkene under kapitlene sine |
-| «Som et vanlig videoopptak» (svaret ditt) | Videoen viser lysarkene **i den rekkefølgen du viste dem**. Går du tilbake til lysark 3, vises det en gang til, og står i lysarklista som «Lysark 3 igjen» |
-| Kapitlene forsvinner | Seksjonene i PowerPoint og bokmerkene i PDF blir **kapitler**: i lysarklista, i sidemenyen, i «Innhold» hos studentene og i videofila |
-| PDF: et klikk velger hele siden | Tekst og bilder fra en PDF er nå **egne elementer** som kan velges, flyttes og redigeres. Resten av siden (farger, streker, tegninger) ligger bak som ett bilde |
-| PDF: lenker virker ikke | Lenker som lå på tekst, **følger med** og virker, også lenker til andre sider |
-| PDF: teksten er litt kornete | Teksten er **ekte tekst**, i Lysarks skrift, og er skarp |
-| Minivideo av noen få lysark | Fantes fra før: «Eksporter video» → «Fra lysark … til …» |
-| Fritt valg ved import: behold utseendet, eller USN-stil | Etter at du har valgt fila, spør Lysark **«Hvordan skal lysarkene se ut?»**. Gjelder både PowerPoint og PDF. «Behold utseendet» er valgt til du velger noe annet |
-
-Også fra før denne chatten, og ikke gitt ut: **merket bilde** (tall eller
-etiketter oppå et bilde).
+Detaljene står i historikken, 6.25 til 6.48.
 
 ## Dette kan du gjøre nå
 
@@ -144,9 +102,10 @@ etiketter oppå et bilde).
 
 ## Det jeg trenger fra deg
 
-Startmeldingen til denne chatten hadde ingen funn eller innspill, så
-det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
-(historikken, 6.43), og alle fire er bygget.
+Du har ikke meldt funn ennå, så lista fra sist står.
+
+**Først: prøv 0.5.0 fra `release/`.** Åpne «Lær mer» på noe med mye
+innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
 
 1. **Prøv bevegelsene.** Lag noen steg på et lysark med en pil, et
    diagram og et stort tall, og se dem i «Forhåndsvis». Prøv «Marker»,
@@ -182,13 +141,14 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
    hånd, innlesing, fritt opptak, PDF-import og grupper.
 3. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
    tavle, og på spørsmål til deg før den bygges.
-4. **Ny utgivelse** når du ber om det. Mye er bygget siden 0.4.0.
+4. **Ny utgivelse** når du ber om det.
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (580) | Ja | – |
+| Automatiske tester (581) | Ja | – |
+| **Den pakkede utgaven 0.5.0** | Ja: 115 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Nei.** Installasjonsfila og zip-fila for 0.5.0 er ikke startet der |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -212,7 +172,7 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
-advare), en USN-styrt PC, og Canvas. **Av det som er nytt etter 0.4.0, er dette prøvd på Windows:** «Behold
+advare), en USN-styrt PC, og Canvas. **Av det som er nytt i 0.5.0, er dette prøvd på Windows:** «Behold
 utseendet» gjennom PowerPoint, kapitlene i lysarklista, og det som står
 med «Ja, 26.11» i tabellen. Fritt opptak, PDF-import, grupper og
 festede piler er ikke prøvd der.
@@ -266,6 +226,9 @@ festede piler er ikke prøvd der.
   ikke tabeller. En lenke som ikke lå på tekst, følger ikke med
   (importen sier fra). En skannet side er fortsatt ett bilde. 94 sider
   tar omtrent ett minutt å importere.
+- **Rullefeltet** som holder seg innenfor hjørnene, virker i Chrome,
+  Edge og Safari. I Firefox er rullefeltet som før. Ikke sett på
+  Windows.
 - **Kamerasirkelen er ikke i HTML-fila** (ditt valg; kan bygges senere).
 - **Windows kan advare** første gang en nedlastet installasjonsfil
   kjøres, fordi programmet ikke er signert.
@@ -285,8 +248,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 | Hva | Hvor |
 | --- | --- |
-| Utgivelsen, gitt ut 25.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.4.0> |
-| Programmet, ferdig pakket | `release/Lysark-0.4.0-windows-installasjon.exe` og `release/Lysark-0.4.0-win.zip` (Windows), `release/Lysark-0.4.0.AppImage` (Linux) |
+| Utgivelsen, gitt ut 26.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.5.0> |
+| Programmet, ferdig pakket | `release/Lysark-0.5.0-windows-installasjon.exe` og `release/Lysark-0.5.0-win.zip` (Windows), `release/Lysark-0.5.0.AppImage` (Linux) |
 | Koden | `~/Forelesningsverktoy/lysark`, offentlig på GitHub (<https://github.com/SimenKode/lysark>) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
@@ -322,18 +285,11 @@ Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
 forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
-og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.4.0 er gitt
-ut (25.11.2026). Etter det er dette bygget, og ikke gitt ut: merket
-bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
-film for hele opptaket), kapitler, PDF-import der tekst, bilder og
-lenker er egne elementer, fritt valg ved import mellom «Behold
-utseendet» og «Gjør om til USN-stil», fri figur (grupper, og piler som
-fester seg til bokser), fire maler med skjema (prosess, lagvis
-oppbygging, sammenligning, tidsakse), og søyle- og linjediagram med en
-tabell for tallene (diagrammer i PowerPoint-fila gjøres om ved import
-til USN-stil), figur i «Lær mer», hentet fra et lysark, og bevegelser:
-måter å komme inn på som programmet foreslår, og steg som markerer, tar
-bort og zoomer.
+og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.5.0 er gitt
+ut (26.11.2026), med figurer og diagrammer, steg med bevegelse, fritt
+opptak, kapitler, merket bilde, figur i «Lær mer», og valget mellom
+«Behold utseendet» og «Gjør om til USN-stil» ved import. Ingenting er
+bygget etter den.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -355,7 +311,8 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (bevegelsene, figur i «Lær mer», figurene
+Det jeg har funnet siden sist (versjon 0.5.0 fra release/, rullefeltet
+i «Lær mer», bevegelsene, figur i «Lær mer», figurene
 og diagrammene, en PowerPoint-fil med diagram, opptak med ekte kamera,
 fram og tilbake under opptak, import med «Behold utseendet» og
 «USN-stil», særlig PowerPoint på Windows, kapitler, mikrofon, musikk,

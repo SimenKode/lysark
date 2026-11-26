@@ -3240,6 +3240,35 @@ er nye: et søylediagram med tabellen for tallene (`figur.png`) og fanen
 «Steg» (`steg.png`). Alle sju er sett på før de ble lagt inn. De har
 bare prøveinnhold, og ingen viser USNs logo.
 
+**Versjon 0.5.0 er gitt ut 26.11.2026** (eieren: «Jeg vil nå egentlig
+bare får en release»):
+<https://github.com/SimenKode/lysark/releases/tag/v0.5.0>.
+
+- Filene: `Lysark-0.5.0-windows-installasjon.exe` (161 MB),
+  `Lysark-0.5.0-win.zip` (222 MB), `Lysark-0.5.0.AppImage` (203 MB), og
+  de tre filene med FFmpegs kildekode, de samme som ved 0.3.0 og 0.4.0
+  (samme FFmpeg-bygg). De ligger også i `release/`.
+- Utgivelsen inneholder alt som er bygget siden 0.4.0 (6.25 til 6.48).
+  Prosjektformatet er 16; i 0.4.0 var det 7, så et prosjekt lagret med
+  0.5.0 kan ikke åpnes i 0.4.0.
+- Før utgivelsen, på Linux Mint: hele testsamlingen (over), og de 115
+  ende-til-ende-testene en gang til mot det pakkede Linux-programmet
+  (utpakket, ikke selve AppImage-fila). 114 besto i kjøringen. Den ene
+  som feilet, var igjen videoeksporten i `tests/e2e-events.test.ts` på
+  tidsfristen, med maskinen belastet (belastning 38); den besto alene
+  mot det pakkede programmet rett etterpå (3 av 3).
+- Kontrollert: begge pakkene sier versjon 0.5.0, har de nye reglene for
+  rullefeltet og har FFmpeg med seg. De seks filene på GitHub har samme
+  størrelse som dem på disken.
+- **Ikke prøvd i den utgitte utgaven:** Windows. Verken
+  installasjonsfila eller zip-fila for 0.5.0 er startet i VM-en, og
+  oppgradering fra 0.4.0 er ikke prøvd. (Koden uten rullefelt-rettingen
+  ble prøvd der samme dag, 6.46.) Selve AppImage-fila er ikke startet.
+  Ellers det samme som før: ekte kamera og mikrofon, nedlastet fil på
+  Windows, USN-PC, Openverse mot ekte nett, Canvas.
+- En feil hos meg underveis, rettet før noe ble pushet: den nye testen
+  hadde en typefeil som typekontrollen fant.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
