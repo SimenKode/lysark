@@ -68,6 +68,25 @@ describe('which picture of the face is shown', () => {
     expect(cameraFilmAt(s, assets, 99)!.time).toBeCloseTo(7 - 1 / CAMERA_FPS);
   });
 
+  it('goes on to the next picture of the one film where a recording goes to the next slide', () => {
+    // One film, two stretches: the second began 3.4 s into it, where the first one's sound ended.
+    const takes: Record<string, Asset> = {
+      ...assets,
+      first: wav({ asset: 'film1', offset: 0 }),
+      second: wav({ asset: 'film1', offset: -3.4 }),
+    };
+    const scenes = [
+      scene([{ id: 'c1', kind: 'sound', asset: 'first', from: 0, to: 3.4 }]),
+      scene([{ id: 'c2', kind: 'sound', asset: 'second', from: 0, to: 2 }]),
+    ];
+    const frame = (time: number): number => Math.floor(time * CAMERA_FPS + 1e-6);
+    const lastBefore = cameraAt(scenes, takes, 0, 3.4 - 1 / CAMERA_FPS)!;
+    const firstAfter = cameraAt(scenes, takes, 1, 0)!;
+    expect(firstAfter.asset).toBe(lastBefore.asset);
+    // Neighbouring pictures: no jump back, and nothing shown twice.
+    expect(frame(firstAfter.time) - frame(lastBefore.time)).toBe(1);
+  });
+
   it('shows the first picture in a pause before anything is said', () => {
     const s = scene([
       { id: 'p', kind: 'pause', duration: 1 },

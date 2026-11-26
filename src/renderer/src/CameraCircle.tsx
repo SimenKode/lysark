@@ -134,7 +134,17 @@ export function CameraCircle({ x, y, diameter, stream, film, onMove, keyboard }:
         onMove(x + move[0], y + move[1], 'end');
       }}
     >
-      <video ref={video} src={filmUrl} muted playsInline preload="auto" />
+      <video
+        ref={video}
+        src={filmUrl}
+        muted
+        playsInline
+        preload="auto"
+        // What the camera sees always runs; only the film that was taken stands still.
+        onPause={(event) => {
+          if (!film && stream) void event.currentTarget.play().catch(() => undefined);
+        }}
+      />
     </div>
   );
 }

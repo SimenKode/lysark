@@ -17,7 +17,7 @@ import { appendSound } from '../../shared/audio/edit';
 import { applyPptxSlides, type PptxSlide } from '../../importer/pptxSlides';
 import { applyRecording, type Applied, type Take } from '../../shared/audio/session';
 import { addTrackClip } from '../../shared/audio/tracks';
-import { encodeWav, wavSamples } from '../../shared/audio/wav';
+import { encodeSound } from './audio/capture';
 import { newId } from '../../shared/format/factory';
 import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
 import type { CameraPlace, Element, Project, Scene, TrackName } from '../../shared/format/schema';
@@ -231,16 +231,22 @@ export interface RecordedTake extends Omit<Take, 'asset' | 'seconds' | 'camera'>
   camera?: { place: CameraPlace; filmAt: number };
 }
 
-/** Stores the sound of one stretch of a recording in the project folder. */
+/**
+ * Stores the sound of one stretch of a recording in the project folder. The
+ * pieces are handed over: the file is made in a thread of its own.
+ */
 export async function storeTakeSound(
-  samples: Float32Array,
+  pieces: Float32Array[],
   name: string,
 ): Promise<AddedSound | undefined> {
   const { dir } = useStore.getState();
   if (!dir) return undefined;
-  const wav = encodeWav(samples);
-  const added = await guard(() => api().addRecording(dir, wav, name));
-  if (added) rememberSamples(added.asset.file, wavSamples(wav));
+  const added = await guard(async () => {
+    const sound = await encodeSound(pieces);
+    const stored = await api().addRecording(dir, sound.wav, name);
+    rememberSamples(stored.asset.file, sound.samples);
+    return stored;
+  });
   return added;
 }
 

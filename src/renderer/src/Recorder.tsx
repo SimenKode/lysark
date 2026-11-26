@@ -15,6 +15,7 @@
 // one, from the start of the recording to its end.
 // Everything is stored in the project folder and sent nowhere.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { mediaUrl } from '../../shared/api';
 import { newId } from '../../shared/format/factory';
 import {
   CAMERA_SIZES,
@@ -47,6 +48,7 @@ import {
 } from './actions';
 import {
   CameraError,
+  FilmSync,
   listCameras,
   openCamera,
   startFilm,
@@ -55,8 +57,8 @@ import {
 } from './audio/camera';
 import {
   MicrophoneError,
+  SoundPieces,
   blockPeak,
-  joinBlocks,
   listMicrophones,
   openMicrophone,
   type Capture,
@@ -90,7 +92,8 @@ interface Stretch {
   stepAts: Record<string, number>;
   /** What was opened, played and moved meanwhile. */
   events: SceneEvent[];
-  blocks: Float32Array[];
+  /** The sound of the stretch, as it arrives. */
+  sound: SoundPieces;
   samples: number;
   /** Where the camera circle stood when the stretch began. */
   circleStart: { x: number; y: number };
@@ -154,6 +157,53 @@ function canInteract(scene: Scene, project: { assets: Record<string, unknown> })
         element.source.kind === 'asset' &&
         project.assets[element.source.asset] !== undefined),
   );
+}
+
+/** How many slides ahead, and back, have their pictures made ready. */
+const PREPARE_AHEAD = 2;
+const PREPARE_BACK = 1;
+
+/**
+ * Fetches and decodes the pictures of the slides near the one that is shown,
+ * before the lecturer gets to them, so that going to the next slide is not
+ * held up by a large picture being read (a slide from a PDF has a picture of
+ * the whole page behind it, thousands of pixels each way). Only the slides
+ * near are kept ready: a lecture of a hundred such slides would not fit in
+ * memory decoded.
+ */
+function usePreparedPictures(index: number): void {
+  const held = useRef(new Map<string, HTMLImageElement>());
+  useEffect(() => {
+    const project = useStore.getState().project;
+    if (!project) return;
+    const near = new Set<string>();
+    const from = Math.max(0, index - PREPARE_BACK);
+    // Slides shown once more stand between the slides; they show the same pictures.
+    for (let at = from, ahead = 0; at < project.scenes.length; at++) {
+      const scene = project.scenes[at]!;
+      if (at > index && !scene.repeat) ahead += 1;
+      if (ahead > PREPARE_AHEAD) break;
+      for (const element of scene.elements) {
+        if (element.type !== 'image') continue;
+        const asset = project.assets[element.asset];
+        if (asset) near.add(mediaUrl(asset.file));
+      }
+    }
+    const kept = held.current;
+    for (const url of [...kept.keys()]) if (!near.has(url)) kept.delete(url);
+    for (const url of near) {
+      if (kept.has(url)) continue;
+      const picture = new Image();
+      picture.decoding = 'async';
+      picture.src = url;
+      void picture.decode().catch(() => undefined);
+      kept.set(url, picture);
+    }
+  }, [index]);
+  useEffect(() => {
+    const kept = held.current;
+    return () => kept.clear();
+  }, []);
 }
 
 /** A slide drawn as large as the space allows. */
@@ -312,6 +362,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     })(),
   ).current;
   const [index, setIndex] = useState(startIndex);
+  usePreparedPictures(index);
   const scene = project.scenes[index] ?? project.scenes[0]!;
   const firstSteps =
     keepBefore !== undefined ? stepsShownAt(project.scenes[startIndex]!, keepBefore) : 0;
@@ -370,6 +421,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     stream: null as MediaStream | null,
     film: null as Film | null,
     filmStore: null as FilmStore | null,
+    /** Which moment of the film belongs to which moment of the sound. */
+    sync: new FilmSync(),
     circle,
     /** When the circle was taken hold of, in seconds of the stretch's sound. */
     dragAt: 0,
@@ -447,8 +500,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
           const state = live.current;
           state.peak = Math.max(state.peak, blockPeak(block));
           if (state.keeping && state.now) {
-            state.now.blocks.push(block);
+            state.now.sound.push(block);
             state.now.samples += block.length;
+            if (state.film) state.sync.note(state.film.time(), keptSamples() / SAMPLE_RATE);
           }
         };
         setMicrophones(await listMicrophones());
@@ -488,7 +542,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       }
       state.peak *= 0.86;
       const samples = state.stored + (state.waiting?.samples ?? 0) + (state.now?.samples ?? 0);
-      setSeconds(samples / SAMPLE_RATE);
+      // Whole seconds, as the clock shows them: the window (and the slide in
+      // it) is then drawn anew once a second, not at every frame.
+      setSeconds(Math.round(samples / SAMPLE_RATE));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -527,9 +583,17 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     if (state.keeping && state.now) state.now.events.push(event);
   };
 
-  /** Every video on the slide and in the open box that is a file in the project. */
+  /**
+   * Every video on the slide and in the open box that is a file in the
+   * project. Never the camera circle's, which lies on the slide too: what
+   * stops the slide's videos when the slide is left once paused the circle
+   * as well, and the lecturer's face stood still from the first change of
+   * slide to the end of the recording (seen by the owner 25 and 26.11.2026).
+   */
   const videos = (): HTMLVideoElement[] =>
-    Array.from(stage.current?.querySelectorAll<HTMLVideoElement>('video:not(.ls-closing)') ?? []);
+    Array.from(
+      stage.current?.querySelectorAll<HTMLVideoElement>('video:not(.ls-closing)') ?? [],
+    ).filter((video) => !video.closest('.camera-circle'));
 
   /** Which video of the slide a video node is: its element, and its block when it is in a box. */
   const whichVideo = (video: HTMLVideoElement): { element: string; block?: string } | null => {
@@ -688,6 +752,16 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   // ---------- The stretches of the recording ----------
   const sceneAt = (at: number): Scene | undefined => useStore.getState().project?.scenes[at];
 
+  /** How many samples the recording has kept so far, the stretch that is being read included. */
+  const keptSamples = (): number => {
+    const state = live.current;
+    return state.stored + (state.waiting?.samples ?? 0) + (state.now?.samples ?? 0);
+  };
+
+  /** The moment of the film that belongs to the sound kept so far. */
+  const filmNow = (film: Film): number =>
+    live.current.sync.filmAt(keptSamples() / SAMPLE_RATE, film.time());
+
   /** A new stretch on a slide, with `shown` of its steps already there. */
   const newStretch = (at: number, shown: number): Stretch | null => {
     const state = live.current;
@@ -701,10 +775,10 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       stepsShown: shown,
       stepAts: {},
       events: [],
-      blocks: [],
+      sound: new SoundPieces(),
       samples: 0,
       circleStart: state.circle,
-      ...(state.film ? { filmAt: state.film.time() } : {}),
+      ...(state.film ? { filmAt: filmNow(state.film) } : {}),
     };
   };
 
@@ -714,8 +788,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     const numbers = slideNumbers(useStore.getState().project?.scenes ?? []);
     state.takes.push({
       scene: stretch.sceneId,
+      // The sound is made into a file in a thread of its own; the window goes on at once.
       sound: storeTakeSound(
-        joinBlocks(stretch.blocks),
+        stretch.sound.take(),
         `Opptak lysark ${numbers[stretch.index] ?? stretch.index + 1}`,
       ),
       shown: stretch.steps.slice(0, stretch.shownAtStart),
@@ -732,7 +807,6 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       ...(stretch.keepBefore === undefined ? {} : { keepBefore: stretch.keepBefore }),
     });
     state.stored += stretch.samples;
-    stretch.blocks = [];
   };
 
   /** The stretch that is being read ends here: the lecturer goes elsewhere, or is done. */
@@ -749,7 +823,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       const before = state.waiting;
       if (before && stretch.samples > 0) {
         const offset = before.samples / SAMPLE_RATE;
-        before.blocks.push(...stretch.blocks);
+        for (const piece of stretch.sound.take()) before.sound.push(piece);
         before.samples += stretch.samples;
         for (const event of stretch.events) {
           if (event.kind === 'camera-move') before.events.push({ ...event, at: event.at + offset });
@@ -884,8 +958,10 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     if (!stretch) return;
     state.keeping = false;
     state.film?.keep(false);
-    stretch.blocks = [];
+    stretch.sound.take();
     stretch.samples = 0;
+    // The film goes on from here while the sound is read anew.
+    state.sync.reset();
     stretch.stepAts = {};
     stretch.events = [];
     stretch.stepsShown = stretch.shownAtStart;

@@ -1,7 +1,10 @@
 // The microphone. Sound only, never the camera. Samples arrive in one
 // unbroken stream at the project's rate, so a recording can be divided
 // between slides without losing or repeating anything at the boundary.
+import { encodeWav, wavSamples } from '../../../shared/audio/wav';
 import { SAMPLE_RATE } from '../../../shared/render/clock';
+import type { SoundReply, SoundRequest } from './soundWorker';
+import SoundWorker from './soundWorker?worker';
 // "no-inline": the file must be a real file of the program; the content security
 // policy does not let a script be loaded from a data: address.
 import workletUrl from './capture-worklet.js?url&no-inline';
@@ -128,17 +131,116 @@ export async function openMicrophone(options: CaptureOptions): Promise<Capture> 
   return capture;
 }
 
-/** Joins blocks of samples into one row. */
-export function joinBlocks(blocks: readonly Float32Array[]): Float32Array {
-  let total = 0;
-  for (const block of blocks) total += block.length;
-  const out = new Float32Array(total);
-  let offset = 0;
-  for (const block of blocks) {
-    out.set(block, offset);
-    offset += block.length;
+/**
+ * Sound kept as it arrives, gathered into pieces of a second. A stretch of
+ * several minutes is then a few hundred pieces rather than tens of thousands
+ * of small blocks, and handing it on to be stored costs the window nothing.
+ */
+export class SoundPieces {
+  private full: Float32Array[] = [];
+  private tail = new Float32Array(SAMPLE_RATE);
+  private used = 0;
+  /** How many samples are kept. */
+  samples = 0;
+
+  push(block: Float32Array): void {
+    let at = 0;
+    while (at < block.length) {
+      const count = Math.min(block.length - at, this.tail.length - this.used);
+      this.tail.set(block.subarray(at, at + count), this.used);
+      this.used += count;
+      at += count;
+      if (this.used === this.tail.length) {
+        this.full.push(this.tail);
+        this.tail = new Float32Array(SAMPLE_RATE);
+        this.used = 0;
+      }
+    }
+    this.samples += block.length;
   }
-  return out;
+
+  /** Hands out everything that is kept, in order, and is empty afterwards. */
+  take(): Float32Array[] {
+    const out = this.full;
+    if (this.used > 0) out.push(this.tail.slice(0, this.used));
+    this.full = [];
+    this.tail = new Float32Array(SAMPLE_RATE);
+    this.used = 0;
+    this.samples = 0;
+    return out;
+  }
+}
+
+export interface EncodedSound {
+  /** A mono WAV file, 48 kHz, 16 bit. */
+  wav: Uint8Array;
+  /** The samples as the file holds them. */
+  samples: Int16Array;
+}
+
+let soundWorker: Worker | null | undefined;
+let soundAsked = 0;
+const soundWaiting = new Map<
+  number,
+  { resolve: (sound: EncodedSound) => void; reject: (error: Error) => void }
+>();
+
+function encodeHere(pieces: readonly Float32Array[]): EncodedSound {
+  let total = 0;
+  for (const piece of pieces) total += piece.length;
+  const joined = new Float32Array(total);
+  let offset = 0;
+  for (const piece of pieces) {
+    joined.set(piece, offset);
+    offset += piece.length;
+  }
+  const wav = encodeWav(joined);
+  return { wav, samples: wavSamples(wav) };
+}
+
+/**
+ * Makes sound into the project's form, in a thread of its own, so the window
+ * goes on drawing meanwhile. The pieces are handed over and cannot be used
+ * here afterwards. Where no such thread can be made, it is done here, after
+ * the window has drawn what it was about to.
+ */
+export function encodeSound(pieces: Float32Array[]): Promise<EncodedSound> {
+  if (soundWorker === undefined) {
+    try {
+      soundWorker = new SoundWorker();
+      soundWorker.onmessage = (event: MessageEvent<SoundReply>) => {
+        const reply = event.data;
+        const waiting = soundWaiting.get(reply.id);
+        if (!waiting) return;
+        soundWaiting.delete(reply.id);
+        if ('error' in reply) waiting.reject(new Error(reply.error));
+        else waiting.resolve({ wav: reply.wav, samples: reply.samples });
+      };
+    } catch {
+      soundWorker = null;
+    }
+  }
+  const worker = soundWorker;
+  if (!worker) {
+    return new Promise((resolve, reject) =>
+      setTimeout(() => {
+        try {
+          resolve(encodeHere(pieces));
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      }, 0),
+    );
+  }
+  const id = ++soundAsked;
+  return new Promise((resolve, reject) => {
+    soundWaiting.set(id, { resolve, reject });
+    const request: SoundRequest = { id, pieces };
+    worker.postMessage(
+      request,
+      pieces.map((piece) => piece.buffer as ArrayBuffer),
+    );
+  });
 }
 
 /** The loudest sample of a block, 0..1. */

@@ -74,6 +74,61 @@ export interface Film {
   end(): Promise<number>;
 }
 
+/**
+ * Which moment of the film belongs to a moment of the sound.
+ *
+ * The film keeps the time by the clock, the sound by its samples, and the
+ * sound reaches the window in small blocks. While the window is busy (a new
+ * slide is drawn, or the lecturer presses the arrow while it is) the blocks
+ * wait and come afterwards, all at once. A slide's stretch begins where the
+ * sound stands when the arrow is handled, so its film must begin at the
+ * moment of the film that belongs to that sound, not at the moment on the
+ * clock: otherwise the face jumps forward where the slide changes and runs
+ * ahead of the voice through the whole slide (measured: 0.8 s after the
+ * window had been busy for 0.8 s).
+ *
+ * Every block that arrives says how far the film's clock is ahead of the
+ * sound. The least of that lately is the lead the sound has when nothing
+ * holds it up; it also follows a clock that runs a little apart from the
+ * sound card's.
+ */
+export class FilmSync {
+  /** The least lead seen in each of the last seconds, by second of film. */
+  private least = new Map<number, number>();
+
+  /** A block of sound has arrived: the film stands at `film` seconds, the sound at `sound`. */
+  note(film: number, sound: number): void {
+    const second = Math.floor(film);
+    const lead = film - sound;
+    const was = this.least.get(second);
+    if (was === undefined || lead < was) this.least.set(second, lead);
+    if (this.least.size > SYNC_SECONDS) {
+      for (const key of this.least.keys()) {
+        if (key <= second - SYNC_SECONDS) this.least.delete(key);
+      }
+    }
+  }
+
+  /** Forgets what was seen (the sound was read anew, while the film went on). */
+  reset(): void {
+    this.least.clear();
+  }
+
+  /**
+   * The moment of the film that belongs to `sound` seconds of sound, never
+   * later than the film has come (`now`). Without anything seen yet, `now`.
+   */
+  filmAt(sound: number, now: number): number {
+    if (this.least.size === 0) return now;
+    let lead = Infinity;
+    for (const value of this.least.values()) lead = Math.min(lead, value);
+    return Math.max(0, Math.min(now, sound + lead));
+  }
+}
+
+/** How many seconds back the lead of the sound is looked for. */
+const SYNC_SECONDS = 8;
+
 /** Chromium's way of reading a camera picture by picture; not yet in TypeScript's own list. */
 declare const MediaStreamTrackProcessor:
   (new (init: { track: MediaStreamTrack }) => { readable: ReadableStream<VideoFrame> }) | undefined;
