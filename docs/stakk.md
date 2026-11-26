@@ -344,8 +344,7 @@ Leveranse 3 tok inn pdf.js (bygd inn) og FFmpeg (eget program).
 - **YouTube fra disk:** åpnes den eksporterte fila rett fra disk, svarer
   YouTube «Error 153» i rammen. Der blir stillbildet stående, og knappen
   åpner YouTube i nettleseren. Fra en http(s)-adresse spiller videoen i
-  lysarket (prøvd fra forhåndsvisningen på Linux Mint og Windows 11;
-  Canvas er ikke prøvd).
+  lysarket (prøvd fra forhåndsvisningen på Linux Mint og Windows 11).
 - **Et vindu som ikke vises, tegner bare omtrent én gang i sekundet.**
   Det gjelder testene (som aldri viser vindu), ikke vanlig bruk.
   Videoeksporten bruker et eget vindu som tegner i minnet og ikke

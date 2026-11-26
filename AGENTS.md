@@ -450,10 +450,10 @@ instead of choosing silently.
   that VM yourself (the libvirt domain's sound input), so that recording
   can be tried on Windows. That leave covers the microphone and nothing
   else in the VM's configuration.
-- **Canvas is the owner's alone.** He tries the exported files in Canvas
-  by hand. No agent, script or automation is ever used there, and you do
-  not ask to be let in. Give him a short checklist of what to look for
-  instead, and record what he reports.
+- **Canvas is not part of the plan** (the owner, 26.11.2026: "Canvas er
+  irrelevant"). Nothing is tried there, by anyone, and it is not listed
+  as untested or as something that remains. No agent, script or
+  automation is ever used there.
 
 ## Working with the owner
 
@@ -487,6 +487,11 @@ instead of choosing silently.
   "Lær mer" panel holds (never "byggestein"), "Nettside" for an embedded
   page (never "innbygging"), "Rydd opp lysarket", and "Lagre som én fil".
 
+- The one who leads a session designs; the building is done by
+  subagents that run on Opus (the owner, 26.11.2026: "Bruk opus for
+  utførelse av ditt design"). Give each a design that is decided, one
+  at a time where they would touch the same files, and look at what
+  comes back before it is pushed.
 - Ask design questions together and early, each with one recommendation.
   Do not start building a delivery before its questions are answered.
   The answers so far are in `docs/sporsmal-leveranse-1.md` and

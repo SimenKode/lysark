@@ -130,8 +130,7 @@ innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
 7. **Prøv PDF-importen på nytt.** Står teksten der den sto?
 8. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
    til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
-   bilde på dine egne bilder, og Canvas (bare du, ingen KI). Sjekklista
-   står nederst.
+   bilde på dine egne bilder.
 9. **En gammel testprosess** fra 22.11 står og går på maskinen din
    (historikken, 6.42). Si fra om jeg skal stoppe den.
 
@@ -174,7 +173,7 @@ innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
-advare), en USN-styrt PC, og Canvas. **Av det som er nytt i 0.5.0, er dette prøvd på Windows:** «Behold
+advare) og en USN-styrt PC. **Av det som er nytt i 0.5.0, er dette prøvd på Windows:** «Behold
 utseendet» gjennom PowerPoint, kapitlene i lysarklista, og det som står
 med «Ja, 26.11» i tabellen. Fritt opptak, PDF-import, grupper og
 festede piler er ikke prøvd der.
@@ -258,24 +257,6 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | I Windows-VM-en | Lysark 0.5.0 er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappene `diagram`, `diagram-usn` og `nytt` |
 | Prøvefila med diagrammer fra PowerPoint | `eksempler/fra-powerpoint/diagram.pptx` (ikke i git) |
 
-## Sjekkliste for Canvas
-
-1. Last opp HTML-fila under Filer og åpne den. Vises forelesningen?
-2. Virker den innebygd i en Canvas-side, og i egen fane?
-3. Piltaster, de runde pilene, innholdsoversikten (med kapitlene) og
-   fullskjerm.
-4. «+»-merkene, «Lær mer»-panelet, «Utvid» og «Bildekilder».
-5. YouTube: spiller videoen inne i lysarket?
-6. Lenker ut av forelesningen.
-7. «Spill av»: følger steg og lysark stemmen din? Vises et lysark igjen
-   der du gikk tilbake til det? Åpner boksen seg og spiller videoen der
-   du gjorde det? Høres musikken?
-8. Hvor stor fil godtar emnet? (Stål er 23 MB.)
-9. En forelesning med stor video: følger mappa ved siden av med?
-10. Videoen (MP4, med kamerasirkelen og kapitler) og tekstingen (.vtt):
-    tar Canvas imot begge? Viser Canvas kapitlene?
-11. På mobil, i Canvas-appen.
-
 ## Startmelding til neste chat
 
 Lim dette inn i en ny chat i mappa `~/Forelesningsverktoy/lysark`, og
@@ -308,7 +289,6 @@ Rammer:
 - Tester skal aldri vise vindu på skjermen min (LYSARK_HIDDEN=1), aldri
   kontakte nettet og aldri bruke den ekte mikrofonen eller det ekte
   kameraet mitt.
-- Canvas prøver jeg selv, for hånd. Ingen KI der.
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
@@ -317,7 +297,7 @@ i «Lær mer», bevegelsene, figur i «Lær mer», figurene
 og diagrammene, en PowerPoint-fil med diagram, opptak med ekte kamera,
 fram og tilbake under opptak, import med «Behold utseendet» og
 «USN-stil», særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
-installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
+installasjonsfila på USN-PC, Openverse, merket bilde):
 (skriv her)
 
 Innspill til produktet:

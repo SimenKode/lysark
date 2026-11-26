@@ -3294,6 +3294,46 @@ advarte ikke). Ellers det som sto i 6.46.
 lukket. CD-en er tatt ut, og avbildningen er slettet. Ingenting er
 endret i `lysark-test\`.
 
+### 6.50 Eierens innspill etter 0.5.0 (26.11.2026)
+
+Meldt i chatten etter at 0.5.0 var gitt ut og prøvd på Windows, med et
+skjermbilde av et lysark fra en PDF med kamerasirkelen på. Ordrett:
+
+> Canvas er irrelevant, fjern fra plan. Lagring av opptak bør være
+> bakgrunnsprosess så man kan jobbe med lysark imens. Kamera fryses
+> fortsatt når jeg spiller inn og går fra ett lysbilde til et annet. Vil
+> at man også skal kunne importere vertikale PDF-er og lage vertikale
+> videoer for f.eks. tiktok. Man skal få valget ved import om hvilken
+> orientering man vil ha, med anbefaling. Slett den gamle
+> testproseessen. Jeg sliter med å endre grunntiden per lysark. Kjente
+> feil som må rettes må bare fikses. Vi må ha mulighet til å lage
+> grafer/nettverk med noder og koblinger. Bruk opus for utførelse av
+> ditt design.
+
+Slik er det lest, punkt for punkt:
+
+1. **Canvas er tatt ut** av planen, HANDOFF.md (også sjekklista) og
+   reglene. Det som står om Canvas lenger opp i denne loggen, er
+   historie og står som det var.
+2. **Lagring av opptak i bakgrunnen.** I dag står innlesingsvinduet på
+   «Lagrer» til filmen og lyden er gjort ferdige. Det skal lukke seg
+   med en gang, og lysarkene skal kunne redigeres imens.
+3. **Kameraet fryser fortsatt mellom lysark,** også etter at hele
+   opptaket ble én film (6.28). Det er altså ikke rettet. Det ble bare
+   prøvd med prøvekamera og små prøvelysark.
+4. **Stående format:** stående PDF-er inn, og stående video ut. Valget
+   tas ved import, med en anbefaling fra programmet.
+5. **Den gamle testprosessen** fra 22.11 er stoppet (den svarte ikke på
+   en vanlig stopp og måtte avsluttes hardt), og arbeidsmappa dens i
+   `/tmp` er slettet.
+6. **Grunntiden per lysark.** Et lysark uten lyd står i 5 sekunder pluss
+   2 per steg. Det er et fast tall i koden, og kan bare endres ved å
+   legge inn en pause. Det er ikke rart det er vanskelig.
+7. **Kjente feil skal rettes uten å spørre.**
+8. **Nettverk:** grafer med noder og koblinger.
+9. **Opus bygger, den som leder økta, designer.** Skrevet inn i
+   AGENTS.md.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

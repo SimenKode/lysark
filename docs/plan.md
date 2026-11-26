@@ -7,10 +7,14 @@ alene, uten stubber eller plassholdere. En leveranse begynner først når
 designspørsmålene for den er besvart, og er ferdig først når den er
 prøvd på både Linux Mint og Windows 11.
 
+Canvas er tatt ut av planen: eieren sa 26.11.2026 at Canvas er
+irrelevant. Ingenting prøves der, og det står ikke lenger som noe som
+gjenstår.
+
 | Nr. | Leveranse | Status |
 | --- | --- | --- |
-| 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
-| 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
+| 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: godkjenning av uttrykket |
+| 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Prøvd på Windows 11 også |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
 | 4 | Figurer og bevegelser | Bygget 25. og 26.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse), søyle- og linjediagram, figur i «Lær mer» og bevegelsene. Det meste av det nye er prøvd på Windows 11 samme dag (historikk.md 6.46). Gitt ut som versjon 0.5.0 (26.11.2026). Gjenstår: eierens utprøving |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
@@ -96,12 +100,9 @@ den i et panel.
   «Åpne på YouTube» står alltid ved siden av.
 - Annen innbygging: «Innhold fra <vert> – klikk for å laste».
 - Forhåndsvisningen vises fra en adresse på din egen maskin
-  (`127.0.0.1`), slik at innbygging oppfører seg som i Canvas.
+  (`127.0.0.1`), slik at innbygging oppfører seg som fra en nettside.
 - Stillbilde for en YouTube-lenke hentes når du trykker «Hent
   forhåndsbilde».
-
-**Canvas** prøver du selv, for hånd: skript, innbygging, filstørrelse,
-fullskjerm (sjekkliste i historikk.md 6.5).
 
 **Ikke med:** byggesteinen «figur/animasjon» (kommer med leveranse 4),
 lyd, video-eksport.
@@ -133,10 +134,8 @@ Avvik fra det som ble valgt, og hvorfor:
 
 Gjenstår før leveransen er ferdig:
 
-1. **Canvas:** eieren prøver selv, for hånd (sjekkliste i HANDOFF.md
-   6.5).
-2. **Windows 11:** ingenting av leveranse 2 er prøvd der.
-3. Dra-og-slipp av byggesteiner er ikke dekket av automatiske tester
+1. **Windows 11:** ingenting av leveranse 2 er prøvd der.
+2. Dra-og-slipp av byggesteiner er ikke dekket av automatiske tester
    (knappene «flytt opp» og «flytt ned» er det).
 
 ### Runde 2 etter eierens utprøving (22.11.2026)
@@ -569,10 +568,9 @@ Det filene viste om innholdet:
 
 Gjenstår før leveransen er ferdig:
 
-1. **Canvas.** HTML-fila er ikke prøvd der.
-2. **Godkjenning av uttrykket** på dine egne lysark.
-3. **Restavvikene i importen** som står under «Kjente begrensninger».
-4. ~~Windows-installasjonsfil.~~ Laget 25.11.2026 (historikk.md 6.24);
+1. **Godkjenning av uttrykket** på dine egne lysark.
+2. **Restavvikene i importen** som står under «Kjente begrensninger».
+3. ~~Windows-installasjonsfil.~~ Laget 25.11.2026 (historikk.md 6.24);
    kommer med i neste utgivelse.
 
 ### Prøvd på Windows 11
