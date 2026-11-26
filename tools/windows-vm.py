@@ -19,6 +19,21 @@ Usage: tools/windows-vm.py <command> [args] [<command> [args] ...]
   dclick X Y        double click
   sleep SECONDS
   shot PATH         save PATH.ppm (full size) and PATH.jpg (1280 wide, for viewing)
+  read PATH         save the file the VM is showing on its screen (see below)
+
+Getting a file out of the VM (there is no other way out: the CD is read
+only, and the VM cannot reach the host): tools/vm/ut.ps1 shows a file on the
+VM's screen as pictures of coloured squares, and `read` takes screenshots,
+reads the file off them and checks it against the checksum in each picture.
+Put tools/vm/ on the CD image, and type in the Run dialog
+  powershell -ep bypass -file d:\\ut.ps1 <file>
+then run `read` on the host. The window closes after the last picture, and
+by itself after fifteen minutes.
+
+tools/vm/diagrammer.ps1 lets PowerPoint make a presentation with a chart on
+each slide and shows it this way; keep the file as
+eksempler/fra-powerpoint/diagram.pptx (never in git), where
+tests/real-charts.test.ts reads it.
 
 Things that bit the first time:
   - Take a screenshot before the first key press or click. The VM is not
@@ -81,6 +96,43 @@ def click(x, y, button='left', double=False):
 def shot(path):
     subprocess.run(['virsh', 'screenshot', DOM, path + '.ppm'], check=True, stdout=subprocess.DEVNULL)
     subprocess.run(['convert', path + '.ppm', '-resize', '1280x800', '-quality', '82', path + '.jpg'], check=True)
+def read_file(path, w=1920, h=1200):
+    """Save the file that tools/vm/ut.ps1 is showing on the VM's screen.
+
+    The file is shown as pictures, three bits in each cell of 4 x 4 pixels,
+    with a heading that says which picture it is and a checksum of it. A
+    click shows the next picture, and closes the window after the last one.
+    """
+    import hashlib
+    from PIL import Image
+    cell, margin, head = 4, 96, 40
+    grab = path + '.screen.png'
+    move(w - 20, h / 2)
+    data, expected = bytearray(), 0
+    while True:
+        for _ in range(60):
+            subprocess.run(['virsh', 'screenshot', DOM, grab], check=True, stdout=subprocess.DEVNULL)
+            im = Image.open(grab).convert('RGB')
+            wide, high = (im.size[0] - margin) // cell, im.size[1] // cell
+            small = im.crop((0, 0, wide * cell, high * cell)).resize((wide, high), Image.NEAREST)
+            bits = ''.join('1' if v > 127 else '0' for v in small.tobytes())
+            raw = int(bits[:len(bits) // 8 * 8], 2).to_bytes(len(bits) // 8, 'big')
+            n = lambda at, size: int.from_bytes(raw[at:at + size], 'big')
+            if raw[:4] == b'LYSK' and n(4, 2) == expected:
+                part = raw[head:head + n(8, 4)]
+                if hashlib.sha256(part).digest()[:16] == raw[20:36]: break
+            time.sleep(1)
+        else:
+            os.remove(grab)
+            sys.exit(f'picture {expected + 1} of the file is not on the screen')
+        data += part
+        expected += 1
+        click(w - 20, h / 2)
+        if expected >= n(6, 2): break
+    os.remove(grab)
+    if len(data) != n(12, 4): sys.exit('the file is not whole')
+    with open(path, 'wb') as f: f.write(data)
+    print(f'{path}: {len(data)} bytes, sha256 {hashlib.sha256(data).hexdigest()}')
 if __name__ == '__main__':
     a = sys.argv[1:]
     i = 0
@@ -92,4 +144,5 @@ if __name__ == '__main__':
         elif c == 'dclick': click(float(a[i + 1]), float(a[i + 2]), double=True); i += 3
         elif c == 'sleep': time.sleep(float(a[i + 1])); i += 2
         elif c == 'shot': shot(a[i + 1]); i += 2
+        elif c == 'read': read_file(a[i + 1]); i += 2
         else: sys.exit('unknown ' + c)
