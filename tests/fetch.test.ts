@@ -246,7 +246,7 @@ describe('a figure in a "Lær mer" box', () => {
     old.version = 13;
     old.scenes[0]!.elements.pop();
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(17);
+    expect(FORMAT_VERSION).toBe(18);
   });
 
   it('is drawn by the code that draws the slide, in a holder that makes it fit', () => {

@@ -31,7 +31,7 @@ export const FORMAT_NAME = 'lysark';
  * 17: tables keep PowerPoint's row heights, spacing, alignment and the
  *    font size of each cell.
  */
-export const FORMAT_VERSION = 17;
+export const FORMAT_VERSION = 18;
 
 export { STAGE } from './constants';
 
@@ -851,6 +851,12 @@ export const Scene = z.object({
    * never in a project; only its length, in seconds, is stored here.
    */
   closingAnimation: z.object({ seconds: z.number().positive().max(120) }).optional(),
+  /**
+   * How long the slide stands in video and in "Spill av" when it has no
+   * sound, in seconds. Without it, a default time with a little for each
+   * step. Not used on a repeat or a slide that plays the closing animation.
+   */
+  seconds: z.number().min(0.5).max(600).optional(),
   /** What was opened and played while the slide was read in, in order of time. */
   events: z.array(SceneEvent).optional(),
   /** Where the camera circle stands on this slide, when a recording of it has a film. */

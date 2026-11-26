@@ -248,8 +248,11 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     await page.keyboard.press('ArrowRight');
     await expect.poll(time).toMatch(/ \/ 0:12$/);
     await save();
+    // That slide has no voice: its pause was only there to give it a length,
+    // and the edge sets the slide's own time without sound instead.
     const second = saved().scenes[1]!;
-    expect(second.audio!.clips).toEqual([{ id: 'c_1', kind: 'pause', duration: 5 }]);
+    expect(second.audio).toBeUndefined();
+    expect(second.seconds).toBe(5);
     // A slide with a voice cannot be made shorter than what is said.
     await page.locator('.tl-edge').nth(0).focus();
     for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowLeft');

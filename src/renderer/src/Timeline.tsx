@@ -24,6 +24,7 @@ import { GAIN_DB, type Project, type TrackName } from '../../shared/format/schem
 import {
   formatTime,
   hasSound,
+  ownsSeconds,
   placeTracks,
   schedule,
   stepsShownAt,
@@ -430,7 +431,11 @@ export function Timeline() {
                       type="button"
                       className="tl-edge"
                       aria-label={`Lengden på lysark ${number}: ${preciseTime(entry.duration)}. Piltaster endrer den.`}
-                      title="Dra for å la lysarket stå lenger eller kortere (pausen på slutten endres)"
+                      title={
+                        !hasSound(scene) && ownsSeconds(scene)
+                          ? 'Dra for å la lysarket stå lenger eller kortere (tiden uten lyd endres)'
+                          : 'Dra for å la lysarket stå lenger eller kortere (pausen på slutten endres)'
+                      }
                       onPointerDown={(e) => startDrag(e, 'slide', scene.id, entry.duration)}
                       onPointerMove={onDragMove}
                       onPointerUp={endDrag}

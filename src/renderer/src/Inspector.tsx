@@ -72,7 +72,17 @@ import {
   stepPerItem,
   wholeFigure,
 } from '../../shared/layout/templates';
-import { cameraOnStage, defaultCameraPlace, hasCameraFilm } from '../../shared/render/clock';
+import { setSilentSeconds } from '../../shared/audio/edit';
+import {
+  SILENT_SECONDS,
+  cameraOnStage,
+  defaultCameraPlace,
+  formatTime,
+  hasCameraFilm,
+  hasSound,
+  ownsSeconds,
+  sceneDuration,
+} from '../../shared/render/clock';
 import { youtubeRef } from '../../shared/render/web';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../../shared/limits';
 import { allowedTextColors, isLargeText } from '../../shared/theme/contrast';
@@ -81,6 +91,7 @@ import { SHAPE_PAIRS } from '../../shared/theme/shapes';
 import { getTheme, roleFontSize, sceneSurface } from '../../shared/theme/theme';
 import { Icon } from './Icon';
 import { CreditFields } from './MediaDialog';
+import { SecondsInput } from './SecondsInput';
 import { addAsset, fetchYouTubeStill, megabytes, replaceImage } from './actions';
 import {
   GEOMETRY_NAMES,
@@ -1826,6 +1837,51 @@ function ElementPanel({ scene }: { scene: Scene }) {
 
 // ---------- Scene ----------
 
+/**
+ * How long the slide stands when it has no sound: the length that applies
+ * now, which the lecturer can change. On a slide with sound, the sound
+ * decides, and that is said instead.
+ */
+function SceneTime({ scene }: { scene: Scene }) {
+  const updateScene = useStore((s) => s.updateScene);
+  if (!ownsSeconds(scene)) return null;
+  if (hasSound(scene)) {
+    return (
+      <div className="field">
+        <span className="field-label">Tid</span>
+        <p className="hint scene-time-sound">
+          Lysarket har lyd, og står så lenge lyden varer: {formatTime(sceneDuration(scene))}.
+          Lengden endres i fanen «Lyd».
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="scene-seconds">
+        Tid uten lyd
+      </label>
+      <span className="scene-seconds">
+        <SecondsInput
+          key={scene.id}
+          id="scene-seconds"
+          className="audio-number"
+          label="Tid uten lyd, i sekunder"
+          describedBy="scene-seconds-hint"
+          min={SILENT_SECONDS.min}
+          max={SILENT_SECONDS.max}
+          value={sceneDuration(scene)}
+          onChange={(seconds) => updateScene((s) => setSilentSeconds(s, seconds))}
+        />{' '}
+        sekunder
+      </span>
+      <span className="field-hint" id="scene-seconds-hint">
+        Så lenge står lysarket i videoen og i «Spill av» når det ikke har lyd.
+      </span>
+    </div>
+  );
+}
+
 function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
   const project = useStore((s) => s.project)!;
   const logo = useStore((s) => s.logo);
@@ -1938,6 +1994,7 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
           )}
         </>
       )}
+      <SceneTime scene={scene} />
       <label className="check">
         <input
           type="checkbox"

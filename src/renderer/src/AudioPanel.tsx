@@ -11,6 +11,7 @@ import {
   removeSound,
   setGain,
   setPauseDuration,
+  setSilentSeconds,
   removeEvent,
   setEventTime,
   setStepTime,
@@ -19,8 +20,10 @@ import { peaks, secondsToSamples } from '../../shared/audio/wav';
 import { newId } from '../../shared/format/factory';
 import { GAIN_DB, type Project, type Scene, type SceneEvent } from '../../shared/format/schema';
 import {
+  SILENT_SECONDS,
   formatTime,
   hasSound,
+  ownsSeconds,
   schedule,
   sceneDuration,
   sceneEvents,
@@ -29,6 +32,7 @@ import {
   trackDuration,
 } from '../../shared/render/clock';
 import { Icon } from './Icon';
+import { SecondsInput } from './SecondsInput';
 import { importSoundFile } from './actions';
 import { loadSceneSamples, playScene, samplesOf, type Playback } from './audio/engine';
 import { WAIT_FOR_SAVING, currentScene, useStore } from './store';
@@ -586,11 +590,40 @@ export function AudioPanel() {
         onKey={onKey}
       />
 
-      {track === 0 && (
-        <p className="hint audio-hint">
-          Lysarket har ingen lyd. I video og «Spill av» står det i {formatTime(duration)}. Les inn
-          stemmen, importer en lydfil, eller legg inn en pause for å bestemme lengden selv.
+      {!sound && ownsSeconds(scene) ? (
+        <p className="audio-hint audio-silent">
+          <label>
+            Lysarket har ingen lyd. Det står i{' '}
+            <SecondsInput
+              key={scene.id}
+              className="audio-number"
+              label="Hvor mange sekunder lysarket står"
+              min={SILENT_SECONDS.min}
+              max={SILENT_SECONDS.max}
+              value={duration}
+              onChange={(seconds) => edit((s) => setSilentSeconds(s, seconds))}
+            />{' '}
+            sekunder.
+          </label>{' '}
+          <button
+            type="button"
+            title="Gir alle lysark som ikke har lyd, denne tiden. Kan angres."
+            onClick={() => {
+              stop();
+              useStore.getState().update((draft) => {
+                for (const each of draft.scenes) setSilentSeconds(each, duration);
+              });
+            }}
+          >
+            Bruk på alle lysark uten lyd
+          </button>
         </p>
+      ) : (
+        track === 0 && (
+          <p className="hint audio-hint">
+            Lysarket har ingen lyd. I video og «Spill av» står det i {formatTime(duration)}.
+          </p>
+        )
       )}
 
       <div className="audio-tools">

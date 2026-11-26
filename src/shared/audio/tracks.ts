@@ -7,14 +7,17 @@ import type { Asset, Project, Scene, TrackClip, TrackName } from '../format/sche
 import { GAIN_DB, TRACK_NAMES } from '../format/schema';
 import {
   SAMPLE_RATE,
+  SILENT_SECONDS,
   anchorAt,
   clipDuration,
+  hasSound,
+  ownsSeconds,
   schedule,
   sceneDuration,
   trackClipDuration,
   trackDuration,
 } from '../render/clock';
-import { MIN_PAUSE } from './edit';
+import { MIN_PAUSE, setSilentSeconds } from './edit';
 
 type NewId = () => string;
 type Lecture = Pick<Project, 'scenes' | 'tracks' | 'assets'>;
@@ -219,8 +222,12 @@ export function releaseScene(project: Lecture, sceneId: string): void {
   tidy(project);
 }
 
+type Lengthened = Pick<Scene, 'audio' | 'timeline'> &
+  Partial<Pick<Scene, 'seconds' | 'closingAnimation' | 'repeat'>>;
+
 /** The shortest a slide can be made by drawing its edge: its sound up to the last pause. */
-export function leastSceneLength(scene: Pick<Scene, 'audio'>): number {
+export function leastSceneLength(scene: Lengthened): number {
+  if (!hasSound(scene) && ownsSeconds(scene)) return SILENT_SECONDS.min;
   const clips = scene.audio?.clips ?? [];
   const last = clips[clips.length - 1];
   const body = trackDuration(scene.audio) - (last?.kind === 'pause' ? clipDuration(last) : 0);
@@ -228,11 +235,16 @@ export function leastSceneLength(scene: Pick<Scene, 'audio'>): number {
 }
 
 /**
- * Makes a slide stand for `seconds`, by the pause at its end: the pause is
- * made longer or shorter, put in or taken away. What is said is never cut;
- * the slide cannot be made shorter than that.
+ * Makes a slide stand for `seconds`. A slide without sound gets that as its
+ * own time (`Scene.seconds`). On one with sound it is done by the pause at
+ * its end: the pause is made longer or shorter, put in or taken away. What
+ * is said is never cut; the slide cannot be made shorter than that.
  */
-export function setSceneLength(scene: Pick<Scene, 'audio'>, seconds: number, newId: NewId): void {
+export function setSceneLength(scene: Lengthened, seconds: number, newId: NewId): void {
+  if (!hasSound(scene) && ownsSeconds(scene)) {
+    setSilentSeconds(scene, seconds);
+    return;
+  }
   const least = leastSceneLength(scene);
   const want = Math.max(least, seconds);
   if (!scene.audio) scene.audio = { clips: [] };

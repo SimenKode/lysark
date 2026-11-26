@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 16), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 18), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,32 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 18: tid uten lyd
+
+```ts
+interface Scene {
+  // ... som før
+  seconds?: number;   // 0,5 til 600: så lenge står lysarket når det ikke har lyd
+}
+```
+
+- **`seconds`** er hvor lenge et lysark uten lyd står i videoen, i GIF-en,
+  i «Spill av» og på tidslinja. Uten feltet står det som før: 5 sekunder,
+  pluss 2 for hvert steg. Steg uten eget tidspunkt fordeles jevnt over
+  tiden, etter samme regel som før. Har lysarket lyd, er det lyden som
+  bestemmer, og `seconds` brukes ikke.
+- Foreleseren setter tallet i feltet «Tid uten lyd» i fanen «Lysark», i
+  setningen i fanen «Lyd» («Bruk på alle lysark uten lyd» setter det på
+  alle lysark uten lyd i én endring), eller ved å dra i kanten av lysarket
+  på tidslinja.
+- Et lysark der «lyden» bare er pauser (den gamle måten å bestemme
+  lengden på), er et lysark uten lyd: feltet viser summen av pausene, og
+  et nytt tall erstatter dem med `seconds`.
+- Et lysark som vises igjen (`repeat`) og et lysark med
+  avslutningsanimasjonen har sine egne regler; der brukes ikke feltet
+  (`ownsSeconds` i `src/shared/render/clock.ts`).
+- Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 17: tabeller fra PowerPoint slik de var
 
@@ -397,8 +423,9 @@ som peker på hver sin del av det samme opptaket. Derfor kan alt angres,
 og «originalen beholdes» er sant bokstavelig. En pause er et eget klipp.
 
 **Lengden på et lysark** i video og i «Spill av» er lengden på lyden.
-Et lysark uten lyd står i 5 sekunder, pluss 2 for hvert steg; vil du
-bestemme lengden selv, legger du inn en pause.
+Et lysark uten lyd står i 5 sekunder, pluss 2 for hvert steg. Fra
+format 18 bestemmer du lengden selv med «Tid uten lyd» (`seconds`, se
+over); før det ble det gjort med en pause.
 
 **Tidspunktet for et steg** er `at` på steget, i sekunder fra lysarket
 starter. Det settes når du trykker pil høyre under innlesing, og kan

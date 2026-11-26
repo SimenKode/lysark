@@ -5,8 +5,11 @@
 // what is shown still follows what is said.
 import type { AudioClip, Scene, SceneEvent } from '../format/schema';
 import {
+  SILENT_SECONDS,
   clipDuration,
   defaultCameraPlace,
+  hasSound,
+  ownsSeconds,
   trackDuration,
   videosAt,
   videoKey,
@@ -277,6 +280,25 @@ export function removeSound(scene: AudioScene): void {
   delete scene.audio;
   delete scene.events;
   for (const step of scene.timeline) delete step.at;
+}
+
+/**
+ * Makes a slide without sound stand for `seconds` (`Scene.seconds`). Pauses
+ * that were put in only to give it a length (the old way) are replaced by
+ * it. Does nothing to a slide with sound, a repeat or a slide that plays the
+ * closing animation.
+ */
+export function setSilentSeconds(
+  scene: AudioScene & Partial<Pick<Scene, 'seconds' | 'closingAnimation' | 'repeat'>>,
+  seconds: number,
+): void {
+  if (!Number.isFinite(seconds) || hasSound(scene) || !ownsSeconds(scene)) return;
+  scene.seconds =
+    Math.round(Math.max(SILENT_SECONDS.min, Math.min(SILENT_SECONDS.max, seconds)) * 10) / 10;
+  if (scene.audio) {
+    scene.audio.clips = [];
+    if (scene.audio.gain === undefined) delete scene.audio;
+  }
 }
 
 /** Sets when something that was opened or played happens, inside the slide. */

@@ -532,6 +532,6 @@ describe('the format', () => {
     expect(read.scenes[0]!.chapter).toBe('En');
     const old = { ...JSON.parse(JSON.stringify(lecture(slide('A')))), version: 8 };
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(17);
+    expect(FORMAT_VERSION).toBe(18);
   });
 });

@@ -54,7 +54,19 @@ export function hasSound(scene: Pick<Scene, 'audio'>): boolean {
 
 /** What the clock needs to know about a slide. */
 export type Timed = Pick<Scene, 'audio' | 'timeline'> &
-  Partial<Pick<Scene, 'closingAnimation' | 'events' | 'repeat'>>;
+  Partial<Pick<Scene, 'closingAnimation' | 'events' | 'repeat' | 'seconds'>>;
+
+/** The least and the most a slide without sound can be set to stand. */
+export const SILENT_SECONDS = { min: 0.5, max: 600 } as const;
+
+/**
+ * True when the slide's own time without sound (`Scene.seconds`) is obeyed:
+ * not on a repeat, and not on a slide that plays the closing animation,
+ * which keep their own rules.
+ */
+export function ownsSeconds(scene: Partial<Pick<Scene, 'closingAnimation' | 'repeat'>>): boolean {
+  return !scene.repeat && !scene.closingAnimation;
+}
 
 /** How long the last picture of the closing animation stands after the film has ended. */
 export const CLOSING_HOLD_SECONDS = 2;
@@ -65,6 +77,8 @@ export function sceneDuration(scene: Timed): number {
   if (track > 0) return track;
   // A slide with the closing animation stands as long as the film, and a little more.
   if (scene.closingAnimation) return scene.closingAnimation.seconds + CLOSING_HOLD_SECONDS;
+  // A slide without sound stands as long as the lecturer has said, or a default time.
+  if (scene.seconds !== undefined && ownsSeconds(scene)) return scene.seconds;
   return SILENT_SCENE_SECONDS + SILENT_STEP_SECONDS * scene.timeline.length;
 }
 

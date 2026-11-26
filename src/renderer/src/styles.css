@@ -797,6 +797,17 @@ textarea {
 .audio-hint {
   margin: 6px 0 0;
 }
+.audio-silent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.scene-seconds {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .audio-group {
   display: inline-flex;
   align-items: center;
