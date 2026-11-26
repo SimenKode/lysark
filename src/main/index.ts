@@ -95,6 +95,15 @@ const APP_NAME = 'Lysark';
 app.setName(APP_NAME);
 // Tests run the program without putting a window on the screen.
 const HIDDEN = process.env.LYSARK_HIDDEN === '1';
+if (HIDDEN) {
+  // Tests never show a window on the owner's screen. An error in this process
+  // would otherwise come up there as a box that waits for an answer, with the
+  // program standing behind it. Here it is written out, and the program ends.
+  process.on('uncaughtException', (error) => {
+    console.error(error);
+    app.exit(1);
+  });
+}
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -431,7 +440,9 @@ function createWindow(): void {
   });
   mainWindow.on('closed', () => {
     mainWindow = null;
-    previewWindow?.close();
+    // The preview may be on its way out already (closed a moment before, and
+    // not yet reported as closed): a window that is gone cannot be closed.
+    if (previewWindow && !previewWindow.isDestroyed()) previewWindow.close();
   });
 
   const devUrl = process.env.ELECTRON_RENDERER_URL;
