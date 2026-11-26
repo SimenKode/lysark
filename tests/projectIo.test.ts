@@ -1,5 +1,5 @@
 // Reading, writing, packing and unpacking projects on disk.
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { strToU8, zipSync } from 'fflate';
@@ -31,6 +31,26 @@ describe('project folders', () => {
     expect(existsSync(join(dir, 'media'))).toBe(true);
     saveProject(dir, { ...project, meta: { ...project.meta, title: 'Endret' } });
     expect(readProject(dir).meta.title).toBe('Endret');
+    expect(existsSync(join(dir, 'prosjekt.json.ny'))).toBe(false);
+  });
+
+  it('saves over a project file that is marked read-only, and says so plainly when it cannot save', () => {
+    const dir = join(work, 'Ny');
+    const project = createProject(dir);
+    // As a file copied from a CD is on Windows, which then refuses to replace it.
+    chmodSync(join(dir, 'prosjekt.json'), 0o444);
+    saveProject(dir, { ...project, meta: { ...project.meta, title: 'Endret' } });
+    expect(readProject(dir).meta.title).toBe('Endret');
+    // A folder that cannot be written in: a message a lecturer can act on, and the project as it was.
+    chmodSync(dir, 0o555);
+    try {
+      expect(() =>
+        saveProject(dir, { ...project, meta: { ...project.meta, title: 'Igjen' } }),
+      ).toThrow(/Prosjektet ble ikke lagret: Lysark får ikke skrive i prosjektmappa/);
+      expect(readProject(dir).meta.title).toBe('Endret');
+    } finally {
+      chmodSync(dir, 0o755);
+    }
     expect(existsSync(join(dir, 'prosjekt.json.ny'))).toBe(false);
   });
 

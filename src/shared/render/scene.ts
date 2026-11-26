@@ -210,10 +210,15 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
   const lineColor = PALETTE[el.stroke ?? defaultTextColor(theme, surface, 'body', 36)];
 
   if (el.geometry === 'line' || el.geometry === 'arrow') {
-    const x1 = el.flipH ? w : 0;
-    const y1 = el.flipV ? h : 0;
-    const x2 = el.flipH ? 0 : w;
-    const y2 = el.flipV ? 0 : h;
+    // A line that lies flat or stands upright has a box one pixel thin. It is
+    // drawn through the middle of that pixel, not from corner to corner: the
+    // slope of one pixel made the axes of a diagram look uneven.
+    const flat = h <= 1;
+    const upright = w <= 1;
+    const x1 = upright ? w / 2 : el.flipH ? w : 0;
+    const y1 = flat ? h / 2 : el.flipV ? h : 0;
+    const x2 = upright ? w / 2 : el.flipH ? 0 : w;
+    const y2 = flat ? h / 2 : el.flipV ? 0 : h;
     const length = Math.hypot(x2 - x1, y2 - y1) || 1;
     const ux = (x2 - x1) / length;
     const uy = (y2 - y1) / length;

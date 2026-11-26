@@ -2,6 +2,7 @@
 // and a media/ folder; media files are named after a hash of their content.
 import { createHash } from 'node:crypto';
 import {
+  chmodSync,
   closeSync,
   copyFileSync,
   existsSync,
@@ -65,11 +66,40 @@ export function mediaPath(dir: string, file: string): string {
   return full;
 }
 
+/** True for the errors the system gives when it will not let a file be written or replaced. */
+function isRefused(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | null)?.code;
+  return code === 'EPERM' || code === 'EACCES' || code === 'EBUSY' || code === 'EROFS';
+}
+
 function writeProjectFile(dir: string, project: Project): void {
   const target = join(dir, PROJECT_FILE);
   const temp = `${target}.ny`;
-  writeFileSync(temp, JSON.stringify(project, null, 2), 'utf8');
-  renameSync(temp, target); // replace in one step so a crash cannot leave half a file
+  try {
+    writeFileSync(temp, JSON.stringify(project, null, 2), 'utf8');
+    try {
+      renameSync(temp, target); // replace in one step so a crash cannot leave half a file
+    } catch (error) {
+      if (!isRefused(error)) throw error;
+      // Windows will not replace a file that is marked read-only, and every
+      // file copied from a CD is (found in the Windows VM, 26.11.2026). The
+      // mark is taken off, and the file is replaced after all.
+      chmodSync(target, 0o666);
+      renameSync(temp, target);
+    }
+  } catch (error) {
+    if (!isRefused(error)) throw error;
+    try {
+      unlinkSync(temp);
+    } catch {
+      // Nothing was written, or it cannot be taken away: the project file itself is untouched.
+    }
+    throw new Error(
+      'Prosjektet ble ikke lagret: Lysark får ikke skrive i prosjektmappa. Fila prosjekt.json ' +
+        'kan være skrivebeskyttet eller åpen i et annet program, eller mappa ligger et sted du ' +
+        'ikke kan skrive. Kopier prosjektmappa til for eksempel Dokumenter, og åpne den derfra.',
+    );
+  }
 }
 
 /** A project folder must be new or empty, so nothing is overwritten. */

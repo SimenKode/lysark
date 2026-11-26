@@ -2063,7 +2063,8 @@ function StepsPanel({ scene }: { scene: Scene }) {
   const updateScene = useStore((s) => s.updateScene);
   const select = useStore((s) => s.select);
   const byId = new Map(scene.elements.map((e) => [e.id, e]));
-  const fromStart = scene.elements.filter((e) => stepOf(scene, e.id) < 0);
+  // A figure with a form is one line here, not one for each of its many parts.
+  const fromStart = scene.elements.filter((e) => stepOf(scene, e.id) < 0 && !e.of);
   const total = scene.timeline.length;
 
   // The frame of a zoom lies on top of the slide and takes the pointer. It is
