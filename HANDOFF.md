@@ -132,7 +132,10 @@ Prøv 0.6.0 fra `release/`.
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd.
+1. **Det du melder** etter å ha prøvd. **Meldt 26.11, ikke rettet:**
+   feltet for sekunder per lysark («Tid uten lyd») ser litt rart ut.
+   Boksene er store, og ordet «sekunder» står på en egen rad. Det skal
+   stå på samme linje som tallet, i en boks som passer til et tall.
 2. **Windows:** ingenting av det som er nytt i 0.6.0, er prøvd der,
    heller ikke installasjonsfila. Fra før gjenstår innlesing, fritt
    opptak, PDF-import og grupper.
@@ -216,6 +219,8 @@ festede piler er ikke prøvd der.
   gjennom boksen når streken fortsetter på den andre siden. Det kan ikke
   stå tekst på en kobling. Endrer du skriftstørrelsen i et nettverk,
   blir ikke nodene som finnes, større.
+- **«Tid uten lyd»:** boksen for tallet er for stor, og «sekunder»
+  havner på en egen rad (du meldte det 26.11).
 - **Stående lysark:** formen kan ikke byttes etter importen, og det
   finnes bare liggende 16:9 og stående 9:16. På en mobil som holdes
   stående, står lysarket øverst, og de små pilene havner under det.

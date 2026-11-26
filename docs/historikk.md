@@ -3657,6 +3657,25 @@ bygget: <https://github.com/SimenKode/lysark/releases/tag/v0.6.0>.
   og mikrofon, nedlastet fil på Windows, USN-PC, Openverse mot ekte
   nett.
 
+### 6.58 Eieren har sett på «Tid uten lyd» (26.11.2026)
+
+Meldt i chatten etter at 0.6.0 var gitt ut og han hadde startet
+programmet fra koden. Han ba om at det ble skrevet i HANDOFF.md, ikke
+om at det ble rettet nå. Ordrett:
+
+> Legg til handoff at gui for å sette antall sekunder per ark er litt
+> rar, store bokser og "sekunder" ordet på egen rad.
+
+Slik er det lest: feltet «Tid uten lyd» (fanen «Lysark», og setningen i
+fanen «Lyd») har en for stor boks for tallet, og ordet «sekunder» brytes
+ned på en egen rad i stedet for å stå rett etter tallet. **Ikke rettet.**
+Det står i HANDOFF.md under «Neste steg» og «Kjente svakheter». Jeg så
+ikke feltet på et bilde før det ble pushet, bare i koden (6.54); der
+skulle jeg ha sett det.
+
+På spørsmålet om 0.6.0 skulle prøves i Windows-VM-en, svarte han «Ikke
+nå».
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
