@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 12), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 13), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,34 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 13: søyle- og linjediagram
+
+En figur med skjema kan ha `template: "bars"` eller `"line"`. Skjemaet er
+da en tabell med tall:
+
+- `series` er seriene: `name`, og `color` når foreleseren har valgt en
+  annen enn temaets.
+- Radene ligger i `items`. I et søylediagram er `text` navnet under
+  søylene. I et linjediagram er `x` tallet langs den vannrette aksen.
+  `values` har ett tall for hver serie, og `null` der det ikke står noe.
+- `xTitle` og `yTitle` er teksten ved aksene. `yMin`, `yMax`, `xMin` og
+  `xMax` er endene på aksene når foreleseren har satt dem. `dots` setter
+  en prikk i hvert punkt.
+
+Delene er vanlige elementer, som i de andre malene: søylene
+(`bar:<rad>:<serie>`) er rektangler, navnene under dem (`label:<rad>`),
+tallene langs aksene (`tick:<n>`, `xtick:<n>`), tekstene ved aksene
+(`title:x`, `title:y`) og navnene i forklaringen (`name:<serie>`) er
+tekstbokser, og aksene og linjene på tvers (`axis:x`, `axis:y`,
+`grid:<n>`) er linjer.
+
+**Ny form: kurve.** En form kan ha `geometry: "curve"`: én strek gjennom
+mange punkter. `points` er punktene som brøkdeler av boksen (x mot
+høyre, y nedover), og `null` er et brudd. `dots` setter en prikk i hvert
+punkt. En linje i et linjediagram er en slik form (`curve:<serie>`).
+
+Et prosjekt i format 12 leses som det er.
 
 ## Format 12: tidsakse
 

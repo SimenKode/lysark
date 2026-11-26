@@ -2280,6 +2280,28 @@ legend {
   gap: 4px;
   max-width: 92px;
 }
+/* The table of a diagram's numbers. It scrolls sideways when there are many series. */
+.chart-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 10px;
+}
+.chart-table {
+  border-collapse: collapse;
+}
+.chart-table th,
+.chart-table td {
+  padding: 2px 4px 2px 0;
+  text-align: left;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.chart-table input {
+  width: 74px;
+  min-width: 0;
+}
+.chart-table input[aria-invalid='true'] {
+  outline: 2px solid var(--danger, #c0392b);
+}
 .fastened-list {
   list-style: none;
   margin: 0 0 10px;

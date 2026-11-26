@@ -1,5 +1,6 @@
 // Figures that draw themselves from a form: a process, layers, a comparison,
-// a time axis. The figure element holds the form and a frame; what is seen
+// a time axis, and bar and line diagrams (whose parts are worked out in
+// ./charts.ts). The figure element holds the form and a frame; what is seen
 // are ordinary shapes (and, on a time axis, ordinary text boxes), each an
 // element of its own (so it can come in at a step and have "Lær mer"
 // content) that carries `of`. One function makes, lays out and takes away
@@ -12,7 +13,6 @@ import type {
   Box,
   Element,
   FigureElement,
-  FigureItem,
   FigureTemplate,
   PaletteColor,
   RichText,
@@ -21,6 +21,7 @@ import type {
   Step,
   TextElement,
 } from '../format/schema';
+import { CHART_FONT_SIZE, chartParts, emptyRow, isChart, removeSeries } from './charts';
 import { edgePoint, setLineEnds } from './groups';
 import { partSource } from './rows';
 
@@ -34,6 +35,8 @@ const NEW_ITEMS: Record<FigureTemplate, number> = {
   layers: 3,
   comparison: 2,
   timeAxis: 3,
+  bars: 3,
+  line: 3,
 };
 /** The size a new figure starts with, in stage pixels. */
 export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> = {
@@ -41,6 +44,8 @@ export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> =
   layers: { w: 900, h: 480 },
   comparison: { w: 1500, h: 560 },
   timeAxis: { w: 1500, h: 360 },
+  bars: { w: 1100, h: 620 },
+  line: { w: 1100, h: 620 },
 };
 /** The one part of a time axis that belongs to no row: the line itself. */
 const AXIS = 'axis:line';
@@ -87,13 +92,24 @@ export function wholeFigure(
 
 /** A new figure with an empty form, to stand in the box given. */
 export function newFigure(template: FigureTemplate, box: Box, newId: () => string): FigureElement {
-  return {
+  const figure: FigureElement = {
     id: newId(),
     type: 'figure',
     template,
-    items: Array.from({ length: NEW_ITEMS[template] }, () => ({ id: newId(), text: '' })),
+    items: [],
     box: { ...box, rotation: 0 },
   };
+  // A diagram starts with one series without a name, and no numbers.
+  if (isChart(figure)) figure.series = [{ id: newId(), name: '' }];
+  figure.items = Array.from({ length: NEW_ITEMS[template] }, () =>
+    isChart(figure) ? emptyRow(figure, newId()) : { id: newId(), text: '' },
+  );
+  return figure;
+}
+
+/** The size of the letters a figure has when the lecturer has chosen none. */
+export function figureFontSize(figure: FigureElement): number {
+  return figure.fontSize ?? (isChart(figure) ? CHART_FONT_SIZE : FONT_SIZE);
 }
 
 // ---------- What a figure consists of ----------
@@ -101,12 +117,21 @@ export function newFigure(template: FigureTemplate, box: Box, newId: () => strin
 /** What a part that is a shape is to look like. Everything named here is decided by the form. */
 type Look = Pick<
   ShapeElement,
-  'geometry' | 'fill' | 'stroke' | 'strokeWidth' | 'content' | 'fontSize' | 'align' | 'valign'
+  | 'geometry'
+  | 'fill'
+  | 'stroke'
+  | 'strokeWidth'
+  | 'content'
+  | 'fontSize'
+  | 'align'
+  | 'valign'
+  | 'points'
+  | 'dots'
 >;
 /** The same for a part that is text with nothing around it. */
 type Words = Pick<TextElement, 'content' | 'fontSize' | 'align' | 'valign'>;
 
-interface PartSpec {
+export interface PartSpec {
   part: string;
   /** A part is a shape with this look, or a text box with these words. */
   look?: Look;
@@ -154,6 +179,7 @@ export function figureParts(figure: FigureElement): PartSpec[] {
   const size = figure.fontSize ?? FONT_SIZE;
   const specs: PartSpec[] = [];
   if (n === 0) return specs;
+  if (isChart(figure)) return chartParts(figure);
 
   if (figure.template === 'process') {
     const down = figure.direction === 'down';
@@ -307,6 +333,8 @@ const LOOK_KEYS = [
   'fontSize',
   'align',
   'valign',
+  'points',
+  'dots',
 ] as const;
 
 const WORD_KEYS = ['content', 'fontSize', 'align', 'valign'] as const;
@@ -431,25 +459,26 @@ export function followTemplates(scene: Templated): boolean {
         if (el.of?.figure === figure.id) last = Math.max(last, index);
       });
       scene.elements.splice(last + 1, 0, ...made);
-      // A part that is new in a row comes in when the rest of the row does.
+      // A part that is new in a row (or, in a diagram, in a series) comes in
+      // when the rest of that row does, when the rest all comes in at one step.
       const fresh = new Set(made.map((el) => el.id));
+      const old = scene.elements.filter(
+        (other) => other.of?.figure === figure.id && !fresh.has(other.id),
+      );
       for (const el of made) {
-        const row = partSource(el.of!.part)?.item;
-        if (row === undefined) continue;
-        const mates = new Set(
-          scene.elements
-            .filter(
-              (other) =>
-                other.of?.figure === figure.id &&
-                !fresh.has(other.id) &&
-                partSource(other.of.part)?.item === row,
-            )
-            .map((other) => other.id),
-        );
-        for (const step of scene.timeline) {
-          const like = step.actions.find((action) => mates.has(action.target));
-          if (!like) continue;
-          step.actions.push({ ...like, target: el.id });
+        const source = partSource(el.of!.part);
+        for (const key of ['item', 'series'] as const) {
+          const mine = source?.[key];
+          if (mine === undefined) continue;
+          const mates = new Set(
+            old.filter((other) => partSource(other.of!.part)?.[key] === mine).map((o) => o.id),
+          );
+          const steps = scene.timeline.filter((step) =>
+            step.actions.some((action) => mates.has(action.target)),
+          );
+          if (steps.length !== 1) continue;
+          const like = steps[0]!.actions.find((action) => mates.has(action.target))!;
+          steps[0]!.actions.push({ ...like, target: el.id });
           break;
         }
       }
@@ -513,7 +542,9 @@ export function releaseFigure(scene: Templated, figureId: string): void {
  * row out of the form, so it does not come back. (An arrow is not a row: it
  * is there as long as the two it joins are. Nor is the line of a time axis.
  * And the text of an event is only a field of its row: that field is emptied,
- * and the event stays.)
+ * and the event stays.) In a diagram a bar deleted by itself takes its number
+ * out of the table, the name under a group of bars takes the row, and a
+ * curve takes its series; axes, numbers and the legend are drawn again.
  */
 export function forgetParts(scene: Pick<Scene, 'elements'>, ids: readonly string[]): void {
   for (const el of scene.elements) {
@@ -525,6 +556,14 @@ export function forgetParts(scene: Pick<Scene, 'elements'>, ids: readonly string
       delete figure.items.find((item) => item.id === source.item)?.detail;
       continue;
     }
+    const series = figure.series?.findIndex((one) => one.id === source.series) ?? -1;
+    if (source.kind === 'bar') {
+      const row = figure.items.find((item) => item.id === source.item);
+      if (row?.values && series >= 0) row.values[series] = null;
+      continue;
+    }
+    if (source.kind === 'curve') removeSeries(figure, series);
+    if (source.item === undefined) continue;
     figure.items = figure.items.filter((item) => item.id !== source.item);
   }
 }
@@ -538,13 +577,29 @@ export function writePart(scene: Pick<Scene, 'elements'>, el: Element, content: 
   if (el.of === undefined) return false;
   const figure = figureOf(scene, el);
   const source = partSource(el.of.part);
-  const item = figure?.items.find((row) => row.id === source?.item);
-  if (!item || !source || source.kind === 'arrow' || source.kind === 'dot') return false;
   const text = plainText(content)
     .split('\n')
     .map((row) => row.trim())
     .filter((row) => row !== '')
     .join('\n');
+  if (figure && isChart(figure)) {
+    // In a diagram the names can be written on the slide; the numbers are the table's.
+    const one = text.replace(/\n/g, ' ');
+    const named = figure.series?.find((series) => series.id === source?.series);
+    if (el.of.part === 'title:x' || el.of.part === 'title:y') {
+      const key = el.of.part === 'title:x' ? 'xTitle' : 'yTitle';
+      if (one) figure[key] = one;
+      else delete figure[key];
+    } else if (source?.kind === 'name' && named) named.name = one;
+    else if (source?.kind === 'label') {
+      const row = figure.items.find((item) => item.id === source.item);
+      if (!row) return false;
+      row.text = one;
+    } else return false;
+    return true;
+  }
+  const item = figure?.items.find((row) => row.id === source?.item);
+  if (!item || !source || source.kind === 'arrow' || source.kind === 'dot') return false;
   if (source.kind === 'body') {
     if (text) item.detail = text;
     else delete item.detail;
@@ -587,12 +642,14 @@ export function moveItem(figure: FigureElement, from: number, to: number): void 
 /**
  * One step for each row of the form, in the order of the form: everything
  * that shows a row comes in together, and with it the arrow that leads to
- * it. Other steps stay.
+ * it. Other steps stay. For a diagram it can be one step for each series
+ * instead: its bars or its curve, with its name in the legend.
  */
 export function stepPerItem(
   scene: Templated,
   figureId: string,
   newStep: (targets: string[]) => Step,
+  by: 'item' | 'series' = 'item',
 ): void {
   const figure = scene.elements.find(
     (el): el is FigureElement => el.id === figureId && isFigure(el),
@@ -600,10 +657,10 @@ export function stepPerItem(
   if (!figure) return;
   const parts = partsOf(scene, figureId);
   dropFromSteps(scene, new Set([figureId, ...parts.map((el) => el.id)]));
-  const of = (item: FigureItem): string[] =>
-    parts.filter((el) => partSource(el.of!.part)?.item === item.id).map((el) => el.id);
-  for (const item of figure.items) {
-    const targets = of(item);
+  const of = (one: { id: string }): string[] =>
+    parts.filter((el) => partSource(el.of!.part)?.[by] === one.id).map((el) => el.id);
+  for (const one of by === 'series' ? (figure.series ?? []) : figure.items) {
+    const targets = of(one);
     if (targets.length > 0) scene.timeline.push(newStep(targets));
   }
 }

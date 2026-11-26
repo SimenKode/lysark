@@ -23,7 +23,7 @@ export const FORMAT_NAME = 'lysark';
  *    fastened to other elements.
  * 11: figures that draw themselves from a form (process, layers, comparison).
  */
-export const FORMAT_VERSION = 12;
+export const FORMAT_VERSION = 13;
 
 export { STAGE } from './constants';
 
@@ -330,9 +330,18 @@ export const STROKE_WIDTH = { min: 1, max: 60 } as const;
 /**
  * "sign" is a rectangle with a point on one side, like a road sign that
  * points the way (PowerPoint's "homePlate"). It points right, or left when
- * `flipH` is set.
+ * `flipH` is set. "curve" is a line through many points (`points`), as in a
+ * line diagram; it is not drawn by hand, so it is not in the "Form" menu.
  */
-export const SHAPE_GEOMETRIES = ['rect', 'roundRect', 'ellipse', 'sign', 'line', 'arrow'] as const;
+export const SHAPE_GEOMETRIES = [
+  'rect',
+  'roundRect',
+  'ellipse',
+  'sign',
+  'line',
+  'arrow',
+  'curve',
+] as const;
 export const ShapeElement = z.object({
   ...elementBase,
   type: z.literal('shape'),
@@ -355,6 +364,14 @@ export const ShapeElement = z.object({
    */
   startAt: z.string().min(1).optional(),
   endAt: z.string().min(1).optional(),
+  /**
+   * For a curve: the points it runs through, each as fractions of the box
+   * (x to the right, y down). `null` is a break: the curve stops there and
+   * begins again at the next point.
+   */
+  points: z.array(z.tuple([z.number(), z.number()]).nullable()).optional(),
+  /** For a curve: a dot is drawn at each point. */
+  dots: z.boolean().optional(),
   content: RichText.optional(),
   fontSize: z.number().positive().optional(),
   levelScale: LevelScale.optional(),
@@ -393,7 +410,14 @@ export const VideoElement = z.object({
 });
 export type VideoElement = z.infer<typeof VideoElement>;
 
-export const FIGURE_TEMPLATES = ['process', 'layers', 'comparison', 'timeAxis'] as const;
+export const FIGURE_TEMPLATES = [
+  'process',
+  'layers',
+  'comparison',
+  'timeAxis',
+  'bars',
+  'line',
+] as const;
 export type FigureTemplate = (typeof FIGURE_TEMPLATES)[number];
 
 /**
@@ -409,8 +433,25 @@ export const FigureItem = z.object({
    * an event on a time axis: what it is.
    */
   detail: z.string().optional(),
+  /**
+   * For a row of a diagram: one number for each series, in the order of the
+   * figure's `series`. `null` where nothing is written.
+   */
+  values: z.array(z.number().nullable()).optional(),
+  /** For a row of a line diagram: where along the horizontal axis its points are. */
+  x: z.number().nullable().optional(),
 });
 export type FigureItem = z.infer<typeof FigureItem>;
+
+/** One series of a diagram: the bars of one colour, or one curve. */
+export const FigureSeries = z.object({
+  id: z.string().min(1),
+  /** Shown in the legend. No legend entry when empty. */
+  name: z.string(),
+  /** The theme's colour for a series in this place when absent. */
+  color: PaletteColor.optional(),
+});
+export type FigureSeries = z.infer<typeof FigureSeries>;
 
 /**
  * A figure that draws itself from a form the lecturer fills in. The element
@@ -431,6 +472,26 @@ export const FigureElement = z.object({
   color: PaletteColor.optional(),
   /** Stage pixels. The template's own size when absent. */
   fontSize: z.number().positive().optional(),
+  /**
+   * For a diagram (bars, line): its series. The rows of the form (`items`)
+   * are the names along the axis of a bar diagram (`text`), or the points
+   * of a line diagram (`x`), each with a number for every series (`values`).
+   */
+  series: z.array(FigureSeries).optional(),
+  /** For a diagram: what stands at the axes, with the unit the lecturer writes. */
+  xTitle: z.string().optional(),
+  yTitle: z.string().optional(),
+  /**
+   * For a diagram: where the axes begin and end, when the lecturer has said
+   * so. Otherwise they follow the numbers (and bars always include zero).
+   * The horizontal ones are for a line diagram only.
+   */
+  yMin: z.number().optional(),
+  yMax: z.number().optional(),
+  xMin: z.number().optional(),
+  xMax: z.number().optional(),
+  /** For a line diagram: a dot at each point. */
+  dots: z.boolean().optional(),
 });
 export type FigureElement = z.infer<typeof FigureElement>;
 

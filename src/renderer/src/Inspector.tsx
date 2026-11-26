@@ -1,6 +1,6 @@
 // The side panel: properties of the selected element, of the scene, and
 // the scene's steps.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ClipboardEvent, type ReactNode } from 'react';
 import { hasLogo } from '../../shared/api';
 import { newId, richText } from '../../shared/format/factory';
 import {
@@ -40,6 +40,16 @@ import {
   stepPerMark,
 } from '../../shared/layout/marks';
 import {
+  addSeries,
+  emptyRow,
+  formatNumber,
+  isChart,
+  parseNumber,
+  pasteTable,
+  removeSeries,
+} from '../../shared/layout/charts';
+import {
+  figureFontSize,
   figureOf,
   moveItem,
   partsOf,
@@ -429,35 +439,39 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
   const update = useElementUpdate(el.id);
   const project = useStore((s) => s.project);
   const theme = getTheme(project!);
-  const line = el.geometry === 'line' || el.geometry === 'arrow';
+  // A curve has a stroke and nothing else: no fill, no text, and it cannot become another shape.
+  const curve = el.geometry === 'curve';
+  const line = el.geometry === 'line' || el.geometry === 'arrow' || curve;
   return (
     <>
-      <Field label="Form">
-        <select
-          value={el.geometry}
-          onChange={(e) =>
-            update<typeof el>((s) => {
-              const next = e.target.value as typeof el.geometry;
-              const toLine = next === 'line' || next === 'arrow';
-              if (toLine) {
-                delete s.fill;
-                delete s.content;
-              } else if (line) {
-                s.fill = 'lilla';
-                s.box.h = Math.max(s.box.h, 120);
-                s.box.w = Math.max(s.box.w, 120);
-              }
-              s.geometry = next;
-            })
-          }
-        >
-          {SHAPE_GEOMETRIES.map((g) => (
-            <option key={g} value={g}>
-              {GEOMETRY_NAMES[g]}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {!curve && (
+        <Field label="Form">
+          <select
+            value={el.geometry}
+            onChange={(e) =>
+              update<typeof el>((s) => {
+                const next = e.target.value as typeof el.geometry;
+                const toLine = next === 'line' || next === 'arrow';
+                if (toLine) {
+                  delete s.fill;
+                  delete s.content;
+                } else if (line) {
+                  s.fill = 'lilla';
+                  s.box.h = Math.max(s.box.h, 120);
+                  s.box.w = Math.max(s.box.w, 120);
+                }
+                s.geometry = next;
+              })
+            }
+          >
+            {SHAPE_GEOMETRIES.filter((g) => g !== 'curve').map((g) => (
+              <option key={g} value={g}>
+                {GEOMETRY_NAMES[g]}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       {el.geometry === 'sign' && (
         <Field label="Spissen peker mot">
           <select
@@ -519,7 +533,7 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
           }
         />
       )}
-      {line && <LineEnds el={el} />}
+      {line && !curve && <LineEnds el={el} />}
       {!line && (
         <>
           <NumberField
@@ -680,11 +694,12 @@ function GroupFields({ scene, selected }: { scene: Scene; selected: Element[] })
   );
 }
 
-/** The form of a figure that draws itself: its rows, and how the figure is to look. */
-function FigureFields({ figure }: { figure: FigureElement }) {
+/** Changes a figure with a form, and keeps the whole of it chosen afterwards. */
+function useFigureChange(
+  figure: FigureElement,
+): (recipe: (f: FigureElement) => void, coalesce?: string) => void {
   const updateScene = useStore((s) => s.updateScene);
-  const [added, setAdded] = useState<string | null>(null);
-  const change = (recipe: (f: FigureElement) => void, coalesce?: string): void => {
+  return (recipe, coalesce) => {
     updateScene(
       (s) => {
         const f = s.elements.find((e) => e.id === figure.id);
@@ -700,6 +715,314 @@ function FigureFields({ figure }: { figure: FigureElement }) {
     const now = state.selection;
     if (all.length !== now.length || all.some((id) => !now.includes(id))) state.select(all);
   };
+}
+
+/** Makes a figure with a form into a free one, and leaves its parts chosen. */
+function releaseToFree(figure: FigureElement): void {
+  const state = useStore.getState();
+  const parts = partsOf(currentScene(state)!, figure.id).map((el) => el.id);
+  state.updateScene((s) => releaseFigure(s, figure.id));
+  state.select(parts);
+}
+
+/** One number of a diagram's table. It is written as in Norwegian, with a comma. */
+function NumberCell(props: {
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  onPaste?: (event: ClipboardEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+}) {
+  const shown = (value: number | null): string => (value === null ? '' : formatNumber(value));
+  const [text, setText] = useState(shown(props.value));
+  // What is being written stays as written; a number changed from elsewhere is shown.
+  useEffect(() => {
+    setText((now) => (parseNumber(now) === props.value ? now : shown(props.value)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.value]);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      aria-label={props.label}
+      aria-invalid={parseNumber(text) === undefined || undefined}
+      placeholder={props.placeholder}
+      value={text}
+      onPaste={props.onPaste}
+      onChange={(e) => {
+        setText(e.target.value);
+        const value = parseNumber(e.target.value);
+        if (value !== undefined && value !== props.value) props.onChange(value);
+      }}
+    />
+  );
+}
+
+/** The form of a diagram: the table of its numbers, and what stands at its axes. */
+function ChartFields({ figure }: { figure: FigureElement }) {
+  const updateScene = useStore((s) => s.updateScene);
+  const change = useFigureChange(figure);
+  const bars = figure.template === 'bars';
+  const series = figure.series ?? [];
+  const seriesName = (k: number): string => series[k]!.name.trim() || `Serie ${k + 1}`;
+  /** Several cells copied from a spreadsheet are laid into the table from the cell they are pasted in. */
+  const paste =
+    (row: number, column: number) =>
+    (event: ClipboardEvent<HTMLInputElement>): void => {
+      const text = event.clipboardData.getData('text/plain');
+      if (!/[\t\n]/.test(text.replace(/[\r\n]+$/, ''))) return;
+      event.preventDefault();
+      change((f) => pasteTable(f, row, column, text, () => newId('e')));
+    };
+  const title = (key: 'xTitle' | 'yTitle', label: string) => (
+    <Field label={label}>
+      <input
+        type="text"
+        value={figure[key] ?? ''}
+        onChange={(e) =>
+          change((f) => {
+            if (e.target.value) f[key] = e.target.value;
+            else delete f[key];
+          }, key)
+        }
+      />
+    </Field>
+  );
+  const end = (key: 'xMin' | 'xMax' | 'yMin' | 'yMax', label: string) => (
+    <label className="field field-number">
+      <span className="field-label">{label}</span>
+      <NumberCell
+        label={label}
+        placeholder="Automatisk"
+        value={figure[key] ?? null}
+        onChange={(value) =>
+          change((f) => {
+            if (value === null) delete f[key];
+            else f[key] = value;
+          }, key)
+        }
+      />
+    </label>
+  );
+  return (
+    <div className="group">
+      <p className="hint">
+        Diagrammet tegner seg selv fra tallene du skriver her. Du kan lime inn rett fra Excel. Dra i
+        rammen rundt diagrammet for å flytte det eller endre størrelsen.
+      </p>
+      <div className="chart-table-wrap">
+        <table className="chart-table">
+          <thead>
+            <tr>
+              <th scope="col">{bars ? 'Navn' : 'X'}</th>
+              {series.map((one, k) => (
+                <th key={one.id} scope="col">
+                  <input
+                    type="text"
+                    aria-label={`Navn på serie ${k + 1}`}
+                    placeholder={`Serie ${k + 1}`}
+                    value={one.name}
+                    onChange={(e) =>
+                      change((f) => {
+                        f.series![k]!.name = e.target.value;
+                      }, `series-name-${one.id}`)
+                    }
+                  />
+                </th>
+              ))}
+              <td />
+            </tr>
+          </thead>
+          <tbody>
+            {figure.items.map((row, r) => (
+              <tr key={row.id}>
+                <td>
+                  {bars ? (
+                    <input
+                      type="text"
+                      aria-label={`Navn på rad ${r + 1}`}
+                      value={row.text}
+                      onPaste={paste(r, 0)}
+                      onChange={(e) =>
+                        change((f) => {
+                          f.items[r]!.text = e.target.value;
+                        }, `row-name-${row.id}`)
+                      }
+                    />
+                  ) : (
+                    <NumberCell
+                      label={`X i rad ${r + 1}`}
+                      value={row.x ?? null}
+                      onPaste={paste(r, 0)}
+                      onChange={(value) =>
+                        change((f) => {
+                          f.items[r]!.x = value;
+                        }, `row-x-${row.id}`)
+                      }
+                    />
+                  )}
+                </td>
+                {series.map((one, k) => (
+                  <td key={one.id}>
+                    <NumberCell
+                      label={`${seriesName(k)}, rad ${r + 1}`}
+                      value={row.values?.[k] ?? null}
+                      onPaste={paste(r, k + 1)}
+                      onChange={(value) =>
+                        change((f) => {
+                          const item = f.items[r]!;
+                          item.values = Array.from(
+                            { length: f.series?.length ?? 0 },
+                            (_, i) => item.values?.[i] ?? null,
+                          );
+                          item.values[k] = value;
+                        }, `cell-${row.id}-${one.id}`)
+                      }
+                    />
+                  </td>
+                ))}
+                <td>
+                  <button
+                    type="button"
+                    className="danger"
+                    aria-label={`Fjern rad ${r + 1}`}
+                    onClick={() =>
+                      change((f) => {
+                        f.items.splice(r, 1);
+                      })
+                    }
+                  >
+                    Fjern
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {series.length > 1 && (
+            <tfoot>
+              <tr>
+                <td />
+                {series.map((one, k) => (
+                  <td key={one.id}>
+                    <button
+                      type="button"
+                      className="danger"
+                      aria-label={`Fjern serie ${k + 1}`}
+                      onClick={() => change((f) => removeSeries(f, k))}
+                    >
+                      Fjern
+                    </button>
+                  </td>
+                ))}
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+      <div className="button-row">
+        <button
+          type="button"
+          className="strong"
+          onClick={() => change((f) => void f.items.push(emptyRow(f, newId('e'))))}
+        >
+          Legg til rad
+        </button>
+        <button type="button" onClick={() => change((f) => addSeries(f, newId('e')))}>
+          Legg til serie
+        </button>
+      </div>
+      {(series.length > 1 || (bars && figure.items.length > 1)) && (
+        <div className="button-row">
+          {bars && figure.items.length > 1 && (
+            <button
+              type="button"
+              title="Søylene kommer inn rad for rad, hver med navnet sitt. Aksene står der fra start."
+              onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep))}
+            >
+              Ett steg per rad
+            </button>
+          )}
+          {series.length > 1 && (
+            <button
+              type="button"
+              title="Seriene kommer inn én etter én. Aksene står der fra start."
+              onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep, 'series'))}
+            >
+              Ett steg per serie
+            </button>
+          )}
+        </div>
+      )}
+      {title('yTitle', 'Tekst ved den loddrette aksen')}
+      {title('xTitle', 'Tekst ved den vannrette aksen')}
+      <p className="hint">
+        {bars
+          ? 'Søylene starter alltid på null. Aksen følger ellers tallene, om du ikke skriver noe her.'
+          : 'Aksene følger tallene, om du ikke skriver noe her.'}
+      </p>
+      {end('yMin', 'Laveste tall på den loddrette aksen')}
+      {end('yMax', 'Høyeste tall på den loddrette aksen')}
+      {!bars && end('xMin', 'Laveste tall på den vannrette aksen')}
+      {!bars && end('xMax', 'Høyeste tall på den vannrette aksen')}
+      {!bars && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={figure.dots === true}
+            onChange={(e) =>
+              change((f) => {
+                if (e.target.checked) f.dots = true;
+                else delete f.dots;
+              })
+            }
+          />
+          Vis punktene
+        </label>
+      )}
+      {series.map((one, k) => (
+        <Swatches
+          key={one.id}
+          label={`Farge på ${seriesName(k)}`}
+          colors={SERIES_ORDER}
+          value={one.color}
+          noneLabel="Temaets"
+          onChange={(value) =>
+            change((f) => {
+              if (value) f.series![k]!.color = value;
+              else delete f.series![k]!.color;
+            })
+          }
+        />
+      ))}
+      <NumberField
+        label="Skriftstørrelse"
+        value={figureFontSize(figure)}
+        min={10}
+        max={200}
+        onChange={(value) =>
+          change((f) => {
+            f.fontSize = value;
+          }, 'figure-size')
+        }
+      />
+      <div className="button-row">
+        <button type="button" onClick={() => releaseToFree(figure)}>
+          Gjør om til fri figur
+        </button>
+      </div>
+      <p className="hint">
+        En fri figur kan du flytte og endre del for del. Tabellen blir da borte for godt.
+      </p>
+    </div>
+  );
+}
+
+/** The form of a figure that draws itself: its rows, and how the figure is to look. */
+function FigureFields({ figure }: { figure: FigureElement }) {
+  const updateScene = useStore((s) => s.updateScene);
+  const [added, setAdded] = useState<string | null>(null);
+  const change = useFigureChange(figure);
   const name = ITEM_NAMES[figure.template];
   const comparison = figure.template === 'comparison';
   const axis = figure.template === 'timeAxis';
@@ -714,12 +1037,8 @@ function FigureFields({ figure }: { figure: FigureElement }) {
     : axis
       ? { label: 'Tekst til', hint: 'Tekst', rows: 2 }
       : undefined;
-  const release = (): void => {
-    const state = useStore.getState();
-    const parts = partsOf(currentScene(state)!, figure.id).map((el) => el.id);
-    state.updateScene((s) => releaseFigure(s, figure.id));
-    state.select(parts);
-  };
+  const release = (): void => releaseToFree(figure);
+  if (isChart(figure)) return <ChartFields figure={figure} />;
   return (
     <div className="group">
       <p className="hint">
@@ -852,7 +1171,7 @@ function FigureFields({ figure }: { figure: FigureElement }) {
       />
       <NumberField
         label="Skriftstørrelse"
-        value={figure.fontSize ?? 30}
+        value={figureFontSize(figure)}
         min={10}
         max={200}
         onChange={(value) =>

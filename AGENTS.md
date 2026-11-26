@@ -302,8 +302,8 @@ instead of choosing silently.
   the render code, the HTML player and the video export never look at
   groups or at what a line is fastened to. In the interface the word is
   "Grupper" and "Del opp gruppen" (the owner's choice, as in PowerPoint).
-- A figure with a form (process, layers, comparison, time axis) is drawn
-  by its form, not by hand (the owner's choice, 25.11.2026: "skjemaet
+- A figure with a form (process, layers, comparison, time axis, bar
+  diagram, line diagram) is drawn by its form, not by hand (the owner's choice, 25.11.2026: "skjemaet
   styrer"). The figure element (`type: 'figure'`) holds the form and a
   frame and shows nothing; what is seen are ordinary shapes (and, for the
   text of an event on a time axis, ordinary text boxes) that carry `of`,
@@ -321,6 +321,19 @@ instead of choosing silently.
   is a "boks", a "lag", a "kolonne" or a "hendelse". The template for
   events in order is called "Tidsakse" (the owner's choice, 26.11.2026):
   "Tidslinje" is the tab under the slide.
+- A diagram is such a figure whose form is a table of numbers (the
+  owner's choices, 26.11.2026: a small table in the properties that takes
+  what is pasted from a spreadsheet; standing bars and lines; a line
+  diagram's points stand where their x says). Its parts are worked out in
+  `src/shared/layout/charts.ts`: bars are rectangles, numbers and names
+  are text boxes, and a line is one shape of the kind "curve". A new
+  diagram has no numbers, and none are ever made up: axes follow the
+  numbers the lecturer writes, bars always include zero, and a point
+  that cannot be drawn truthfully is left out, never moved. Numbers are
+  read and written the Norwegian way (`parseNumber`, `formatNumber`).
+  For those who cannot see it, the numbers are in the HTML as a table
+  that is read and not shown. `charts.ts` takes only types from the
+  format, like `rows.ts`.
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

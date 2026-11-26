@@ -52,6 +52,8 @@ export const TEMPLATE_NAMES: Record<FigureTemplate, string> = {
   comparison: 'Sammenligning',
   // Not "Tidslinje": that is the tab under the slide (the owner's choice, 26.11.2026).
   timeAxis: 'Tidsakse',
+  bars: 'Søylediagram',
+  line: 'Linjediagram',
 };
 
 /** What one row of a figure's form is called: a box of a process, a layer, a column, an event. */
@@ -60,6 +62,8 @@ export const ITEM_NAMES: Record<FigureTemplate, string> = {
   layers: 'lag',
   comparison: 'kolonne',
   timeAxis: 'hendelse',
+  bars: 'rad',
+  line: 'rad',
 };
 
 export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {
@@ -69,6 +73,7 @@ export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {
   sign: 'Skilt (rektangel med spiss)',
   line: 'Linje',
   arrow: 'Pil',
+  curve: 'Kurve',
 };
 
 function shorten(text: string, max = 40): string {

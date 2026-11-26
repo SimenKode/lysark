@@ -207,6 +207,11 @@ button.ls-mark { cursor: pointer; font-family: inherit; }
 /* The frame of a figure that draws itself from a form: nothing to see, and nothing to press. */
 .ls-el-figure { pointer-events: none; }
 .ls-figure { width: 100%; height: 100%; }
+/* The numbers of a diagram, for those who cannot see it: read, and not shown. */
+.ls-figure-table {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 .ls-figure-empty {
   display: flex; align-items: center; justify-content: center; text-align: center;
   border: 3px dashed currentColor; opacity: 0.55; font-size: 28px; font-style: italic;

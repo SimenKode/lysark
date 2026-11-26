@@ -2631,6 +2631,78 @@ er ikke brukt; det er rekkefølgen i fila som er kontrollert.
 **Kjent:** hendelsene står med lik avstand, ikke etter hvor lang tid
 det er mellom dem. Teksten krymper ikke når den er for lang.
 
+### 6.37 Søyle- og linjediagram: fire spørsmål og svar (26.11.2026)
+
+Før diagrammene bygges, spurte jeg om fire ting. Eierens svar:
+
+| Spørsmål | Svar |
+| --- | --- |
+| Hvordan vil du skrive inn tallene? | **Liten tabell** i egenskapene, der du også kan lime inn rett fra Excel (anbefalt) |
+| Linjediagram: hva står langs den vannrette aksen? | **Tall, plassert etter verdi** (anbefalt). Søylediagram har navn langs aksen |
+| Hvilke typer i første runde? | **Stående søyler og linje** (anbefalt). Liggende og stablede kan komme etterpå |
+| Diagrammer i PowerPoint-fila du importerer? | **Gjør om til Lysark-diagram.** (Jeg anbefalte bilde, som nå.) Søyle- og linjediagram leses inn med tallene; andre typer blir fortsatt bilder. Gjøres etter at selve diagrammene er laget |
+
+To ting valgte jeg selv, etter vanlig skikk, og sier fra om:
+søyler starter alltid på null, og et linjediagram velger selv hvor aksene
+starter og slutter (du kan overstyre laveste og høyeste verdi).
+
+### 6.38 Søyle- og linjediagram er bygget (26.11.2026)
+
+**Bygget:**
+
+- **«Sett inn → Figur → Søylediagram»** og **«Linjediagram»**. Et nytt
+  diagram har akser og ingenting annet: ingen tall er funnet på.
+- **Tabellen i egenskapene.** Søylediagram: en kolonne med navn, og en
+  kolonne med tall for hver serie. Linjediagram: en kolonne med x, og en
+  kolonne for hver serie. Tall skrives med komma eller punktum. Det som
+  ikke er et tall, får rød ramme og endrer ingenting.
+- **Lim inn fra Excel.** Limer du inn flere celler, legges de inn fra
+  cellen du står i, og tabellen får flere rader og serier ved behov. Er
+  første linje uten tall, blir den navn på seriene.
+- **Aksene** velger runde tall selv (1, 2 eller 5 ganger en tierpotens).
+  Søyler har alltid null med. «Laveste tall» og «Høyeste tall» kan
+  settes for hånd. Tallene langs aksen skrives med komma.
+- **Linjediagram:** punktene står der x- og y-tallene sier, ikke med lik
+  avstand. Mangler et tall, brytes linja der. Et punkt utenfor en akse
+  du har satt selv, tegnes ikke på feil sted; linja brytes. «Vis
+  punktene» setter en prikk i hvert punkt. Linjene er rette mellom
+  punktene.
+- **Tekst ved aksene** (med enhet, slik du skriver den), og en
+  forklaring øverst til høyre med farge og navn for hver serie som har
+  navn. Fargene er temaets seriefarger, og kan velges per serie.
+- **Steg:** «Ett steg per rad» (søyler) og «Ett steg per serie». Aksene
+  og tallene står der fra start. En søyle eller serie som kommer til
+  etterpå, kommer inn sammen med sine.
+- **På lysarket:** navn under søylene, navn i forklaringen og tekst ved
+  aksene kan skrives med dobbeltklikk. Tallene skrives bare i tabellen.
+  Slettes en søyle alene, tømmes tallet. Slettes navnet under en
+  søylegruppe, går raden. Slettes en kurve, går serien.
+- **For den som ikke ser diagrammet:** tallene ligger i HTML-fila som en
+  tabell som leses opp, men ikke vises.
+- **Bygd av vanlige deler,** som de andre malene: søylene er
+  rektangler, tallene og navnene er tekstbokser, og en linje er én ny
+  form, «kurve». «Gjør om til fri figur» virker derfor som før, og
+  bevegelsene som kommer (vokse, tegne strek), kan brukes på dem.
+- **En hel figur med skjema har nå én ramme** når den er valgt, ikke en
+  ramme rundt hver del. Det gjelder alle malene.
+- **Formatet** er 13.
+
+**Prøvd på Linux Mint:** 18 nye enhetstester (`tests/charts.test.ts`) og
+3 prøver i det bygde programmet uten vindu (`tests/e2e-charts.test.ts`):
+skrive tall for hånd, lime inn det et regneark gir, to serier, tekst
+ved aksene, steg sett i forhåndsvisningen, tabellen som leses opp,
+linjediagram med prikker og en akse satt for hånd, fjerne en serie, og
+fri figur med angre. Tre bilder er sett på.
+
+**Ikke prøvd:** Windows. Å lime inn fra et ekte Excel eller LibreOffice
+Calc (testen sender den samme teksten som et regneark legger på
+utklippstavla). Et diagram i en videofil. Mange serier eller mange
+rader. En skjermleser er ikke brukt.
+
+**Kjent:** radene kan ikke flyttes opp og ned i tabellen. Lange navn
+under søylene brytes eller går over hverandre; skriften krymper ikke.
+Liggende og stablede søyler, kake- og punktdiagram finnes ikke.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

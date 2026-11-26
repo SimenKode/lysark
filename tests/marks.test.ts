@@ -339,6 +339,6 @@ describe('marks in the format', () => {
     const old = JSON.parse(JSON.stringify(sampleProject().project)) as { version: number };
     old.version = 7;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(12);
+    expect(FORMAT_VERSION).toBe(13);
   });
 });

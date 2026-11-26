@@ -34,6 +34,7 @@ import {
   type Theme,
 } from '../theme/theme';
 import { labelLineStart, markNumber, markStyle, marksOf, pictureOf } from '../layout/marks';
+import { chartTable, isChart } from '../layout/charts';
 import { rowOrder } from '../layout/rows';
 import { classifyLink, renderRichText } from './richtext';
 import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
@@ -240,6 +241,45 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
         .map((p) => `${p[0]},${p[1]}`)
         .join(' ');
       root.appendChild(svg(doc, 'polygon', { points, fill: lineColor }));
+    }
+    wrap.appendChild(root);
+    return wrap;
+  }
+
+  if (el.geometry === 'curve') {
+    // One line through the points, broken where a point is missing. A point
+    // that stands alone is a dot, or it would not be seen.
+    const runs: Array<Array<[number, number]>> = [];
+    let run: Array<[number, number]> = [];
+    for (const point of el.points ?? []) {
+      if (point) run.push([point[0] * w, point[1] * h]);
+      else if (run.length > 0) {
+        runs.push(run);
+        run = [];
+      }
+    }
+    if (run.length > 0) runs.push(run);
+    const at = (value: number): string => String(Number(value.toFixed(2)));
+    for (const one of runs) {
+      if (one.length > 1) {
+        root.appendChild(
+          svg(doc, 'polyline', {
+            points: one.map((p) => `${at(p[0])},${at(p[1])}`).join(' '),
+            fill: 'none',
+            stroke: lineColor,
+            'stroke-width': sw,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round',
+          }),
+        );
+      }
+      if (el.dots || one.length === 1) {
+        for (const p of one) {
+          root.appendChild(
+            svg(doc, 'circle', { cx: at(p[0]), cy: at(p[1]), r: sw * 1.4 + 2, fill: lineColor }),
+          );
+        }
+      }
     }
     wrap.appendChild(root);
     return wrap;
@@ -861,14 +901,46 @@ function renderLegend(ctx: RenderContext, scene: Scene, el: LegendElement): Node
  * when the form is empty, does it say where it is.
  */
 function renderFigure(ctx: RenderContext, el: FigureElement): Node {
-  const frame = ctx.doc.createElement('div');
+  const { doc } = ctx;
+  const frame = doc.createElement('div');
   frame.className = 'ls-figure';
-  frame.setAttribute('aria-hidden', 'true');
   if (ctx.mode === 'edit' && el.items.length === 0) {
+    frame.setAttribute('aria-hidden', 'true');
     frame.classList.add('ls-figure-empty');
     frame.style.fontFamily = ctx.theme.fonts.body;
     frame.textContent = ctx.strings.figureEmpty;
+    return frame;
   }
+  if (!isChart(el) || ctx.mode === 'edit') {
+    frame.setAttribute('aria-hidden', 'true');
+    return frame;
+  }
+  // A diagram says nothing to those who cannot see it: its numbers are here
+  // as a table that is read and not shown.
+  const { head, rows } = chartTable(el);
+  if (!rows.some((row) => row.slice(1).some((cell) => cell !== ''))) {
+    frame.setAttribute('aria-hidden', 'true');
+    return frame;
+  }
+  // A table does not shrink to nothing by itself, so it is kept in a box that does.
+  const read = doc.createElement('div');
+  read.className = 'ls-figure-table';
+  const table = doc.createElement('table');
+  const line = (cells: string[], tag: 'th' | 'td'): void => {
+    const tr = doc.createElement('tr');
+    cells.forEach((text, i) => {
+      const cell = doc.createElement(tag === 'td' && i === 0 ? 'th' : tag);
+      if (tag === 'th') cell.setAttribute('scope', 'col');
+      else if (i === 0) cell.setAttribute('scope', 'row');
+      cell.textContent = text;
+      tr.appendChild(cell);
+    });
+    table.appendChild(tr);
+  };
+  if (head.some((text) => text !== '')) line(head, 'th');
+  for (const row of rows) line(row, 'td');
+  read.appendChild(table);
+  frame.appendChild(read);
   return frame;
 }
 

@@ -683,7 +683,7 @@ export function Stage() {
     const state = useStore.getState();
     if (el.type === 'text') {
       state.setEditing({ elementId: el.id });
-    } else if (el.type === 'shape' && !isLine(el)) {
+    } else if (el.type === 'shape' && !isLine(el) && el.geometry !== 'curve') {
       if (!el.content) {
         state.updateScene((s) => {
           const target = s.elements.find((e) => e.id === el.id);
@@ -1041,6 +1041,9 @@ export function Stage() {
               )}
               {scene.elements
                 .filter((el) => selection.includes(el.id))
+                // A whole figure with a form is one thing to the lecturer: the frame round
+                // it is shown, not a frame round each of its many parts.
+                .filter(() => !wholeFigure(scene, selection))
                 .map((el) => {
                   const box = boxOf(el);
                   if (isLine(el)) {

@@ -88,5 +88,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 10) project.version = 11;
   // 11 -> 12 only added things (the time axis among the figures with a form).
   if (project.version === 11) project.version = 12;
+  // 12 -> 13 only added things (bar and line diagrams, and the curve they draw).
+  if (project.version === 12) project.version = 13;
   return project;
 }

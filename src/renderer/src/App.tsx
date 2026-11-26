@@ -283,16 +283,19 @@ function InsertBar() {
         </button>
         {menu === 'shape' && (
           <div className="menu" role="menu">
-            {(Object.keys(GEOMETRY_NAMES) as ShapeElement['geometry'][]).map((g) => (
-              <button
-                key={g}
-                type="button"
-                role="menuitem"
-                onClick={() => add(() => newShapeElement(scene, theme, g), false)}
-              >
-                {GEOMETRY_NAMES[g]}
-              </button>
-            ))}
+            {(Object.keys(GEOMETRY_NAMES) as ShapeElement['geometry'][])
+              // A curve is drawn by a diagram, not put in by hand.
+              .filter((g) => g !== 'curve')
+              .map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => add(() => newShapeElement(scene, theme, g), false)}
+                >
+                  {GEOMETRY_NAMES[g]}
+                </button>
+              ))}
           </div>
         )}
       </div>
