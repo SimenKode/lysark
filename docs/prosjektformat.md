@@ -52,6 +52,27 @@ stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
 
+## Format 17: tabeller fra PowerPoint slik de var
+
+En tabell kan ha med seg det PowerPoint visste om den, så den blir like
+høy og bred som der. Alt er valgfritt; en tabell uten disse feltene
+følger temaet som før.
+
+- `rowHeights` på tabellen: den minste høyden på hver rad, i piksler på
+  lysarket. En rad blir høyere når teksten trenger det.
+- `lineHeight` på tabellen: linjehøyden, som et tall ganger
+  skriftstørrelsen.
+- `spaceBefore` på tabellen: luften over et avsnitt på hvert av de fem
+  listenivåene, som et tall ganger skriftstørrelsen i cella. Det første
+  avsnittet i en celle har aldri luft over seg.
+- `scale` på en celle: skriftstørrelsen i cella, som et tall ganger
+  tabellens. Feltet «Skriftstørrelse» endrer derfor fortsatt hele
+  tabellen.
+- `align` (`left`, `center`, `right`) og `valign` (`top`, `middle`,
+  `bottom`) på en celle. Uten dem står teksten oppe til venstre.
+
+Eldre prosjekter løftes uten endring.
+
 ## Format 16: bevegelser, og steg som markerer, tar bort og zoomer
 
 ```ts

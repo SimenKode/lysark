@@ -221,6 +221,18 @@ instead of choosing silently.
   The video export lays it on top of the picture of the slide itself
   (`src/shared/render/cameraDraw.ts`), and the interface draws the same
   circle with CSS; change the two together.
+- A recording is saved in the background (the owner, 26.11.2026). The
+  recording window closes at once, and the job lays its takes on the
+  project as it is when the job is done, as one change
+  (`src/renderer/src/actions.ts`). While it runs the lecturer can edit;
+  a new recording, the exports, another project and closing the program
+  wait, and say why. The selection is never changed under the
+  lecturer's hands.
+- Whatever stops the videos on a slide in the recording window must
+  leave the camera circle alone (`videos()` in `Recorder.tsx`). On
+  26.11.2026 the circle turned out to have stood still after every
+  first change of slide for that reason; the film itself was never
+  touched.
 - FFmpeg is a separate program that Lysark starts (`src/main/ffmpeg.ts`),
   never linked in and never in git. One fixed build is fetched by
   `tools/fetch-ffmpeg.mjs` with its checksum checked, placed in

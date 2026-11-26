@@ -3373,6 +3373,105 @@ valgte det ikke.
   feil: ekte formler, SmartArt, flere diagramtyper, venndiagram og
   årsak-virkning, håndlaget stil.
 
+### 6.52 Kamerasirkelen som sto stille, og lagring av opptak i bakgrunnen (26.11.2026)
+
+Bygget av en Opus-agent etter designet mitt, og sett over av meg.
+
+**Kamerasirkelen. Årsaken er funnet, og den var en annen enn jeg
+trodde.** Innlesingsvinduet stanser alle videoer på lysarket når du går
+videre, slik at en film du har spilt, ikke fortsetter på neste lysark.
+Sirkelen med ansiktet ditt er også en video, og lå i samme område. Den
+ble derfor stanset ved første lysarkskifte, og ingenting startet den
+igjen. Pause og «Ta om dette lysarket» stanset den også. Filmen som
+lagres, ble aldri berørt; derfor var den ferdige videoen jevn, slik du
+sa.
+
+Rettet: sirkelen holdes utenfor det som stanses, og starter seg selv
+igjen om noe likevel skulle stanse den.
+
+**Målt med prøvekameraet (20 bilder i sekundet), over 0,8 sekunder:**
+
+| Når | Før | Etter |
+| --- | --- | --- |
+| Før første lysarkskifte | 16 bilder | 16 |
+| Etter første skifte | **0** | 16 |
+| Etter siste skifte | **0** | 16 |
+| Under et skifte der vinduet ble holdt opptatt i 0,8 s | **0** | 16 |
+
+**Også funnet og rettet:** trykket du pil mens vinduet var opptatt,
+kunne ansiktet i videoen komme opptil 0,8 sekunder foran stemmen på det
+lysarket. Nå begynner filmen til hvert lysark der lyden gjør det (målt:
+mellom 12 millisekunder bak og 6 foran). Lyden gjøres ferdig i en egen
+tråd mens du leser, ikke i det du trykker pil. Bildene til lysarkene
+rett foran og bak hentes på forhånd.
+
+**Ikke kjent:** ingenting er prøvd med et ekte kamera. Et vindu som
+ikke vises, tegner bare omtrent én gang i sekundet, så hva som faktisk
+kommer på skjermen, er ikke målt. Det som er vist, er at sirkelen får
+bilder hele tiden, og at det som stanset den, er borte.
+
+**Lagring i bakgrunnen.** «Ferdig» lukker innlesingsvinduet med en gang.
+Øverst står «Lagrer opptaket» til det er ferdig. Imens kan du redigere
+lysark, skrive manus og lagre prosjektet. Dette venter, og sier
+«Opptaket lagres. Vent til det er ferdig.»: «Les inn», «Ta om herfra»,
+«Eksporter HTML», «Eksporter video», og nytt, åpne og importer. Prøver
+du å lukke programmet, blir det stående, med meldingen «Opptaket lagres
+ennå. Lysark avslutter ikke før det er ferdig; prøv igjen om litt.»
+
+Når opptaket er ferdig, legges det på lysarkene slik prosjektet er da.
+Ett «Angre» tar bort hele opptaket og beholder det du gjorde imens.
+Slettet du et lysark i mellomtiden, sier meldingen fra om at det du sa
+der, ikke er lagt på. Programmet hopper ikke lenger til siste lysark og
+fanen «Lyd» når opptaket er ferdig.
+
+**Prøvd på Linux Mint:** to nye prøver i det bygde programmet uten
+vindu (`tests/e2e-camera-change.test.ts` og
+`tests/e2e-background.test.ts`), og hele testsamlingen: 585 besto, 1
+hoppes over som før. Under belastning feilet to tidsmålinger i testen
+for fritt opptak i én kjøring; de besto alene.
+
+**Ikke prøvd:** Windows. Et ekte kamera og en ekte mikrofon. Et langt
+opptak.
+
+**Kjent:** henger lagringen seg (for eksempel FFmpeg), kan programmet
+ikke lukkes på vanlig måte. Det rettes i neste del.
+
+### 6.53 Tette tabeller fra PowerPoint, og titler som ble dekket (26.11.2026)
+
+Bygget av en Opus-agent på en egen gren, og flettet inn etter at jeg
+hadde sett på bildene.
+
+**Hva som var galt:** en importert tabell brukte temaets linjehøyde og
+luft mellom avsnitt, ikke PowerPoints, og hele tabellen fikk én
+skriftstørrelse. Radhøyder og justering ble ikke lest. Lange ord fikk
+ikke brytes, så de gikk inn i nabocella.
+
+**Nå:** radhøyder, linjeavstand, justering og skriftstørrelsen i hver
+celle hentes fra PowerPoint (format 17). Er tabellen likevel høyere enn
+plassen den hadde, krympes all teksten likt, ned til 7 punkt. Går det
+ikke da heller, sier importrapporten fra. Lange ord brytes inne i
+cella; korte, som «B10», holdes hele.
+
+| Lysark | Før | Nå |
+| --- | --- | --- |
+| Stål 4 | Nederste rad utenfor lysarket | Hele tabellen på lysarket, lik PDF-en (sett på av meg) |
+| Praktisk HMS 35 | Brødteksten i 14 punkt, overskriften over en ekstra linje | 18 punkt som i PowerPoint; slutter over bildene |
+| Trevirke 17 | Et langt ord gikk inn i nabocella | Ordet brytes i cella |
+| Trevirke 19 | For høy | Fyller plassen sin |
+| Betong 33 og 42 | Siste bokstav i tittelen dekket av et bilde | Ikke dekket |
+
+**Titlene blir 5 prosent mindre** ved import fra en PowerPoint-fil satt
+i Calibri. Lysarks tittelskrift er litt bredere (målt på 273 titler mot
+PDF-ene). Det gjelder alle innholdstitler, ikke bare de to.
+
+**Prøvd på Linux Mint:** importen av alle forelesningene, sammenlignet
+før og etter (bare de 12 tabellene og titlene er endret), og bilder av
+lysarkene mot PDF-ene.
+
+**Ikke tatt med:** tabellstilen fra PowerPoint (rammer rundt cellene,
+annenhver rad farget, fet første kolonne). På Betong 42 ligger en
+tekstlinje fortsatt delvis under et bilde.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
