@@ -342,6 +342,23 @@ instead of choosing silently.
   is not made over: where its points stand would have to be made up.
   A presentation that keeps its look keeps its charts in the picture of
   the page; the owner chose that too (26.11.2026).
+- A figure in a "Lær mer" box is fetched from a slide (the owner's
+  choice, 25.11.2026): it is made on a slide, with the tools that are
+  there, and the builder puts a copy of it in the box (a block of the
+  kind `figure`; `figuresOn` and `fetchFigure` in
+  `src/shared/layout/fetch.ts`). What can be fetched is what the lecturer
+  made as one thing: a group (a figure with a form is one) and a picture
+  with marks. The copy is its own: the slide can change or go without it,
+  and "Hent på nytt" replaces it. It is only drawn: it has no steps, and
+  the format lets nothing in it carry "Lær mer" content, and no video or
+  "+ Lær mer" button (`DrawnElement`). It is drawn by the code that draws
+  a slide (`renderDrawing` in `src/shared/render/scene.ts`), in stage
+  pixels, and made to fit the box (`fitDrawings` in
+  `src/shared/render/more.ts`). The box drawn on the slide for the video
+  fits it when the box is placed, never later, so the picture does not
+  wait for the window. The text rules of a box stop at the box's own text
+  and tables (`:is(.lm-text, .lm-table)` in `MORE_CSS`), so that a figure
+  in it looks as on the slide; keep them from reaching into `.lm-stage`.
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered
@@ -364,6 +381,15 @@ instead of choosing silently.
   Never show windows on the owner's screen from tests. A window that is
   not shown draws only about once a second, so anything in those tests
   that follows an animation needs a generous timeout.
+- A test must never put anything on the owner's screen, an error box
+  included. An error in the main process ends the program when it runs
+  without windows, instead of showing Electron's box that waits for an
+  answer (`HIDDEN` in `src/main/index.ts`; `tests/e2e-quiet.test.ts`
+  checks it). On 26.11.2026 such a box stood on the owner's screen five
+  times before this was in place: a test's clean-up closed the main
+  window just as the preview was going. When a clean-up hangs, look for
+  the process that is left (`pgrep -f 'user-data-dir=/tmp/[l]ysark-'`),
+  see what it shows (`wmctrl -lp`), and stop it by its number.
 - `npm run fetch:ffmpeg` fetches FFmpeg into `vendor/ffmpeg/` (about
   350 MB of downloads, once). `tests/e2e-sound.test.ts` needs it and is
   skipped without it; the `dist:*` scripts fetch it when it is missing.
@@ -374,9 +400,17 @@ instead of choosing silently.
   `tests/real-screens.test.ts` saves a picture of every scene of one of
   them (see the comment at its top). Compare against the owner's own PDF
   exports before and after any change to the importer.
+  `eksempler/fra-powerpoint/diagram.pptx` is not a lecture: PowerPoint
+  made it in the Windows VM, with a chart of test numbers on each slide
+  (`tools/vm/diagrammer.ps1`), and `tests/real-charts.test.ts` says what
+  the importer is to make of each. Make it anew when the importer is to
+  be tried on other charts.
 
 - `tools/windows-vm.py` drives the owner's Windows 11 test VM; read its
   header before using it, and never press Enter on text you did not type.
+  The VM has no way out but its screen, so a file is fetched from it by
+  showing it there as pictures that `tools/windows-vm.py read` reads off
+  screenshots (`tools/vm/ut.ps1`).
   The owner has said (22.11.2026) that you may set up a microphone in
   that VM yourself (the libvirt domain's sound input), so that recording
   can be tried on Windows. That leave covers the microphone and nothing

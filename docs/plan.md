@@ -12,7 +12,7 @@ prøvd på både Linux Mint og Windows 11.
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
-| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse) og søyle- og linjediagram er bygget. Gjenstår: figur i «Lær mer» og bevegelsene |
+| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse), søyle- og linjediagram og figur i «Lær mer» er bygget. Gjenstår: bevegelsene, som venter på svar fra eieren |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML
@@ -432,11 +432,20 @@ Det som gjenstår av leveranse 4, i denne rekkefølgen:
    egenskapene, og diagrammer fra PowerPoint gjøres om ved import til
    USN-stil (historikken, 6.37 til 6.39). Liggende og stablede søyler,
    venndiagram og årsak-virkning kommer ved behov.
-2. **Figur i «Lær mer»** (egen del i byggeren): eieren valgte 25.11.2026
-   at figuren **hentes fra et lysark**. Den lages på et lysark, og i
-   byggeren velger man «Figur» og peker på den; en kopi legges i boksen.
+2. **Figur i «Lær mer» er bygget** 26.11.2026 (historikken, 6.41),
+   slik eieren valgte 25.11.2026: figuren **hentes fra et lysark**. I
+   byggeren velger man «Figur» og peker på en figur med skjema, en
+   gruppe eller et bilde med merker; en kopi legges i boksen. Åpent:
+   om boksen skal bli bredere når den har en figur (historikken, 6.43).
 3. **Bevegelser:** tone inn, gli inn, tegne strek, vokse, markere, telle
-   opp, forsvinne, og zoome inn på et utsnitt.
+   opp, forsvinne, og zoome inn på et utsnitt. Ikke påbegynt:
+   spørsmålene om hvordan de velges, er stilt 26.11.2026 og venter på
+   svar.
+
+Diagramimporten fra PowerPoint er 26.11.2026 prøvd på diagrammer
+PowerPoint selv har laget (historikken, 6.40). Åpent: om et linjediagram
+skal kunne ha navn langs aksen, slik PowerPoints vanlige linjediagram
+har (historikken, 6.43).
 
 Ikke laget for fri figur: grupper og koblingslinjer fra PowerPoint
 kommer inn som løse former, som før, og en linje kan ikke ha knekk.

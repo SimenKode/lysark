@@ -85,7 +85,8 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 
 Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
 fri figur (6.32), fire maler (6.33 og 6.36) og søyle- og linjediagram
-(6.38 og 6.39) er bygget. Figur i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
+(6.38 og 6.39) og figur i «Lær mer» (6.41) er bygget. Bevegelsene
+gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2753,6 +2754,195 @@ import leser dem, men VM-en var i bruk til annet arbeid da jeg kom dit.
 Jeg skrev og klikket ingenting der, og tok CD-avbildningen ut igjen.
 Filene i testene er skrevet etter hvordan jeg kjenner formatet, ikke
 etter en fil fra PowerPoint.
+
+### 6.40 Diagramimporten prøvd på diagrammer PowerPoint selv har laget (26.11.2026)
+
+**Startmeldingen.** Feltene «Det jeg har funnet siden sist» og «Innspill
+til produktet» sto tomme («(skriv her)»), så det var ingenting å føre
+inn og ingenting å rette. Jeg gikk rett på «Neste steg» i HANDOFF.md.
+Det som står under «Det jeg trenger fra deg», er altså fortsatt ikke
+prøvd av eieren.
+
+**VM-en var ledig** (bare skrivebordet på skjermen), så hullet fra 6.39
+ble tettet.
+
+**Slik ble det gjort:**
+
+- Et skript (`tools/vm/diagrammer.ps1`) lar PowerPoint i VM-en lage en
+  presentasjon med 13 lysark og ett diagram på hvert. Ett er urørt, slik
+  PowerPoint lager det. De andre har prøvetall («A», «B», «C», 1, 2, 3).
+- **Fila måtte ut av VM-en.** Det finnes ingen vei ut: CD-en er bare til
+  å lese, og VM-en når ikke verten. Jeg laget en: fila vises på
+  VM-skjermen som bilder av fargede ruter (`tools/vm/ut.ps1`), og
+  `tools/windows-vm.py read` leser den av skjermbilder, med en kontrollsum
+  i hvert bilde. Fila (218 kB, pakket til 105 kB) kom ut hel i tre
+  bilder, alle de fem gangene skriptet ble kjørt.
+- Fila ligger i `eksempler/fra-powerpoint/diagram.pptx`, utenfor git, og
+  `tests/real-charts.test.ts` importerer den og sier hva hvert lysark
+  skal bli.
+
+**Resultatet. Importen trengte ingen endring:**
+
+| Lysark | Diagram i PowerPoint | I Lysark |
+| --- | --- | --- |
+| 1 | Stående søyler, urørt (tre serier, fire navn) | Søylediagram, alle tolv tallene riktige |
+| 2 | Stående søyler, to serier, et hull, et negativt tall, overskrift, aksetekster, høyeste tall 10 | Søylediagram med alt dette |
+| 3 | Linjediagram med navn langs aksen | **Ikke gjort om** (med vilje, se under) |
+| 4 | Linjediagram med tall langs aksen, et hull | Linjediagram, punktene på 0, 1 og 4 |
+| 5 | Det samme med prikker, overskrift og aksetekster | Linjediagram med prikker og tekstene |
+| 6 | Punktdiagram med rette linjer, x fra 0 til 8 | Linjediagram med aksen fra 0 til 8 |
+| 7 | Punktdiagram med linjer uten prikker | Linjediagram uten prikker |
+| 8 | Punktdiagram med glattede linjer | Linjediagram (linjene blir rette) |
+| 9 til 13 | Punkter uten linjer, stablede søyler, liggende søyler, kake, areal | Ikke gjort om |
+
+**To ting dette viste, som du bør vite:**
+
+- **Et diagram som ikke gjøres om, forsvinner fra lysarket.** PowerPoint
+  lagrer ikke noe bilde av diagrammene sine, så det finnes ingenting å
+  falle tilbake på. Lysarket får merknaden «Diagrammet følger ikke med og
+  må lages på nytt». Slik har det alltid vært; det nye er at jeg nå har
+  sett det på en ekte fil. Med «Behold utseendet» ligger diagrammet i
+  bildet bak, som før.
+- **PowerPoints vanlige linjediagram har navn langs aksen** («Kategori 1»
+  og så videre) og gjøres derfor ikke om. Du valgte i 6.37 at et
+  linjediagram i Lysark har tall langs aksen, plassert etter verdi.
+  Skriver foreleseren tall i første kolonne (årstall, for eksempel),
+  gjøres det om. Dette er spørsmål 2 i 6.43.
+
+**Prøvd:** PowerPoint 16.0 (bygg 20625) i VM-en laget fila. Importen ble
+kjørt på Linux Mint, av testen, som sammenligner tallene. Fila er også
+importert i programmet selv (uten vindu, «Gjør om til USN-stil»), og
+bilder av lysark 1, 2, 5 og 6 er sett på: søylene, hullet, det negative
+tallet, linjene, prikkene, aksene og tekstene står som de skal.
+**Ikke prøvd:** importen kjørt i Lysark på Windows (koden er den samme,
+men det er ikke gjort), et diagram limt inn fra Excel i PowerPoint, et
+diagram fra en eldre PowerPoint-utgave, og et diagram fra Keynote eller
+Google Slides.
+
+**I VM-en ligger igjen:** `lysark-test\diagram\` under brukermappa
+(presentasjonen og en logg) og `lysark-ut.zip` i den midlertidige mappa.
+Et tomt Excel-vindu sto åpent etter skriptet; det lukket jeg. CD-en er
+tatt ut og avbildningen slettet.
+
+**Skriptet feilet fire ganger før det virket.** Hver gang lå det i
+skriptet mitt, ikke i Lysark: arket med tallene til forrige diagram sto
+åpent; PowerShell nektet å skrive et tall i en celle etter en tekst;
+uten ett bestemt kall fikk PowerPoint ikke med seg tallene; og med det
+kallet tok PowerPoint tallkolonnen for en egen serie. Rådene står i
+skriptet.
+
+### 6.41 Figur i «Lær mer», hentet fra et lysark (26.11.2026)
+
+Bygget på svaret i 6.32, spørsmål 3: figuren **hentes fra et lysark**.
+
+**Hva som er nytt.**
+
+- **«Legg til → Figur»** i «Lær mer»-byggeren. Du får opp figurene som
+  finnes i lysarkene, hver tegnet smått med «Lysark 2: Prosess» under.
+  Trykk på en, og en kopi legges i boksen.
+- **Hva som regnes som en figur:** en figur med skjema (prosess, lagvis
+  oppbygging, sammenligning, tidsakse, søylediagram, linjediagram), en
+  gruppe du har laget med «Grupper», og et bilde med merker (merkene og
+  forklaringslista følger med).
+- **Det er en kopi.** Figuren på lysarket blir stående, og kan endres
+  eller slettes uten at boksen merker det. Skulle figuren bare i boksen,
+  sletter du den fra lysarket etterpå. «Hent på nytt» på kortet bytter
+  kopien med figuren slik den er nå, og beholder det du har skrevet om
+  den.
+- **«Beskrivelse for skjermleser»** og **«Figurtekst»** på kortet.
+  Teksten i figuren leses opp uansett; et diagram har tallene sine som
+  en tabell som leses og ikke vises, som på lysarket.
+- **Hos studenten** fyller figuren bredden boksen har. Den blir aldri
+  større enn tre firedeler av størrelsen på lysarket. Trykker studenten
+  «Utvid», får den hele størrelsen.
+- **Det samme i videoen** og i innlesingsvinduet, der boksen tegnes på
+  lysarket.
+- **Finnes det ingen figurer,** sier velgeren hvor de lages.
+- Formatet er nå 14 (`docs/prosjektformat.md`). Eldre prosjekter leses
+  som de er.
+
+**Valg jeg tok uten å spørre** (si fra hvis noe skal være annerledes):
+
+- Video og «+ Lær mer»-knapper i en gruppe følger ikke med inn i boksen.
+  Programmet sier fra når det skjer.
+- Deler av figuren som hadde «Lær mer» selv, mister den i kopien: ingen
+  boks inni en boks.
+- Steg følger ikke med: i boksen står hele figuren der med en gang.
+- Figuren står på boksens hvite flate, uansett hvilken farge lysarket
+  hadde. Tekst som var hvit på mørk bunn, blir mørk.
+
+**Svakheten du bør se selv:** en figur som er bred på lysarket, blir
+**liten i boksen**. En prosess i full bredde krympes til under en
+tredel, og teksten i boksene blir omtrent 10 piksler høy hos studenten.
+«Utvid» gjør den stor og tydelig. Dette er spørsmål 1 i 6.43.
+
+**To feil funnet av skjermbildene og rettet før noe ble sendt ut:**
+miniatyren i velgeren var tom (den ble målt før dialogen var åpnet), og
+tekstreglene til boksen (avstand mellom avsnitt, farge på lenker,
+tekstmarkering) slo inn på figuren. De stopper nå ved boksens egen tekst
+og egne tabeller.
+
+**Prøvd på Linux Mint:** 9 nye enhetstester (`tests/fetch.test.ts`) og 4
+prøver i det bygde programmet uten vindu (`tests/e2e-fetch.test.ts`):
+velgeren uten figurer, lage en prosess på lysark 2 og hente den inn i
+boksen til en tekst på lysark 1, beskrivelse og figurtekst, endre
+figuren på lysarket og hente på nytt, slette figuren på lysarket,
+forhåndsvisningen slik studenten ser den, og «Utvid». Fire skjermbilder
+er sett på. Hele testsamlingen: 560 består, 1 hoppes over som før, i én
+kjøring (i den første feilet fire eldre tester som hadde formatnummeret
+13 skrevet inn; de er rettet til 14).
+
+**Ikke prøvd:** Windows. En figur i en boks i en videofil og i
+innlesingsvinduet (koden som tilpasser figuren, er prøvd i en
+enhetstest, men ingen video er laget). En gruppe og et bilde med merker
+i det bygde programmet (bare i enhetstestene; i programmet er det
+prosessen som er hentet). Et diagram i en boks. En eksportert HTML-fil
+åpnet i Firefox eller Safari. En skjermleser.
+
+### 6.42 En feilboks på skjermen din under testingen, og rettingen (26.11.2026)
+
+**Dette skulle ikke skjedd:** fem ganger i denne økta sto en feilboks med
+tittelen «Error» på skjermen din, i opptil et par minutter hver gang, til
+jeg stoppet prosessen. Regelen er at tester aldri viser noe på skjermen.
+
+**Hva som skjedde.** Den nye prøven lukker forhåndsvisningen og rydder
+så opp ved å lukke alle vinduer. Når hovedvinduet lukkes, lukker
+programmet forhåndsvisningen også. Den var i dette tilfellet allerede på
+vei ut, og programmet prøvde å lukke et vindu som var borte. Feilen kom
+i hovedprosessen, og da viser Electron en boks som venter på svar, også
+når programmet kjøres uten vinduer. Programmet ble stående bak boksen.
+
+**Rettet, to steder:**
+
+- Programmet lukker ikke lenger en forhåndsvisning som alt er borte.
+  Dette er en feil du også kunne ha møtt selv, ved å lukke Lysark i
+  samme øyeblikk som forhåndsvisningen lukkes.
+- Når programmet kjøres uten vinduer (i tester), skrives en feil i
+  hovedprosessen ut, og programmet avsluttes. Ingen boks.
+  `tests/e2e-quiet.test.ts` prøver akkurat dette.
+
+Etter rettingen: prøven kjørt fire ganger på rad, og programmet lukket
+seg hver gang. Før: fire av fem kjøringer hang.
+
+**Funnet i samme slengen:** en Lysark-prosess fra en test 22.11.2026
+(`/tmp/lysark-more-1jYoQl`) står fortsatt og går på maskinen din. Den har
+ingen vinduer på skjermen. Jeg startet den ikke i denne økta og har ikke
+rørt den; si fra om jeg skal stoppe den.
+
+### 6.43 Spørsmål som venter på svar (26.11.2026)
+
+Samlet her, hvert med én anbefaling. Svarene avgjør hva som bygges
+videre.
+
+1. **Skal «Lær mer»-boksen bli bredere når den har en figur i seg?**
+   Anbefaling: **ja.** I dag er boksen 560 bred hos studenten, og en
+   bred figur blir liten. Bredere boks dekker mer av lysarket.
+2. **Skal et linjediagram kunne ha navn langs aksen, med lik avstand
+   mellom punktene?** Anbefaling: **ja, som et valg ved siden av tall.**
+   Da kan PowerPoints vanlige linjediagram gjøres om ved import. I dag
+   forsvinner det fra lysarket med en merknad.
+3. **Bevegelsene** (neste punkt på lista). Fire spørsmål stilles før de
+   bygges; se sluttrapporten fra økta.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

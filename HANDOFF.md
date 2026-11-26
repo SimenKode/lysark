@@ -59,13 +59,29 @@ Og diagrammene (historikken, 6.37 til 6.39), etter fire svar fra deg:
 - **«Ett steg per rad»** og **«Ett steg per serie»**.
 - **Diagrammer i PowerPoint-fila** blir Lysark-diagram når du velger
   «Gjør om til USN-stil»: stående søyler, og linjer med tall langs
-  aksen. Andre typer blir som før. **Dette er ikke prøvd på et diagram
-  PowerPoint selv har laget** (se under).
+  aksen. Andre typer blir som før. **Nå prøvd på 13 diagrammer
+  PowerPoint selv laget** i VM-en: alle ble som de skulle, uten at
+  importen måtte endres (historikken, 6.40).
 - En hel figur har nå **én ramme** når den er valgt, ikke en rundt hver
   del.
 
+Og **figur i «Lær mer»** (historikken, 6.41), bygget 26.11:
+
+- **«Legg til → Figur»** i «Lær mer»-byggeren viser figurene som finnes
+  i lysarkene. Trykk på en, og en **kopi** legges i boksen.
+- Du kan hente en figur med skjema, en gruppe, og et bilde med merker.
+- Figuren på lysarket blir stående. Skulle den bare i boksen, sletter du
+  den fra lysarket etterpå. **«Hent på nytt»** bytter kopien hvis du har
+  endret figuren.
+- Hos studenten fyller figuren boksen, og blir stor med **«Utvid»**.
+
 Rettet i samme slengen: **«Lag kopi» av et lysark mistet merkene på
-bildene.** Nå følger de med.
+bildene.** Nå følger de med. Og: Lysark kunne gi en feilmelding hvis du
+lukket programmet i samme øyeblikk som forhåndsvisningen ble lukket.
+
+**Beklager:** under testingen 26.11 sto en feilboks («Error») på
+skjermen din fem ganger, til jeg stoppet den. Årsaken er rettet, og
+tester kan ikke lenger vise en slik boks (historikken, 6.42).
 
 ## Nytt 25.11.2026, etter versjon 0.4.0 (ikke gitt ut)
 
@@ -103,7 +119,8 @@ etiketter oppå et bilde).
    sammenligning, tidsakse), **søyle- og linjediagram** fra en tabell
    med tall, eller fritt av bokser, ellipser og piler som henger sammen.
 4. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
-   Commons og Openverse, og **sette merker på et bilde**.
+   Commons og Openverse, **figurer hentet fra et lysark**, og **sette
+   merker på et bilde**.
 5. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
    og hopp mellom lysarkene som du vil; opptaket går hele tiden. Mens du
    leser, kan du åpne «Lær mer», spille videoer og flytte sirkelen.
@@ -147,55 +164,52 @@ etiketter oppå et bilde).
 
 ## Det jeg trenger fra deg
 
-Startmeldingen til denne chatten hadde ingen funn eller innspill, så
-punktene fra sist står fortsatt.
+Startmeldingen til denne chatten hadde heller ingen funn eller innspill,
+så punktene fra sist står fortsatt. Først det som stopper videre
+bygging:
 
-1. **Prøv figurene** på et av dine egne lysark. Sett inn en prosess og
-   en tidsakse, og fyll ut skjemaene. Sett inn et diagram og lim inn
-   tall fra Excel. Tegn så en fri figur: tre bokser, piler mellom dem,
-   flytt en boks, grupper, og gi delene steg. Si hva som er tungvint
-   eller uventet, og om farger og størrelser er som du vil ha dem.
-2. **Importer en PowerPoint-fil med et søyle- eller linjediagram**, med
-   «Gjør om til USN-stil», og se om tallene stemmer. Forelesningene dine
-   i `eksempler/` har ingen diagrammer, og VM-en var opptatt da jeg
-   skulle prøve med PowerPoint der, så dette er bare prøvd på filer jeg
-   har bygd selv. Med «Behold utseendet» blir diagrammet liggende i
-   bildet bak; det valgte du 26.11.
-3. **Prøv «Behold utseendet» på Windows med en av dine egne
-   forelesninger.** Veien gjennom PowerPoint er prøvd i VM-en og virker
-   (historikken, 6.35), men bare med én liten prøvefil. Glitchen i
-   popupvinduet fikk jeg aldri fram; si hvordan den ser ut hvis den
-   fortsatt plager deg.
-4. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
-   lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
-   Det kan jeg ikke måle.
-5. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
-   du ventet. Særlig: er det riktig at et lysark du bare blar forbi
+1. **Svar på spørsmålene** nederst i denne chatten (også i historikken,
+   6.43): om «Lær mer»-boksen skal bli bredere når den har en figur, om
+   et linjediagram skal kunne ha navn langs aksen, og fire spørsmål om
+   bevegelsene. Bevegelsene bygges ikke før du har svart.
+2. **Prøv figur i «Lær mer».** Lag en prosess eller et diagram på et
+   lysark, åpne «Lær mer» på noe annet, og velg «Legg til → Figur». Er
+   figuren stor nok i boksen? Er det greit at den lages på et lysark
+   først?
+3. **Prøv figurene** på et av dine egne lysark: en prosess, en tidsakse,
+   et diagram med tall limt inn fra Excel, og en fri figur med bokser og
+   piler. Si hva som er tungvint, og om farger og størrelser er som du
+   vil ha dem.
+4. **Importer en av dine egne PowerPoint-filer med diagram**, med «Gjør
+   om til USN-stil». Det er nå prøvd på diagrammer PowerPoint laget i
+   VM-en, men ikke på et diagram du har laget selv.
+5. **Prøv «Behold utseendet» på Windows med en av dine egne
+   forelesninger.** Veien gjennom PowerPoint virker i VM-en, men er bare
+   prøvd med én liten prøvefil.
+6. **Prøv et opptak med ekte kamera**, og gå fram og tilbake underveis.
+   Fryser bildet mellom lysark? Følger munn og lyd hverandre? Ble
+   videoen slik du ventet? Er det riktig at et lysark du bare blar forbi
    (under et halvt sekund), ikke vises?
-6. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
-   burde vært tekst, blitt liggende i bakgrunnsbildet? Lysarkene med
-   «å ordne» i lista sier hvor importen selv var i tvil.
-7. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
+7. **Prøv PDF-importen på nytt.** Står teksten der den sto? Lysarkene
+   med «å ordne» i lista sier hvor importen selv var i tvil.
+8. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
    til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
    bilde på dine egne bilder, og Canvas (bare du, ingen KI). Sjekklista
    står nederst.
 
 ## Neste steg, i rekkefølge
 
-1. **Det du melder** etter å ha prøvd figurene, opptaket, importen og
-   valget av utseende.
-2. **Prøve diagramimporten på et ekte PowerPoint-diagram** i VM-en, når
-   den er ledig.
-3. **Figur i «Lær mer»**, hentet fra et lysark.
-4. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
-   opp, forsvinne og zoome inn på et utsnitt.
-5. **Håndlaget stil** (leveranse 5).
+1. **Det du melder** etter å ha prøvd, og svarene på spørsmålene.
+2. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
+   opp, forsvinne og zoome inn på et utsnitt. Venter på svarene dine.
+3. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
+   tavle.
 
 ## Hva som er prøvd
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (541) | Ja | – |
+| Automatiske tester (560) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -211,14 +225,15 @@ punktene fra sist står fortsatt.
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
 | **Maler med skjema** (også tidsaksen) | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
 | **Søyle- og linjediagram** | Ja, i programmet og i forhåndsvisningen. Ikke limt inn fra et ekte regneark, ikke målt i videoen | **Nei** |
-| **Diagram fra PowerPoint** | Bare på filer bygd i testene | **Nei.** Ikke på et diagram PowerPoint har laget |
+| **Diagram fra PowerPoint** | Ja, på 13 diagrammer PowerPoint laget i VM-en (tallene kontrollert av en test, og fire av bildene sett på) | PowerPoint laget fila der. Selve importen er kjørt på Linux |
+| **Figur i «Lær mer»** | Ja, i programmet og i forhåndsvisningen: en prosess. Gruppe og bilde med merker bare i enhetstester. Ikke i en videofil | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
 advare), en USN-styrt PC, og Canvas. **Av det som er nytt etter 0.4.0, er bare dette prøvd på Windows:**
 «Behold utseendet» gjennom PowerPoint, kapitlene i lysarklista og at en
-prosessfigur kan settes inn.
+prosessfigur kan settes inn. Figur i «Lær mer» er ikke prøvd der.
 
 ## Kjente svakheter
 
@@ -231,7 +246,14 @@ prosessfigur kan settes inn.
   søylene kan gå over hverandre.
 - **Diagrammer fra PowerPoint** gjøres bare om med «Gjør om til
   USN-stil», og bare stående søyler og linjer med tall langs aksen.
-  Fargene blir temaets. Det er ikke prøvd på en fil fra PowerPoint.
+  Fargene blir temaets. **Et diagram som ikke gjøres om, forsvinner fra
+  lysarket** med en merknad; PowerPoint lagrer ikke noe bilde av det.
+  Det gjelder også PowerPoints vanlige linjediagram, som har navn langs
+  aksen.
+- **Figur i «Lær mer»:** en figur som er bred på lysarket, blir liten i
+  boksen til studenten trykker «Utvid». Steg, video og «Lær mer» inni
+  figuren følger ikke med. Figuren kan ikke endres i boksen; endre den
+  på lysarket og hent på nytt.
 - **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
   gruppe større eller mindre. En pil går alltid korteste vei mellom to
   bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
@@ -283,7 +305,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
 | Reglene for den som bygger | [AGENTS.md](AGENTS.md) |
-| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før |
+| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappa `diagram` |
+| Prøvefila med diagrammer fra PowerPoint | `eksempler/fra-powerpoint/diagram.pptx` (ikke i git) |
 
 ## Sjekkliste for Canvas
 
@@ -322,7 +345,7 @@ utseendet» og «Gjør om til USN-stil», fri figur (grupper, og piler som
 fester seg til bokser), fire maler med skjema (prosess, lagvis
 oppbygging, sammenligning, tidsakse), og søyle- og linjediagram med en
 tabell for tallene (diagrammer i PowerPoint-fila gjøres om ved import
-til USN-stil).
+til USN-stil), og figur i «Lær mer», hentet fra et lysark.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -344,11 +367,15 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (figurene og diagrammene, en
-PowerPoint-fil med diagram, opptak med ekte kamera, fram og tilbake
-under opptak, import med «Behold utseendet» og «USN-stil», særlig
-PowerPoint på Windows, kapitler, mikrofon, musikk, installasjonsfila på
-USN-PC, Openverse, merket bilde, Canvas):
+Det jeg har funnet siden sist (figur i «Lær mer», figurene og
+diagrammene, en PowerPoint-fil med diagram, opptak med ekte kamera, fram
+og tilbake under opptak, import med «Behold utseendet» og «USN-stil»,
+særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
+installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
+(skriv her)
+
+Svarene mine på spørsmålene i historikken, 6.43 (bredere boks for
+figur, navn langs aksen i linjediagram, bevegelsene):
 (skriv her)
 
 Innspill til produktet:

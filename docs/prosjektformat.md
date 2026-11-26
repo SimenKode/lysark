@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 13), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 14), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,44 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 14: figur i en «Lær mer»-boks
+
+En «Lær mer»-boks kan holde en figur. Figuren lages på et lysark og
+hentes inn i boksen (eierens valg 25.11.2026); det som legges i boksen,
+er en kopi.
+
+```ts
+type MoreBlock =
+  // ... som før, og
+  | {
+      id; kind: 'figure';
+      elements: DrawnElement[];      // kopien: elementene, der de sto på lysarket
+      frame: { x; y; w; h };         // den delen av lysarket figuren fylte
+      alt: string;                   // hva figuren viser, for skjermleser
+      caption?: string;              // figurtekst under figuren
+    };
+```
+
+- **`DrawnElement`** er et element som bare viser noe: tekst, bilde,
+  form, tabell, merke, forklaringsliste og figur med skjema. Det har ikke
+  `more` selv (ingen boks i boksen), og video og «+ Lær mer»-knapper er
+  ikke med. I koden er elementene derfor først beskrevet uten `more`, og
+  får det lagt til etterpå.
+- **Hva som kan hentes** (`figuresOn` i `src/shared/layout/fetch.ts`): en
+  gruppe (en figur med skjema er en gruppe, med delene sine) og et bilde
+  med merker. Merker og forklaringsliste følger bildet sitt.
+- **Kopien** (`fetchFigure`) har egne id-er, står der figuren sto, og er
+  bare tegnet: ingen gruppe, ingen festede ender, ingen steg. Lysarket
+  kan endres eller slettes uten at boksen merker det. «Hent på nytt» i
+  byggeren bytter kopien.
+- **Tegningen:** de samme elementene, tegnet av den samme koden som
+  tegner lysarket (`renderDrawing` i `src/shared/render/scene.ts`), på
+  boksens hvite flate. Tegningen er i lysarkets egne piksler og krympes
+  til bredden boksen har, men blir aldri større enn tre firedeler av
+  størrelsen på lysarket (hele størrelsen når studenten har utvidet
+  boksen).
+- Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 13: søyle- og linjediagram
 
