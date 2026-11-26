@@ -249,4 +249,17 @@ describe('music under a voice', () => {
     mixTracks(plain, 0, placed, samplesOf, null);
     expect(plain[5 * SAMPLE_RATE]).toBe(4000 + 1000 + 100);
   });
+
+  it('can be put together apart from the voice, lowered the same (the HTML file)', () => {
+    const project = lecture();
+    addTrackClip(project, 'music', 'a_music', 60, 0, id);
+    const placed = placeTracks(project);
+    const music = tone(60, 1000);
+    const samplesOf = (asset: string): Int16Array | undefined =>
+      asset === 'a_music' ? music : undefined;
+    const part = new Int16Array(10 * SAMPLE_RATE);
+    mixTracks(part, 0, placed, samplesOf, newDuckState(), tone(10, 4000));
+    // The music only, lowered to a quarter as under the voice above.
+    expect(part[5 * SAMPLE_RATE]).toBe(250);
+  });
 });

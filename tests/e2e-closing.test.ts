@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 import type { Project } from '../src/shared/format/schema';
 import { writeSampleProject } from './fixtures/sampleProject';
@@ -157,44 +158,51 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the closing animation, end to en
     await player.close();
   });
 
-  it('is drawn picture by picture in the video, and then stands on its last picture', async () => {
-    const out = join(work, 'slutt.mp4');
-    await app.evaluate(({ dialog }, file) => {
-      dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
-    }, out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.getByLabel('Bare dette lysarket (nr. 3)').check();
-    expect(await dialog.textContent()).toContain('Lengde: 0:04'); // two seconds of film, two of rest
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 120_000, interval: 500 })
-      .toContain('Videoen er lagret');
-    const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
-    expect(probe).toMatch(/Duration: 00:00:04\.0/);
-    const pixels = (at: number): Buffer =>
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-ss', String(at), '-i', out, '-frames:v', '1', '-s', '192x108'].concat([
-          '-f',
-          'rawvideo',
-          '-pix_fmt',
-          'rgb24',
-          'pipe:1',
-        ]),
-        { maxBuffer: 1 << 22 },
-      );
-    // How far two pictures are from each other, as the mean difference per colour value (0-255).
-    const apart = (a: Buffer, b: Buffer): number => {
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
-      return sum / a.length;
-    };
-    // The film moves while it runs ...
-    expect(apart(pixels(0.2), pixels(1.4))).toBeGreaterThan(3);
-    // ... and after its two seconds the last picture stands (compression leaves a breath of difference).
-    expect(apart(pixels(2.6), pixels(3.6))).toBeLessThan(1);
-    // The last picture of the film, not its first.
-    expect(apart(pixels(3.6), pixels(1.9))).toBeLessThan(apart(pixels(3.6), pixels(0.1)));
-  }, 180_000);
+  it(
+    'is drawn picture by picture in the video, and then stands on its last picture',
+    async () => {
+      const out = join(work, 'slutt.mp4');
+      await app.evaluate(({ dialog }, file) => {
+        dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
+      }, out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.getByLabel('Bare dette lysarket (nr. 3)').check();
+      expect(await dialog.textContent()).toContain('Lengde: 0:04'); // two seconds of film, two of rest
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
+      const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
+      expect(probe).toMatch(/Duration: 00:00:04\.0/);
+      const pixels = (at: number): Buffer =>
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-ss', String(at), '-i', out, '-frames:v', '1', '-s', '192x108'].concat([
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgb24',
+            'pipe:1',
+          ]),
+          { maxBuffer: 1 << 22 },
+        );
+      // How far two pictures are from each other, as the mean difference per colour value (0-255).
+      const apart = (a: Buffer, b: Buffer): number => {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
+        return sum / a.length;
+      };
+      // The film moves while it runs ...
+      expect(apart(pixels(0.2), pixels(1.4))).toBeGreaterThan(3);
+      // ... and after its two seconds the last picture stands (compression leaves a breath of difference).
+      expect(apart(pixels(2.6), pixels(3.6))).toBeLessThan(1);
+      // The last picture of the film, not its first.
+      expect(apart(pixels(3.6), pixels(1.9))).toBeLessThan(apart(pixels(3.6), pixels(0.1)));
+    },
+    EXPORT_TEST,
+  );
 });

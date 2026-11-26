@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 import { readWavInfo } from '../src/shared/audio/wav';
 import type { Project } from '../src/shared/format/schema';
@@ -199,112 +200,129 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await shot(page, 'l04-klippet');
   });
 
-  it('exports the lecture as MP4 with captions, drawn frame by frame', async () => {
-    const out = join(work, 'forelesning.mp4');
-    await answerSaveDialog(out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    expect(await dialog.textContent()).toContain('1920 × 1080');
-    await dialog.getByLabel('Mellom lysarkene').selectOption('fade');
-    await shot(page, 'l05-videodialog');
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 120_000, interval: 500 })
-      .toContain('Videoen er lagret');
-    expect(statSync(out).size).toBeGreaterThan(20_000);
+  it(
+    'exports the lecture as MP4 with captions, drawn frame by frame',
+    async () => {
+      const out = join(work, 'forelesning.mp4');
+      await answerSaveDialog(out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      expect(await dialog.textContent()).toContain('1920 × 1080');
+      await dialog.getByLabel('Mellom lysarkene').selectOption('fade');
+      await shot(page, 'l05-videodialog');
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
+      expect(statSync(out).size).toBeGreaterThan(20_000);
 
-    // What FFmpeg itself says about the file.
-    const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
-    expect(probe).toMatch(/Video: h264.*yuv420p.*1920x1080.*30 fps/s);
-    expect(probe).toMatch(/Audio: aac.*48000 Hz, mono/);
-    const duration = /Duration: (\d+):(\d+):([\d.]+)/.exec(probe)!;
-    const seconds = Number(duration[2]) * 60 + Number(duration[3]);
-    const lecture = saved().scenes[1]!.audio!.clips.reduce(
-      (sum, c) => sum + (c.kind === 'sound' ? c.to - c.from : c.duration),
-      4, // the two pauses of two seconds
-    );
-    expect(Math.abs(seconds - lecture)).toBeLessThan(0.2);
-
-    // The first picture is the title slide (purple), not black; a later one differs.
-    const pixels = (at: number): Buffer =>
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-ss', String(at), '-i', out, '-frames:v', '1', '-s', '192x108'].concat([
-          '-f',
-          'rawvideo',
-          '-pix_fmt',
-          'rgb24',
-          'pipe:1',
-        ]),
-        { maxBuffer: 1 << 22 },
+      // What FFmpeg itself says about the file.
+      const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
+      expect(probe).toMatch(/Video: h264.*yuv420p.*1920x1080.*30 fps/s);
+      expect(probe).toMatch(/Audio: aac.*48000 Hz, mono/);
+      const duration = /Duration: (\d+):(\d+):([\d.]+)/.exec(probe)!;
+      const seconds = Number(duration[2]) * 60 + Number(duration[3]);
+      const lecture = saved().scenes[1]!.audio!.clips.reduce(
+        (sum, c) => sum + (c.kind === 'sound' ? c.to - c.from : c.duration),
+        4, // the two pauses of two seconds
       );
-    const title = pixels(0.5);
-    expect(title).toHaveLength(192 * 108 * 3);
-    const corner = [...title.subarray((5 * 192 + 5) * 3, (5 * 192 + 5) * 3 + 3)];
-    expect(
-      Math.abs(corner[0]! - 120) + Math.abs(corner[1]!) + Math.abs(corner[2]! - 240),
-    ).toBeLessThan(40);
-    expect(pixels(3).equals(title)).toBe(false);
+      expect(Math.abs(seconds - lecture)).toBeLessThan(0.2);
 
-    // Captions from the manuscript of slide 2, timed inside that slide.
-    const vtt = readFileSync(join(work, 'forelesning.vtt'), 'utf8');
-    expect(vtt).toMatch(/^WEBVTT\nLanguage: nb\n/);
-    expect(vtt).toContain('Manus A.');
-    expect(vtt).toContain('Manus B.');
-    expect(vtt).toMatch(/\n00:00:02\.\d{3} --> /); // slide 2 starts after the two seconds of slide 1
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
-    // The choice is kept with the project.
-    await save();
-    expect(saved().video).toEqual({ transition: 'fade', evenLoudness: true, credits: false });
-  }, 180_000);
+      // The first picture is the title slide (purple), not black; a later one differs.
+      const pixels = (at: number): Buffer =>
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-ss', String(at), '-i', out, '-frames:v', '1', '-s', '192x108'].concat([
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgb24',
+            'pipe:1',
+          ]),
+          { maxBuffer: 1 << 22 },
+        );
+      const title = pixels(0.5);
+      expect(title).toHaveLength(192 * 108 * 3);
+      const corner = [...title.subarray((5 * 192 + 5) * 3, (5 * 192 + 5) * 3 + 3)];
+      expect(
+        Math.abs(corner[0]! - 120) + Math.abs(corner[1]!) + Math.abs(corner[2]! - 240),
+      ).toBeLessThan(40);
+      expect(pixels(3).equals(title)).toBe(false);
 
-  it('exports one slide as a GIF: a short clip without sound, with the steps coming in', async () => {
-    const out = join(work, 'lysark2.gif');
-    await answerSaveDialog(out);
-    await page.locator('.lecture-block').nth(1).click();
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    await dialog.getByLabel('Filtype').selectOption('gif');
-    await dialog.getByLabel('Bare dette lysarket (nr. 2)').check();
-    expect(await dialog.textContent()).toContain(
-      'GIF, 640 × 360, 12,5 bilder i sekundet, uten lyd',
-    );
-    expect(await dialog.textContent()).toContain('(1 lysark)');
-    await shot(page, 'l07-gif-dialog');
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 120_000, interval: 500 })
-      .toContain('GIF-fila er lagret');
-    const bytes = readFileSync(out);
-    expect(bytes.subarray(0, 6).toString('latin1')).toBe('GIF89a');
-    const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
-    expect(probe).toMatch(/Video: gif.*640x360.*12\.50? fps/s);
-    expect(probe).not.toMatch(/Audio:/);
-    // As long as the slide: its sound decides, also in a file without sound.
-    const duration = /Duration: (\d+):(\d+):([\d.]+)/.exec(probe)!;
-    const seconds = Number(duration[2]) * 60 + Number(duration[3]);
-    const slide = saved().scenes[1]!.audio!.clips.reduce(
-      (sum, c) => sum + (c.kind === 'sound' ? c.to - c.from : c.duration),
-      0,
-    );
-    expect(Math.abs(seconds - slide)).toBeLessThan(0.3);
-    // No captions file for a GIF, and nothing else left next to it.
-    expect(existsSync(join(work, 'lysark2.vtt'))).toBe(false);
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+      // Captions from the manuscript of slide 2, timed inside that slide.
+      const vtt = readFileSync(join(work, 'forelesning.vtt'), 'utf8');
+      expect(vtt).toMatch(/^WEBVTT\nLanguage: nb\n/);
+      expect(vtt).toContain('Manus A.');
+      expect(vtt).toContain('Manus B.');
+      expect(vtt).toMatch(/\n00:00:02\.\d{3} --> /); // slide 2 starts after the two seconds of slide 1
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
+      // The choice is kept with the project.
+      await save();
+      expect(saved().video).toEqual({ transition: 'fade', evenLoudness: true, credits: false });
+    },
+    EXPORT_TEST,
+  );
 
-    // A GIF is for short clips: more than two minutes is refused before anything is made.
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    await dialog.getByLabel('Filtype').selectOption('gif');
-    await dialog.getByLabel('Første lysark').fill('3');
-    await dialog.getByLabel('Siste lysark').fill('2');
-    expect(await dialog.textContent()).toContain('Skriv to lysarknumre mellom 1 og 3');
-    expect(await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).isDisabled()).toBe(
-      true,
-    );
-    await dialog.getByRole('button', { name: 'Lukk' }).click();
-  }, 180_000);
+  it(
+    'exports one slide as a GIF: a short clip without sound, with the steps coming in',
+    async () => {
+      const out = join(work, 'lysark2.gif');
+      await answerSaveDialog(out);
+      await page.locator('.lecture-block').nth(1).click();
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByLabel('Filtype').selectOption('gif');
+      await dialog.getByLabel('Bare dette lysarket (nr. 2)').check();
+      expect(await dialog.textContent()).toContain(
+        'GIF, 640 × 360, 12,5 bilder i sekundet, uten lyd',
+      );
+      expect(await dialog.textContent()).toContain('(1 lysark)');
+      await shot(page, 'l07-gif-dialog');
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('GIF-fila er lagret');
+      const bytes = readFileSync(out);
+      expect(bytes.subarray(0, 6).toString('latin1')).toBe('GIF89a');
+      const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
+      expect(probe).toMatch(/Video: gif.*640x360.*12\.50? fps/s);
+      expect(probe).not.toMatch(/Audio:/);
+      // As long as the slide: its sound decides, also in a file without sound.
+      const duration = /Duration: (\d+):(\d+):([\d.]+)/.exec(probe)!;
+      const seconds = Number(duration[2]) * 60 + Number(duration[3]);
+      const slide = saved().scenes[1]!.audio!.clips.reduce(
+        (sum, c) => sum + (c.kind === 'sound' ? c.to - c.from : c.duration),
+        0,
+      );
+      expect(Math.abs(seconds - slide)).toBeLessThan(0.3);
+      // No captions file for a GIF, and nothing else left next to it.
+      expect(existsSync(join(work, 'lysark2.vtt'))).toBe(false);
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
+
+      // A GIF is for short clips: more than two minutes is refused before anything is made.
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      await dialog.getByLabel('Filtype').selectOption('gif');
+      await dialog.getByLabel('Første lysark').fill('3');
+      await dialog.getByLabel('Siste lysark').fill('2');
+      expect(await dialog.textContent()).toContain('Skriv to lysarknumre mellom 1 og 3');
+      expect(await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).isDisabled()).toBe(
+        true,
+      );
+      await dialog.getByRole('button', { name: 'Lukk' }).click();
+    },
+    EXPORT_TEST,
+  );
 
   it('exports HTML that carries the voice and plays itself', async () => {
     const out = join(work, 'forelesning.html');

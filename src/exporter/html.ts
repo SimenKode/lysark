@@ -39,6 +39,8 @@ export interface ExportSources {
    * Returning undefined means it cannot be placed, and it is inlined anyway.
    */
   sidecarHref: (assetId: string, file: string) => string | undefined;
+  /** The asset that holds the lecture's own tracks (music, other sound) as one sound, if any. */
+  under?: string;
 }
 
 export interface ExportResult {
@@ -150,7 +152,10 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
   const sidecar: ExportResult['sidecar'] = [];
   let inlinedBytes = 0;
 
-  for (const id of usedAssets(project)) {
+  const used = usedAssets(project);
+  const under = sources.under && project.assets[sources.under] ? sources.under : undefined;
+  if (under) used.add(under);
+  for (const id of used) {
     const asset = project.assets[id];
     if (!asset) continue;
     if (asset.kind === 'video' && asset.bytes > INLINE_VIDEO_LIMIT_BYTES) {
@@ -196,6 +201,7 @@ export function buildHtml(project: Project, sources: ExportSources): ExportResul
     assets,
     logo,
     ...(closing ? { closing: { mime: closing.mime } } : {}),
+    ...(under ? { under } : {}),
   };
   // No script may load from elsewhere and nothing may phone home. A frame
   // is only ever created when the viewer presses "play" on web content the

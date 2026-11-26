@@ -1,4 +1,5 @@
-// Settings kept between runs: USN's logo files and recently used projects.
+// Settings kept between runs: USN's logo files, recently used projects and
+// the folder last exported to.
 // Stored in the user's own data folder.
 import { app } from 'electron';
 import {
@@ -8,10 +9,11 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { extname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import type { LogoLanguage, LogoStatus, LogoVariant } from '../shared/api';
 
 interface LogoFile {
@@ -27,6 +29,8 @@ interface Settings {
   recent: string[];
   /** USN's closing animation, as the owner supplied it; `seconds` is its length. */
   closing?: LogoFile & { seconds: number; sha256: string };
+  /** The folder the owner last exported to (HTML, video, GIF, one file). */
+  exportFolder?: string;
 }
 
 /**
@@ -65,6 +69,7 @@ function load(): Settings {
     logoVersion: loaded.logoVersion ?? 0,
     recent: Array.isArray(loaded.recent) ? loaded.recent : [],
     closing: loaded.closing,
+    ...(typeof loaded.exportFolder === 'string' ? { exportFolder: loaded.exportFolder } : {}),
   };
   return cache;
 }
@@ -208,5 +213,24 @@ export function recentProjects(): string[] {
 export function rememberProject(dir: string): void {
   const s = load();
   s.recent = [dir, ...s.recent.filter((d) => d !== dir)].slice(0, 8);
+  save();
+}
+
+/** The folder last exported to, while it still exists. */
+export function exportFolder(): string | undefined {
+  const folder = load().exportFolder;
+  try {
+    return folder && statSync(folder).isDirectory() ? folder : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Remembers the folder a file was exported to, to propose it next time. */
+export function rememberExportFolder(file: string): void {
+  const s = load();
+  const folder = dirname(file);
+  if (s.exportFolder === folder) return;
+  s.exportFolder = folder;
   save();
 }

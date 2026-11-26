@@ -7,9 +7,8 @@ import { basename, dirname, extname, join } from 'node:path';
 import { buildHtml, type ExportSources, type FontFace } from '../exporter/html';
 import type { Project } from '../shared/format/schema';
 import type { ExportSummary, LogoVariant } from '../shared/api';
-import { secondsToSamples } from '../shared/audio/wav';
-import { hasSound, placeTracks, schedule } from '../shared/render/clock';
-import { encodeSceneSound, hasTracks, sampleReader, trackSound } from './audio';
+import { hasSound, schedule } from '../shared/render/clock';
+import { encodeLectureTracks, encodeSceneSound, hasTracks, sampleReader } from './audio';
 import { requireFfmpeg } from './ffmpeg';
 import { mediaPath } from './projectIo';
 import { closingAnimation, logoFile } from './settings';
@@ -27,47 +26,40 @@ const FONT_FILES: Record<FontFace, string> = {
 const encoded = new Map<string, { data: Uint8Array; seconds: number }>();
 const ENCODED_LIMIT = 400;
 
+/** The id of the lecture's tracks in an exported file, put together as one sound file. */
+const UNDER_ASSET = 'a_tracks';
+/** The clip that holds it, on the track for other sound, so the file can be opened again. */
+const UNDER_CLIP = 'k_tracks';
+
 /**
  * The project as it goes into an HTML file. The sound of each slide is put
  * together (cuts, pauses, loudness) and encoded as one small AAC file; the
  * slide then points at that file instead of at the recordings, which are
- * left out. Returns the bytes of the new files by their media path.
+ * left out. The lecture's own tracks (music, other sound) become one file
+ * of their own for the whole lecture (`under`), so that "Spill av" can let
+ * the music run on over the change of slide. Returns the bytes of the new
+ * files by their media path.
  */
 async function withEncodedSound(
   dir: string,
   project: Project,
-): Promise<{ project: Project; generated: Map<string, Uint8Array> }> {
+): Promise<{ project: Project; generated: Map<string, Uint8Array>; under?: string }> {
   const generated = new Map<string, Uint8Array>();
   const tracks = hasTracks(project);
   if (!tracks && !project.scenes.some(hasSound)) return { project, generated };
   requireFfmpeg();
   const samplesOf = sampleReader(dir, project);
   const out = structuredClone(project);
-  // Music and other sound on the lecture's own tracks are put into the sound
-  // of the slides they lie under, so "Spill av" plays them with the voice.
-  // (The sound of a film is not: the film plays itself in the page.)
-  const plan = schedule(project.scenes);
-  const placed = tracks ? placeTracks(project, plan) : [];
-  const mixes = tracks ? [trackSound(project, samplesOf)] : [];
-  // Tells one lecture's music from another's, so the sound kept from an earlier export is not used for the wrong one.
-  const mixKey = tracks ? JSON.stringify([project.tracks, project.video?.duckMusic]) : '';
-  for (const [index, scene] of out.scenes.entries()) {
-    const { start, duration } = plan.entries[index]!;
-    const under = placed.some((p) => p.end > start && p.start < start + duration);
-    if (!hasSound(scene) && !under) continue;
+  for (const scene of out.scenes) {
+    if (!hasSound(scene)) continue;
     const key = createHash('sha256')
       .update(JSON.stringify(scene.audio ?? null))
-      .update(tracks ? `${mixKey}|${start}|${duration}` : '')
       .digest('hex');
-    // With music, every slide is put together anew and in order: how far the
-    // music is lowered at the start of a slide depends on the slide before it.
-    let sound = tracks ? undefined : encoded.get(key);
+    let sound = encoded.get(key);
     if (!sound) {
-      sound = await encodeSceneSound(scene, samplesOf, secondsToSamples(start), mixes);
-      if (!tracks) {
-        if (encoded.size >= ENCODED_LIMIT) encoded.delete(encoded.keys().next().value!);
-        encoded.set(key, sound);
-      }
+      sound = await encodeSceneSound(scene, samplesOf);
+      if (encoded.size >= ENCODED_LIMIT) encoded.delete(encoded.keys().next().value!);
+      encoded.set(key, sound);
     }
     const id = `a_voice_${scene.id}`;
     const file = `media/stemme-${key.slice(0, 16)}.m4a`;
@@ -78,8 +70,15 @@ async function withEncodedSound(
       clips: [{ id: `c_voice_${scene.id}`, kind: 'sound', asset: id, from: 0, to: sound.seconds }],
     };
   }
+  // Music and other sound on the lecture's own tracks: one file from the
+  // start of the lecture. (The sound of a film is not: the film plays itself
+  // in the page.)
+  const lecture =
+    tracks && out.scenes.length > 0
+      ? await encodeLectureTracks(project, schedule(project.scenes), samplesOf)
+      : undefined;
   // The recordings themselves are not part of an exported file, and the
-  // tracks are in the sound of the slides now. What is left of the tracks is
+  // tracks are in that one file now. What is left of the clips themselves is
   // only who is to be credited: clips whose sound file carries a credit stay
   // as names in the list of sources, without their sound.
   const credited = new Set<string>();
@@ -98,13 +97,37 @@ async function withEncodedSound(
     out.tracks = { music: keep(out.tracks.music), sound: keep(out.tracks.sound) };
     if (credited.size === 0) delete out.tracks;
   }
+  let under: string | undefined;
+  if (lecture) {
+    const key = createHash('sha256').update(lecture.data).digest('hex');
+    const file = `media/lydspor-${key.slice(0, 16)}.m4a`;
+    out.assets[UNDER_ASSET] = {
+      kind: 'audio',
+      file,
+      mime: 'audio/mp4',
+      bytes: lecture.data.byteLength,
+      name: 'Musikk og lyd',
+    };
+    generated.set(file, lecture.data);
+    // The clip lets the file be opened as a project again with its music.
+    out.tracks ??= { music: [], sound: [] };
+    out.tracks.sound.push({
+      id: UNDER_CLIP,
+      asset: UNDER_ASSET,
+      scene: out.scenes[0]!.id,
+      offset: 0,
+      from: 0,
+      to: lecture.seconds,
+    });
+    under = UNDER_ASSET;
+  }
   for (const [id, asset] of Object.entries(out.assets)) {
     if (asset.kind === 'audio' && !generated.has(asset.file) && !credited.has(id)) {
       delete out.assets[id];
     }
   }
   withoutCamera(out);
-  return { project: out, generated };
+  return { project: out, generated, ...(under ? { under } : {}) };
 }
 
 /**
@@ -130,6 +153,7 @@ function sources(
   project: Project,
   sidecarHref: ExportSources['sidecarHref'],
   generated: Map<string, Uint8Array>,
+  under: string | undefined,
 ): ExportSources {
   const logo: ExportSources['logo'] = {};
   for (const variant of ['light', 'dark'] as LogoVariant[]) {
@@ -144,6 +168,7 @@ function sources(
     readAsset: (file) => generated.get(file) ?? readFileSync(mediaPath(dir, file)),
     logo,
     sidecarHref,
+    ...(under ? { under } : {}),
   };
 }
 
@@ -152,7 +177,7 @@ export async function exportHtml(
   source: Project,
   outFile: string,
 ): Promise<ExportSummary> {
-  const { project, generated } = await withEncodedSound(dir, source);
+  const { project, generated, under } = await withEncodedSound(dir, source);
   const stem = basename(outFile, extname(outFile));
   const sidecarName = `${stem}_filer`;
   const result = buildHtml(
@@ -162,6 +187,7 @@ export async function exportHtml(
       project,
       (_id, file) => `${encodeURIComponent(sidecarName)}/${basename(file)}`,
       generated,
+      under,
     ),
   );
   writeFileSync(outFile, result.html, 'utf8');
@@ -188,9 +214,9 @@ export async function exportHtml(
  * not copied; the preview server hands them out from the project's folder.
  */
 export async function buildPreview(dir: string, source: Project): Promise<string> {
-  const { project, generated } = await withEncodedSound(dir, source);
+  const { project, generated, under } = await withEncodedSound(dir, source);
   return buildHtml(
     project,
-    sources(dir, project, (_id, file) => `media/${basename(file)}`, generated),
+    sources(dir, project, (_id, file) => `media/${basename(file)}`, generated, under),
   ).html;
 }

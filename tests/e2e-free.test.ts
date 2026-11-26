@@ -15,6 +15,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project, Scene } from '../src/shared/format/schema';
 import { schedule } from '../src/shared/render/clock';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -289,76 +290,83 @@ describe.skipIf(!built || !existsSync(ffmpeg))(
       recorded = await save();
     }, 60_000);
 
-    it('makes a video that shows the slides in the order the lecturer showed them', async () => {
-      const out = join(work, 'forelesning.mp4');
-      await answerSaveDialog(out);
-      await page
-        .locator('.topbar-actions')
-        .getByRole('button', { name: 'Eksporter video' })
-        .click();
-      const dialog = page.locator('dialog.video-dialog');
-      await dialog.waitFor();
-      // Slides are counted as the lecturer counts them: slide 2 has the repeat after it.
-      await dialog.getByLabel('Første lysark').fill('2');
-      await dialog.getByLabel('Siste lysark').fill('2');
-      expect(await dialog.textContent()).toContain('1 lysark og ett som vises igjen');
-      await dialog.getByLabel('Første lysark').fill('4');
-      expect(await dialog.locator('.video-missing').textContent()).toContain('mellom 1 og 3');
-      await dialog.getByLabel('Hele forelesningen').check();
-      expect(await dialog.textContent()).toContain('3 lysark og ett som vises igjen');
-      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-      await expect
-        .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
-        .toContain('Videoen er lagret');
-      await page.locator('.notice button', { hasText: 'Lukk' }).click();
+    it(
+      'makes a video that shows the slides in the order the lecturer showed them',
+      async () => {
+        const out = join(work, 'forelesning.mp4');
+        await answerSaveDialog(out);
+        await page
+          .locator('.topbar-actions')
+          .getByRole('button', { name: 'Eksporter video' })
+          .click();
+        const dialog = page.locator('dialog.video-dialog');
+        await dialog.waitFor();
+        // Slides are counted as the lecturer counts them: slide 2 has the repeat after it.
+        await dialog.getByLabel('Første lysark').fill('2');
+        await dialog.getByLabel('Siste lysark').fill('2');
+        expect(await dialog.textContent()).toContain('1 lysark og ett som vises igjen');
+        await dialog.getByLabel('Første lysark').fill('4');
+        expect(await dialog.locator('.video-missing').textContent()).toContain('mellom 1 og 3');
+        await dialog.getByLabel('Hele forelesningen').check();
+        expect(await dialog.textContent()).toContain('3 lysark og ett som vises igjen');
+        await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+        await expect
+          .poll(() => page.locator('.notice').textContent(), {
+            timeout: EXPORT_WAIT,
+            interval: 500,
+          })
+          .toContain('Videoen er lagret');
+        await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
-      const plan = schedule(recorded.scenes);
-      /** One picture of the video, small and grey. */
-      const picture = (time: number): Buffer =>
-        execFileSync(
-          ffmpeg,
-          ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
-            '-vf',
-            'scale=192:108,format=gray',
-            '-f',
-            'rawvideo',
-            'pipe:1',
-          ]),
-          { maxBuffer: 1 << 24 },
-        );
-      const difference = (x: Buffer, y: Buffer): number => {
-        let sum = 0;
-        for (let i = 0; i < x.length; i++) sum += Math.abs(x[i]! - y[i]!);
-        return sum / x.length;
-      };
-      const [a, b, again, c] = plan.entries;
-      const middle = (entry: { start: number; duration: number }): number =>
-        entry.start + entry.duration / 2;
-      const endOfA = picture(a!.start + a!.duration - 0.2);
-      const onB = picture(middle(b!));
-      const onAgain = picture(middle(again!));
-      const startOfAgain = picture(again!.start + 0.15);
-      const onC = picture(middle(c!));
-      // Where the lecturer went back, the video shows A again, with both steps from the start.
-      expect(difference(onAgain, endOfA)).toBeLessThan(0.05);
-      expect(difference(startOfAgain, endOfA)).toBeLessThan(0.05);
-      expect(difference(onAgain, onB)).toBeGreaterThan(0.15);
-      expect(difference(onAgain, onC)).toBeGreaterThan(0.15);
-      // At its first showing A began without the steps.
-      expect(difference(picture(0.3), endOfA)).toBeGreaterThan(0.1);
-      // The video is as long as what was recorded.
-      const told = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
-      const length = Number(/Duration: 00:00:(\d+\.\d+)/.exec(told)?.[1]);
-      expect(Math.abs(length - plan.total)).toBeLessThan(0.2);
-      // The chapters of the lecture are chapters of the video file: the second
-      // begins where C begins.
-      const chapterLines = told.split('\n').filter((line) => /^\s*Chapter #/.test(line));
-      expect(chapterLines).toHaveLength(2);
-      expect(told).toMatch(/title\s*: Første del/);
-      expect(told).toMatch(/title\s*: Andre del/);
-      const second = Number(/start (\d+\.\d+)/.exec(chapterLines[1]!)?.[1]);
-      expect(Math.abs(second - c!.start)).toBeLessThan(0.05);
-    }, 240_000);
+        const plan = schedule(recorded.scenes);
+        /** One picture of the video, small and grey. */
+        const picture = (time: number): Buffer =>
+          execFileSync(
+            ffmpeg,
+            ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
+              '-vf',
+              'scale=192:108,format=gray',
+              '-f',
+              'rawvideo',
+              'pipe:1',
+            ]),
+            { maxBuffer: 1 << 24 },
+          );
+        const difference = (x: Buffer, y: Buffer): number => {
+          let sum = 0;
+          for (let i = 0; i < x.length; i++) sum += Math.abs(x[i]! - y[i]!);
+          return sum / x.length;
+        };
+        const [a, b, again, c] = plan.entries;
+        const middle = (entry: { start: number; duration: number }): number =>
+          entry.start + entry.duration / 2;
+        const endOfA = picture(a!.start + a!.duration - 0.2);
+        const onB = picture(middle(b!));
+        const onAgain = picture(middle(again!));
+        const startOfAgain = picture(again!.start + 0.15);
+        const onC = picture(middle(c!));
+        // Where the lecturer went back, the video shows A again, with both steps from the start.
+        expect(difference(onAgain, endOfA)).toBeLessThan(0.05);
+        expect(difference(startOfAgain, endOfA)).toBeLessThan(0.05);
+        expect(difference(onAgain, onB)).toBeGreaterThan(0.15);
+        expect(difference(onAgain, onC)).toBeGreaterThan(0.15);
+        // At its first showing A began without the steps.
+        expect(difference(picture(0.3), endOfA)).toBeGreaterThan(0.1);
+        // The video is as long as what was recorded.
+        const told = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
+        const length = Number(/Duration: 00:00:(\d+\.\d+)/.exec(told)?.[1]);
+        expect(Math.abs(length - plan.total)).toBeLessThan(0.2);
+        // The chapters of the lecture are chapters of the video file: the second
+        // begins where C begins.
+        const chapterLines = told.split('\n').filter((line) => /^\s*Chapter #/.test(line));
+        expect(chapterLines).toHaveLength(2);
+        expect(told).toMatch(/title\s*: Første del/);
+        expect(told).toMatch(/title\s*: Andre del/);
+        const second = Number(/start (\d+\.\d+)/.exec(chapterLines[1]!)?.[1]);
+        expect(Math.abs(second - c!.start)).toBeLessThan(0.05);
+      },
+      EXPORT_TEST,
+    );
 
     it('lets the student turn the pages slide by slide, while "Spill av" follows the recording', async () => {
       const out = join(work, 'forelesning.html');

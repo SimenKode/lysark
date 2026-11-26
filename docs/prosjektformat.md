@@ -398,6 +398,16 @@ utsnitt av fila (`from`, `to`) og valgfritt `gain`, `fadeIn` og
 endrer lengde. `video.duckMusic` sier om musikken skal dempes mens det
 snakkes (på når det ikke står noe).
 
+I en eksportert HTML-fil ligger sporene som én lydfil for hele
+forelesningen, fra starten og til det siste klippet slutter, med
+musikken dempet under stemmen slik som i videoen. Den ligger på et klipp
+på sporet `sound` (`k_tracks`), og spilleren får vite hvilken fil det er
+(`under`). «Spill av» spiller den ved siden av stemmen og lar den gå
+videre over byttet av lysark; stemmen på hvert lysark holder seg til den.
+Åpnes HTML-fila som prosjekt igjen, ligger musikken og lyden som ett
+klipp under hele forelesningen. (Tidligere lå musikken i lyden på
+hvert lysark, og fikk et lite opphold ved hvert bytte.)
+
 ## Format 5: skiltformen og avslutningsanimasjonen
 
 **Skilt** er en ny form (`geometry: 'sign'`): et rektangel med spiss,

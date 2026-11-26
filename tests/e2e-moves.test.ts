@@ -12,6 +12,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project, Scene } from '../src/shared/format/schema';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -356,70 +357,77 @@ describe.skipIf(!built || !existsSync(ffmpeg))('movements, in the video', () => 
     if (work) rmSync(work, { recursive: true, force: true });
   });
 
-  it('zooms in, marks, zooms out and takes away, at the times of the steps', async () => {
-    const out = join(work, 'forelesning.mp4');
-    await app.evaluate(({ dialog }, path) => {
-      dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path });
-    }, out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 200_000, interval: 500 })
-      .toContain('Videoen er lagret');
+  it(
+    'zooms in, marks, zooms out and takes away, at the times of the steps',
+    async () => {
+      const out = join(work, 'forelesning.mp4');
+      await app.evaluate(({ dialog }, path) => {
+        dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path });
+      }, out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
 
-    /** How many pixels of a picture of the film are purple (the box), and orange (the mark). */
-    const colours = (time: number): { purple: number; orange: number } => {
-      const pixels = execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
-          '-f',
-          'rawvideo',
-          '-pix_fmt',
-          'rgb24',
-          'pipe:1',
-        ]),
-        { maxBuffer: 1 << 26 },
-      );
-      let purple = 0;
-      let orange = 0;
-      for (let i = 0; i < pixels.length; i += 3) {
-        const [r, g, b] = [pixels[i]!, pixels[i + 1]!, pixels[i + 2]!];
-        if (Math.abs(r - 120) < 40 && g < 60 && b > 190) purple += 1;
-        else if (r > 215 && g > 60 && g < 140 && b < 60) orange += 1;
+      /** How many pixels of a picture of the film are purple (the box), and orange (the mark). */
+      const colours = (time: number): { purple: number; orange: number } => {
+        const pixels = execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgb24',
+            'pipe:1',
+          ]),
+          { maxBuffer: 1 << 26 },
+        );
+        let purple = 0;
+        let orange = 0;
+        for (let i = 0; i < pixels.length; i += 3) {
+          const [r, g, b] = [pixels[i]!, pixels[i + 1]!, pixels[i + 2]!];
+          if (Math.abs(r - 120) < 40 && g < 60 && b > 190) purple += 1;
+          else if (r > 215 && g > 60 && g < 140 && b < 60) orange += 1;
+        }
+        return { purple, orange };
+      };
+      const box = 360 * 200;
+      const near = (count: number, expected: number): boolean =>
+        Math.abs(count - expected) < expected * 0.06;
+      // From the start: the box as it is, and nothing marked.
+      const start = colours(0.5);
+      expect(near(start.purple, box)).toBe(true);
+      expect(start.orange).toBe(0);
+      // Zoomed in on a quarter of the slide: the box is twice as wide and twice as high.
+      expect(near(colours(2.5).purple, box * 4)).toBe(true);
+      // Marked: an orange frame round it (16 wide in the picture, round a box of 720 by 400).
+      const marked = colours(4.5);
+      expect(near(marked.purple, box * 4)).toBe(true);
+      expect(marked.orange).toBeGreaterThan(30_000);
+      // Zoomed out again, and the mark has gone with the step that came.
+      const back = colours(6.5);
+      expect(near(back.purple, box)).toBe(true);
+      expect(back.orange).toBe(0);
+      // Taken away.
+      expect(colours(8.5).purple).toBe(0);
+      if (shots) {
+        mkdirSync(shots, { recursive: true });
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-y', '-ss', '4.5', '-i', out].concat([
+            '-frames:v',
+            '1',
+            join(shots, 'b05-video-zoomet-og-markert.png'),
+          ]),
+        );
       }
-      return { purple, orange };
-    };
-    const box = 360 * 200;
-    const near = (count: number, expected: number): boolean =>
-      Math.abs(count - expected) < expected * 0.06;
-    // From the start: the box as it is, and nothing marked.
-    const start = colours(0.5);
-    expect(near(start.purple, box)).toBe(true);
-    expect(start.orange).toBe(0);
-    // Zoomed in on a quarter of the slide: the box is twice as wide and twice as high.
-    expect(near(colours(2.5).purple, box * 4)).toBe(true);
-    // Marked: an orange frame round it (16 wide in the picture, round a box of 720 by 400).
-    const marked = colours(4.5);
-    expect(near(marked.purple, box * 4)).toBe(true);
-    expect(marked.orange).toBeGreaterThan(30_000);
-    // Zoomed out again, and the mark has gone with the step that came.
-    const back = colours(6.5);
-    expect(near(back.purple, box)).toBe(true);
-    expect(back.orange).toBe(0);
-    // Taken away.
-    expect(colours(8.5).purple).toBe(0);
-    if (shots) {
-      mkdirSync(shots, { recursive: true });
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-y', '-ss', '4.5', '-i', out].concat([
-          '-frames:v',
-          '1',
-          join(shots, 'b05-video-zoomet-og-markert.png'),
-        ]),
-      );
-    }
-  }, 300_000);
+    },
+    EXPORT_TEST,
+  );
 });

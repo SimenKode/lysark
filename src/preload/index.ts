@@ -44,6 +44,7 @@ const api: LysarkApi = {
   importSound: (dir) => call('lysark:import-sound', dir),
   packProject: (dir) => call('lysark:pack', dir),
   unpackProject: () => call('lysark:unpack'),
+  tidyMedia: (dir, keep) => call('lysark:tidy-media', dir, keep),
   openHtmlFile: () => call('lysark:open-html'),
   pickPdf: () => call('lysark:pdf-pick'),
   beginPdfImport: () => call('lysark:pdf-begin'),

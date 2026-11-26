@@ -27,6 +27,7 @@ import type {
   VideoSummary,
   PickedPdf,
   PptxPdf,
+  TidyResult,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
 import { webPictureUrl } from '../shared/api';
@@ -77,15 +78,19 @@ import {
   unpackProject,
   writeHtmlExport,
   type ImportFolder,
+  formatBytes,
+  unusedMedia,
 } from './projectIo';
 import {
   CLOSING_EXTENSIONS,
   clearClosingAnimation,
   clearLogos,
   closingAnimation,
+  exportFolder,
   logoFile,
   logoStatus,
   recentProjects,
+  rememberExportFolder,
   rememberProject,
   setClosingAnimation,
   setLogosFromFolder,
@@ -146,15 +151,38 @@ function send(command: MenuCommand): void {
   mainWindow?.webContents.send('lysark:command', command);
 }
 
+/** Counts the recordings that have been saved in the background, to tell one from the next. */
+let savingJob = 0;
+/** The saving during which the lecturer has already been told once that the program waits. */
+let toldWhileSaving = -1;
+/** The lecturer chose to close although a recording was being saved. */
+let leaveSaving = false;
+
 /**
- * True when a recording is being saved: the program is kept open, and the
- * interface tells the lecturer so in the window. Never a box that waits for
- * an answer, so that this holds also when the program runs without windows.
+ * True when a recording is being saved: the program is kept open. The first
+ * time, the interface says so in the window, with no box that waits for an
+ * answer. Should the lecturer ask again while the same recording is still
+ * being saved (the saving may hang: FFmpeg stuck, a disk gone), Lysark asks
+ * whether to close anyway, so that it can always be closed.
  */
 function keptOpenWhileSaving(): boolean {
-  if (!documentState.saving) return false;
-  send('close-while-saving');
-  return true;
+  if (!documentState.saving || leaveSaving) return false;
+  if (toldWhileSaving !== savingJob || !mainWindow) {
+    toldWhileSaving = savingJob;
+    send('close-while-saving');
+    return true;
+  }
+  const choice = dialog.showMessageBoxSync(mainWindow, {
+    type: 'warning',
+    message: 'Opptaket lagres ennå. Vil du avslutte likevel? Da går opptaket tapt.',
+    buttons: ['Vent', 'Avslutt likevel'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+  if (choice !== 1) return true;
+  leaveSaving = true;
+  return false;
 }
 
 function updateTitle(): void {
@@ -360,6 +388,7 @@ function buildMenu(): void {
         { label: 'Lagre som én fil …', click: () => send('pack') },
         { label: 'Åpne prosjekt lagret som én fil …', click: () => send('unpack') },
         { label: 'Åpne HTML-fil …', click: () => send('open-html') },
+        { label: 'Rydd i prosjektmappa …', click: () => send('tidy') },
         { type: 'separator' },
         { label: 'Logo fra USN …', click: () => send('settings') },
         { type: 'separator' },
@@ -454,6 +483,9 @@ function createWindow(): void {
     else if (choice === 1) {
       closeConfirmed = true;
       mainWindow.close();
+    } else {
+      // The lecturer stays after all: a recording that is still being saved is waited for again.
+      leaveSaving = false;
     }
   });
   mainWindow.on('closed', () => {
@@ -729,11 +761,13 @@ function registerHandlers(): void {
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Eksporter HTML',
       buttonLabel: 'Eksporter',
-      defaultPath: join(dirname(dir), `${safeName || 'forelesning'}.html`),
+      defaultPath: join(exportFolder() ?? dirname(dir), `${safeName || 'forelesning'}.html`),
       filters: [{ name: 'HTML', extensions: ['html'] }],
     });
     if (result.canceled || !result.filePath) return null;
-    return await exportHtml(dir, project, result.filePath);
+    const summary = await exportHtml(dir, project, result.filePath);
+    rememberExportFolder(result.filePath);
+    return summary;
   });
 
   handle(
@@ -753,7 +787,10 @@ function registerHandlers(): void {
       const result = await dialog.showSaveDialog(mainWindow, {
         title: gif ? 'Eksporter GIF' : 'Eksporter video',
         buttonLabel: 'Eksporter',
-        defaultPath: join(dirname(dir), `${safeName || 'forelesning'}.${extension}`),
+        defaultPath: join(
+          exportFolder() ?? dirname(dir),
+          `${safeName || 'forelesning'}.${extension}`,
+        ),
         filters: [
           gif ? { name: 'GIF', extensions: ['gif'] } : { name: 'MP4-video', extensions: ['mp4'] },
         ],
@@ -777,7 +814,9 @@ function registerHandlers(): void {
           mainWindow?.webContents.send('lysark:video-progress', progress),
       });
       try {
-        return await videoJob.done;
+        const summary = await videoJob.done;
+        if (summary) rememberExportFolder(outFile);
+        return summary;
       } finally {
         videoJob = null;
       }
@@ -827,11 +866,49 @@ function registerHandlers(): void {
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Lagre som én fil',
       buttonLabel: 'Pakk',
-      defaultPath: join(dirname(dir), `${basename(dir)}.lysark.zip`),
+      defaultPath: join(exportFolder() ?? dirname(dir), `${basename(dir)}.lysark.zip`),
       filters: [{ name: 'Lysark-prosjekt i én fil', extensions: ['zip'] }],
     });
     if (result.canceled || !result.filePath) return null;
-    return { path: result.filePath, bytes: packProject(dir, result.filePath) };
+    const bytes = packProject(dir, result.filePath);
+    rememberExportFolder(result.filePath);
+    return { path: result.filePath, bytes };
+  });
+
+  handle('lysark:tidy-media', async (dir: string, keep: string[]): Promise<TidyResult> => {
+    if (!currentDir || resolve(dir) !== resolve(currentDir)) {
+      throw new Error('Mappa hører ikke til prosjektet som er åpent.');
+    }
+    const unused = unusedMedia(dir, Array.isArray(keep) ? keep.map(String) : []);
+    const bytes = unused.reduce((sum, file) => sum + file.bytes, 0);
+    const result: TidyResult = { found: unused.length, bytes, trashed: [], failed: 0 };
+    if (unused.length === 0 || !mainWindow) return result;
+    const size = formatBytes(bytes);
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      message:
+        unused.length === 1
+          ? `Én fil i prosjektmappa er ikke i bruk (${size}).`
+          : `${unused.length} filer i prosjektmappa er ikke i bruk (${size}).`,
+      detail:
+        'Ingen lysark, «Lær mer»-boks eller lydspor bruker dem, og de kan ikke komme tilbake med «Angre». ' +
+        'Det er for eksempel opptak som er tatt om igjen, og bilder og videoer som er fjernet. ' +
+        'Vil du legge dem i papirkurven? Derfra kan du hente dem igjen.',
+      buttons: ['Legg i papirkurven', 'Avbryt'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+    if (choice !== 0) return result;
+    for (const file of unused) {
+      try {
+        await shell.trashItem(file.path);
+        result.trashed.push(file.file);
+      } catch {
+        result.failed += 1;
+      }
+    }
+    return result;
   });
 
   handle('lysark:unpack', async (): Promise<OpenedProject | null> => {
@@ -1036,10 +1113,13 @@ function registerHandlers(): void {
   ipcMain.on(
     'lysark:document-state',
     (_event, state: { dirty: boolean; title: string; saving?: boolean }) => {
+      const saving = state.saving === true;
+      // A new recording that is being saved is a saving of its own.
+      if (saving && !documentState.saving) savingJob += 1;
       documentState = {
         dirty: !!state.dirty,
         title: String(state.title ?? ''),
-        saving: state.saving === true,
+        saving,
       };
       updateTitle();
     },

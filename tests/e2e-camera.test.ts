@@ -18,6 +18,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project } from '../src/shared/format/schema';
 import { CAMERA_DIAMETER, CAMERA_GLIDE_SECONDS } from '../src/shared/render/clock';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -279,86 +280,93 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the camera circle, end to end', 
     expect(Math.abs(there.y - START.y)).toBeLessThan(8);
   }, 60_000);
 
-  it('makes a video with the face in the circle, where it stood at each moment', async () => {
-    const out = join(work, 'forelesning.mp4');
-    await answerSaveDialog(out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
-      .toContain('Videoen er lagret');
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+  it(
+    'makes a video with the face in the circle, where it stood at each moment',
+    async () => {
+      const out = join(work, 'forelesning.mp4');
+      await answerSaveDialog(out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
-    /** A part of one picture of the video, as red, green, blue. */
-    const crop = (time: number, x: number, y: number, w: number, h: number): Buffer =>
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
-          '-vf',
-          `crop=${w}:${h}:${Math.round(x)}:${Math.round(y)}`,
-          '-f',
-          'rawvideo',
-          '-pix_fmt',
-          'rgb24',
-          'pipe:1',
-        ]),
-        { maxBuffer: 1 << 24 },
-      );
-    /** The middle of where a circle would stand, 80 pixels each way. */
-    const middle = (time: number, at: { x: number; y: number }): Buffer =>
-      crop(time, at.x - 40, at.y - 40, 80, 80);
-    const difference = (a: Buffer, b: Buffer): number => {
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
-      return sum / a.length;
-    };
-    const white = (pixels: Buffer): number => {
-      let count = 0;
-      for (let i = 0; i < pixels.length; i += 3) {
-        if (pixels[i]! > 235 && pixels[i + 1]! > 235 && pixels[i + 2]! > 235) count += 1;
+      /** A part of one picture of the video, as red, green, blue. */
+      const crop = (time: number, x: number, y: number, w: number, h: number): Buffer =>
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
+            '-vf',
+            `crop=${w}:${h}:${Math.round(x)}:${Math.round(y)}`,
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgb24',
+            'pipe:1',
+          ]),
+          { maxBuffer: 1 << 24 },
+        );
+      /** The middle of where a circle would stand, 80 pixels each way. */
+      const middle = (time: number, at: { x: number; y: number }): Buffer =>
+        crop(time, at.x - 40, at.y - 40, 80, 80);
+      const difference = (a: Buffer, b: Buffer): number => {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
+        return sum / a.length;
+      };
+      const white = (pixels: Buffer): number => {
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 3) {
+          if (pixels[i]! > 235 && pixels[i + 1]! > 235 && pixels[i + 2]! > 235) count += 1;
+        }
+        return count;
+      };
+      // What the slide looks like where nothing is: its own colour.
+      const empty = middle(0.5, { x: 960, y: 480 });
+      const isEmpty = (pixels: Buffer): boolean => difference(pixels, empty) < 3;
+
+      // Before the move the face is where the circle was put, and nowhere else.
+      expect(isEmpty(middle(0.5, START))).toBe(false);
+      expect(isEmpty(middle(0.5, MOVED))).toBe(true);
+      // The white ring is at the circle's edge.
+      const r = CAMERA_DIAMETER.medium / 2;
+      expect(white(crop(0.5, START.x - r, START.y - 2, 6, 4))).toBeGreaterThan(12);
+      // After the move, and the glide, it is at the new place.
+      const after = movedAt + CAMERA_GLIDE_SECONDS + 0.2;
+      expect(isEmpty(middle(after, START))).toBe(true);
+      expect(isEmpty(middle(after, MOVED))).toBe(false);
+      // On the next slide it glides to where it was put afterwards, and is smaller.
+      const second = firstLength + CAMERA_GLIDE_SECONDS + 0.6;
+      expect(isEmpty(middle(second, MOVED))).toBe(true);
+      expect(isEmpty(middle(second, LATER))).toBe(false);
+      const small = CAMERA_DIAMETER.small / 2;
+      expect(white(crop(second, LATER.x - small, LATER.y - 2, 6, 4))).toBeGreaterThan(12);
+      expect(isEmpty(crop(second, LATER.x - r + 10, LATER.y - 20, 20, 40))).toBe(true);
+      // The face is a film: its picture changes while the slide stands still.
+      const face = (time: number): Buffer => crop(time, START.x - 90, START.y - 90, 180, 180);
+      expect(difference(face(0.2), face(0.9))).toBeGreaterThan(0.3);
+      expect(
+        difference(middle(0.2, { x: 960, y: 480 }), middle(0.9, { x: 960, y: 480 })),
+      ).toBeLessThan(0.5);
+      if (shots) {
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-y', '-ss', String(after), '-i', out].concat([
+            '-frames:v',
+            '1',
+            join(shots, 'k03-video-kamera.png'),
+          ]),
+        );
       }
-      return count;
-    };
-    // What the slide looks like where nothing is: its own colour.
-    const empty = middle(0.5, { x: 960, y: 480 });
-    const isEmpty = (pixels: Buffer): boolean => difference(pixels, empty) < 3;
-
-    // Before the move the face is where the circle was put, and nowhere else.
-    expect(isEmpty(middle(0.5, START))).toBe(false);
-    expect(isEmpty(middle(0.5, MOVED))).toBe(true);
-    // The white ring is at the circle's edge.
-    const r = CAMERA_DIAMETER.medium / 2;
-    expect(white(crop(0.5, START.x - r, START.y - 2, 6, 4))).toBeGreaterThan(12);
-    // After the move, and the glide, it is at the new place.
-    const after = movedAt + CAMERA_GLIDE_SECONDS + 0.2;
-    expect(isEmpty(middle(after, START))).toBe(true);
-    expect(isEmpty(middle(after, MOVED))).toBe(false);
-    // On the next slide it glides to where it was put afterwards, and is smaller.
-    const second = firstLength + CAMERA_GLIDE_SECONDS + 0.6;
-    expect(isEmpty(middle(second, MOVED))).toBe(true);
-    expect(isEmpty(middle(second, LATER))).toBe(false);
-    const small = CAMERA_DIAMETER.small / 2;
-    expect(white(crop(second, LATER.x - small, LATER.y - 2, 6, 4))).toBeGreaterThan(12);
-    expect(isEmpty(crop(second, LATER.x - r + 10, LATER.y - 20, 20, 40))).toBe(true);
-    // The face is a film: its picture changes while the slide stands still.
-    const face = (time: number): Buffer => crop(time, START.x - 90, START.y - 90, 180, 180);
-    expect(difference(face(0.2), face(0.9))).toBeGreaterThan(0.3);
-    expect(
-      difference(middle(0.2, { x: 960, y: 480 }), middle(0.9, { x: 960, y: 480 })),
-    ).toBeLessThan(0.5);
-    if (shots) {
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-y', '-ss', String(after), '-i', out].concat([
-          '-frames:v',
-          '1',
-          join(shots, 'k03-video-kamera.png'),
-        ]),
-      );
-    }
-  }, 240_000);
+    },
+    EXPORT_TEST,
+  );
 
   it('leaves the circle out of the HTML file', async () => {
     const out = join(work, 'forelesning.html');

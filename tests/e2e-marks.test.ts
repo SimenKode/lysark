@@ -17,6 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { ImageElement, MarkElement, Project } from '../src/shared/format/schema';
 import { MARK_SIZE, addMark, followMarks, legendOf } from '../src/shared/layout/marks';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 import { testPng } from './fixtures/sampleProject';
 
@@ -308,7 +309,7 @@ describe.skipIf(!built)('marks on a picture, end to end', () => {
       await dialog.waitFor();
       await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
       await expect
-        .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
         .toContain('Videoen er lagret');
       await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
@@ -349,6 +350,6 @@ describe.skipIf(!built)('marks on a picture, end to end', () => {
       // Away from the marks there is no orange.
       expect(orange(second + 6.5, { x: 300, y: 900 })).toBe(0);
     },
-    240_000,
+    EXPORT_TEST,
   );
 });

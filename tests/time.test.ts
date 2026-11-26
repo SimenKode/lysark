@@ -6,7 +6,12 @@ import { applyRecording, type Take } from '../src/shared/audio/session';
 import { chapterMarks, lectureCues } from '../src/shared/render/captions';
 import { leastSceneLength, setSceneLength } from '../src/shared/audio/tracks';
 import { newProject, newScene } from '../src/shared/format/factory';
-import { FORMAT_VERSION, parseProject, type Project, type Scene } from '../src/shared/format/schema';
+import {
+  FORMAT_VERSION,
+  parseProject,
+  type Project,
+  type Scene,
+} from '../src/shared/format/schema';
 import {
   SILENT_SCENE_SECONDS,
   SILENT_STEP_SECONDS,
@@ -184,7 +189,10 @@ describe('a slide left out of the video', () => {
     expect(lectureCues(scenes, plan)).toEqual([]);
     const placed = placeTracks({
       scenes,
-      tracks: { music: [{ id: 'k', asset: 'm', scene: 's_B', offset: 0, from: 0, to: 1 }], sound: [] },
+      tracks: {
+        music: [{ id: 'k', asset: 'm', scene: 's_B', offset: 0, from: 0, to: 1 }],
+        sound: [],
+      },
     });
     expect(placed[0]!.start).toBe(2);
     // The circle on C glides from where it stood at the end of A, not of B.
@@ -199,7 +207,9 @@ describe('a slide left out of the video', () => {
       f: { kind: 'camera' as const, file: 'media/f.webm', mime: 'video/webm', bytes: 1 },
     };
     for (const scene of scenes) {
-      scene.audio = { clips: [{ id: `c${scene.id}`, kind: 'sound', asset: 'a_rec', from: 0, to: 2 }] };
+      scene.audio = {
+        clips: [{ id: `c${scene.id}`, kind: 'sound', asset: 'a_rec', from: 0, to: 2 }],
+      };
     }
     scenes[0]!.camera = { x: 300, y: 300, size: 'medium' };
     scenes[1]!.camera = { x: 900, y: 900, size: 'medium' };

@@ -5,12 +5,35 @@
 // the student sees it in a window of 1280 x 720, like the builder's preview.
 import { STAGE } from '../format/constants';
 import type { Element as SceneElement } from '../format/schema';
+import type { View } from '../layout/steps';
 import { fitDrawings, placePopover, popoverWidth, popoverWish, renderMore } from './more';
 import { moreCorner, moreOf, moreTitle, type RenderContext } from './scene';
 
 /** The student's window the box is drawn for: the slide at two thirds of its size. */
 export const POP_VIEW = { width: 1280, height: 720 } as const;
 const VIEW_SCALE = POP_VIEW.width / STAGE.width;
+
+type Box = { x: number; y: number; w: number; h: number };
+
+/**
+ * Where a box on the slide is seen, in stage pixels, when the picture is
+ * zoomed in on `view` (everything on the slide lies in the layer the zoom
+ * makes larger, but the "Lær mer" box lies outside it). Only the part that
+ * is inside the picture counts; an element wholly outside it is seen as a
+ * sliver at the nearest edge.
+ */
+export function seenBox(box: Box, view: View | undefined): Box {
+  if (!view) return box;
+  const k = STAGE.width / view.w;
+  const left = (box.x - view.x) * k;
+  const top = (box.y - view.y) * k;
+  const clamp = (value: number, most: number): number => Math.max(0, Math.min(most, value));
+  const x0 = clamp(left, STAGE.width);
+  const y0 = clamp(top, STAGE.height);
+  const x1 = clamp(left + box.w * k, STAGE.width);
+  const y1 = clamp(top + box.h * k, STAGE.height);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
 
 export interface SlidePopover {
   /** The element the box belongs to. */
@@ -20,8 +43,13 @@ export interface SlidePopover {
   panel: HTMLElement;
   /** The content, block by block (`data-block` on each). */
   body: HTMLElement;
-  /** Puts the box where it belongs. Call when it is in the document, and when its content has changed size. */
-  place(): void;
+  /**
+   * Puts the box where it belongs: beside its element where the element is
+   * seen, with the picture zoomed in on `view` (the whole slide when it is
+   * undefined; left out, the view of the last call). Call when it is in the
+   * document, when its content has changed size, and when the zoom changes.
+   */
+  place(view?: View | null): void;
   /** How far the box has popped out: 0 is just started, 1 is all the way. */
   setProgress(progress: number): void;
 }
@@ -68,30 +96,38 @@ export function createPopover(
   panel.append(head, body);
   layer.appendChild(panel);
 
-  const { box } = element;
-  const anchor = {
-    left: box.x * VIEW_SCALE,
-    top: box.y * VIEW_SCALE,
-    right: (box.x + box.w) * VIEW_SCALE,
-    bottom: (box.y + box.h) * VIEW_SCALE,
-  };
   const corner = moreCorner(element);
-  const from = {
-    x: corner.endsWith('r') ? anchor.right : anchor.left,
-    y: corner.startsWith('t') ? anchor.top : anchor.bottom,
-  };
   const wish = popoverWish(more);
-  const width = popoverWidth(anchor, POP_VIEW.width, wish.preferred, wish.least);
-  panel.style.width = `${width}px`;
+  /** Where the element is seen, in the student's window, and the corner its mark is in. */
+  const seen = (view: View | undefined) => {
+    const box = seenBox(element.box, view);
+    const anchor = {
+      left: box.x * VIEW_SCALE,
+      top: box.y * VIEW_SCALE,
+      right: (box.x + box.w) * VIEW_SCALE,
+      bottom: (box.y + box.h) * VIEW_SCALE,
+    };
+    const from = {
+      x: corner.endsWith('r') ? anchor.right : anchor.left,
+      y: corner.startsWith('t') ? anchor.top : anchor.bottom,
+    };
+    return { anchor, from };
+  };
+  let view: View | undefined;
   panel.style.left = '16px';
   panel.style.top = '16px';
+  panel.style.width = `${popoverWidth(seen(undefined).anchor, POP_VIEW.width, wish.preferred, wish.least)}px`;
 
   return {
     element: element.id,
     layer,
     panel,
     body,
-    place() {
+    place(next) {
+      if (next !== undefined) view = next ?? undefined;
+      const { anchor, from } = seen(view);
+      const width = popoverWidth(anchor, POP_VIEW.width, wish.preferred, wish.least);
+      panel.style.width = `${width}px`;
       // A figure in the box is made to fit it now, not when the window next draws.
       fitDrawings(panel);
       const place = placePopover(anchor, from, POP_VIEW, {

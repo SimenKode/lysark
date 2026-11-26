@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { encodeWav } from '../src/shared/audio/wav';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project } from '../src/shared/format/schema';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -276,25 +277,87 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
     expect(await time()).not.toBe('0:00,0 / 0:12');
   }, 60_000);
 
-  it('puts the music in the video, lowered while the voice speaks', async () => {
-    const out = join(work, 'forelesning.mp4');
-    await answerSaveDialog(out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
-      .toContain('Videoen er lagret');
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+  it(
+    'puts the music in the video, lowered while the voice speaks',
+    async () => {
+      const out = join(work, 'forelesning.mp4');
+      await answerSaveDialog(out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
-    // The music is a tone at 2000 Hz; the voice lies far below it, and is filtered well away.
+      // The music is a tone at 2000 Hz; the voice lies far below it, and is filtered well away.
+      const band = 'highpass=f=1700,lowpass=f=2300';
+      const pcm = execFileSync(
+        ffmpeg,
+        ['-v', 'error', '-i', out, '-af', `${band},${band},${band}`, '-ac', '1'].concat([
+          '-ar',
+          '48000',
+          '-f',
+          's16le',
+          'pipe:1',
+        ]),
+        { maxBuffer: 1 << 26 },
+      );
+      const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.byteLength / 2));
+      const loudness = (from: number, to: number): number => {
+        let sum = 0;
+        const a = Math.round(from * 48000);
+        const b = Math.min(samples.length, Math.round(to * 48000));
+        for (let i = a; i < b; i++) sum += samples[i]! * samples[i]!;
+        return Math.sqrt(sum / Math.max(1, b - a));
+      };
+      const end = 1 + saved().tracks!.music[0]!.to; // where the clip ends in the lecture
+      const before = loudness(0.2, 0.8); // the clip starts one second in
+      const underVoice = loudness(2.5, 3.5); // faded in, and the voice speaks until 4 s
+      const alone = loudness(5.6, 6.6); // the voice has been quiet for a while
+      const after = loudness(end + 0.4, 11.8);
+      expect(alone).toBeGreaterThan(100);
+      expect(before).toBeLessThan(alone / 20);
+      expect(after).toBeLessThan(alone / 20);
+      // Lowered to about a quarter under the voice.
+      expect(underVoice / alone).toBeGreaterThan(0.15);
+      expect(underVoice / alone).toBeLessThan(0.4);
+      // And it tones out towards its end.
+      expect(loudness(end - 0.5, end - 0.1)).toBeLessThan(alone / 2);
+    },
+    EXPORT_TEST,
+  );
+
+  it('lets the music run on over the change of slide in the HTML file', async () => {
+    const out = join(work, 'forelesning.html');
+    await answerSaveDialog(out);
+    await page.getByRole('button', { name: 'Eksporter HTML' }).click();
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+      .toContain('lagret');
+    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+    const html = readFileSync(out, 'utf8');
+    // The voice is in the sound of its slide; the slides without a voice have none.
+    expect(html).toContain('a_voice_s_a');
+    expect(html).not.toContain('a_voice_s_b');
+    expect(html).not.toContain('a_voice_s_c');
+    // The music is one sound for the whole lecture, beside the voice.
+    expect(html).toContain('"under":"a_tracks"');
+    // What is left of the music is also who made it, for the list of sources.
+    expect(html).toContain('Person A');
+
+    // In that sound the music runs straight on where slide A gives way to B (at 4 s).
+    const base64 = /id="ls-asset-a_tracks">([^<]+)</.exec(html)![1]!;
+    const m4a = join(work, 'lydspor.m4a');
+    writeFileSync(m4a, Buffer.from(base64, 'base64'));
     const band = 'highpass=f=1700,lowpass=f=2300';
     const pcm = execFileSync(
       ffmpeg,
-      ['-v', 'error', '-i', out, '-af', `${band},${band},${band}`, '-ac', '1'].concat([
-        '-ar',
-        '48000',
+      ['-v', 'error', '-i', m4a, '-af', `${band},${band}`, '-ac', '1', '-ar', '48000'].concat([
         '-f',
         's16le',
         'pipe:1',
@@ -309,35 +372,97 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the timeline, end to end', () =>
       for (let i = a; i < b; i++) sum += samples[i]! * samples[i]!;
       return Math.sqrt(sum / Math.max(1, b - a));
     };
-    const end = 1 + saved().tracks!.music[0]!.to; // where the clip ends in the lecture
-    const before = loudness(0.2, 0.8); // the clip starts one second in
-    const underVoice = loudness(2.5, 3.5); // faded in, and the voice speaks until 4 s
-    const alone = loudness(5.6, 6.6); // the voice has been quiet for a while
-    const after = loudness(end + 0.4, 11.8);
+    const alone = loudness(5.6, 6.6);
     expect(alone).toBeGreaterThan(100);
-    expect(before).toBeLessThan(alone / 20);
-    expect(after).toBeLessThan(alone / 20);
-    // Lowered to about a quarter under the voice.
-    expect(underVoice / alone).toBeGreaterThan(0.15);
-    expect(underVoice / alone).toBeLessThan(0.4);
-    // And it tones out towards its end.
-    expect(loudness(end - 0.5, end - 0.1)).toBeLessThan(alone / 2);
-  }, 240_000);
+    for (let t = 3.8; t < 4.3; t += 0.02) {
+      expect(loudness(t, t + 0.02)).toBeGreaterThan(alone * 0.1);
+    }
 
-  it('puts the music into the sound of the slides in the HTML file', async () => {
-    const out = join(work, 'forelesning.html');
-    await answerSaveDialog(out);
-    await page.getByRole('button', { name: 'Eksporter HTML' }).click();
+    // "Spill av" plays it beside the voice: when the lecture goes on to the
+    // next slide, the music is neither stopped nor moved.
+    await page.locator('.scene-item').first().click();
+    const opened = app.waitForEvent('window');
+    await page.getByRole('button', { name: 'Forhåndsvis' }).click();
+    const player = await opened;
+    await player.waitForSelector('.lp-stage .ls-scene');
+    await expect.poll(() => player.locator('.lp-counter').textContent()).toBe('1 / 3');
+    await player.evaluate(() => {
+      const elements: HTMLMediaElement[] = [];
+      const log: Array<{ el: number; what: string }> = [];
+      Object.assign(window, { mediaElements: elements, mediaLog: log });
+      const which = (el: HTMLMediaElement): number => {
+        if (!elements.includes(el)) elements.push(el);
+        return elements.indexOf(el);
+      };
+      const proto = HTMLMediaElement.prototype;
+      const time = Object.getOwnPropertyDescriptor(proto, 'currentTime')!;
+      Object.defineProperty(proto, 'currentTime', {
+        configurable: true,
+        get(this: HTMLMediaElement) {
+          return time.get!.call(this);
+        },
+        set(this: HTMLMediaElement, value: number) {
+          log.push({ el: which(this), what: 'seek' });
+          time.set!.call(this, value);
+        },
+      });
+      const pause = proto.pause;
+      proto.pause = function (this: HTMLMediaElement) {
+        log.push({ el: which(this), what: 'pause' });
+        pause.call(this);
+      };
+    });
+    await player.getByRole('button', { name: 'Spill av' }).click();
+    await expect
+      .poll(() => player.locator('.lp-counter').textContent(), { timeout: 20_000 })
+      .toBe('2 / 3');
+    await player.waitForTimeout(1000);
+    const seen = await player.evaluate(() => {
+      const w = window as unknown as {
+        mediaElements: HTMLMediaElement[];
+        mediaLog: Array<{ el: number; what: string }>;
+      };
+      // The music is the longer of the two sounds.
+      const music = w.mediaElements.reduce((a, b) =>
+        (b.duration || 0) > (a.duration || 0) ? b : a,
+      );
+      const index = w.mediaElements.indexOf(music);
+      return {
+        time: music.currentTime,
+        paused: music.paused,
+        log: w.mediaLog.filter((entry) => entry.el === index).map((entry) => entry.what),
+      };
+    });
+    // Moved once, to where "Spill av" started; never stopped or moved since.
+    expect(seen.log).toEqual(['seek']);
+    expect(seen.paused).toBe(false);
+    expect(seen.time).toBeGreaterThan(4.5);
+    await player.getByRole('button', { name: 'Pause' }).click();
+    await player.close();
+
+    // Opened as a project again, the music is one clip under the whole lecture.
+    const dir = join(work, 'fra-html');
+    await app.evaluate(
+      ({ dialog, Menu }, paths) => {
+        dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [paths.html] });
+        dialog.showSaveDialog = async () => ({ canceled: false, filePath: paths.dir });
+        dialog.showMessageBoxSync = () => 1;
+        const file = Menu.getApplicationMenu()!.items.find((item) => item.label === 'Fil')!;
+        file.submenu!.items.find((item) => item.label === 'Åpne HTML-fil …')!.click();
+      },
+      { html: out, dir },
+    );
     await expect
       .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
-      .toContain('lagret');
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
-    const html = readFileSync(out, 'utf8');
-    // Every slide has sound of its own now, also the two without a voice; the music file itself is not in.
-    expect(html).toContain('a_voice_s_a');
-    expect(html).toContain('a_voice_s_b');
-    expect(html).toContain('a_voice_s_c');
-    // What is left of the music is who made it, for the list of sources.
-    expect(html).toContain('Person A');
-  }, 120_000);
+      .toContain('er åpnet som et nytt prosjekt');
+    expect(await page.locator('.notice').textContent()).toContain(
+      'ett klipp under hele forelesningen',
+    );
+    const reopened = JSON.parse(readFileSync(join(dir, 'prosjekt.json'), 'utf8')) as Project;
+    expect(reopened.tracks!.music).toEqual([]);
+    expect(reopened.tracks!.sound).toHaveLength(1);
+    const under = reopened.tracks!.sound[0]!;
+    expect(under).toMatchObject({ scene: reopened.scenes[0]!.id, offset: 0, from: 0 });
+    expect(reopened.assets[under.asset]).toMatchObject({ kind: 'audio', mime: 'audio/wav' });
+  }, 180_000);
 });

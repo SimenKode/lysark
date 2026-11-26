@@ -7,6 +7,7 @@ import { newScene } from '../src/shared/format/factory';
 import {
   FORMAT_VERSION,
   parseProject,
+  type Element as SceneElement,
   type Project,
   type Scene,
 } from '../src/shared/format/schema';
@@ -34,6 +35,7 @@ import {
   youtubeStillUrl,
   youtubeWatchUrl,
 } from '../src/shared/render/web';
+import { createPopover, seenBox } from '../src/shared/render/popover';
 import { THEME_REN } from '../src/shared/theme/theme';
 import { sampleProject } from './fixtures/sampleProject';
 
@@ -534,5 +536,56 @@ describe('the exported file', () => {
     // Nothing from the web is referred to by anything that loads on its own.
     expect(html).not.toMatch(/<iframe/);
     expect(html).not.toMatch(/<(script|img|link)[^>]+(src|href)="https?:/);
+  });
+});
+
+describe('the "Lær mer" box on a zoomed slide', () => {
+  it('knows where a box on the slide is seen when the picture is zoomed in', () => {
+    const box = { x: 160, y: 420, w: 360, h: 200 };
+    expect(seenBox(box, undefined)).toEqual(box);
+    // Twice as large round the left half: everything is seen at twice its size.
+    expect(seenBox(box, { x: 0, y: 270, w: 960, h: 540 })).toEqual({
+      x: 320,
+      y: 300,
+      w: 720,
+      h: 400,
+    });
+    // Only the part inside the picture counts.
+    expect(seenBox({ x: 800, y: 300, w: 400, h: 100 }, { x: 0, y: 0, w: 960, h: 540 })).toEqual({
+      x: 1600,
+      y: 600,
+      w: 320,
+      h: 200,
+    });
+  });
+
+  it('places the box drawn on the slide beside its element where it is seen', () => {
+    const { project } = sampleProject();
+    const scene = newScene('content', 'A');
+    const element: SceneElement = {
+      id: 'e_a',
+      type: 'shape',
+      geometry: 'rect',
+      fill: 'lilla',
+      box: { x: 160, y: 420, w: 360, h: 200, rotation: 0 },
+      more: { title: 'A', blocks: [{ id: 'b', kind: 'heading', text: 'B' }] },
+    };
+    scene.elements.push(element);
+    const pop = createPopover(context(project), element)!;
+    document.body.appendChild(pop.layer);
+    try {
+      // The box is drawn for a window of 1280 x 720, two thirds of the stage.
+      pop.place();
+      expect(parseFloat(pop.panel.style.left)).toBeCloseTo((520 * 2) / 3 + 16, 2);
+      pop.place({ x: 0, y: 270, w: 960, h: 540 });
+      expect(parseFloat(pop.panel.style.left)).toBeCloseTo((1040 * 2) / 3 + 16, 2);
+      // Placed again without a view (a picture in it was fetched): the same zoom holds.
+      pop.place();
+      expect(parseFloat(pop.panel.style.left)).toBeCloseTo((1040 * 2) / 3 + 16, 2);
+      pop.place(null);
+      expect(parseFloat(pop.panel.style.left)).toBeCloseTo((520 * 2) / 3 + 16, 2);
+    } finally {
+      pop.layer.remove();
+    }
   });
 });

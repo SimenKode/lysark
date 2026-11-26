@@ -25,6 +25,7 @@ import {
   hasSound,
   isPlayed,
   moreAt,
+  schedule,
   sceneDuration,
   sceneMovesAt,
   stepTimes,
@@ -33,7 +34,12 @@ import {
   videosAt,
 } from '../shared/render/clock';
 import { chapters, ownIndex, slideCount, slideNumbers, slideSpan } from '../shared/layout/slides';
-import { applySceneMoves, sceneMoves, stepDuration } from '../shared/render/timeline';
+import {
+  applySceneMoves as drawMoves,
+  sceneMoves,
+  stepDuration,
+  type Moves,
+} from '../shared/render/timeline';
 import { PLAYER_STRINGS } from './strings';
 
 /** How the player finds the bytes of an asset. */
@@ -54,6 +60,12 @@ export interface PlayerData {
   logo: { light?: string; dark?: string };
   /** The brand's closing animation lies in the file, with this type. */
   closing?: { mime: string };
+  /**
+   * The asset that holds the lecture's own tracks (music, other sound) as
+   * one sound from the start of the lecture. "Spill av" plays it beside the
+   * voice, so the music runs on over the change of slide.
+   */
+  under?: string;
 }
 
 type Attrs = Record<string, string | boolean | undefined>;
@@ -110,7 +122,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const hasScript = project.export.showScript && scenes.some((s) => s.script.trim() !== '');
   /** The lecture carries the lecturer's voice and can play itself. */
-  const hasVoice = scenes.some((scene) => hasSound(scene) && isPlayed(scene));
+  const hasVoice = scenes.some((scene) => hasSound(scene) && isPlayed(scene)) || !!data.under;
 
   document.documentElement.lang = lang;
   document.title = project.meta.title;
@@ -180,6 +192,19 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   voice.addEventListener('timeupdate', () => void catchUp());
   voice.addEventListener('ended', () => void catchUp());
   voice.preload = 'auto';
+  // The lecture's music and other sound, as one sound from the start of the
+  // lecture. While it plays it is the clock of "Spill av": it runs on over
+  // the change of slide, and the voice of each slide keeps to it.
+  const underUrl = data.under ? assetUrl(data.under) : undefined;
+  const music = underUrl ? new Audio() : null;
+  if (music) {
+    music.preload = 'auto';
+    music.addEventListener('timeupdate', () => void catchUp());
+  }
+  /** When each slide starts in the lecture, as the music counts. */
+  const plan = schedule(scenes);
+  /** "Spill av" goes on to the next slide by itself: the music is not moved. */
+  let continuing = false;
 
   // ---------- Structure ----------
   const stage = h('div', { class: 'lp-stage' });
@@ -436,8 +461,18 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   }
 
   /**
-   * Puts the "Lær mer" box beside the element it belongs to. The box lies on
-   * top of the slide; the slide keeps its size and its place.
+   * Draws how the slide stands. A "Lær mer" box that is open goes along to
+   * where its element is seen: a step can zoom while it is open.
+   */
+  function applySceneMoves(el: Element, moves: Moves): void {
+    drawMoves(el, moves);
+    if (!panel.hidden) placePanel();
+  }
+
+  /**
+   * Puts the "Lær mer" box beside the element it belongs to, where the
+   * element is seen (the slide can be zoomed in). The box lies on top of the
+   * slide; the slide keeps its size and its place.
    */
   function placePanel(): void {
     if (panel.hidden || !moreOpener || panel.classList.contains('lp-panel-wide')) return;
@@ -445,7 +480,17 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     // The box keeps to the slide's own area, so the round arrows stay free.
     const area = viewport.getBoundingClientRect();
     const owner = moreOpener.closest<HTMLElement>('[data-el]') ?? moreOpener;
-    const anchor = owner.getBoundingClientRect();
+    // Where the element is seen: its drawn place, inside the part of the slide that shows.
+    const drawn = owner.getBoundingClientRect();
+    const slide = stageBox.getBoundingClientRect();
+    const clampX = (x: number): number => Math.max(slide.left, Math.min(slide.right, x));
+    const clampY = (y: number): number => Math.max(slide.top, Math.min(slide.bottom, y));
+    const anchor = {
+      left: clampX(drawn.left),
+      right: clampX(drawn.right),
+      top: clampY(drawn.top),
+      bottom: clampY(drawn.bottom),
+    };
     const mark = moreOpener.getBoundingClientRect();
     const width = popoverWidth(
       { left: anchor.left - area.left, right: anchor.right - area.left },
@@ -462,7 +507,10 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         right: anchor.right - area.left,
         bottom: anchor.bottom - area.top,
       },
-      { x: mark.left + mark.width / 2 - area.left, y: mark.top + mark.height / 2 - area.top },
+      {
+        x: clampX(mark.left + mark.width / 2) - area.left,
+        y: clampY(mark.top + mark.height / 2) - area.top,
+      },
       { width: area.width, height: area.height },
       { width, height: Math.min(panel.offsetHeight, area.height - 32) },
     );
@@ -586,7 +634,18 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   }
 
   // ---------- "Spill av": the voice, with steps and slides at the recorded times ----------
+  /** True while the music plays and is the clock. */
+  function musicLive(): boolean {
+    return !!music && playing && !music.paused && !music.ended && music.readyState >= 2;
+  }
+
+  /** Where the slide that is shown starts in the lecture. */
+  function slideStart(): number {
+    return plan.entries[index]?.start ?? 0;
+  }
+
   function voiceTime(scene: Scene): number {
+    if (musicLive()) return music!.currentTime - slideStart();
     return hasSound(scene) ? voice.currentTime : (performance.now() - silentStart) / 1000;
   }
 
@@ -594,8 +653,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   function startVoice(from: number): void {
     const scene = scenes[index]!;
     cancelAnimationFrame(playFrame);
+    // Going on by itself, the music is where the slide is: it is not moved.
+    const keepMusic = continuing && musicLive();
+    const at = keepMusic ? Math.max(0, music!.currentTime - slideStart()) : from;
     voice.pause();
-    silentStart = performance.now() - from * 1000;
+    silentStart = performance.now() - at * 1000;
     const clip = scene.audio?.clips.find((c) => c.kind === 'sound');
     const url = clip && clip.kind === 'sound' ? assetUrl(clip.asset) : undefined;
     if (hasSound(scene) && url) {
@@ -603,10 +665,24 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         voice.src = url;
         voice.dataset.scene = scene.id;
       }
-      voice.currentTime = from;
+      voice.currentTime = at;
       void voice.play().catch(() => setPlaying(false));
     }
+    if (music && underUrl && !keepMusic) {
+      if (!music.src) music.src = underUrl;
+      music.currentTime = slideStart() + from;
+      if (!(music.currentTime >= music.duration)) void music.play().catch(() => undefined);
+    }
     playFrame = requestAnimationFrame(followVoice);
+  }
+
+  /** While the music is the clock, the voice of the slide keeps to it. */
+  function keepVoiceWithMusic(scene: Scene, now: number): void {
+    silentStart = performance.now() - now * 1000;
+    if (!hasSound(scene) || voice.readyState < 1 || voice.paused) return;
+    if (now < voice.duration && Math.abs(voice.currentTime - now) > 0.25) {
+      voice.currentTime = Math.max(0, now);
+    }
   }
 
   /** The video of an element on the slide, or of a block in the open box. */
@@ -677,14 +753,21 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const el = sceneElement(scene);
     const now = voiceTime(scene);
     const duration = sceneDuration(scene);
-    const done = hasSound(scene) ? voice.ended || now >= duration : now >= duration;
+    const byMusic = musicLive();
+    if (byMusic) keepVoiceWithMusic(scene, now);
+    const done = hasSound(scene) && !byMusic ? voice.ended || now >= duration : now >= duration;
     if (done) {
       const to = nextPlayed(index);
       if (to >= 0) {
-        // Goes on with the voice of the next slide that is in "Spill av".
-        // Where the lecturer came back to a slide, the steps that were there
-        // are there from the start.
-        show(to, stepsShownBefore(scenes[to]!), false);
+        // Goes on with the voice of the next slide that is in "Spill av",
+        // and the music runs on. Where the lecturer came back to a slide,
+        // the steps that were there are there from the start.
+        continuing = true;
+        try {
+          show(to, stepsShownBefore(scenes[to]!), false);
+        } finally {
+          continuing = false;
+        }
       } else {
         stepsShown = scene.timeline.length;
         applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
@@ -727,6 +810,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     } else {
       cancelAnimationFrame(playFrame);
       voice.pause();
+      music?.pause();
       stopVoiceVideos();
       // What has come in stays; the rest waits for the keys again.
       applySceneMoves(sceneElement(scene), sceneMoves(scene, stepsShown, Infinity));
@@ -894,6 +978,21 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   document.addEventListener('fullscreenchange', () => {
     fullscreenButton.textContent = document.fullscreenElement ? t.exitFullscreen : t.fullscreen;
   });
+
+  // An embedded frame (YouTube's player) that has been clicked in keeps the
+  // keyboard: the arrows would go to it and not turn pages. The keyboard is
+  // given back to the player when the pointer leaves the frame, and on any
+  // press on the player outside it.
+  const reclaimKeys = (event: Event): void => {
+    const active = document.activeElement;
+    if (active?.tagName !== 'IFRAME' || (event.target as Element | null)?.closest?.('iframe')) {
+      return;
+    }
+    (active as HTMLElement).blur();
+    viewport.focus({ preventScroll: true });
+  };
+  root.addEventListener('pointerover', reclaimKeys);
+  root.addEventListener('pointerdown', reclaimKeys, true);
 
   document.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;

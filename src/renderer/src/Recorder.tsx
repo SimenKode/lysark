@@ -38,6 +38,7 @@ import {
 } from '../../shared/render/clock';
 import { chapters, ownIndex, slideCount, slideNumbers } from '../../shared/layout/slides';
 import { createPopover, type SlidePopover } from '../../shared/render/popover';
+import { sceneMoves } from '../../shared/render/timeline';
 import { moreOf } from '../../shared/render/scene';
 import {
   openFilmStore,
@@ -395,6 +396,11 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const meter = useRef<HTMLSpanElement>(null);
   const stage = useRef<HTMLDivElement | null>(null);
   const box = useRef<SlidePopover | null>(null);
+  // A step that zooms while a box is open: the box goes where its element is seen now.
+  useEffect(() => {
+    const open = box.current;
+    if (open) open.place(sceneMoves(scene, stepsShown, Infinity).view ?? null);
+  }, [scene, stepsShown]);
 
   // What the sound thread fills, kept outside React's state.
   const live = useRef({
@@ -666,7 +672,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     if (!made) return;
     closeBox(false);
     stage.current.appendChild(made.layer);
-    made.place();
+    // Beside its element where it is seen, also when the slide is zoomed in.
+    made.place(sceneMoves(current!, live.current.stepsShown, Infinity).view ?? null);
     // A picture in the box can change its height when it has been fetched.
     for (const img of Array.from(made.layer.querySelectorAll('img'))) {
       img.addEventListener('load', () => made.place(), { once: true });

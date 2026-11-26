@@ -16,6 +16,7 @@ import { encodeWav } from '../src/shared/audio/wav';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project } from '../src/shared/format/schema';
 import { sceneDuration } from '../src/shared/render/clock';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -127,18 +128,16 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
     );
     await field().fill('12,5');
     await field().press('Enter');
-    await expect.poll(() => page.getByRole('tab', { name: /^Lyd/ }).textContent()).toBe(
-      'Lyd (0:13)',
-    );
+    await expect
+      .poll(() => page.getByRole('tab', { name: /^Lyd/ }).textContent())
+      .toBe('Lyd (0:13)');
     await save();
     expect(saved().scenes[0]!.seconds).toBe(12.5);
 
     // A slide with sound: the sound decides, and the field is not offered.
     await slide(1).click();
     await expect.poll(() => field().count()).toBe(0);
-    expect(await page.locator('.scene-time-sound').textContent()).toMatch(
-      /lyd.*0:03.*fanen «Lyd»/,
-    );
+    expect(await page.locator('.scene-time-sound').textContent()).toMatch(/lyd.*0:03.*fanen «Lyd»/);
 
     // A slide whose only sound is a pause shows the pause, and the number replaces it.
     await slide(2).click();
@@ -160,9 +159,9 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
     await expect.poll(() => number.inputValue()).toBe('5');
     await number.fill('9');
     await number.press('Enter');
-    await expect.poll(() => page.getByRole('tab', { name: /^Lyd/ }).textContent()).toBe(
-      'Lyd (0:09)',
-    );
+    await expect
+      .poll(() => page.getByRole('tab', { name: /^Lyd/ }).textContent())
+      .toBe('Lyd (0:09)');
     await page.getByRole('button', { name: 'Bruk på alle lysark uten lyd' }).click();
     await save();
     expect(saved().scenes.map((s) => s.seconds)).toEqual([9, undefined, 9, 9]);
@@ -247,9 +246,9 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
     // From slide 1 straight to slide 4, over 2 (which has sound) and 3 (which has none).
     await page.keyboard.press('l');
     await recorder.locator('.recorder-menu-item').nth(3).click();
-    await expect.poll(() => recorder.locator('.recorder-where').textContent()).toContain(
-      'Lysark 4 av',
-    );
+    await expect
+      .poll(() => recorder.locator('.recorder-where').textContent())
+      .toContain('Lysark 4 av');
     await page.waitForTimeout(1500);
     await recorder.getByRole('button', { name: 'Ferdig' }).click();
     await expect
@@ -325,7 +324,7 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
       expect(await dialog.textContent()).toContain('(2 lysark; ett er ikke med, 2 med lyd)');
       await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
       await expect
-        .poll(notice, { timeout: 400_000, interval: 1000 })
+        .poll(notice, { timeout: EXPORT_WAIT, interval: 1000 })
         .toContain('Videoen er lagret');
       await page.locator('.notice button', { hasText: 'Lukk' }).click();
       const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
@@ -334,6 +333,6 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
       const [, b, , d] = saved().scenes;
       expect(Math.abs(seconds - (sceneDuration(b!) + sceneDuration(d!)))).toBeLessThan(0.3);
     },
-    480_000,
+    EXPORT_TEST,
   );
 });

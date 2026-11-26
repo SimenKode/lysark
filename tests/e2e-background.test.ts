@@ -77,6 +77,25 @@ describe.skipIf(!built || !existsSync(ffmpeg))('a recording saved in the backgro
       held.gates = [];
     });
 
+  /**
+   * Lets the test answer the question about closing while a recording is
+   * being saved (0 "Vent", 1 "Avslutt likevel"), and notes what was asked.
+   * Any other question (unsaved changes) is answered "Ikke lagre".
+   */
+  const answerClose = (choice: number): Promise<void> =>
+    app.evaluate(({ dialog }, pick) => {
+      const asked: unknown[] = [];
+      (globalThis as unknown as { closeAsked?: unknown[] }).closeAsked = asked;
+      dialog.showMessageBoxSync = ((_window: unknown, options: unknown) => {
+        const { message, buttons } = options as { message: string; buttons: string[] };
+        if (!message.startsWith('Opptaket lagres')) return 1;
+        asked.push({ message, buttons });
+        return pick;
+      }) as typeof dialog.showMessageBoxSync;
+    }, choice);
+  const askedClose = (): Promise<unknown[]> =>
+    app.evaluate(() => (globalThis as unknown as { closeAsked?: unknown[] }).closeAsked ?? []);
+
   /** Reads slide after slide in from the selected one, about 1.5 s each, and presses "Ferdig". */
   const record = async (count: number, camera: boolean): Promise<void> => {
     await page.getByRole('tab', { name: /^Lyd/ }).click();
@@ -195,10 +214,23 @@ describe.skipIf(!built || !existsSync(ffmpeg))('a recording saved in the backgro
     await page.getByRole('tab', { name: 'Manus' }).click();
 
     // Closing the program waits too: no box, the window stays, and it says why.
+    await answerClose(0);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
     await expect.poll(notice).toContain('Opptaket lagres ennå');
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+    expect(await askedClose()).toEqual([]);
     await page.locator('.notice button', { hasText: 'Lukk' }).click();
+    // Asked again while the same recording is being saved, it asks whether to
+    // close anyway. "Vent": the window stays, and the saving goes on.
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
+    await expect.poll(async () => (await askedClose()).length).toBe(1);
+    expect(await askedClose()).toEqual([
+      {
+        message: 'Opptaket lagres ennå. Vil du avslutte likevel? Da går opptaket tapt.',
+        buttons: ['Vent', 'Avslutt likevel'],
+      },
+    ]);
+    expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 
     await letGo();
     await expect
@@ -259,5 +291,20 @@ describe.skipIf(!built || !existsSync(ffmpeg))('a recording saved in the backgro
     );
     const sounds = Object.entries(project.assets).filter(([, x]) => x.kind === 'audio');
     expect(sounds.every(([id]) => used.has(id))).toBe(true);
+  }, 120_000);
+
+  it('can always be closed: asked twice while the saving hangs, it closes when the lecturer says so', async () => {
+    await page.locator('.scene-item').first().click();
+    await record(2, false);
+    await page.locator('.recorder').waitFor({ state: 'detached', timeout: 5000 });
+    expect(await status()).toBe('Lagrer opptaket');
+    // The sound is never let go: the saving hangs.
+    await answerClose(1);
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
+    await expect.poll(notice).toContain('Opptaket lagres ennå');
+    expect(await askedClose()).toEqual([]);
+    const closed = app.waitForEvent('close');
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
+    await closed;
   }, 120_000);
 });

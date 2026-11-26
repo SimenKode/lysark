@@ -146,6 +146,17 @@ export function hasLogo(status: LogoStatus, language: LogoLanguage, variant: Log
 }
 
 /** Commands sent from the application menu to the interface. */
+/** What «Rydd i prosjektmappa» found and did. */
+export interface TidyResult {
+  /** Files that nothing uses, and how large they are together. */
+  found: number;
+  bytes: number;
+  /** The owner said yes: these files (`media/…`) are in the waste bin now. */
+  trashed: string[];
+  /** Files that could not be moved to the waste bin. */
+  failed: number;
+}
+
 export type MenuCommand =
   | 'new'
   | 'open'
@@ -166,6 +177,7 @@ export type MenuCommand =
   | 'unpack'
   | 'open-html'
   | 'import-pdf'
+  | 'tidy'
   /** The program was asked to close while a recording is being saved: it stays open. */
   | 'close-while-saving';
 
@@ -238,6 +250,12 @@ export interface LysarkApi {
   packProject(dir: string): Promise<{ path: string; bytes: number } | null>;
   /** Unpacks a packed project into a new folder and opens it. */
   unpackProject(): Promise<OpenedProject | null>;
+  /**
+   * «Rydd i prosjektmappa»: counts the files in the project's media folder
+   * that are not in `keep`, asks the owner, and on a yes moves them to the
+   * system's waste bin. Never deletes anything outright.
+   */
+  tidyMedia(dir: string, keep: string[]): Promise<TidyResult>;
   /** Makes a project in a new folder out of an HTML file exported by Lysark, and opens it. */
   openHtmlFile(): Promise<OpenedHtml | null>;
   /** Lets the owner pick a PDF and hands over its bytes. */

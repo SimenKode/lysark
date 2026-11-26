@@ -203,6 +203,39 @@ export function addMediaBytes(
 
 const SAFE_MEDIA_NAME = /^media\/[A-Za-z0-9._-]+$/;
 
+/** A file in the project's media folder that nothing uses. */
+export interface UnusedMedia {
+  /** `media/…`, as the project names it. */
+  file: string;
+  path: string;
+  bytes: number;
+}
+
+/** The files in the project's media folder that are not in `keep` (names `media/…`). */
+export function unusedMedia(dir: string, keep: readonly string[]): UnusedMedia[] {
+  const mediaDir = join(dir, 'media');
+  if (!existsSync(mediaDir)) return [];
+  const used = new Set(keep);
+  const unused: UnusedMedia[] = [];
+  for (const name of readdirSync(mediaDir).sort()) {
+    const file = `media/${name}`;
+    if (!SAFE_MEDIA_NAME.test(file) || used.has(file)) continue;
+    const path = join(mediaDir, name);
+    const info = statSync(path);
+    if (info.isFile()) unused.push({ file, path, bytes: info.size });
+  }
+  return unused;
+}
+
+/** "1,4 MB" or "820 kB", as a lecturer reads a size. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('nb-NO')} kB`;
+  }
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toLocaleString('nb-NO', { maximumFractionDigits: 1 })} MB`;
+}
+
 /** Packs a project folder into one zip file, for moving or archiving. */
 export function packProject(dir: string, target: string): number {
   readProject(dir); // refuse to pack something that is not a readable project

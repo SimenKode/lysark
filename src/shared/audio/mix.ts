@@ -157,7 +157,10 @@ export function mixPiece(
  * slide. `part` holds the slide's voice and is changed; `partStart` is
  * where the slide begins in the lecture, in samples. With `duck`, the
  * music steps back while someone speaks; the state is carried from slide
- * to slide, so the slides must come in the order of the lecture.
+ * to slide, so the slides must come in the order of the lecture. With
+ * `voice`, that is what the music steps back for, and `part` gets only the
+ * tracks (the HTML file keeps the music apart from the voice, so that it
+ * can run on over the change of slide).
  */
 export function mixTracks(
   part: Int16Array,
@@ -165,6 +168,7 @@ export function mixTracks(
   placed: readonly PlacedClip[],
   samplesOf: (assetId: string) => Int16Array | undefined,
   duck: DuckState | null,
+  voice?: Int16Array,
 ): void {
   if (duck) {
     // After a jump in the lecture (slides without any sound are not put
@@ -175,7 +179,7 @@ export function mixTracks(
     duck.end = partStart + part.length;
   }
   // The voice decides before anything is laid on top of it.
-  const gains = duck ? duckGains(part, duck) : undefined;
+  const gains = duck ? duckGains(voice ?? part, duck) : undefined;
   const from = partStart / SAMPLE_RATE;
   const to = (partStart + part.length) / SAMPLE_RATE;
   for (const { track, clip, start, end } of placed) {

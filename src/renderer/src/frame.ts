@@ -150,12 +150,15 @@ async function sceneElement(index: number): Promise<HTMLElement> {
 
 /** Shows the box that is open at `t`, as far out as it has popped, and hides the others. */
 function showBoxes(index: number, t: number | null): void {
-  const open = t === null ? undefined : moreAt(job!.scenes[index]!, t);
+  const scene = job!.scenes[index]!;
+  const open = t === null ? undefined : moreAt(scene, t);
+  // The box lies beside its element where it is seen, also when the picture is zoomed in.
+  const view = t === null ? null : (sceneMovesAt(scene, t).view ?? null);
   for (const [element, box] of boxes.get(index) ?? []) {
     const shown = t === null || open?.element === element;
     box.layer.style.display = shown ? '' : 'none';
     if (!shown) continue;
-    box.place();
+    box.place(view);
     box.setProgress(open ? popProgress(open.since) : 1);
   }
 }

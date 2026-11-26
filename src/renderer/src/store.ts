@@ -140,6 +140,12 @@ interface State {
   setVideoProgress(progress: VideoProgress | null): void;
   setPdfProgress(progress: PdfProgress | null): void;
   setLookRequest(request: LookRequest | null): void;
+  /**
+   * Takes the assets whose files are gone from the project folder (moved to
+   * the waste bin by «Rydd i prosjektmappa») out of the project, and out of
+   * every state "Angre" and "Gjør om" can bring back. Nothing used them.
+   */
+  forgetMedia(files: readonly string[]): void;
 }
 
 const HISTORY_LIMIT = 100;
@@ -377,6 +383,20 @@ export const useStore = create<State>((set, get) => ({
 
   setLookRequest(request) {
     set({ lookRequest: request });
+  },
+
+  forgetMedia(files) {
+    const gone = new Set(files);
+    const without = (project: Project): Project => {
+      const ids = Object.keys(project.assets).filter((id) => gone.has(project.assets[id]!.file));
+      if (ids.length === 0) return project;
+      return produce(project, (draft) => {
+        for (const id of ids) delete draft.assets[id];
+      });
+    };
+    const { project, past, future } = get();
+    if (!project) return;
+    set({ project: without(project), past: past.map(without), future: future.map(without) });
   },
 }));
 

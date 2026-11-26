@@ -511,8 +511,17 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       await player.locator('.lp-stage .ls-el-video a.ls-webvideo-open').getAttribute('href'),
     ).toBe('https://www.youtube.com/watch?v=BBBBBBBBBBB');
     await shot(player, 'm10-youtube-i-lysarket');
+    // A click in YouTube's player gives it the keyboard. When the pointer
+    // leaves it, the arrows turn pages again, without a click on the round arrows.
+    await frame.click();
+    await expect.poll(() => player.evaluate(() => document.activeElement?.tagName)).toBe('IFRAME');
+    const stage = (await player.locator('.lp-stagebox').boundingBox())!;
+    await player.mouse.move(stage.x + 8, stage.y + 8, { steps: 4 });
+    await expect
+      .poll(() => player.evaluate(() => document.activeElement?.tagName))
+      .not.toBe('IFRAME');
     // Going on takes the player away, so nothing plays in the background.
-    await player.locator('.lp-nav-prev').click();
+    await player.keyboard.press('ArrowLeft');
     await expect.poll(() => player.locator('.lp-counter').textContent()).toBe('2 / 3');
     expect(await player.locator('iframe').count()).toBe(0);
   });

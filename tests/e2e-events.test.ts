@@ -20,6 +20,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project, SceneEvent } from '../src/shared/format/schema';
+import { EXPORT_TEST, EXPORT_WAIT } from './fixtures/limits';
 import { OFFLINE } from './fixtures/offline';
 import { testPng } from './fixtures/sampleProject';
 
@@ -278,107 +279,114 @@ describe.skipIf(!built || !existsSync(ffmpeg))('"Lær mer" and video while readi
     await shot(page, 'h03-lydpanel-merker');
   }, 120_000);
 
-  it('makes a video where the box pops out and the films play, with their sound', async () => {
-    const out = join(work, 'forelesning.mp4');
-    await answerSaveDialog(out);
-    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
-    const dialog = page.locator('dialog.video-dialog');
-    await dialog.waitFor();
-    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
-    await expect
-      .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
-      .toContain('Videoen er lagret');
-    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+  it(
+    'makes a video where the box pops out and the films play, with their sound',
+    async () => {
+      const out = join(work, 'forelesning.mp4');
+      await answerSaveDialog(out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: EXPORT_WAIT, interval: 500 })
+        .toContain('Videoen er lagret');
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
-    /** A part of one picture of the video, as red, green, blue. */
-    const crop = (time: number, x: number, y: number, w: number, h: number): Buffer =>
-      execFileSync(
+      /** A part of one picture of the video, as red, green, blue. */
+      const crop = (time: number, x: number, y: number, w: number, h: number): Buffer =>
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
+            '-vf',
+            `crop=${w}:${h}:${x}:${y}`,
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgb24',
+            'pipe:1',
+          ]),
+          { maxBuffer: 1 << 24 },
+        );
+      const purple = (pixels: Buffer): number => {
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 3) {
+          const [r, g, b] = [pixels[i]!, pixels[i + 1]!, pixels[i + 2]!];
+          if (Math.abs(r - 120) < 40 && g < 60 && b > 190) count += 1;
+        }
+        return count;
+      };
+      const difference = (a: Buffer, b: Buffer): number => {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
+        return sum / a.length;
+      };
+      const opened = at('more-open');
+      const closed = at('more-close');
+      // The box lies to the left of the picture: its purple edge is there while it is
+      // open, and neither before nor after.
+      const edge = (time: number): number => purple(crop(time, 420, 300, 40, 40));
+      expect(edge(Math.max(0, opened - 0.3))).toBe(0);
+      expect(edge(opened + 0.8)).toBeGreaterThan(100);
+      expect(edge(closed + 0.4)).toBe(0);
+      // The "+" mark of what was opened is in the video (the box pops out of it).
+      expect(purple(crop(0.2, 1650, 190, 80, 80))).toBeGreaterThan(300);
+      if (shots) {
+        execFileSync(
+          ffmpeg,
+          ['-v', 'error', '-y', '-ss', String(opened + 1.6), '-i', out].concat([
+            '-frames:v',
+            '1',
+            join(shots, 'h04-video-boks.png'),
+          ]),
+        );
+      }
+
+      // The film in the box moves while it plays.
+      const inBox = at('video-play', 0);
+      const boxArea = (time: number): Buffer => crop(time, 440, 230, 830, 560);
+      expect(difference(boxArea(inBox + 0.3), boxArea(inBox + 1.1))).toBeGreaterThan(0.5);
+      // The film on the slide stands still, moves while it plays, and stops where it was stopped.
+      const filmArea = (time: number): Buffer => crop(time, 1300, 600, 480, 270);
+      const started = at('video-play', 1);
+      const stopped = at('video-pause');
+      expect(difference(filmArea(closed + 0.2), filmArea(started - 0.15))).toBeLessThan(1);
+      expect(difference(filmArea(started + 0.3), filmArea(started + 1.1))).toBeGreaterThan(1);
+      expect(difference(filmArea(stopped + 0.2), filmArea(stopped + 0.6))).toBeLessThan(1);
+      expect(difference(filmArea(started - 0.15), filmArea(stopped + 0.4))).toBeGreaterThan(1);
+
+      // The high tone of the film is heard while a film plays, and not otherwise.
+      const pcm = execFileSync(
         ffmpeg,
-        ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
-          '-vf',
-          `crop=${w}:${h}:${x}:${y}`,
+        ['-v', 'error', '-i', out, '-af', 'highpass=f=2700,lowpass=f=3300', '-ac', '1'].concat([
+          '-ar',
+          '48000',
           '-f',
-          'rawvideo',
-          '-pix_fmt',
-          'rgb24',
+          's16le',
           'pipe:1',
         ]),
-        { maxBuffer: 1 << 24 },
+        { maxBuffer: 1 << 26 },
       );
-    const purple = (pixels: Buffer): number => {
-      let count = 0;
-      for (let i = 0; i < pixels.length; i += 3) {
-        const [r, g, b] = [pixels[i]!, pixels[i + 1]!, pixels[i + 2]!];
-        if (Math.abs(r - 120) < 40 && g < 60 && b > 190) count += 1;
-      }
-      return count;
-    };
-    const difference = (a: Buffer, b: Buffer): number => {
-      let sum = 0;
-      for (let i = 0; i < a.length; i++) sum += Math.abs(a[i]! - b[i]!);
-      return sum / a.length;
-    };
-    const opened = at('more-open');
-    const closed = at('more-close');
-    // The box lies to the left of the picture: its purple edge is there while it is
-    // open, and neither before nor after.
-    const edge = (time: number): number => purple(crop(time, 420, 300, 40, 40));
-    expect(edge(Math.max(0, opened - 0.3))).toBe(0);
-    expect(edge(opened + 0.8)).toBeGreaterThan(100);
-    expect(edge(closed + 0.4)).toBe(0);
-    // The "+" mark of what was opened is in the video (the box pops out of it).
-    expect(purple(crop(0.2, 1650, 190, 80, 80))).toBeGreaterThan(300);
-    if (shots) {
-      execFileSync(
-        ffmpeg,
-        ['-v', 'error', '-y', '-ss', String(opened + 1.6), '-i', out].concat([
-          '-frames:v',
-          '1',
-          join(shots, 'h04-video-boks.png'),
-        ]),
-      );
-    }
-
-    // The film in the box moves while it plays.
-    const inBox = at('video-play', 0);
-    const boxArea = (time: number): Buffer => crop(time, 440, 230, 830, 560);
-    expect(difference(boxArea(inBox + 0.3), boxArea(inBox + 1.1))).toBeGreaterThan(0.5);
-    // The film on the slide stands still, moves while it plays, and stops where it was stopped.
-    const filmArea = (time: number): Buffer => crop(time, 1300, 600, 480, 270);
-    const started = at('video-play', 1);
-    const stopped = at('video-pause');
-    expect(difference(filmArea(closed + 0.2), filmArea(started - 0.15))).toBeLessThan(1);
-    expect(difference(filmArea(started + 0.3), filmArea(started + 1.1))).toBeGreaterThan(1);
-    expect(difference(filmArea(stopped + 0.2), filmArea(stopped + 0.6))).toBeLessThan(1);
-    expect(difference(filmArea(started - 0.15), filmArea(stopped + 0.4))).toBeGreaterThan(1);
-
-    // The high tone of the film is heard while a film plays, and not otherwise.
-    const pcm = execFileSync(
-      ffmpeg,
-      ['-v', 'error', '-i', out, '-af', 'highpass=f=2700,lowpass=f=3300', '-ac', '1'].concat([
-        '-ar',
-        '48000',
-        '-f',
-        's16le',
-        'pipe:1',
-      ]),
-      { maxBuffer: 1 << 26 },
-    );
-    const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.byteLength / 2));
-    const loudness = (from: number, to: number): number => {
-      let sum = 0;
-      const a = Math.round(from * 48000);
-      const b = Math.min(samples.length, Math.round(to * 48000));
-      for (let i = a; i < b; i++) sum += samples[i]! * samples[i]!;
-      return Math.sqrt(sum / Math.max(1, b - a));
-    };
-    // (The fake microphone beeps, and a little of that lies near the tone too.)
-    const quiet = loudness(0.1, opened - 0.1) + 1;
-    expect(loudness(inBox + 0.2, closed - 0.2)).toBeGreaterThan(quiet * 4);
-    expect(loudness(started + 0.2, stopped - 0.2)).toBeGreaterThan(quiet * 4);
-    expect(loudness(closed + 0.2, started - 0.2)).toBeLessThan(quiet * 2);
-    expect(loudness(stopped + 0.2, length - 0.1)).toBeLessThan(quiet * 2);
-  }, 240_000);
+      const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.byteLength / 2));
+      const loudness = (from: number, to: number): number => {
+        let sum = 0;
+        const a = Math.round(from * 48000);
+        const b = Math.min(samples.length, Math.round(to * 48000));
+        for (let i = a; i < b; i++) sum += samples[i]! * samples[i]!;
+        return Math.sqrt(sum / Math.max(1, b - a));
+      };
+      // (The fake microphone beeps, and a little of that lies near the tone too.)
+      const quiet = loudness(0.1, opened - 0.1) + 1;
+      expect(loudness(inBox + 0.2, closed - 0.2)).toBeGreaterThan(quiet * 4);
+      expect(loudness(started + 0.2, stopped - 0.2)).toBeGreaterThan(quiet * 4);
+      expect(loudness(closed + 0.2, started - 0.2)).toBeLessThan(quiet * 2);
+      expect(loudness(stopped + 0.2, length - 0.1)).toBeLessThan(quiet * 2);
+    },
+    EXPORT_TEST,
+  );
 
   it('does the same in "Spill av" in the HTML file', async () => {
     const out = join(work, 'forelesning.html');

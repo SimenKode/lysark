@@ -258,11 +258,57 @@ export async function writeLectureSound(
 export async function encodeSceneSound(
   scene: Scene,
   samplesOf: (assetId: string) => Int16Array | undefined,
-  start = 0,
-  mixes: readonly SlideMix[] = [],
 ): Promise<{ data: Uint8Array; seconds: number }> {
   const want = secondsToSamples(sceneDuration(scene));
-  const samples = await slideSound(scene, start, want, samplesOf, mixes);
+  const samples = await slideSound(scene, 0, want, samplesOf, []);
+  const data = await encodeAac(async (write) => write(samples));
+  return { data, seconds: want / SAMPLE_RATE };
+}
+
+/**
+ * The lecture's own tracks (music, other sound) as one AAC file (M4A) for
+ * the exported HTML, from the start of the lecture to where the last clip
+ * ends: one file, so that "Spill av" can let the music run on over the
+ * change of slide. The music steps back under the voice exactly as in the
+ * video (`mixTracks`), but the voice itself is not in the file: it stays in
+ * the sound of each slide. Undefined when nothing is heard on the tracks.
+ */
+export async function encodeLectureTracks(
+  project: Project,
+  plan: Schedule,
+  samplesOf: (assetId: string) => Int16Array | undefined,
+): Promise<{ data: Uint8Array; seconds: number } | undefined> {
+  const placed = placeTracks(project, plan);
+  const end = Math.min(plan.total, Math.max(0, ...placed.map((p) => p.end)));
+  if (placed.length === 0 || end <= 0) return undefined;
+  const duck = videoOptions(project).duckMusic === false ? null : newDuckState();
+  const total = secondsToSamples(end);
+  const data = await encodeAac(async (write) => {
+    let written = 0;
+    for (const entry of plan.entries) {
+      if (written >= total) break;
+      const to = Math.min(total, secondsToSamples(entry.start + entry.duration));
+      const want = Math.max(0, to - written);
+      if (want === 0) continue;
+      const scene = project.scenes[entry.index]!;
+      const voice = new Int16Array(want);
+      if (hasSound(scene)) {
+        const track = renderTrack(scene.audio, samplesOf);
+        voice.set(track.subarray(0, Math.min(track.length, want)));
+      }
+      const part = new Int16Array(want);
+      mixTracks(part, written, placed, samplesOf, duck, voice);
+      await write(part);
+      written += want;
+    }
+  });
+  return { data, seconds: total / SAMPLE_RATE };
+}
+
+/** Encodes raw samples, handed over by `fill` a piece at a time, as one AAC file (M4A). */
+async function encodeAac(
+  fill: (write: (samples: Int16Array) => Promise<void>) => Promise<void>,
+): Promise<Uint8Array> {
   const work = mkdtempSync(join(tmpdir(), 'lysark-lyd-'));
   const target = join(work, 'lyd.m4a');
   try {
@@ -286,14 +332,16 @@ export async function encodeSceneSound(
       '-1',
       target,
     ]);
-    const bytes = bytesOf(samples);
     const CHUNK = 1 << 20;
-    for (let offset = 0; offset < bytes.byteLength; offset += CHUNK) {
-      await writeTo(run, bytes.subarray(offset, offset + CHUNK));
-    }
+    await fill(async (samples) => {
+      const bytes = bytesOf(samples);
+      for (let offset = 0; offset < bytes.byteLength; offset += CHUNK) {
+        await writeTo(run, bytes.subarray(offset, offset + CHUNK));
+      }
+    });
     run.process.stdin.end();
     await run.done;
-    return { data: new Uint8Array(readFileSync(target)), seconds: want / SAMPLE_RATE };
+    return new Uint8Array(readFileSync(target));
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
@@ -317,15 +365,27 @@ export async function restoreSound(
   const project = structuredClone(source);
   const notes: string[] = [];
   if (project.tracks) {
-    // In an exported file the music lies in the sound of each slide; what was
-    // left of the tracks was only the names for the list of sources.
+    // In an exported file the music and other sound lie in one sound file for
+    // the whole lecture, on a clip of its own; files made before that have
+    // them in the sound of each slide. What else is left of the tracks is
+    // only the names for the list of sources.
+    const carried = (clip: { asset: string }): boolean =>
+      compressed.some(([id]) => id === clip.asset);
+    const sound = project.tracks.sound.filter(carried);
     for (const clip of [...project.tracks.music, ...project.tracks.sound]) {
-      delete project.assets[clip.asset];
+      if (!carried(clip)) delete project.assets[clip.asset];
     }
-    delete project.tracks;
-    notes.push(
-      'Musikk og annen lyd fra lydsporene ligger nå i lyden på hvert lysark, sammen med stemmen.',
-    );
+    if (sound.length > 0) {
+      project.tracks = { music: [], sound };
+      notes.push(
+        'Musikk og annen lyd fra lydsporene ligger nå som ett klipp under hele forelesningen, på sporet «Lyd», slik de ble hørt i HTML-fila.',
+      );
+    } else {
+      delete project.tracks;
+      notes.push(
+        'Musikk og annen lyd fra lydsporene ligger nå i lyden på hvert lysark, sammen med stemmen.',
+      );
+    }
   }
   if (compressed.length === 0) return { project, notes };
   const lost = new Set<string>();
@@ -343,9 +403,18 @@ export async function restoreSound(
           clip.from = Math.min(clip.from, Math.max(0, clip.to - 0.01));
         }
       }
+      for (const clip of project.tracks?.sound ?? []) {
+        if (clip.asset === id) clip.to = Math.min(clip.to, stored.seconds);
+      }
     } catch {
       lost.add(id);
       delete project.assets[id];
+      if (project.tracks) {
+        project.tracks.sound = project.tracks.sound.filter((clip) => clip.asset !== id);
+        if (project.tracks.sound.length + project.tracks.music.length === 0) {
+          delete project.tracks;
+        }
+      }
     }
     rmSync(file, { force: true });
   }

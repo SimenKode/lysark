@@ -28,6 +28,7 @@ import { Stage } from './Stage';
 import {
   exportHtml,
   importPdf,
+  tidyProjectFolder,
   importPptx,
   insertImage,
   insertVideoFile,
@@ -604,6 +605,9 @@ export function App() {
           return openHtmlFile();
         case 'import-pdf':
           return importPdf();
+        case 'tidy':
+          state.setEditing(null);
+          return tidyProjectFolder();
         case 'close-while-saving':
           state.setNotice({
             kind: 'info',

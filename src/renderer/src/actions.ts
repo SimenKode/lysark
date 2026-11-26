@@ -18,6 +18,7 @@ import { applyPptxSlides, type PptxSlide } from '../../importer/pptxSlides';
 import { applyRecording, type Applied, type Take } from '../../shared/audio/session';
 import { addTrackClip } from '../../shared/audio/tracks';
 import { slideNumbers } from '../../shared/layout/slides';
+import { usedMediaFiles } from '../../shared/format/media';
 import { encodeSound } from './audio/capture';
 import { newId } from '../../shared/format/factory';
 import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
@@ -521,6 +522,57 @@ export async function packProject(): Promise<void> {
       path: packed.path,
     });
   }
+}
+
+/**
+ * «Rydd i prosjektmappa»: the files in the media folder that nothing uses
+ * (no slide, no "Lær mer" box, no track, and nothing "Angre" or "Gjør om"
+ * can bring back) are counted, the owner is asked, and on a yes they go to
+ * the system's waste bin. They are then taken out of the project's list of
+ * media too, in every state of the undo history.
+ */
+export async function tidyProjectFolder(): Promise<void> {
+  if (waitsForSaving()) return;
+  const state = useStore.getState();
+  if (!state.dir || !state.project || state.recorder) return;
+  const projects = [
+    state.project,
+    ...(state.saved ? [state.saved] : []),
+    ...state.past,
+    ...state.future,
+  ];
+  const keep = [...usedMediaFiles(projects)];
+  const result = await guard(() => api().tidyMedia(state.dir!, keep));
+  if (!result) return;
+  if (result.found === 0) {
+    useStore.getState().setNotice({
+      kind: 'info',
+      text: 'Prosjektmappa er ryddig. Alle filene i den er i bruk.',
+    });
+    return;
+  }
+  if (result.trashed.length === 0 && result.failed === 0) return; // the owner said no
+  if (result.trashed.length > 0) useStore.getState().forgetMedia(result.trashed);
+  const parts: string[] = [];
+  if (result.trashed.length > 0) {
+    parts.push(
+      result.trashed.length === 1
+        ? 'Én fil er lagt i papirkurven.'
+        : `${result.trashed.length} filer er lagt i papirkurven.`,
+    );
+  }
+  if (result.failed > 0) {
+    parts.push(
+      result.failed === 1
+        ? 'Én fil kunne ikke legges i papirkurven, og ligger fortsatt i prosjektmappa.'
+        : `${result.failed} filer kunne ikke legges i papirkurven, og ligger fortsatt i prosjektmappa.`,
+    );
+  }
+  if (result.trashed.length > 0) parts.push('Husk å lagre prosjektet.');
+  useStore.getState().setNotice({
+    kind: result.failed > 0 ? 'error' : 'info',
+    text: parts.join(' '),
+  });
 }
 
 export async function unpackProject(): Promise<void> {
