@@ -5,13 +5,17 @@
 // the figure on the slide is taken away. Needs `npm run build`. The window
 // is never shown, and nothing touches the network. The content is test
 // content, not subject matter.
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
-import type { MoreBlock, Project } from '../src/shared/format/schema';
+import type { MoreBlock, Project, ShapeElement } from '../src/shared/format/schema';
+import { fetchFigure, figuresOn } from '../src/shared/layout/fetch';
+import { followFigures } from '../src/shared/layout/groups';
+import { NEW_FIGURE_SIZE, followTemplates, newFigure } from '../src/shared/layout/templates';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
@@ -19,6 +23,14 @@ const built =
   existsSync(join(root, 'out/main/index.js')) && existsSync(join(root, 'out/player/player.js'));
 const packaged = process.env.LYSARK_APP;
 const shots = process.env.LYSARK_SHOTS;
+const ffmpeg =
+  process.env.LYSARK_FFMPEG ??
+  join(
+    root,
+    'vendor/ffmpeg',
+    `${process.platform}-${process.arch}`,
+    process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
+  );
 
 type FigureBlock = Extract<MoreBlock, { kind: 'figure' }>;
 
@@ -285,4 +297,160 @@ describe.skipIf(!built)('a figure in a "Lær mer" box, end to end', () => {
     await shot(player, 'h04-utvidet');
     await player.close();
   }, 120_000);
+});
+
+// The box is drawn on the slide in the video, at the moment the lecturer
+// opened it. A figure in it must be there in the picture that is taken, as
+// wide as the box allows. Needs FFmpeg in vendor/ffmpeg.
+describe.skipIf(!built || !existsSync(ffmpeg))('a figure in a "Lær mer" box, in the video', () => {
+  let work: string;
+  let app: ElectronApplication;
+  let page: Page;
+  /** How wide the three boxes of the process are to be in the video, from the first to the last. */
+  let expected = 0;
+
+  beforeAll(async () => {
+    work = mkdtempSync(join(tmpdir(), 'lysark-hent-video-'));
+    const projectDir = join(work, 'prosjekt');
+    mkdirSync(join(projectDir, 'media'), { recursive: true });
+    const project = newProject('Testforelesning');
+    // The figure is made on a slide that is not kept; only the copy in the box is.
+    let n = 0;
+    const draft = newScene('content', 'Utkast');
+    const form = newFigure(
+      'process',
+      { x: 200, y: 400, ...NEW_FIGURE_SIZE.process, rotation: 0 },
+      () => `e_del_${++n}`,
+    );
+    form.items = ['A', 'B', 'C'].map((text) => ({ id: `i_${text}`, text }));
+    draft.elements.push(form);
+    followTemplates(draft);
+    followFigures(draft);
+    const copy = fetchFigure(draft, figuresOn(draft)[0]!, () => `e_kopi_${++n}`)!;
+    const boxes = copy.elements.filter(
+      (el): el is ShapeElement => el.type === 'shape' && el.fill === 'lilla',
+    );
+    expect(boxes).toHaveLength(3);
+    // The box is 560 wide in the student's window of 1280; its edge and its
+    // margins take 52 of that, and the window is drawn 1.5 times as large.
+    const inBox = 560 - 52;
+    expect(copy.frame.w * 0.75).toBeGreaterThan(inBox);
+    const left = Math.min(...boxes.map((el) => el.box.x));
+    const right = Math.max(...boxes.map((el) => el.box.x + el.box.w));
+    expected = (right - left) * (inBox / copy.frame.w) * 1.5;
+
+    const scene = newScene('content', 'Lysark A');
+    scene.showLogo = false;
+    scene.elements.push({
+      id: 'e_tekst',
+      type: 'text',
+      role: 'body',
+      content: richText('Tekst A'),
+      align: 'left',
+      valign: 'top',
+      box: { x: 120, y: 300, w: 500, h: 70, rotation: 0 },
+      more: {
+        title: 'Mer',
+        blocks: [
+          { id: 'b_figur', kind: 'figure', elements: copy.elements, frame: copy.frame, alt: '' },
+        ],
+      },
+    });
+    // The lecturer opened the box half a second into the slide.
+    scene.events = [{ id: 'h_1', at: 0.5, kind: 'more-open', element: 'e_tekst' }];
+    project.scenes.push(scene);
+    writeFileSync(join(projectDir, 'prosjekt.json'), JSON.stringify(project, null, 2), 'utf8');
+    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`, projectDir];
+    app = await electron.launch({
+      ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
+      env: { ...process.env, LYSARK_HIDDEN: '1' },
+    });
+    page = await app.firstWindow();
+    await page.waitForSelector('.app');
+    await page.waitForSelector('.stage-inner .ls-el-text');
+  }, 60_000);
+
+  afterAll(async () => {
+    await app
+      ?.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.destroy()))
+      .catch(() => undefined);
+    await app?.close().catch(() => undefined);
+    if (work) rmSync(work, { recursive: true, force: true });
+  });
+
+  it('is drawn in the box, as wide as the box allows', async () => {
+    const out = join(work, 'forelesning.mp4');
+    await app.evaluate(({ dialog }, path) => {
+      dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path });
+    }, out);
+    await page.locator('.topbar-actions').getByRole('button', { name: 'Eksporter video' }).click();
+    const dialog = page.locator('dialog.video-dialog');
+    await dialog.waitFor();
+    await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 150_000, interval: 500 })
+      .toContain('Videoen er lagret');
+
+    /** One picture of the video, as red, green, blue. */
+    const picture = (time: number): Buffer =>
+      execFileSync(
+        ffmpeg,
+        ['-v', 'error', '-ss', String(time), '-i', out, '-frames:v', '1'].concat([
+          '-f',
+          'rawvideo',
+          '-pix_fmt',
+          'rgb24',
+          'pipe:1',
+        ]),
+        { maxBuffer: 1 << 26 },
+      );
+    /**
+     * The rows of a picture that three purple boxes cross side by side, and
+     * how far it is from the first box's left edge to the last one's right.
+     */
+    const threeBoxes = (pixels: Buffer): { rows: number; span: number } => {
+      let rows = 0;
+      let span = 0;
+      for (let y = 0; y < 1080; y++) {
+        const runs: Array<[number, number]> = [];
+        let start = -1;
+        for (let x = 0; x <= 1920; x++) {
+          const i = (y * 1920 + x) * 3;
+          const purple =
+            x < 1920 &&
+            Math.abs(pixels[i]! - 120) < 40 &&
+            pixels[i + 1]! < 60 &&
+            pixels[i + 2]! > 190;
+          if (purple && start < 0) start = x;
+          if (!purple && start >= 0) {
+            if (x - start > 100) runs.push([start, x]);
+            start = -1;
+          }
+        }
+        if (runs.length === 3) {
+          rows += 1;
+          span = Math.max(span, runs[2]![1] - runs[0]![0]);
+        }
+      }
+      return { rows, span };
+    };
+    // Before the box is opened there is no figure in the picture.
+    expect(threeBoxes(picture(0.2)).rows).toBe(0);
+    // With the box open, the three boxes of the process stand in it, and they
+    // reach as far as the box has room for: fitted, not cut and not left small.
+    const open = threeBoxes(picture(3));
+    expect(open.rows).toBeGreaterThan(20);
+    expect(Math.abs(open.span - expected)).toBeLessThan(5);
+    if (shots) {
+      mkdirSync(shots, { recursive: true });
+      execFileSync(
+        ffmpeg,
+        ['-v', 'error', '-y', '-ss', '3', '-i', out].concat([
+          '-frames:v',
+          '1',
+          join(shots, 'h05-video.png'),
+        ]),
+      );
+    }
+  }, 240_000);
 });

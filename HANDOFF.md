@@ -209,7 +209,7 @@ bygging:
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (560) | Ja | – |
+| Automatiske tester (561) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -226,7 +226,7 @@ bygging:
 | **Maler med skjema** (også tidsaksen) | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
 | **Søyle- og linjediagram** | Ja, i programmet og i forhåndsvisningen. Ikke limt inn fra et ekte regneark, ikke målt i videoen | **Nei** |
 | **Diagram fra PowerPoint** | Ja, på 13 diagrammer PowerPoint laget i VM-en (tallene kontrollert av en test, og fire av bildene sett på) | PowerPoint laget fila der. Selve importen er kjørt på Linux |
-| **Figur i «Lær mer»** | Ja, i programmet og i forhåndsvisningen: en prosess. Gruppe og bilde med merker bare i enhetstester. Ikke i en videofil | **Nei** |
+| **Figur i «Lær mer»** | Ja, i programmet, i forhåndsvisningen og målt i en videofil: en prosess. Gruppe og bilde med merker bare i enhetstester | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte

@@ -2882,19 +2882,25 @@ tekstreglene til boksen (avstand mellom avsnitt, farge på lenker,
 tekstmarkering) slo inn på figuren. De stopper nå ved boksens egen tekst
 og egne tabeller.
 
-**Prøvd på Linux Mint:** 9 nye enhetstester (`tests/fetch.test.ts`) og 4
+**Prøvd på Linux Mint:** 9 nye enhetstester (`tests/fetch.test.ts`) og 5
 prøver i det bygde programmet uten vindu (`tests/e2e-fetch.test.ts`):
 velgeren uten figurer, lage en prosess på lysark 2 og hente den inn i
 boksen til en tekst på lysark 1, beskrivelse og figurtekst, endre
 figuren på lysarket og hente på nytt, slette figuren på lysarket,
 forhåndsvisningen slik studenten ser den, og «Utvid». Fire skjermbilder
-er sett på. Hele testsamlingen: 560 består, 1 hoppes over som før, i én
-kjøring (i den første feilet fire eldre tester som hadde formatnummeret
-13 skrevet inn; de er rettet til 14).
+er sett på. Hele testsamlingen: 560 besto og 1 ble hoppet over som før
+(i den første kjøringen feilet fire eldre tester som hadde
+formatnummeret 13 skrevet inn; de er rettet til 14 og kjørt på nytt).
+Videoprøven kom til etterpå og er kjørt for seg; med den er det 561.
 
-**Ikke prøvd:** Windows. En figur i en boks i en videofil og i
-innlesingsvinduet (koden som tilpasser figuren, er prøvd i en
-enhetstest, men ingen video er laget). En gruppe og et bilde med merker
+**Målt i en videofil:** en femte prøve lager en video av et lysark der
+boksen ble åpnet under innlesingen, og måler bildet: de tre boksene i
+prosessen står i boksen, og når så langt ut som boksen har plass til
+(innenfor fem piksler av det utregnede). Ett bilde fra videoen er sett
+på.
+
+**Ikke prøvd:** Windows. En figur i en boks i innlesingsvinduet (den
+bruker samme kode som videoen). En gruppe og et bilde med merker
 i det bygde programmet (bare i enhetstestene; i programmet er det
 prosessen som er hentet). Et diagram i en boks. En eksportert HTML-fil
 åpnet i Firefox eller Safari. En skjermleser.
