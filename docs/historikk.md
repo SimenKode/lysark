@@ -3151,7 +3151,7 @@ samme test som i 6.32 og 6.36; koden den prøver, er ikke rørt.
 først?» med knappene OK og Cancel, og så «Fortsette uten å lagre?» med de
 samme knappene. Det er to spørsmål etter hverandre, og knappene sier
 ikke hva de gjør. Slik har det vært lenge; én dialog med «Lagre», «Ikke
-lagre» og «Avbryt» ville vært klarere.
+lagre» og «Avbryt» ville vært klarere. Rettet i 6.47.
 
 **Ikke prøvd på Windows, fortsatt:** å lage steg og dra zoom-rammen for
 hånd (prosjektet hadde stegene fra før; bare fanen ble sett). Bytte av
@@ -3165,6 +3165,26 @@ jeg ikke fram). Installasjonsfila; dette var en utpakket mappe.
 **I VM-en ligger igjen:** `lysark-test\nytt\` (prøveprosjektet og
 `film.mp4`) og `lysark-test\diagram-usn\` (det importerte prosjektet).
 CD-en er tatt ut, og avbildningen er slettet. Lysark er lukket.
+
+### 6.47 Ett spørsmål ved ulagrede endringer (26.11.2026)
+
+Eieren svarte «Ja, én dialog» på spørsmålet i 6.46.
+
+Når du lager, åpner eller importerer noe annet mens prosjektet har
+endringer som ikke er lagret, spør Lysark nå **én gang**: «Prosjektet har
+endringer som ikke er lagret. Vil du lagre dem før du går videre?», med
+knappene **«Lagre»**, **«Ikke lagre»** og **«Avbryt»**. Før var det to
+spørsmål etter hverandre, begge med «OK» og «Cancel». Dialogen er den
+samme typen som den du får når du lukker programmet.
+
+**Prøvd på Linux Mint:** en ny prøve i det bygde programmet uten vindu
+(`tests/e2e-unsaved.test.ts`): ingenting spørres uten endringer; med
+endringer spørres det én gang, med de tre knappene; «Avbryt» lar alt
+stå, «Ikke lagre» lagrer ingenting, og «Lagre» lagrer før programmet går
+videre. Testen svarer selv; dialogen er aldri vist på skjermen.
+
+**Ikke prøvd:** Windows, og dialogen sett med øynene (testen leser hva
+den ber om, den ser den ikke).
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

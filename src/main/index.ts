@@ -20,6 +20,7 @@ import type {
   OpenedHtml,
   OpenedProject,
   OpenverseResult,
+  UnsavedAnswer,
   PictureBytes,
   VideoProgress,
   VideoRequest,
@@ -1023,6 +1024,22 @@ function registerHandlers(): void {
   ipcMain.on('lysark:close-window', () => {
     closeConfirmed = true;
     mainWindow?.close();
+  });
+
+  // One question with three answers that say what they do (the owner,
+  // 26.11.2026). Before, the interface asked twice, with "OK" and "Cancel".
+  handle('lysark:ask-unsaved', (): UnsavedAnswer => {
+    if (!mainWindow) return 'cancel';
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      message: 'Prosjektet har endringer som ikke er lagret.',
+      detail: 'Vil du lagre dem før du går videre?',
+      buttons: ['Lagre', 'Ikke lagre', 'Avbryt'],
+      defaultId: 0,
+      cancelId: 2,
+      noLink: true,
+    });
+    return choice === 0 ? 'save' : choice === 1 ? 'discard' : 'cancel';
   });
 }
 

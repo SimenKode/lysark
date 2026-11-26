@@ -58,7 +58,8 @@ kunne gi en feilmelding hvis det ble lukket i samme øyeblikk som
 forhåndsvisningen. En knapp som var trykket inn, var uleselig så lenge
 pekeren sto over den. **På Windows kunne et prosjekt kopiert fra en CD
 ikke lagres** (fila var skrivebeskyttet); nå lagres det. Akselinjene i
-diagrammer var ujevne.
+diagrammer var ujevne. Spørsmålet ved ulagrede endringer er nå **én
+dialog** med «Lagre», «Ikke lagre» og «Avbryt» (du valgte det 26.11).
 
 **Beklager:** under testingen 26.11 sto en feilboks («Error») på
 skjermen din fem ganger, til jeg stoppet den. Årsaken er rettet, og
@@ -172,9 +173,6 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
    står nederst.
 9. **En gammel testprosess** fra 22.11 står og går på maskinen din
    (historikken, 6.42). Si fra om jeg skal stoppe den.
-10. **Spørsmålet ved ulagrede endringer** har knappene OK og Cancel, to
-    ganger etter hverandre (historikken, 6.46). Skal det bli én dialog
-    med «Lagre», «Ikke lagre» og «Avbryt»?
 
 ## Neste steg, i rekkefølge
 
@@ -190,7 +188,7 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (579) | Ja | – |
+| Automatiske tester (580) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |

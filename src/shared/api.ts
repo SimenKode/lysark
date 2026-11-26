@@ -271,6 +271,11 @@ export interface LysarkApi {
   setDocumentState(state: { dirty: boolean; title: string }): void;
   /** Closes the window after "save, then close". */
   closeWindow(): void;
+  /**
+   * Asks what is to be done with the unsaved changes before the project is
+   * left for another: save them, throw them away, or stay.
+   */
+  askUnsaved(): Promise<UnsavedAnswer>;
   onCommand(listener: (command: MenuCommand) => void): () => void;
 }
 
@@ -293,3 +298,6 @@ export function closingUrl(version: number): string {
 export function webPictureUrl(address: string): string {
   return `lysark-web://picture/${encodeURIComponent(address)}`;
 }
+
+/** What the lecturer answers when a project with unsaved changes is about to be left. */
+export type UnsavedAnswer = 'save' | 'discard' | 'cancel';

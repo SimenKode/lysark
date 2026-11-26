@@ -61,6 +61,7 @@ const api: LysarkApi = {
   showInFolder: (path) => call('lysark:show-in-folder', path),
   setDocumentState: (state) => ipcRenderer.send('lysark:document-state', state),
   closeWindow: () => ipcRenderer.send('lysark:close-window'),
+  askUnsaved: () => call('lysark:ask-unsaved'),
   onCommand: (listener) => {
     const handler = (_event: unknown, command: MenuCommand): void => listener(command);
     ipcRenderer.on('lysark:command', handler);

@@ -53,15 +53,17 @@ async function guard<T>(work: () => Promise<T>): Promise<T | undefined> {
   }
 }
 
-/** Asks before throwing away unsaved changes. Returns false when the owner cancels. */
+/**
+ * Asks what is to be done with unsaved changes before the project is left:
+ * one question, with "Lagre", "Ikke lagre" and "Avbryt". Returns false when
+ * the lecturer stays (or the saving did not go through).
+ */
 async function leaveCurrent(): Promise<boolean> {
   const state = useStore.getState();
   if (!state.project || !isDirty(state)) return true;
-  const answer = window.confirm(
-    'Prosjektet har endringer som ikke er lagret. Vil du lagre dem først?',
-  );
-  if (answer) return (await save()) === true;
-  return window.confirm('Fortsette uten å lagre? Endringene går tapt.');
+  const answer = await guard(() => api().askUnsaved());
+  if (answer === 'save') return (await save()) === true;
+  return answer === 'discard';
 }
 
 export async function newProject(): Promise<void> {
