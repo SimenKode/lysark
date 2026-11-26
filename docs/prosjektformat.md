@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 18), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 19), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,64 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 19: stående lysark (9:16)
+
+```ts
+interface Project {
+  // ... som før
+  orientation?: 'portrait';   // stående lysark; uten feltet er lysarkene liggende
+}
+```
+
+- Et prosjekt har én form på lysarkene, valgt når prosjektet lages, og den
+  gjelder hele prosjektet. **Liggende** (16:9) er som før: en scene på
+  1920 × 1080 punkter. **Stående** (9:16, som en mobilskjerm) er en scene på
+  1080 × 1920. Uten feltet er prosjektet liggende, så alle prosjekter som
+  fantes fra før, er uendret. Formen kan ikke endres etterpå.
+- Én funksjon sier hvor stor scenen er: `stageOf(project)` i
+  `src/shared/format/constants.ts`. Alle bokser i et stående prosjekt er i
+  punkter på den stående scenen. Temaet legges ut for formen
+  (`getTheme`, `THEME_REN_UPRIGHT` i `src/shared/theme/theme.ts`).
+- Formen velges i spørsmålet ved import, under spørsmålet om utseendet:
+  «Hvilken form skal lysarkene ha?», med «Liggende (16:9)» og
+  «Stående (9:16)». Lysark ser på sidene i PDF-en eller på lysarkstørrelsen
+  i PowerPoint-fila før det spør, og anbefaler formen de har: valget som
+  passer er merket «Anbefalt» og er valgt til foreleseren velger noe annet
+  (`recommendShape` i `src/importer/shape.ts`: stående når flere sider er
+  høyere enn brede enn omvendt, ellers liggende). For «Nytt, tomt prosjekt»
+  spørres det samme etter at mappa er valgt, med liggende valgt. En
+  HTML-fil fra Lysark som åpnes som prosjekt, beholder formen den har.
+- En side eller et lysark med en annen form enn scenen (en stående A4-side
+  på et stående lysark, en liggende side i et stående prosjekt, eller
+  omvendt) settes inn hel, så stor den kan bli uten at noe skjæres bort,
+  midt på, på temaets flate: med samme skala begge veier (`fitPage` i
+  `src/importer/pdf.ts`, `stageMapFor` i `src/importer/geometry.ts`). Bildet
+  av siden og det som er løftet ut av den, flyttes og skaleres sammen, så
+  teksten står der den stod. Diagrammer som gjøres om til Lysark-diagrammer,
+  beholder tallene sine.
+- Slik ser et stående lysark ut i temaet: de samme fargene, skriftene,
+  størrelsene, formene og margene som på et liggende. Bredden har fire
+  kolonner i stedet for åtte («Rydd opp lysarket» rydder inn i dem). På
+  tittel- og seksjonslysark står tittelen og undertittelen i den øvre
+  halvdelen, over hele bredden mellom margene, og de to profilformene står
+  i den nedre halvdelen, inntil høyre marg, over logoen. Logoen står nede
+  til venstre, som på et liggende lysark.
+- Alt følger scenen: redigeringsflaten, de små bildene i lista,
+  «Forhåndsvis», innspillingsvinduet, HTML-spilleren (et stående lysark er
+  så høyt vinduet tillater, midt i det), «Lær mer»-boksen (tegnet for et
+  vindu på 720 × 1280 i stedet for 1280 × 720), zoomrammen (som har scenens
+  form), merker og forklaringer, figurer og diagrammer (en ny figur er aldri
+  bredere enn plassen mellom margene), nye elementer fra «Sett inn»,
+  kamerasirkelen (de samme størrelsene, siden de følger scenens korteste
+  side, som er 1080 for begge formene; den starter nede til høyre), og
+  «Bildekilder» til slutt i videoen.
+- USNs avslutningsanimasjon er liggende. På et stående lysark vises den
+  hel, så bred som lysarket, midt på den hvite flaten den starter fra.
+- Video og GIF fra et stående prosjekt har samme form: MP4 på 1080 × 1920
+  (H.264, 30 bilder i sekundet), og en GIF der størrelsene som tilbys er
+  høyden i stedet for bredden. Teksting og kapitler er som før.
+- Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 18: tid uten lyd, og lysark som ikke er med i videoen
 
