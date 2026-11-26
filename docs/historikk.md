@@ -3334,6 +3334,45 @@ Slik er det lest, punkt for punkt:
 9. **Opus bygger, den som leder økta, designer.** Skrevet inn i
    AGENTS.md.
 
+### 6.51 Fire spørsmål etter innspillene, og svarene (26.11.2026)
+
+Stilt samlet før stående format og nettverk bygges. Eierens svar:
+
+| Spørsmål | Svar |
+| --- | --- |
+| Hvor ser du at kameraet fryser når du går fra ett lysark til et annet? | **Bare mens jeg leser inn.** Den ferdige videoen er jevn. Feilen er altså i sirkelen i innlesingsvinduet, ikke i filmen |
+| Hvilken form skal et stående lysark ha? | **9:16, som mobilskjerm** (anbefalt): 1080 × 1920. En stående A4-side fyller bredden og får luft over og under |
+| Hvordan vil du lage et nettverk? | **Skjema, og du drar nodene** (anbefalt) |
+| Hva er viktigst at nettverket kan vise i første runde? | Han krysset ikke av, men skrev: «Det viktigste er at jeg fritt kan plassere og forme streker mellom bokser med snapping til nodepunkter på strekene. Må også kunne feste strek til strek for å bygge nettverk med t-kryss osv.» |
+
+**Slik er det siste svaret lest:** det viktigste er strekene, ikke
+skjemaet. En strek skal kunne ha knekkpunkter som dras fritt og smetter
+på plass, og en ende skal kunne festes til en annen strek, ikke bare
+til en boks, slik at det blir T-kryss. Dette bygges for alle streker
+(også i fri figur), og «Nettverk» blir skjemaet som lager noder og
+koblinger raskt. Tekst på koblingene er ikke med i første runde; han
+valgte det ikke.
+
+**Det jeg har bestemt selv, og sier fra om:**
+
+- **Stående format** velges ved import (og for et nytt, tomt prosjekt)
+  og ligger fast for prosjektet. Lysark anbefaler formen sidene i fila
+  har. En side med annen form enn lysarket settes inn hel, midt på.
+- **Grunntiden** blir et tall på lysarket, «Tid uten lyd», som kan
+  settes for ett lysark eller for alle uten lyd.
+- **Lysark du hopper over under et opptak,** og som ikke har lyd, tas
+  ikke lenger med i videoen av seg selv. Et lysark får et valg for om
+  det er med i video og «Spill av».
+- **Kjente feil som rettes nå:** tette tabeller fra PowerPoint som går
+  ut av lysarket, mediefiler og gamle opptak som blir liggende,
+  piltastene etter et klikk i YouTube-spilleren, oppholdet i musikken
+  mellom lysark i HTML-fila, lagre-dialogen som ikke husker mappa,
+  «Lær mer»-boksen som legger seg feil når bildet er zoomet inn, og
+  testen som går over tidsfristen når maskinen er belastet.
+- **Ikke rettet i denne runden,** fordi det er nye funksjoner og ikke
+  feil: ekte formler, SmartArt, flere diagramtyper, venndiagram og
+  årsak-virkning, håndlaget stil.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`
