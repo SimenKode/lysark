@@ -13,6 +13,7 @@ import type {
   Step,
   TextRole,
 } from '../../shared/format/schema';
+import type { SlideFigure } from '../../shared/layout/fetch';
 import { forgetParts } from '../../shared/layout/templates';
 import { pruneTimeline } from '../../shared/render/timeline';
 import { columnEdges, type Theme } from '../../shared/theme/theme';
@@ -55,6 +56,13 @@ export const TEMPLATE_NAMES: Record<FigureTemplate, string> = {
   bars: 'Søylediagram',
   line: 'Linjediagram',
 };
+
+/** What a figure on a slide is called where it is fetched into a "Lær mer" box. */
+export function slideFigureName(figure: SlideFigure): string {
+  if (figure.kind === 'group') return 'Gruppe';
+  if (figure.kind === 'marked') return 'Bilde med merker';
+  return TEMPLATE_NAMES[figure.kind];
+}
 
 /** What one row of a figure's form is called: a box of a process, a layer, a column, an event. */
 export const ITEM_NAMES: Record<FigureTemplate, string> = {
@@ -190,6 +198,7 @@ export const BLOCK_NAMES: Record<MoreBlockKind, string> = {
   video: 'Video',
   table: 'Tabell',
   embed: 'Nettside',
+  figure: 'Figur',
 };
 
 export const CORNER_NAMES: Record<NonNullable<More['corner']>, string> = {

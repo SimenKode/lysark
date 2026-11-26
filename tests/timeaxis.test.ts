@@ -450,6 +450,6 @@ describe('a time axis, drawn and stored', () => {
     expect(settle(parsed.scenes[0]!)).toBe(false);
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 11;
-    expect(parseProject(old).version).toBe(13);
+    expect(parseProject(old).version).toBe(14);
   });
 });

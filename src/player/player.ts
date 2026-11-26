@@ -6,6 +6,7 @@ import { PALETTE } from '../shared/theme/palette';
 import { getTheme, sceneSurface } from '../shared/theme/theme';
 import {
   collectCredits,
+  fitDrawings,
   placePopover,
   popoverWidth,
   renderCredit,
@@ -782,6 +783,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     panel.scrollTop = 0;
     opener.setAttribute('aria-expanded', 'true');
     placePanel();
+    fitDrawings(panelBody);
     // The box pops out of the mark each time it is opened.
     panel.classList.remove('lp-pop-in');
     void panel.offsetWidth;

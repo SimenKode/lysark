@@ -22,8 +22,11 @@ export const FORMAT_NAME = 'lysark';
  * 10: elements can be grouped, and the ends of a line or an arrow can be
  *    fastened to other elements.
  * 11: figures that draw themselves from a form (process, layers, comparison).
+ * 12: the time axis among the figures with a form.
+ * 13: bar and line diagrams, and the curve they draw.
+ * 14: a "Lær mer" box can hold a figure fetched from a slide.
  */
-export const FORMAT_VERSION = 13;
+export const FORMAT_VERSION = 14;
 
 export { STAGE } from './constants';
 
@@ -120,60 +123,16 @@ export const TableCell = z.object({
 });
 export type TableCell = z.infer<typeof TableCell>;
 
-// ---------- "Lær mer": content that elaborates on an element ----------
-
-const blockId = z.string().min(1);
-
-/** One building block of the panel that opens when a student asks for more. */
-export const MoreBlock = z.discriminatedUnion('kind', [
-  z.object({ id: blockId, kind: z.literal('heading'), text: z.string() }),
-  z.object({ id: blockId, kind: z.literal('text'), content: RichText }),
-  z.object({
-    id: blockId,
-    kind: z.literal('image'),
-    asset: z.string(),
-    alt: z.string(),
-    caption: z.string().optional(),
-  }),
-  z.object({
-    id: blockId,
-    kind: z.literal('video'),
-    source: VideoSource,
-    title: z.string(),
-    /** Still picture shown before a web video is fetched. */
-    poster: z.string().optional(),
-  }),
-  z.object({
-    id: blockId,
-    kind: z.literal('table'),
-    columns: z.array(z.number().positive()).min(1),
-    headerRow: z.boolean(),
-    rows: z.array(z.array(TableCell)).min(1),
-  }),
-  /** A web page shown inside the panel, fetched only when the student asks for it. */
-  z.object({ id: blockId, kind: z.literal('embed'), url: z.string(), title: z.string() }),
-]);
-export type MoreBlock = z.infer<typeof MoreBlock>;
-export type MoreBlockKind = MoreBlock['kind'];
-
-export const MORE_CORNERS = ['tr', 'tl', 'br', 'bl'] as const;
-
-export const More = z.object({
-  /** Heading of the panel, and the name of the mark for screen readers. */
-  title: z.string(),
-  blocks: z.array(MoreBlock),
-  /** Which corner of the element carries the "+" mark. Top right when absent. */
-  corner: z.enum(MORE_CORNERS).optional(),
-});
-export type More = z.infer<typeof More>;
-
+/**
+ * What every element has, save its "Lær mer" content. The elements are
+ * first described without that content (the names in small letters), since
+ * a "Lær mer" box can itself hold elements: a figure fetched from a slide.
+ */
 const elementBase = {
   id: z.string().min(1),
   box: Box,
   /** Optional label shown in the element and step lists. */
   name: z.string().optional(),
-  /** "Lær mer" content attached to this element. Any element can have it. */
-  more: More.optional(),
   /**
    * Elements of a slide that carry the same value here are a group: they
    * are chosen, moved, resized and copied as one, and each is still an
@@ -234,7 +193,7 @@ export const TEXT_ROLES = ['title', 'subtitle', 'heading', 'body', 'caption', 'n
 export const TextRole = z.enum(TEXT_ROLES);
 export type TextRole = z.infer<typeof TextRole>;
 
-export const TextElement = z.object({
+const textElement = z.object({
   ...elementBase,
   type: z.literal('text'),
   role: TextRole,
@@ -249,7 +208,6 @@ export const TextElement = z.object({
   /** Optional override; must be allowed on the surface by the contrast table. */
   color: PaletteColor.optional(),
 });
-export type TextElement = z.infer<typeof TextElement>;
 
 export const Crop = z.object({ l: z.number(), t: z.number(), r: z.number(), b: z.number() });
 export type Crop = z.infer<typeof Crop>;
@@ -257,7 +215,7 @@ export type Crop = z.infer<typeof Crop>;
 export const MARK_STYLES = ['numbers', 'labels'] as const;
 export type MarkStyle = (typeof MARK_STYLES)[number];
 
-export const ImageElement = z.object({
+const imageElement = z.object({
   ...elementBase,
   type: z.literal('image'),
   asset: z.string(),
@@ -277,7 +235,6 @@ export const ImageElement = z.object({
    */
   marks: z.enum(MARK_STYLES).optional(),
 });
-export type ImageElement = z.infer<typeof ImageElement>;
 
 /**
  * A mark on a picture: something the lecturer points out in it. Marks are
@@ -290,7 +247,7 @@ export type ImageElement = z.infer<typeof ImageElement>;
  * labels, the box is the label that shows `text`, and a line runs from it
  * to `point`.
  */
-export const MarkElement = z.object({
+const markElement = z.object({
   ...elementBase,
   type: z.literal('mark'),
   /** The picture the mark belongs to. */
@@ -307,10 +264,9 @@ export const MarkElement = z.object({
   /** For a label: how far the middle of the label lies from `point`. */
   offset: z.object({ x: z.number(), y: z.number() }).optional(),
 });
-export type MarkElement = z.infer<typeof MarkElement>;
 
 /** The list that explains the numbered marks of a picture. It writes itself from the marks. */
-export const LegendElement = z.object({
+const legendElement = z.object({
   ...elementBase,
   type: z.literal('legend'),
   /** The picture whose marks it explains. */
@@ -323,7 +279,6 @@ export const LegendElement = z.object({
   anchor: z.object({ x: z.number(), y: z.number() }).optional(),
   offset: z.object({ x: z.number(), y: z.number() }).optional(),
 });
-export type LegendElement = z.infer<typeof LegendElement>;
 
 /** The thinnest and thickest stroke a shape can be given. */
 export const STROKE_WIDTH = { min: 1, max: 60 } as const;
@@ -342,7 +297,7 @@ export const SHAPE_GEOMETRIES = [
   'arrow',
   'curve',
 ] as const;
-export const ShapeElement = z.object({
+const shapeElement = z.object({
   ...elementBase,
   type: z.literal('shape'),
   geometry: z.enum(SHAPE_GEOMETRIES),
@@ -384,9 +339,8 @@ export const ShapeElement = z.object({
   /** Margins between the shape's edge and its text, in stage pixels. When absent the theme's are used. */
   textInset: Inset.optional(),
 });
-export type ShapeElement = z.infer<typeof ShapeElement>;
 
-export const TableElement = z.object({
+const tableElement = z.object({
   ...elementBase,
   type: z.literal('table'),
   /** Relative column widths. */
@@ -398,9 +352,8 @@ export const TableElement = z.object({
   /** Margins inside each cell, in stage pixels. When absent the theme's are used. */
   cellInset: Inset.optional(),
 });
-export type TableElement = z.infer<typeof TableElement>;
 
-export const VideoElement = z.object({
+const videoElement = z.object({
   ...elementBase,
   type: z.literal('video'),
   source: VideoSource,
@@ -408,7 +361,6 @@ export const VideoElement = z.object({
   title: z.string(),
   poster: z.string().optional(),
 });
-export type VideoElement = z.infer<typeof VideoElement>;
 
 export const FIGURE_TEMPLATES = [
   'process',
@@ -461,7 +413,7 @@ export type FigureSeries = z.infer<typeof FigureSeries>;
  * the form says, so they cannot be moved by hand until the figure is made
  * into a free one: then this element goes, and the shapes stay as a group.
  */
-export const FigureElement = z.object({
+const figureElement = z.object({
   ...elementBase,
   type: z.literal('figure'),
   template: z.enum(FIGURE_TEMPLATES),
@@ -493,18 +445,121 @@ export const FigureElement = z.object({
   /** For a line diagram: a dot at each point. */
   dots: z.boolean().optional(),
 });
-export type FigureElement = z.infer<typeof FigureElement>;
 
 /**
  * The "+ Lær mer" button: an element whose only job is to open its `more`
  * content. The simple way in; any other element can carry `more` too.
  */
-export const DeepDiveElement = z.object({
+const deepDiveElement = z.object({
   ...elementBase,
   type: z.literal('deepdive'),
   /** Text on the button. The theme's "Lær mer" when empty. */
   label: z.string(),
 });
+
+/**
+ * An element as it is drawn inside a "Lær mer" box, as a part of a figure
+ * fetched from a slide: any element that only shows something. It has no
+ * "Lær mer" content of its own, and it is not a video or a "+ Lær mer" button.
+ */
+export const DrawnElement = z.discriminatedUnion('type', [
+  textElement,
+  imageElement,
+  shapeElement,
+  tableElement,
+  markElement,
+  legendElement,
+  figureElement,
+]);
+export type DrawnElement = z.infer<typeof DrawnElement>;
+
+// ---------- "Lær mer": content that elaborates on an element ----------
+
+const blockId = z.string().min(1);
+
+/** One building block of the panel that opens when a student asks for more. */
+export const MoreBlock = z.discriminatedUnion('kind', [
+  z.object({ id: blockId, kind: z.literal('heading'), text: z.string() }),
+  z.object({ id: blockId, kind: z.literal('text'), content: RichText }),
+  z.object({
+    id: blockId,
+    kind: z.literal('image'),
+    asset: z.string(),
+    alt: z.string(),
+    caption: z.string().optional(),
+  }),
+  z.object({
+    id: blockId,
+    kind: z.literal('video'),
+    source: VideoSource,
+    title: z.string(),
+    /** Still picture shown before a web video is fetched. */
+    poster: z.string().optional(),
+  }),
+  z.object({
+    id: blockId,
+    kind: z.literal('table'),
+    columns: z.array(z.number().positive()).min(1),
+    headerRow: z.boolean(),
+    rows: z.array(z.array(TableCell)).min(1),
+  }),
+  /** A web page shown inside the panel, fetched only when the student asks for it. */
+  z.object({ id: blockId, kind: z.literal('embed'), url: z.string(), title: z.string() }),
+  /**
+   * A figure fetched from a slide (the owner's choice, 25.11.2026): a copy
+   * of its elements, standing where they stood on the slide. `frame` is the
+   * part of the slide they fill; the box shows that part, as wide as the box
+   * allows. The copy is its own: the slide can change, or go, without it.
+   */
+  z.object({
+    id: blockId,
+    kind: z.literal('figure'),
+    elements: z.array(DrawnElement).min(1),
+    frame: z.object({
+      x: z.number(),
+      y: z.number(),
+      w: z.number().positive(),
+      h: z.number().positive(),
+    }),
+    /** What the figure shows, for those who cannot see it. Its own text is read as well. */
+    alt: z.string(),
+    caption: z.string().optional(),
+  }),
+]);
+export type MoreBlock = z.infer<typeof MoreBlock>;
+export type MoreBlockKind = MoreBlock['kind'];
+
+export const MORE_CORNERS = ['tr', 'tl', 'br', 'bl'] as const;
+
+export const More = z.object({
+  /** Heading of the panel, and the name of the mark for screen readers. */
+  title: z.string(),
+  blocks: z.array(MoreBlock),
+  /** Which corner of the element carries the "+" mark. Top right when absent. */
+  corner: z.enum(MORE_CORNERS).optional(),
+});
+export type More = z.infer<typeof More>;
+
+/** "Lær mer" content attached to an element. Any element can have it. */
+const withMore = { more: More.optional() };
+
+export const TextElement = textElement.extend(withMore);
+export type TextElement = z.infer<typeof TextElement>;
+export const ImageElement = imageElement.extend(withMore);
+export type ImageElement = z.infer<typeof ImageElement>;
+export const MarkElement = markElement.extend(withMore);
+export type MarkElement = z.infer<typeof MarkElement>;
+export const LegendElement = legendElement.extend(withMore);
+export type LegendElement = z.infer<typeof LegendElement>;
+export const ShapeElement = shapeElement.extend(withMore);
+export type ShapeElement = z.infer<typeof ShapeElement>;
+export const TableElement = tableElement.extend(withMore);
+export type TableElement = z.infer<typeof TableElement>;
+export const VideoElement = videoElement.extend(withMore);
+export type VideoElement = z.infer<typeof VideoElement>;
+export const FigureElement = figureElement.extend(withMore);
+export type FigureElement = z.infer<typeof FigureElement>;
+export const DeepDiveElement = deepDiveElement.extend(withMore);
 export type DeepDiveElement = z.infer<typeof DeepDiveElement>;
 
 export const Element = z.discriminatedUnion('type', [

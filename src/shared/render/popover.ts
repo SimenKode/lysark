@@ -5,7 +5,7 @@
 // the student sees it in a window of 1280 x 720, like the builder's preview.
 import { STAGE } from '../format/constants';
 import type { Element as SceneElement } from '../format/schema';
-import { placePopover, popoverWidth, renderMore } from './more';
+import { fitDrawings, placePopover, popoverWidth, renderMore } from './more';
 import { moreCorner, moreOf, moreTitle, type RenderContext } from './scene';
 
 /** The student's window the box is drawn for: the slide at two thirds of its size. */
@@ -91,6 +91,8 @@ export function createPopover(
     panel,
     body,
     place() {
+      // A figure in the box is made to fit it now, not when the window next draws.
+      fitDrawings(panel);
       const place = placePopover(anchor, from, POP_VIEW, {
         width,
         height: Math.min(panel.offsetHeight, POP_VIEW.height - 32),

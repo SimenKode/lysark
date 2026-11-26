@@ -1,7 +1,7 @@
 // Builds the exported HTML: one file that works offline. Fonts, images and
 // the player are written into the file. Videos above a size limit are the
 // one exception; they are placed in a folder next to the file.
-import type { Project } from '../shared/format/schema';
+import type { DrawnElement, Element, Project } from '../shared/format/schema';
 import { INLINE_VIDEO_LIMIT_BYTES } from '../shared/limits';
 import { MORE_CSS, STAGE_CSS } from '../shared/render/css';
 import { moreAssets } from '../shared/render/more';
@@ -112,24 +112,27 @@ export function usedFonts(project: Project): FontFace[] {
       }
     }
   };
+  const visitElement = (el: DrawnElement | Element): void => {
+    if (el.type === 'text') {
+      const serif = el.role === 'title' || el.role === 'number';
+      visit(el.content, serif, el.role === 'heading');
+    } else if (el.type === 'shape' && el.content) visit(el.content, false, false);
+    else if (el.type === 'table') {
+      el.rows.forEach((row, i) =>
+        row.forEach((cell) => visit(cell.content, false, el.headerRow && i === 0)),
+      );
+    }
+  };
   for (const scene of project.scenes) {
     for (const el of scene.elements) {
-      if (el.type === 'text') {
-        const serif = el.role === 'title' || el.role === 'number';
-        visit(el.content, serif, el.role === 'heading');
-      } else if (el.type === 'shape' && el.content) visit(el.content, false, false);
-      else if (el.type === 'table') {
-        el.rows.forEach((row, i) =>
-          row.forEach((cell) => visit(cell.content, false, el.headerRow && i === 0)),
-        );
-      }
+      visitElement(el);
       for (const block of el.more?.blocks ?? []) {
         if (block.kind === 'text') visit(block.content, false, false);
         else if (block.kind === 'table') {
           block.rows.forEach((row, i) =>
             row.forEach((cell) => visit(cell.content, false, block.headerRow && i === 0)),
           );
-        }
+        } else if (block.kind === 'figure') block.elements.forEach(visitElement);
       }
     }
   }

@@ -269,23 +269,40 @@ export const MORE_CSS = `
 }
 .lm-heading:first-child { margin-top: 0; }
 .lm-text { white-space: pre-wrap; overflow-wrap: break-word; }
-.lm-body .ls-p { margin: 0; }
-.lm-body .ls-p + .ls-p, .lm-body .ls-p + .ls-list, .lm-body .ls-list + .ls-p { margin-top: 0.7em; }
-.lm-body .ls-list { list-style: none; margin: 0; padding: 0; }
-.lm-body .ls-li { display: flex; align-items: baseline; gap: 0.55em; text-align: left; }
-.lm-body .ls-li + .ls-li { margin-top: 0.35em; }
-.lm-body .ls-marker { flex: none; min-width: 0.55em; font-variant-numeric: tabular-nums; }
-.lm-body .ls-li-body { flex: 1; min-width: 0; }
-.lm-body .ls-bullet::before {
+/* The text rules are for the text and the tables of the box itself. They stop there, so that
+   a figure fetched from a slide (.lm-stage) is drawn as on the slide. */
+:is(.lm-text, .lm-table) .ls-p { margin: 0; }
+:is(.lm-text, .lm-table) .ls-p + .ls-p, :is(.lm-text, .lm-table) .ls-p + .ls-list, :is(.lm-text, .lm-table) .ls-list + .ls-p { margin-top: 0.7em; }
+:is(.lm-text, .lm-table) .ls-list { list-style: none; margin: 0; padding: 0; }
+:is(.lm-text, .lm-table) .ls-li { display: flex; align-items: baseline; gap: 0.55em; text-align: left; }
+:is(.lm-text, .lm-table) .ls-li + .ls-li { margin-top: 0.35em; }
+:is(.lm-text, .lm-table) .ls-marker { flex: none; min-width: 0.55em; font-variant-numeric: tabular-nums; }
+:is(.lm-text, .lm-table) .ls-li-body { flex: 1; min-width: 0; }
+:is(.lm-text, .lm-table) .ls-bullet::before {
   content: ''; display: inline-block; width: 0.36em; height: 0.36em;
   background: var(--lm-accent); transform: translateY(-0.16em);
 }
-.lm-body .ls-mark { background: var(--ls-mark-field); color: var(--ls-mark-text); padding: 0.04em 0.16em; }
-.lm-body sub, .lm-body sup { line-height: 0; font-size: 0.7em; }
-.lm-body a, .lm-body .ls-link { color: var(--lm-accent); text-decoration: underline; text-underline-offset: 0.14em; }
-.lm-figure { margin: 0; }
+:is(.lm-text, .lm-table) .ls-mark { background: var(--ls-mark-field); color: var(--ls-mark-text); padding: 0.04em 0.16em; }
+:is(.lm-text, .lm-table) sub, :is(.lm-text, .lm-table) sup { line-height: 0; font-size: 0.7em; }
+:is(.lm-text, .lm-table, .lm-figure) a, :is(.lm-text, .lm-table) .ls-link { color: var(--lm-accent); text-decoration: underline; text-underline-offset: 0.14em; }
+.lm-figure, .lm-drawn { margin: 0; }
+/* A figure fetched from a slide. Its holder is as wide as the box allows, but the figure is
+   never drawn larger than three quarters of its size on the slide, and never so tall that
+   the box cannot hold it. The stage inside is in stage pixels, made to fit the holder. */
+.lm-drawing {
+  position: relative; overflow: hidden; margin: 0 auto;
+  width: min(100%, calc(var(--lm-w) * var(--lm-grow, 0.75) * 1px), calc(var(--lm-tall, 440px) * var(--lm-w) / var(--lm-h)));
+}
+.lm-stage {
+  position: absolute; left: 0; top: 0; transform-origin: 0 0;
+  text-align: left; line-height: 1.3;
+  text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
+  font-kerning: normal; font-synthesis: none;
+}
+.lm-stage *, .lm-stage *::before, .lm-stage *::after { box-sizing: border-box; }
+.lm-stage sub, .lm-stage sup { line-height: 0; font-size: 0.65em; }
 .lm-figure img { display: block; max-width: 100%; height: auto; }
-.lm-figure figcaption { margin-top: 6px; font-size: 0.9em; line-height: 1.35; display: flex; flex-direction: column; gap: 2px; }
+.lm-figure figcaption, .lm-drawn figcaption { margin-top: 6px; font-size: 0.9em; line-height: 1.35; display: flex; flex-direction: column; gap: 2px; }
 .lm-credit { font-size: 0.9em; }
 .lm-missing { margin: 0; padding: 12px; border: 2px dashed currentColor; }
 .lm-table-wrap { overflow-x: auto; }

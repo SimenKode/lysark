@@ -4,6 +4,7 @@
 import { STAGE } from '../format/constants';
 import {
   type DeepDiveElement,
+  type DrawnElement,
   type Element as SceneElement,
   type FigureElement,
   type ImageElement,
@@ -1101,6 +1102,57 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     root.appendChild(logo);
   }
   return root;
+}
+
+/**
+ * A figure fetched from a slide, as it is drawn in a "Lær mer" box: its
+ * elements on the white of the box, in a stage as large as the part of the
+ * slide they filled. The elements are drawn by the same code as on a slide,
+ * so the stage is in stage pixels; what holds it makes it fit
+ * (`fitDrawings` in ./more.ts).
+ */
+export function renderDrawing(
+  ctx: RenderContext,
+  elements: DrawnElement[],
+  frame: { x: number; y: number; w: number; h: number },
+): HTMLElement {
+  const { doc, theme } = ctx;
+  const surface: Surface = 'hvit';
+  // The elements are drawn as on a slide that holds them and nothing else.
+  const scene: Scene = {
+    id: 'drawing',
+    title: '',
+    kind: 'content',
+    decoration: false,
+    shapeVariant: 0,
+    showLogo: false,
+    elements,
+    timeline: [],
+    script: '',
+  };
+  const stage = doc.createElement('div');
+  stage.className = 'lm-stage';
+  stage.style.width = `${frame.w}px`;
+  stage.style.height = `${frame.h}px`;
+  stage.style.fontFamily = theme.fonts.body;
+  stage.style.color = PALETTE[defaultTextColor(theme, surface, 'body', theme.roles.body.size)];
+  setMarkVars(stage, surface);
+  const zIndex = new Map(elements.map((el, i) => [el.id, i + 1]));
+  for (const el of readingOrder(elements)) {
+    const wrap = doc.createElement('div');
+    wrap.className = `ls-el ls-el-${el.type}`;
+    wrap.dataset.part = el.id;
+    wrap.style.left = `${el.box.x - frame.x}px`;
+    wrap.style.top = `${el.box.y - frame.y}px`;
+    wrap.style.width = `${el.box.w}px`;
+    wrap.style.height = `${el.box.h}px`;
+    wrap.style.zIndex = String(zIndex.get(el.id));
+    if (el.type === 'image' && el.blend) wrap.style.mixBlendMode = el.blend;
+    if (el.box.rotation) wrap.style.transform = `rotate(${el.box.rotation}deg)`;
+    wrap.appendChild(renderElement(ctx, scene, surface, el));
+    stage.appendChild(wrap);
+  }
+  return stage;
 }
 
 /** The scene strings in each supported language. */

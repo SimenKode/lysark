@@ -2,24 +2,34 @@
 // content on the left and, on the right, the slide itself with the box
 // popped out beside the element, exactly as a student will see it (drawn
 // and placed by the same code as the player uses).
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { mediaUrl } from '../../shared/api';
-import { plainText, richText } from '../../shared/format/factory';
+import { newId, plainText, richText } from '../../shared/format/factory';
 import { MORE_CORNERS, type Element, type More, type MoreBlock } from '../../shared/format/schema';
 import { STAGE } from '../../shared/format/constants';
+import { fetchFigure, figuresOn, type FetchedFigure } from '../../shared/layout/fetch';
+import { slideNumbers } from '../../shared/layout/slides';
 import {
   creditText,
+  fitDrawings,
   hasCredit,
   placePopover,
   popoverWidth,
   renderMore,
 } from '../../shared/render/more';
-import { SCENE_STRINGS, moreCorner, moreTitle } from '../../shared/render/scene';
+import { SCENE_STRINGS, moreCorner, moreTitle, renderDrawing } from '../../shared/render/scene';
 import { embedTarget, youtubeRef } from '../../shared/render/web';
 import { RichTextField } from './RichTextField';
 import { SceneView, renderContext } from './SceneView';
 import { fetchYouTubeStill, megabytes, pickMedia } from './actions';
-import { BLOCK_NAMES, CORNER_NAMES, describeElement, moveBlock, newBlock } from './ops';
+import {
+  BLOCK_NAMES,
+  CORNER_NAMES,
+  describeElement,
+  moveBlock,
+  newBlock,
+  slideFigureName,
+} from './ops';
 import { currentScene, useStore } from './store';
 
 type Block<K extends MoreBlock['kind']> = Extract<MoreBlock, { kind: K }>;
@@ -407,6 +417,179 @@ function EmbedEditor({ elementId, block }: { elementId: string; block: Block<'em
   );
 }
 
+// ---------- A figure fetched from a slide ----------
+
+/** A fetched figure drawn to fit a small frame: where one is chosen, and on its card. */
+function DrawingThumb({ figure }: { figure: Pick<FetchedFigure, 'elements' | 'frame'> }) {
+  const project = useStore((s) => s.project)!;
+  const logo = useStore((s) => s.logo);
+  const host = useRef<HTMLDivElement>(null);
+  const { elements, frame } = figure;
+  useLayoutEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const stage = renderDrawing(renderContext(project, logo), elements, frame);
+    el.replaceChildren(stage);
+    // The frame has no size until it is shown (a dialog that is about to open), so it is measured then.
+    const fit = (): void => {
+      const scale = Math.min(el.clientWidth / frame.w, el.clientHeight / frame.h);
+      stage.style.transform = `scale(${scale})`;
+      stage.style.left = `${(el.clientWidth - frame.w * scale) / 2}px`;
+      stage.style.top = `${(el.clientHeight - frame.h * scale) / 2}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elements, frame, project.assets, logo]);
+  return <div ref={host} className="drawing-thumb" aria-hidden="true" />;
+}
+
+/**
+ * The figures of the lecture's slides, to choose one from. A figure for a
+ * "Lær mer" box is made on a slide and fetched from it (the owner's choice,
+ * 25.11.2026); what goes into the box is a copy.
+ */
+function FigurePicker(props: { onPick: (figure: FetchedFigure) => void; onClose: () => void }) {
+  const scenes = useStore((s) => s.project!.scenes);
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+  const choices = useMemo(() => {
+    const numbers = slideNumbers(scenes);
+    return scenes.flatMap((scene, index) =>
+      // A slide that is shown once more shows nothing of its own.
+      scene.repeat
+        ? []
+        : figuresOn(scene).flatMap((figure) => {
+            const fetched = fetchFigure(scene, figure, () => newId('e'));
+            const name = `Lysark ${numbers[index]}: ${slideFigureName(figure)}`;
+            return fetched ? [{ key: figure.ids[0]!, name, fetched }] : [];
+          }),
+    );
+  }, [scenes]);
+  return (
+    <dialog
+      ref={ref}
+      className="dialog dialog-wide figure-picker"
+      aria-labelledby="figure-picker-title"
+      onClose={props.onClose}
+      onCancel={props.onClose}
+    >
+      <h2 id="figure-picker-title">Hent en figur fra et lysark</h2>
+      {choices.length === 0 ? (
+        <p>
+          Det er ingen figurer i lysarkene ennå. Lag figuren på et lysark først: «Sett inn → Figur»,
+          merker på et bilde, eller flere former som du har gruppert. Kom så tilbake hit og hent
+          den.
+        </p>
+      ) : (
+        <>
+          <p className="hint">
+            En kopi av figuren legges i boksen. Figuren på lysarket blir stående; den kan du slette
+            etterpå hvis den bare skulle hit.
+          </p>
+          <ul className="figure-choices">
+            {choices.map((choice) => (
+              <li key={choice.key}>
+                <button
+                  type="button"
+                  className="figure-choice"
+                  onClick={() => props.onPick(choice.fetched)}
+                >
+                  <DrawingThumb figure={choice.fetched} />
+                  <span>{choice.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <div className="dialog-actions">
+        <button type="button" onClick={props.onClose}>
+          Avbryt
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
+/** Says so when something of a figure could not come along into the box. */
+function tellWhatWasLeft(figure: FetchedFigure): void {
+  if (figure.left === 0) return;
+  useStore.getState().setNotice({
+    kind: 'info',
+    text: 'Video og «Lær mer»-knapper følger ikke med inn i boksen. Resten av figuren er hentet.',
+  });
+}
+
+function FigureEditor({ elementId, block }: { elementId: string; block: Block<'figure'> }) {
+  const update = useBlockUpdate<'figure'>(elementId, block.id);
+  const [picking, setPicking] = useState(false);
+  return (
+    <div className="block-media">
+      <div className="block-thumb block-thumb-figure">
+        <DrawingThumb figure={block} />
+      </div>
+      <div className="block-fields">
+        <label className="field">
+          <span className="field-label">Beskrivelse for skjermleser</span>
+          <input
+            type="text"
+            value={block.alt}
+            onChange={(e) =>
+              update((b) => {
+                b.alt = e.target.value;
+              }, 'alt')
+            }
+          />
+          <span className="field-hint">
+            Si kort hva figuren viser. Teksten i figuren leses opp uansett.
+          </span>
+        </label>
+        <label className="field">
+          <span className="field-label">Figurtekst (vises under figuren)</span>
+          <input
+            type="text"
+            value={block.caption ?? ''}
+            onChange={(e) =>
+              update((b) => {
+                if (e.target.value) b.caption = e.target.value;
+                else delete b.caption;
+              }, 'caption')
+            }
+          />
+        </label>
+        <p className="hint">
+          Figuren er en kopi fra et lysark. Har du endret figuren på lysarket, henter du den på nytt
+          her.
+        </p>
+        <div className="button-row">
+          <button type="button" onClick={() => setPicking(true)}>
+            Hent på nytt
+          </button>
+        </div>
+      </div>
+      {picking && (
+        <FigurePicker
+          onClose={() => setPicking(false)}
+          onPick={(figure) => {
+            setPicking(false);
+            update((b) => {
+              b.elements = figure.elements;
+              b.frame = figure.frame;
+            });
+            tellWhatWasLeft(figure);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 function BlockEditor({ elementId, block }: { elementId: string; block: MoreBlock }) {
   switch (block.kind) {
     case 'heading':
@@ -421,6 +604,8 @@ function BlockEditor({ elementId, block }: { elementId: string; block: MoreBlock
       return <TableEditor elementId={elementId} block={block} />;
     case 'embed':
       return <EmbedEditor elementId={elementId} block={block} />;
+    case 'figure':
+      return <FigureEditor elementId={elementId} block={block} />;
   }
 }
 
@@ -461,6 +646,7 @@ function Preview({ element }: { element: Element }) {
     host.current.replaceChildren(
       renderMore(renderContext(project, logo), more ?? { title: '', blocks: [] }),
     );
+    fitDrawings(host.current);
     // The assets decide what pictures show; the content decides the rest.
     // (`shown`: the box is first drawn when the view has been measured.)
   }, [more, project.assets, project.meta.language, logo, shown]);
@@ -549,6 +735,7 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
   const dragged = useRef<string | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
   const [videoMenu, setVideoMenu] = useState(false);
+  const [pickingFigure, setPickingFigure] = useState(false);
   const missing = !element;
 
   const close = (): void => {
@@ -612,6 +799,8 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
       aria-labelledby="builder-title"
       ref={root}
       onKeyDown={(e) => {
+        // Escape in a dialog that lies on top (the figures to choose from) closes that one.
+        if ((e.target as HTMLElement).closest('dialog')) return;
         if (e.key === 'Escape' && !useStore.getState().mediaRequest) {
           e.stopPropagation();
           close();
@@ -805,7 +994,26 @@ export function MoreBuilder({ elementId }: { elementId: string }) {
             <button type="button" onClick={() => add(newBlock('embed'))}>
               Nettside
             </button>
+            <button type="button" onClick={() => setPickingFigure(true)}>
+              Figur
+            </button>
           </div>
+          {pickingFigure && (
+            <FigurePicker
+              onClose={() => setPickingFigure(false)}
+              onPick={(figure) => {
+                setPickingFigure(false);
+                add({
+                  id: newBlockId(),
+                  kind: 'figure',
+                  elements: figure.elements,
+                  frame: figure.frame,
+                  alt: '',
+                });
+                tellWhatWasLeft(figure);
+              }}
+            />
+          )}
 
           {!isButton && (
             <div className="button-row builder-remove">

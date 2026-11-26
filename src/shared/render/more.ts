@@ -4,7 +4,13 @@
 import { slideNumbers } from '../layout/slides';
 import type { Credit, More, MoreBlock, Project, TableCell } from '../format/schema';
 import { renderRichText } from './richtext';
-import { renderEmbed, renderVideo, type RenderContext, type SceneStrings } from './scene';
+import {
+  renderDrawing,
+  renderEmbed,
+  renderVideo,
+  type RenderContext,
+  type SceneStrings,
+} from './scene';
 
 function el<K extends keyof HTMLElementTagNameMap>(
   doc: Document,
@@ -218,6 +224,65 @@ function renderBlock(ctx: RenderContext, block: MoreBlock): HTMLElement | undefi
       figure.appendChild(frame);
       return figure;
     }
+    case 'figure': {
+      // A figure fetched from a slide: the same elements, drawn by the same
+      // code, in a holder whose size the style sheet decides. The stage in
+      // it is in stage pixels and is made to fit the holder.
+      const figure = el(doc, 'figure', 'lm-drawn');
+      const holder = el(doc, 'div', 'lm-drawing');
+      const { w, h } = block.frame;
+      holder.dataset.width = String(w);
+      holder.style.setProperty('--lm-w', String(w));
+      holder.style.setProperty('--lm-h', String(h));
+      holder.style.aspectRatio = `${w} / ${h}`;
+      const said = block.alt.trim();
+      if (said) {
+        holder.setAttribute('role', 'group');
+        holder.setAttribute('aria-label', said);
+      }
+      const stage = renderDrawing(ctx, block.elements, block.frame);
+      // Until the holder has been measured: as in a box of ordinary width.
+      stage.style.transform = `scale(${Math.min(DRAWING_GROWTH, 500 / w)})`;
+      holder.appendChild(stage);
+      figure.appendChild(holder);
+      const view = doc.defaultView;
+      if (view && 'ResizeObserver' in view) {
+        new view.ResizeObserver(() => fitDrawing(holder)).observe(holder);
+      }
+      const caption = block.caption?.trim();
+      if (caption) {
+        const figcaption = el(doc, 'figcaption');
+        figcaption.appendChild(el(doc, 'span', 'lm-caption', caption));
+        figure.appendChild(figcaption);
+      }
+      return figure;
+    }
+  }
+}
+
+/**
+ * A figure in a box is never drawn larger than this share of its size on
+ * the slide (the student sees the slide itself at about two thirds).
+ * The style sheet says the same (`--lm-grow` in MORE_CSS).
+ */
+const DRAWING_GROWTH = 0.75;
+
+function fitDrawing(holder: HTMLElement): void {
+  const stage = holder.firstElementChild as HTMLElement | null;
+  const width = Number(holder.dataset.width);
+  if (!stage || !(width > 0) || holder.clientWidth === 0) return;
+  stage.style.transform = `scale(${holder.clientWidth / width})`;
+}
+
+/**
+ * Makes every figure under `root` fit the holder it stands in. The figures
+ * do this themselves when their holder changes size; call this where the
+ * picture is needed at once (the video export draws the box and takes its
+ * picture in one go).
+ */
+export function fitDrawings(root: Element): void {
+  for (const holder of Array.from(root.querySelectorAll<HTMLElement>('.lm-drawing'))) {
+    fitDrawing(holder);
   }
 }
 
@@ -251,6 +316,9 @@ export function moreAssets(more: More | undefined): string[] {
     else if (block.kind === 'video') {
       if (block.source.kind === 'asset') ids.push(block.source.asset);
       if (block.poster) ids.push(block.poster);
+    } else if (block.kind === 'figure') {
+      // The pictures in a figure that was fetched from a slide.
+      for (const part of block.elements) if (part.type === 'image') ids.push(part.asset);
     }
   }
   return ids;

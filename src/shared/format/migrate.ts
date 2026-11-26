@@ -90,5 +90,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 11) project.version = 12;
   // 12 -> 13 only added things (bar and line diagrams, and the curve they draw).
   if (project.version === 12) project.version = 13;
+  // 13 -> 14 only added things (a figure in a "Lær mer" box).
+  if (project.version === 13) project.version = 14;
   return project;
 }

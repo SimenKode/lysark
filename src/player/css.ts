@@ -77,6 +77,8 @@ body { background: ${C.indigo}; }
 .lp-panel.lp-panel-wide { left: 16px; top: 16px; right: 16px; bottom: 16px; width: auto; max-height: none; transform-origin: 50% 50%; }
 .lp-panel.lp-panel-wide .lp-panel-body { max-width: 1100px; margin: 0 auto; }
 .lp-panel.lp-panel-wide .lp-panel-head { max-width: 1100px; margin: 0 auto; }
+/* A figure in a box that is widened can be as large as on the slide, as tall as the window allows. */
+.lp-panel.lp-panel-wide .lm-drawing { --lm-grow: 1; --lm-tall: 70vh; }
 .lp-panel-body { margin-top: 8px; }
 
 .lp-script {
