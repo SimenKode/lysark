@@ -136,12 +136,11 @@ punktene fra sist står fortsatt.
    eller uventet, og om farger og størrelser er som du vil ha dem.
    **Ett valg trengs:** hva skal malen for hendelser i rekkefølge hete?
    «Tidslinje» er allerede fanen under lysarket.
-2. **Logg inn i Office i VM-en**, så jeg kan prøve «Behold utseendet»
-   med PowerPoint på Windows. Popupvinduet («Sign in to get started») og
-   innloggingsvinduet tegnes riktig i VM-ens eget bilde, så glitchen du
-   ser, får jeg ikke fram (historikken, 6.34). Si hvordan den ser ut, så
-   kan jeg lete videre. Uten innlogging nekter PowerPoint å lagre; da går
-   Lysark videre til neste vei uten å henge.
+2. **Prøv «Behold utseendet» på Windows med en av dine egne
+   forelesninger.** Veien gjennom PowerPoint er prøvd i VM-en og virker
+   (historikken, 6.35), men bare med én liten prøvefil. Glitchen i
+   popupvinduet fikk jeg aldri fram; si hvordan den ser ut hvis den
+   fortsatt plager deg.
 3. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
    lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
    Det kan jeg ikke måle.
@@ -178,20 +177,21 @@ punktene fra sist står fortsatt.
 | Tidslinje og musikk | Ja, også målt i videoen | Ja, for hånd (0.4.0) |
 | Kamerasirkelen | Ja, med prøvekamera, også målt i videoen | **Nei.** VM-en har ikke kamera |
 | **Fritt opptak, sidemeny, «igjen»-lysark** | Ja, også målt i videoen, og i den pakkede utgaven | **Nei** |
-| **Kapitler** | Ja, også i videofila og i spilleren | **Nei** |
+| **Kapitler** | Ja, også i videofila og i spilleren | Bare sett i lysarklista etter import (26.11) |
 | **PDF-import med egne elementer** | Ja, også på to av dine egne PDF-er (26 og 94 sider) | **Nei** |
-| **Valget av utseende ved import** | Ja: PDF begge veier, PowerPoint via LibreOffice og via PDF ved siden av | **Nei.** Bare forespørselen til PowerPoint er prøvd, og PowerPoint nektet fordi Office ikke er logget inn |
+| **Valget av utseende ved import** | Ja: PDF begge veier, PowerPoint via LibreOffice og via PDF ved siden av | **Ja, 26.11:** «Behold utseendet» gjennom PowerPoint, én prøvefil med tre lysark, manus og kapittel. USN-stil og PDF er ikke prøvd der |
 | Installasjonsfila | – | Ja, for hånd (0.4.0) |
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
-| **Maler med skjema** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
+| **Maler med skjema** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
-advare), en USN-styrt PC, og Canvas. **Ingenting av det som er nytt
-etter 0.4.0, er prøvd på Windows.**
+advare), en USN-styrt PC, og Canvas. **Av det som er nytt etter 0.4.0, er bare dette prøvd på Windows:**
+«Behold utseendet» gjennom PowerPoint, kapitlene i lysarklista og at en
+prosessfigur kan settes inn.
 
 ## Kjente svakheter
 
@@ -209,9 +209,9 @@ etter 0.4.0, er prøvd på Windows.**
 - **Det du sier på et «igjen»-lysark, får ikke teksting** av seg selv.
   Skriv manus på stedet om du vil ha teksting der.
 - **Munn og lyd** i videoen er ikke kontrollert med ekte kamera.
-- **«Behold utseendet» for PowerPoint på Windows er uprøvd med et
-  PowerPoint som er logget inn.** Uten innlogging nekter PowerPoint å
-  lagre (prøvd i VM-en). På Linux
+- **«Behold utseendet» for PowerPoint på Windows** er prøvd med én liten
+  prøvefil, ikke med dine egne forelesninger. En PowerPoint-fil uten
+  lysark kan PowerPoint ikke lage PDF av. På Linux
   uten en PDF ved siden av tegner LibreOffice lysarkene, og det blir
   ikke helt likt PowerPoint.
 - **USN-stil for en PDF** tar bare med tekst og bilder. Har du

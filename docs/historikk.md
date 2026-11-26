@@ -2449,6 +2449,10 @@ Ingen har prøvd dette for hånd med mus.
 
 ### 6.34 PowerPoint i Windows-VM-en, uten innlogging (26.11.2026)
 
+**Les 6.35 først: konklusjonen under var feil.** Årsaken til at
+lagringen feilet, var at prøvefila ikke hadde noen lysark, ikke at
+Office manglet innlogging.
+
 Eieren skrev midt i økta: «Jeg har installert m365 på VM, men har
 trøbbel med en visuell glitch på et popupvindu som kommer når jeg
 starter et m365 program. Hvis du får fikset feilen på et eller annet
@@ -2493,6 +2497,66 @@ forvrengt linje ble kjørt. Forespørselen ble til slutt lagt i en
 skriptfil på en CD-avbildning, som er tatt ut og slettet igjen. Igjen i
 VM-en ligger bare en kopi av prøvefila i brukerens midlertidige mappe
 (`lysark-inn.pptx`). Rådet er skrevet inn i `tools/windows-vm.py`.
+
+### 6.35 «Behold utseendet» med PowerPoint på Windows: prøvd, og det virker (26.11.2026)
+
+Eieren logget inn i Office i VM-en og skrev «Jeg har logget inn».
+
+**Rettelse av 6.34.** Der skrev jeg at PowerPoint nektet å lagre fordi
+Office ikke var logget inn. **Det var feil.** Forespørselen feilet like
+mye etter innloggingen. Årsaken var prøvefila: `test.pptx` på
+skrivebordet har **null lysark**, og PowerPoint kan ikke lage PDF (eller
+bilde) av en presentasjon uten lysark. Om et PowerPoint som ikke er
+logget inn, kan lagre, er altså aldri prøvd med en ordentlig fil.
+
+Slik ble det funnet, i tur og orden: sju måter å be om PDF-en på feilet
+likt; lagring som .pptx virket, lagring som PDF og PNG feilet; skriver
+fantes; å slå av maskinvareakselerert grafikk i Office hjalp ikke (den
+ene registerverdien er tatt bort igjen); en ny presentasjon med ett
+lysark ble til PDF; og prøvefila viste seg å ha 0 lysark.
+
+**Det som er prøvd, i VM-en (Windows 11, PowerPoint 16.0 bygg 20625):**
+
+- PowerPoint laget selv en prøvefil: tre lysark med nøytralt innhold
+  («Overskrift A», punktene «En», «To», «Tre», en farget boks «Boks C»),
+  manuset «Manus B» på lysark 2 og seksjonen «Kapittel B» fra lysark 2.
+- **Forespørselen Lysark sender** (åpne en kopi uten vindu, skrivebeskyttet,
+  lagre som PDF) ga en PDF på 42 kB på under ett sekund.
+- **Dagens Lysark**, pakket for Windows i en egen mappe og kjørt fra en
+  CD-avbildning: «Importer PowerPoint» → fila → spørsmålet «Hvordan skal
+  lysarkene se ut?» kom opp med «Behold utseendet» valgt → «Importer» →
+  valg av prosjektmappe → prosjektet åpnet. Meldingen: «behold.pptx er
+  importert: 3 lysark. Tekst og bilder er egne elementer som kan flyttes
+  og endres. Manus og kapitler er hentet fra PowerPoint-fila. Lysark 3
+  har merknader fra importen …». LibreOffice er ikke i VM-en og ingen
+  PDF lå ved siden av, så det var PowerPoint som tegnet.
+- **Sett på:** kapitlene «Default Section» og «Kapittel B» i lysarklista;
+  lysark 1 med overskrift og undertittel; lysark 2 med overskrift, tre
+  punkter og «Manus B» i manusfeltet; lysark 3 med boksen som bilde og
+  merknaden under «Fra importen».
+- **Ingen PowerPoint-prosess sto igjen** etter importen.
+- **Figur-menyen** (6.33) ble åpnet i samme slengen: «Prosess» ga tre
+  bokser med piler og skjemaet i egenskapene. Den ble angret igjen.
+
+**Endret etter dette:** når det er PowerPoint som har tegnet lysarkene,
+sier meldingen etter importen det («PowerPoint har tegnet lysarkene.»),
+slik den allerede gjorde for LibreOffice og for en PDF ved siden av.
+Den setningen er ikke sett på Windows; den kom etter prøven.
+
+**Ikke prøvd:** dine egne forelesninger gjennom PowerPoint-veien (bare
+én liten fil laget for prøven), en fil mens PowerPoint står åpent med
+andre presentasjoner, PowerPoint uten innlogging, og en fil uten
+lysark gjennom Lysark (PowerPoint nekter; Lysark skal da gå videre til
+neste vei). Av det nye etter 0.4.0 er ellers bare dette prøvd på
+Windows: importen over, kapitlene i lista og Figur-menyen. Fritt opptak,
+PDF-import, grupper og festede piler er fortsatt ikke prøvd der.
+
+**Glitchen** i popupvinduet fikk jeg aldri fram: alle vinduene tegnes
+riktig i VM-ens eget bilde. Den hindret ikke prøven.
+
+**Igjen i VM-en:** `C:\Users\simen\lysark-test\behold.pptx` og
+prosjektmappa `behold-ppt` samme sted, og noen små prøvefiler i den
+midlertidige mappa (`lysark-*.pdf`, `lysark-inn.pptx`).
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
