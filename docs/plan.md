@@ -12,7 +12,7 @@ prøvd på både Linux Mint og Windows 11.
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
-| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde er bygget. Gjenstår: fri figur, malene, diagrammer og bevegelsene |
+| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde, fri figur og fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse) er bygget. Gjenstår: søyle- og linjediagram, figur i «Lær mer» og bevegelsene |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML
@@ -419,18 +419,18 @@ valgte 25.11.2026: rett i lysarket, av formene som fantes fra før.
   som alle andre former.
 
 **De tre første malene er bygget 26.11.2026** (historikk.md 6.33):
-«Sett inn → Figur» gir **prosess**, **lagvis oppbygging** og
-**sammenligning**. Eieren valgte 25.11.2026 at **skjemaet styrer**:
+«Sett inn → Figur» gir **prosess**, **lagvis oppbygging**,
+**sammenligning** og **tidsakse** (navnet valgte eieren 26.11.2026;
+«Tidslinje» er fanen under lysarket). Eieren valgte 25.11.2026 at **skjemaet styrer**:
 figuren tegner seg selv fra skjemaet i egenskapene, og «Gjør om til fri
 figur» slipper den løs for godt (som SmartArt i PowerPoint). Malene
 starter tomme.
 
 Det som gjenstår av leveranse 4, i denne rekkefølgen:
 
-1. **Resten av malene:** tidslinje, og søyle- og linjediagram.
-   Venndiagram og årsak-virkning etterpå ved behov. Før tidslinja bygges,
-   må eieren velge navn: fanen under lysarket heter allerede
-   «Tidslinje».
+1. **Resten av malene:** søyle- og linjediagram. Venndiagram og
+   årsak-virkning etterpå ved behov. Diagrammene trenger svar fra eieren
+   først (blant annet hvordan tallene skrives inn).
 2. **Figur i «Lær mer»** (egen del i byggeren): eieren valgte 25.11.2026
    at figuren **hentes fra et lysark**. Den lages på et lysark, og i
    byggeren velger man «Figur» og peker på den; en kopi legges i boksen.

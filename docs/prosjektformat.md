@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 11), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 12), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,24 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 12: tidsakse
+
+En figur med skjema kan ha `template: "timeAxis"`: en strek med et punkt
+for hver hendelse. Radene i skjemaet er hendelsene: `text` er når
+hendelsen er, og `detail` er hva den er. `direction` snur aksen nedover,
+som for en prosess.
+
+- **Delene:** streken (`part` er `axis:line`), og for hver hendelse et
+  punkt på streken (`dot:<rad>`), en boks med tidspunktet (`head:<rad>`)
+  og teksten (`body:<rad>`).
+- **Teksten er en vanlig tekstboks** (`type: "text"`) med `of`, ikke en
+  form. Den finnes bare når det står noe i `detail`. Alle andre deler er
+  former, som før.
+- **En del som kommer til i en rad**, kommer inn i samme steg som resten
+  av raden. Det gjelder alle figurer med skjema.
+
+Et prosjekt i format 11 leses som det er.
 
 ## Format 11: figurer som tegner seg selv fra et skjema
 

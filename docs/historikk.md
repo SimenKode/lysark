@@ -84,8 +84,8 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 - **Format 4**, med automatisk løft av eldre prosjekter.
 
 Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
-fri figur (6.32) og tre maler (6.33) er bygget. Resten av malene, figur
-i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
+fri figur (6.32) og fire maler (6.33 og 6.36) er bygget. Søyle- og
+linjediagram, figur i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2557,6 +2557,79 @@ riktig i VM-ens eget bilde. Den hindret ikke prøven.
 **Igjen i VM-en:** `C:\Users\simen\lysark-test\behold.pptx` og
 prosjektmappa `behold-ppt` samme sted, og noen små prøvefiler i den
 midlertidige mappa (`lysark-*.pdf`, `lysark-inn.pptx`).
+
+### 6.36 Malen «Tidsakse» (26.11.2026)
+
+**Eierens valg:** malen for hendelser i rekkefølge heter **«Tidsakse»**.
+«Tidslinje» er fanen under lysarket, og det navnet beholder fanen.
+
+**Bygget:**
+
+- **«Sett inn → Figur → Tidsakse».** En strek med et punkt for hver
+  hendelse. Tidspunktet står i en boks på den ene siden av streken, og
+  teksten står uten ramme på den andre. Malen starter med tre tomme
+  hendelser.
+- **Skjemaet** har «Tidspunkt» og «Tekst» for hver hendelse, «Legg til
+  hendelse», flytt opp og ned, «Fjern», «Ett steg per hendelse»,
+  «Retning» (bortover eller nedover), farge, skriftstørrelse og «Gjør om
+  til fri figur». Raden heter «hendelse».
+- **Bortover** står tidspunktet over streken og teksten under.
+  **Nedover** står tidspunktet til venstre og teksten til høyre.
+- **Teksten er en vanlig tekstboks**, ikke en form, og finnes bare når
+  det er skrevet noe. Dette er nytt: til nå var alle deler av en figur
+  med skjema former. Etter «Gjør om til fri figur» er tekstene vanlige
+  tekstbokser i gruppen.
+- **På lysarket:** dobbeltklikk for å skrive i boksen eller i teksten;
+  det havner i skjemaet. Slettes teksten alene, tømmes feltet, og
+  hendelsen står. Slettes punktet eller boksen, forsvinner hendelsen.
+  Streken er ingen hendelse; slettes den alene, tegnes den på nytt.
+- **Steg:** «Ett steg per hendelse» lar punkt, boks og tekst komme inn
+  sammen. Streken står der fra start.
+- **Formatet** er nå 12 (`docs/prosjektformat.md`). Eldre prosjekter
+  leses som de er.
+
+**Rettet i samme slengen, for alle malene:**
+
+- **En del som kommer til i en rad som har steg,** kommer nå inn sammen
+  med resten av raden. Før sto den der fra start. Det gjaldt pila i en
+  prosess når en boks ble flyttet i skjemaet etter «Ett steg per boks»,
+  og ville ha gjeldt teksten til en hendelse skrevet etter stegene.
+- **Leserekkefølgen for skjermleser.** En figur med skjema leses nå rad
+  for rad: hendelse for hendelse, kolonne for kolonne. Før ble en
+  sammenligning lest som alle overskriftene først og punktene etterpå,
+  fordi rekkefølgen bare fulgte plassen på lysarket. Det som tegnes, er
+  uendret.
+
+**En feil jeg laget og rettet underveis:** første utgave av
+leserekkefølgen dro kontrollkoden for prosjektformatet inn i
+HTML-spilleren, så den vokste fra 52 til 151 kB. En test fra før fanget
+det (den eksporterte fila skal ikke ha adresser ut). Funksjonen ligger
+nå i en egen liten fil (`src/shared/layout/rows.ts`), spilleren er
+53 kB, og en ny test passer på at den holder seg slik.
+
+**Prøvd på Linux Mint:**
+
+- 13 nye enhetstester (`tests/timeaxis.test.ts`) og 5 nye prøver i det
+  bygde programmet uten vindu (`tests/e2e-timeaxis.test.ts`): sette inn,
+  fylle ut, legge til, flytte og fjerne en hendelse, skrive og slette på
+  lysarket, snu nedover og tilbake, steg sett i forhåndsvisningen, og
+  fri figur med angre.
+- Sett på tre bilder fra prøvene: bortover og nedover i programmet, og
+  forhåndsvisningen etter to steg.
+- Hele testsamlingen: 516 består og 1 hoppes over som før. Det var den
+  tredje kjøringen. I den første feilet HTML-testen på feilen over. I
+  den andre feilet to tester for fritt opptak på tid (maskinen var
+  opptatt med annet, last 7–10); de besto alene rett etterpå og i den
+  tredje kjøringen. Det er den samme testfila som i 6.32.
+
+**Ikke prøvd:** Windows. Tidsaksen i en videofil (MP4) og i en
+eksportert HTML-fil åpnet i en nettleser; den består av vanlige former
+og tekstbokser, som begge er prøvd fra før, men selve tidsaksen er bare
+sett i programmet og i forhåndsvisningen. Lange tekster. En skjermleser
+er ikke brukt; det er rekkefølgen i fila som er kontrollert.
+
+**Kjent:** hendelsene står med lik avstand, ikke etter hvor lang tid
+det er mellom dem. Teksten krymper ikke når den er for lang.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

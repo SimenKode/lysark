@@ -33,14 +33,18 @@ fra et lysark**, og ordet er **«Grupper»**. Første del er bygget:
 - **«Ett steg per del».** Delene i gruppen kommer inn én etter én. En pil
   kommer sammen med boksen den peker på.
 
-Deretter de tre første malene (historikken, 6.33):
+Deretter malene (historikken, 6.33 og 6.36):
 
-- **«Sett inn → Figur»** gir **Prosess**, **Lagvis oppbygging** og
-  **Sammenligning**. Du fyller ut et skjema i egenskapene, og figuren
-  tegner seg selv. Dra i rammen for å flytte den eller endre størrelsen.
+- **«Sett inn → Figur»** gir **Prosess**, **Lagvis oppbygging**,
+  **Sammenligning** og **Tidsakse**. Du fyller ut et skjema i
+  egenskapene, og figuren tegner seg selv. Dra i rammen for å flytte den
+  eller endre størrelsen.
+- **«Tidsakse»** er hendelser i rekkefølge langs en strek. Hver hendelse
+  har et tidspunkt og en tekst, og aksen kan gå bortover eller nedover.
+  Navnet valgte du 26.11; «Tidslinje» er fortsatt fanen under lysarket.
 - Du kan også **dobbeltklikke og skrive rett i en boks**.
-- **«Ett steg per boks»** (eller lag, kolonne) lar radene komme inn én
-  etter én.
+- **«Ett steg per boks»** (eller lag, kolonne, hendelse) lar radene
+  komme inn én etter én.
 - **«Gjør om til fri figur»** tar bort skjemaet for godt, så du kan
   endre hver del for hånd.
 
@@ -80,8 +84,8 @@ etiketter oppå et bilde).
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
    i kapitler.
 3. **Lage figurer:** fra en mal med skjema (prosess, lagvis oppbygging,
-   sammenligning), eller fritt av bokser, ellipser og piler som henger
-   sammen.
+   sammenligning, tidsakse), eller fritt av bokser, ellipser og piler
+   som henger sammen.
 4. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
    Commons og Openverse, og **sette merker på et bilde**.
 5. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
@@ -131,11 +135,10 @@ Startmeldingen til denne chatten hadde ingen funn eller innspill, så
 punktene fra sist står fortsatt.
 
 1. **Prøv figurene** på et av dine egne lysark. Sett inn en prosess og
-   fyll ut skjemaet. Tegn så en fri figur: tre bokser, piler mellom dem,
-   flytt en boks, grupper, og gi delene steg. Si hva som er tungvint
-   eller uventet, og om farger og størrelser er som du vil ha dem.
-   **Ett valg trengs:** hva skal malen for hendelser i rekkefølge hete?
-   «Tidslinje» er allerede fanen under lysarket.
+   en tidsakse, og fyll ut skjemaene. Tegn så en fri figur: tre bokser,
+   piler mellom dem, flytt en boks, grupper, og gi delene steg. Si hva
+   som er tungvint eller uventet, og om farger og størrelser er som du
+   vil ha dem.
 2. **Prøv «Behold utseendet» på Windows med en av dine egne
    forelesninger.** Veien gjennom PowerPoint er prøvd i VM-en og virker
    (historikken, 6.35), men bare med én liten prøvefil. Glitchen i
@@ -159,8 +162,8 @@ punktene fra sist står fortsatt.
 
 1. **Det du melder** etter å ha prøvd figurene, opptaket, importen og
    valget av utseende.
-2. **Resten av malene** (leveranse 4): tidslinje (trenger et navn fra
-   deg), og søyle- og linjediagram.
+2. **Søyle- og linjediagram** (leveranse 4). Jeg kommer med spørsmål
+   først, blant annet om hvordan du vil skrive inn tallene.
 3. **Figur i «Lær mer»**, hentet fra et lysark.
 4. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
    opp, forsvinne og zoome inn på et utsnitt.
@@ -170,7 +173,7 @@ punktene fra sist står fortsatt.
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (498) | Ja | – |
+| Automatiske tester (516) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -184,7 +187,7 @@ punktene fra sist står fortsatt.
 | Openverse | Ja, der testen svarer for Openverse | Nei |
 | Merket bilde | Ja, også målt i videoen | Nei |
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
-| **Maler med skjema** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
+| **Maler med skjema** (også tidsaksen) | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
@@ -197,7 +200,9 @@ prosessfigur kan settes inn.
 
 - **Maler med skjema:** teksten krymper ikke av seg selv når den er for
   lang for boksen. En del kan ikke flyttes eller få egen farge før du
-  gjør figuren om til fri figur. Tidslinje og diagrammer er ikke laget.
+  gjør figuren om til fri figur. På tidsaksen står hendelsene med lik
+  avstand, ikke etter hvor lang tid det er mellom dem. Diagrammer er
+  ikke laget.
 - **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
   gruppe større eller mindre. En pil går alltid korteste vei mellom to
   bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
@@ -285,8 +290,8 @@ bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
 film for hele opptaket), kapitler, PDF-import der tekst, bilder og
 lenker er egne elementer, fritt valg ved import mellom «Behold
 utseendet» og «Gjør om til USN-stil», fri figur (grupper, og piler som
-fester seg til bokser), og tre maler med skjema (prosess, lagvis
-oppbygging, sammenligning).
+fester seg til bokser), og fire maler med skjema (prosess, lagvis
+oppbygging, sammenligning, tidsakse).
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.

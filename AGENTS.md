@@ -302,17 +302,25 @@ instead of choosing silently.
   the render code, the HTML player and the video export never look at
   groups or at what a line is fastened to. In the interface the word is
   "Grupper" and "Del opp gruppen" (the owner's choice, as in PowerPoint).
-- A figure with a form (process, layers, comparison) is drawn by its
-  form, not by hand (the owner's choice, 25.11.2026: "skjemaet styrer").
-  The figure element (`type: 'figure'`) holds the form and a frame and
-  shows nothing; what is seen are ordinary shapes that carry `of`, made,
-  laid out and taken away by one function after every change
+- A figure with a form (process, layers, comparison, time axis) is drawn
+  by its form, not by hand (the owner's choice, 25.11.2026: "skjemaet
+  styrer"). The figure element (`type: 'figure'`) holds the form and a
+  frame and shows nothing; what is seen are ordinary shapes (and, for the
+  text of an event on a time axis, ordinary text boxes) that carry `of`,
+  made, laid out and taken away by one function after every change
   (`followTemplates` in `src/shared/layout/templates.ts`, called from the
-  store's `update` before `followFigures`). The render code knows only
-  the shapes. "Gjør om til fri figur" takes the form away for good and
-  leaves the shapes as a group. A row of a form is never called "steg"
-  in the interface (that word is the steps of a slide): it is a "boks",
-  a "lag" or a "kolonne".
+  store's `update` before `followFigures`). What is drawn knows only the
+  shapes and text boxes. The one thing in the render code that knows of
+  forms is the order the parts are read in by assistive technology: one
+  row of the form at a time (`rowOrder` in `src/shared/layout/rows.ts`,
+  used by `readingOrder` in `src/shared/render/scene.ts`; that file is
+  kept free of the format's checking code, so the exported HTML file
+  does not grow by it). "Gjør om til fri figur" takes the form
+  away for good and leaves the parts as a group. A row of a form is never
+  called "steg" in the interface (that word is the steps of a slide): it
+  is a "boks", a "lag", a "kolonne" or a "hendelse". The template for
+  events in order is called "Tidsakse" (the owner's choice, 26.11.2026):
+  "Tidslinje" is the tab under the slide.
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered
