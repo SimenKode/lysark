@@ -8,7 +8,8 @@ import {
   clearClosingAnimation,
   clearLogos,
 } from './actions';
-import { useStore, type ImportLook, type LookRequest } from './store';
+import type { Orientation } from '../../shared/format/constants';
+import { useStore, type ImportLook, type LookChoice, type LookRequest } from './store';
 
 function Dialog(props: {
   title: string;
@@ -111,7 +112,7 @@ export function ImportReportDialog(props: {
 }
 
 /** What each look means for each kind of file, in the lecturer's words. */
-const LOOKS: Record<LookRequest['kind'], Record<ImportLook, { name: string; text: string }>> = {
+const LOOKS: Record<'pptx' | 'pdf', Record<ImportLook, { name: string; text: string }>> = {
   pptx: {
     keep: {
       name: 'Behold utseendet',
@@ -144,18 +145,65 @@ const LOOKS: Record<LookRequest['kind'], Record<ImportLook, { name: string; text
   },
 };
 
-/** Asks how the slides of a file that is being imported are to look. The choice is free. */
+/** The two shapes a slide can have, in the lecturer's words. */
+const SHAPES: Record<Orientation, { name: string; text: string; why: string }> = {
+  landscape: {
+    name: 'Liggende (16:9)',
+    text: 'For skjerm, prosjektor og vanlige videoer.',
+    why: 'Sidene i fila er liggende.',
+  },
+  portrait: {
+    name: 'Stående (9:16)',
+    text: 'For mobil, og for videoer til TikTok, Reels og Shorts.',
+    why: 'Sidene i fila er stående.',
+  },
+};
+
+/**
+ * Asks how the slides of a file that is being imported are to look, and
+ * which shape they are to have; for a new, empty project only the shape.
+ * Both choices are free. The shape the pages of the file have is
+ * recommended, and chosen until the lecturer says otherwise; a new project
+ * is lying until he says otherwise.
+ */
 export function LookDialog({ request }: { request: LookRequest }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [look, setLook] = useState<ImportLook>('keep');
+  const [shape, setShape] = useState<Orientation>(request.recommended ?? 'landscape');
   useEffect(() => {
     const dialog = ref.current;
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
-  const answer = (choice: ImportLook | undefined): void => {
+  const answer = (choice: LookChoice | undefined): void => {
     useStore.getState().setLookRequest(null);
     request.resolve(choice);
   };
+  const kind = request.kind;
+  const shapes = (
+    <fieldset className="look-choice">
+      <legend className={kind === 'new' ? 'field-label' : 'look-question'}>
+        {kind === 'new' ? 'Velg fritt.' : 'Hvilken form skal lysarkene ha?'}
+      </legend>
+      {request.recommended && <p className="look-why">{SHAPES[request.recommended].why}</p>}
+      {(['landscape', 'portrait'] as const).map((choice) => (
+        <label key={choice} className="look-option">
+          <input
+            type="radio"
+            name="import-shape"
+            checked={shape === choice}
+            onChange={() => setShape(choice)}
+          />
+          <span>
+            <strong>
+              {SHAPES[choice].name}
+              {request.recommended === choice && <span className="look-recommended">Anbefalt</span>}
+            </strong>
+            <span>{SHAPES[choice].text}</span>
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
   return (
     <dialog
       ref={ref}
@@ -165,33 +213,43 @@ export function LookDialog({ request }: { request: LookRequest }) {
         answer(undefined);
       }}
     >
-      <h2>Hvordan skal lysarkene se ut?</h2>
+      <h2>
+        {kind === 'new' ? 'Hvilken form skal lysarkene ha?' : 'Hvordan skal lysarkene se ut?'}
+      </h2>
       <p>
         <strong>{request.name}</strong>
       </p>
-      <fieldset className="look-choice">
-        <legend className="field-label">Velg fritt. Innholdet er det samme.</legend>
-        {(['keep', 'theme'] as const).map((choice) => (
-          <label key={choice} className="look-option">
-            <input
-              type="radio"
-              name="import-look"
-              checked={look === choice}
-              onChange={() => setLook(choice)}
-            />
-            <span>
-              <strong>{LOOKS[request.kind][choice].name}</strong>
-              <span>{LOOKS[request.kind][choice].text}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      {kind !== 'new' && (
+        <fieldset className="look-choice">
+          <legend className="field-label">Velg fritt. Innholdet er det samme.</legend>
+          {(['keep', 'theme'] as const).map((choice) => (
+            <label key={choice} className="look-option">
+              <input
+                type="radio"
+                name="import-look"
+                checked={look === choice}
+                onChange={() => setLook(choice)}
+              />
+              <span>
+                <strong>{LOOKS[kind][choice].name}</strong>
+                <span>{LOOKS[kind][choice].text}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {shapes}
+      <p className="hint">Formen gjelder hele prosjektet og kan ikke endres etterpå.</p>
       <div className="dialog-actions">
         <button type="button" onClick={() => answer(undefined)}>
           Avbryt
         </button>
-        <button type="button" className="strong" onClick={() => answer(look)}>
-          Importer
+        <button
+          type="button"
+          className="strong"
+          onClick={() => answer({ look, orientation: shape })}
+        >
+          {kind === 'new' ? 'Lag prosjektet' : 'Importer'}
         </button>
       </div>
     </dialog>

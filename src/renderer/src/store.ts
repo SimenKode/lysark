@@ -7,6 +7,7 @@ import { followRepeats } from '../../shared/layout/repeats';
 import { create } from 'zustand';
 import type { ImportReport, LogoStatus, VideoProgress } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
+import { stageOf, type Orientation, type Stage } from '../../shared/format/constants';
 
 export interface Notice {
   kind: 'info' | 'error';
@@ -41,12 +42,24 @@ export interface PdfProgress {
 /** How the slides of an imported file are to look. */
 export type ImportLook = 'keep' | 'theme';
 
-/** A file has been picked for import, and the owner is asked how its slides are to look. */
+/** What the owner chose for the slides of a new project. */
+export interface LookChoice {
+  look: ImportLook;
+  orientation: Orientation;
+}
+
+/**
+ * A file has been picked for import, and the owner is asked how its slides
+ * are to look and which shape they are to have; or a new, empty project is
+ * being made, and only the shape is asked.
+ */
 export interface LookRequest {
-  kind: 'pptx' | 'pdf';
+  kind: 'pptx' | 'pdf' | 'new';
   name: string;
+  /** The shape the pages of the file have, recommended and chosen until the owner says otherwise. */
+  recommended?: Orientation;
   /** Called with the choice, or undefined when the owner breaks off. */
-  resolve: (look: ImportLook | undefined) => void;
+  resolve: (choice: LookChoice | undefined) => void;
 }
 
 /** What the lecturer is told when something must wait for a recording to be saved. */
@@ -414,4 +427,9 @@ export function currentScene(state: Pick<State, 'project' | 'sceneId'>): Scene |
 
 export function isDirty(state: Pick<State, 'project' | 'saved'>): boolean {
   return state.project !== state.saved;
+}
+
+/** The stage of the open project: what size its slides are, in stage pixels. */
+export function useStage(): Stage {
+  return useStore((s) => stageOf(s.project ?? {}));
 }

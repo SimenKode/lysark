@@ -208,6 +208,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
 
   // ---------- Structure ----------
   const stage = h('div', { class: 'lp-stage' });
+  stage.style.width = `${theme.stage.width}px`;
+  stage.style.height = `${theme.stage.height}px`;
   const stageBox = h('div', { class: 'lp-stagebox' }, stage);
   const viewport = h(
     'main',
@@ -417,6 +419,14 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const printArea = h('div', { class: 'lp-print' });
 
   root.className = 'lp-app';
+  const upright = theme.orientation === 'portrait';
+  if (upright) {
+    // An upright lecture is printed on upright paper.
+    root.classList.add('lp-upright');
+    const paper = document.createElement('style');
+    paper.textContent = '@media print { @page { size: A4 portrait; margin: 12mm; } }';
+    document.head.appendChild(paper);
+  }
   root.replaceChildren(
     h(
       'div',
@@ -447,13 +457,19 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     return el;
   }
 
+  /**
+   * The slide as large as the window allows, centred: a lying slide fills
+   * the width of a wide window, an upright one is as tall as the window is
+   * (and fills the screen of a phone held upright).
+   */
   function fit(): void {
+    const size = theme.stage;
     const scale = Math.max(
       0.05,
-      Math.min(viewport.clientWidth / 1920, viewport.clientHeight / 1080),
+      Math.min(viewport.clientWidth / size.width, viewport.clientHeight / size.height),
     );
-    stageBox.style.width = `${1920 * scale}px`;
-    stageBox.style.height = `${1080 * scale}px`;
+    stageBox.style.width = `${size.width * scale}px`;
+    stageBox.style.height = `${size.height * scale}px`;
     stage.style.transform = `scale(${scale})`;
     // The "+" mark is 56 px on the stage; on screen it never gets smaller than 28 px.
     stage.style.setProperty('--ls-badge-scale', String(Math.max(1, 28 / (56 * scale))));
@@ -524,16 +540,16 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const step = scene.timeline[stepsShown - 1];
     const total = step ? stepDuration(step) : 0;
     if (!step || reducedMotion || total <= 0) {
-      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity, theme.stage));
       return;
     }
     const start = performance.now();
     const tick = (now: number): void => {
       const elapsed = (now - start) / 1000;
-      applySceneMoves(el, sceneMoves(scene, stepsShown, elapsed));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, elapsed, theme.stage));
       if (elapsed < total) frame = requestAnimationFrame(tick);
     };
-    applySceneMoves(el, sceneMoves(scene, stepsShown, 0));
+    applySceneMoves(el, sceneMoves(scene, stepsShown, 0, theme.stage));
     frame = requestAnimationFrame(tick);
   }
 
@@ -616,7 +632,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     } else if (animate) animateStep(scene, el);
     else {
       cancelAnimationFrame(frame);
-      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity, theme.stage));
     }
     updateChrome();
   }
@@ -770,13 +786,13 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         }
       } else {
         stepsShown = scene.timeline.length;
-        applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
+        applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity, theme.stage));
         updateChrome();
         setPlaying(false);
       }
       return false;
     }
-    applySceneMoves(el, sceneMovesAt(scene, now));
+    applySceneMoves(el, sceneMovesAt(scene, now, theme.stage));
     followEvents(scene, now);
     const shown = stepsShownAt(scene, now);
     if (shown !== stepsShown) {
@@ -813,7 +829,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       music?.pause();
       stopVoiceVideos();
       // What has come in stays; the rest waits for the keys again.
-      applySceneMoves(sceneElement(scene), sceneMoves(scene, stepsShown, Infinity));
+      applySceneMoves(sceneElement(scene), sceneMoves(scene, stepsShown, Infinity, theme.stage));
     }
   }
 

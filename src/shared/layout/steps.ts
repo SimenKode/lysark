@@ -4,7 +4,7 @@
 // player uses this file, and it must not bring the format's checking code
 // into the exported file.
 import type { Element, Scene, Step, StepAction, StepEffect, StepKind } from '../format/schema';
-import { STAGE } from '../format/constants';
+import { stageFor, type Stage } from '../format/constants';
 
 /** What a step does: brings something in, when it says nothing else. */
 export function stepKind(step: Pick<Step, 'kind'>): StepKind {
@@ -119,25 +119,32 @@ export interface View {
   h: number;
 }
 
-/** The whole slide. */
-export const WHOLE: View = { x: 0, y: 0, w: STAGE.width, h: STAGE.height };
+/** The whole of a slide on a stage. */
+export function wholeView(stage: Stage): View {
+  return { x: 0, y: 0, w: stage.width, h: stage.height };
+}
+
+/** The whole of a lying slide. Code that works on a project uses `wholeView`. */
+export const WHOLE: View = wholeView(stageFor('landscape'));
 
 /** The smallest part of the slide a zoom may show: a fifth of its width. */
-export const SMALLEST_VIEW = STAGE.width / 5;
+export function smallestView(stage: Stage): number {
+  return stage.width / 5;
+}
 
 /**
  * A part of the slide in the shape of the slide, inside the slide: as wide
  * as asked for (within what is allowed), round the same middle where that
  * is possible.
  */
-export function fitView(wanted: View): View {
-  const w = Math.max(SMALLEST_VIEW, Math.min(STAGE.width, wanted.w));
-  const h = (w * STAGE.height) / STAGE.width;
+export function fitView(wanted: View, stage: Stage = stageFor('landscape')): View {
+  const w = Math.max(smallestView(stage), Math.min(stage.width, wanted.w));
+  const h = (w * stage.height) / stage.width;
   const midX = wanted.x + wanted.w / 2;
   const midY = wanted.y + wanted.h / 2;
   return {
-    x: Math.round(Math.max(0, Math.min(STAGE.width - w, midX - w / 2))),
-    y: Math.round(Math.max(0, Math.min(STAGE.height - h, midY - h / 2))),
+    x: Math.round(Math.max(0, Math.min(stage.width - w, midX - w / 2))),
+    y: Math.round(Math.max(0, Math.min(stage.height - h, midY - h / 2))),
     w: Math.round(w),
     h: Math.round(h),
   };
@@ -146,9 +153,10 @@ export function fitView(wanted: View): View {
 /** The part of the slide that holds the boxes, with air round them, in the shape of the slide. */
 export function viewAround(
   boxes: ReadonlyArray<{ x: number; y: number; w: number; h: number }>,
+  stage: Stage = stageFor('landscape'),
 ): View {
   if (boxes.length === 0)
-    return fitView({ x: STAGE.width / 4, y: STAGE.height / 4, w: STAGE.width / 2, h: 1 });
+    return fitView({ x: stage.width / 4, y: stage.height / 4, w: stage.width / 2, h: 1 }, stage);
   const left = Math.min(...boxes.map((b) => b.x));
   const top = Math.min(...boxes.map((b) => b.y));
   const right = Math.max(...boxes.map((b) => b.x + b.w));
@@ -157,9 +165,9 @@ export function viewAround(
   // Wide enough for the width, and for the height at the shape of the slide.
   const w = Math.max(
     right - left + 2 * air,
-    ((bottom - top + 2 * air) * STAGE.width) / STAGE.height,
+    ((bottom - top + 2 * air) * stage.width) / stage.height,
   );
-  return fitView({ x: (left + right) / 2 - w / 2, y: (top + bottom) / 2, w, h: 0 });
+  return fitView({ x: (left + right) / 2 - w / 2, y: (top + bottom) / 2, w, h: 0 }, stage);
 }
 
 /** True when the zoom that is in force after the steps before `index` shows only a part of the slide. */

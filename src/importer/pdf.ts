@@ -4,7 +4,7 @@
 // which of the page's drawing operations are text, pictures and the rest,
 // and how the pages become a project. The drawing itself happens in the
 // interface (src/renderer/src/pdfRender.ts).
-import { STAGE } from '../shared/format/constants';
+import { stageFor, type Orientation, type Stage } from '../shared/format/constants';
 import { newId, newProject, newScene, plainText } from '../shared/format/factory';
 import {
   SURFACES,
@@ -22,7 +22,7 @@ import {
 } from '../shared/format/schema';
 import { isAllowedTextColor, isLargeText } from '../shared/theme/contrast';
 import { PALETTE } from '../shared/theme/palette';
-import { THEME_REN, defaultTextColor, logoArea } from '../shared/theme/theme';
+import { THEME_REN, defaultTextColor, getTheme, logoArea, type Theme } from '../shared/theme/theme';
 
 /** Pixels per stage unit: a page is drawn at double resolution. */
 export const PDF_PIXEL_DENSITY = 2;
@@ -46,14 +46,23 @@ export interface PageFit {
 }
 
 /**
- * Fits a page (in any unit) to the stage. The page fills the stage in one
- * direction and is centred in the other. The picture is drawn at double
- * resolution, so it is at most 3840 x 2160 pixels.
+ * Fits a page (in any unit) to the stage, whole, as large as it can be
+ * without anything being cut: it fills the stage in one direction and is
+ * centred in the other (an upright A4 page on an upright slide fills the
+ * width and gets air above and below; a lying page on an upright slide
+ * gets air above and below too, more of it). The picture is drawn at double
+ * resolution, so it is at most twice the stage (3840 x 2160 pixels on a
+ * lying stage).
  */
-export function fitPage(width: number, height: number): PageFit {
+export function fitPage(
+  width: number,
+  height: number,
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): PageFit {
   if (!(width > 0) || !(height > 0)) throw new Error('Siden har ingen størrelse.');
-  const maxW = STAGE.width * PDF_PIXEL_DENSITY;
-  const maxH = STAGE.height * PDF_PIXEL_DENSITY;
+  const maxW = stage.width * PDF_PIXEL_DENSITY;
+  const maxH = stage.height * PDF_PIXEL_DENSITY;
   const scale = Math.min(maxW / width, maxH / height);
   const pixelWidth = Math.min(maxW, Math.max(1, Math.round(width * scale)));
   const pixelHeight = Math.min(maxH, Math.max(1, Math.round(height * scale)));
@@ -61,7 +70,7 @@ export function fitPage(width: number, height: number): PageFit {
   const w = pixelWidth / PDF_PIXEL_DENSITY;
   const h = pixelHeight / PDF_PIXEL_DENSITY;
   return {
-    box: { x: (STAGE.width - w) / 2, y: (STAGE.height - h) / 2, w, h, rotation: 0 },
+    box: { x: (stage.width - w) / 2, y: (stage.height - h) / 2, w, h, rotation: 0 },
     pixelWidth,
     pixelHeight,
   };
@@ -1832,17 +1841,15 @@ export function isPagePicture(scene: Scene): boolean {
  */
 export type PdfLook = 'keep' | 'theme';
 
-const LOGO_AREA = logoArea(THEME_REN, 'nb');
-
 /** True when an element lies where the theme puts the logo. */
-function onLogo(element: Element): boolean {
+function onLogo(theme: Theme, element: Element): boolean {
   const { x, y, w, h } = element.box;
-  const a = LOGO_AREA;
+  const a = logoArea(theme, 'nb');
   return x < a.x + a.w && x + w > a.x && y < a.y + a.h && y + h > a.y;
 }
 
 /** Makes a scene of text and pictures over into the theme (see `PdfLook`). */
-function intoTheme(scene: Scene): void {
+function intoTheme(scene: Scene, theme: Theme): void {
   delete scene.background;
   let title: TextElement | undefined;
   for (const element of scene.elements) {
@@ -1859,7 +1866,7 @@ function intoTheme(scene: Scene): void {
     ...scene.elements.map((el) => (el.type === 'text' ? (el.fontSize ?? 0) : 0)),
   );
   if (title && (title.fontSize ?? 0) >= largest) title.role = 'title';
-  scene.showLogo = !scene.elements.some(onLogo);
+  scene.showLogo = !scene.elements.some((element) => onLogo(theme, element));
 }
 
 /**
@@ -1870,7 +1877,12 @@ function intoTheme(scene: Scene): void {
  * steps and no script until the owner adds them. Elements lie back to
  * front: the background, the pictures, then the text in the PDF's order.
  */
-export function pdfScene(page: PdfPage, look: PdfLook = 'keep'): Scene {
+export function pdfScene(
+  page: PdfPage,
+  look: PdfLook = 'keep',
+  /** The theme of the project, laid out for its shape (lying when not given). */
+  theme: Theme = THEME_REN,
+): Scene {
   const scene = newScene('content', pageTitle(page.lines, page.number));
   scene.background = page.surface ?? 'hvit';
   scene.showLogo = false;
@@ -1939,7 +1951,7 @@ export function pdfScene(page: PdfPage, look: PdfLook = 'keep'): Scene {
 
   if (kept.some((k) => k.why === 'formula')) warnings.push({ code: 'text', message: KEPT_FORMULA });
   if (kept.some((k) => k.why !== 'formula')) warnings.push({ code: 'text', message: KEPT_OTHER });
-  if (madeOver) intoTheme(scene);
+  if (madeOver) intoTheme(scene, theme);
   else if (page.recoloured) warnings.push({ code: 'text', message: RECOLOURED });
   warnings.push(...linkWarnings(page.looseLinks ?? []));
   scene.imported = { slide: page.number, warnings };
@@ -1957,10 +1969,14 @@ export function pdfProject(
   pages: PdfPage[],
   chapters: ReadonlyMap<number, string> = new Map(),
   look: PdfLook = 'keep',
+  /** The shape of the project's slides; the pages were fitted to its stage. */
+  orientation: Orientation = 'landscape',
 ): Project {
   const project = newProject(title);
+  if (orientation === 'portrait') project.orientation = 'portrait';
+  const theme = getTheme(project);
   for (const page of pages) {
-    const scene = pdfScene(page, look);
+    const scene = pdfScene(page, look, theme);
     // Only the pictures the scene shows belong to the project.
     const shown = new Set(scene.elements.map((el) => (el.type === 'image' ? el.asset : '')));
     for (const stored of [page.whole, page.background, ...(page.pictures ?? [])]) {

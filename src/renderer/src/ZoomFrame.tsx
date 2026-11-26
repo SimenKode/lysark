@@ -3,13 +3,13 @@
 // corner to make the part larger or smaller. It always has the shape of the
 // slide, and stays inside it.
 import { useRef, useState } from 'react';
-import { STAGE } from '../../shared/format/constants';
 import type { Scene } from '../../shared/format/schema';
-import { SMALLEST_VIEW, fitView, type View } from '../../shared/layout/steps';
-import { useStore } from './store';
+import { fitView, smallestView, type View } from '../../shared/layout/steps';
+import { useStage, useStore } from './store';
 
 export function ZoomFrame({ scene, scale }: { scene: Scene; scale: number }) {
   const stepId = useStore((s) => s.zoomStep);
+  const stage = useStage();
   const ref = useRef<HTMLDivElement>(null);
   const [live, setLive] = useState<View | null>(null);
   const step = scene.timeline.find((one) => one.id === stepId && one.kind === 'zoom');
@@ -20,8 +20,8 @@ export function ZoomFrame({ scene, scale }: { scene: Scene; scale: number }) {
   const onSlide = (event: { clientX: number; clientY: number }): { x: number; y: number } => {
     const rect = ref.current!.parentElement!.getBoundingClientRect();
     return {
-      x: ((event.clientX - rect.left) / rect.width) * STAGE.width,
-      y: ((event.clientY - rect.top) / rect.height) * STAGE.height,
+      x: ((event.clientX - rect.left) / rect.width) * stage.width,
+      y: ((event.clientY - rect.top) / rect.height) * stage.height,
     };
   };
   const drag =
@@ -36,15 +36,18 @@ export function ZoomFrame({ scene, scale }: { scene: Scene; scale: number }) {
       const onMove = (moved: PointerEvent): void => {
         const p = onSlide(moved);
         if (how === 'move') {
-          latest = fitView({ ...first, x: first.x + p.x - from.x, y: first.y + p.y - from.y });
+          latest = fitView(
+            { ...first, x: first.x + p.x - from.x, y: first.y + p.y - from.y },
+            stage,
+          );
         } else {
           // The corner follows the pointer; the opposite corner stands still.
           const widest = Math.min(
-            STAGE.width - first.x,
-            ((STAGE.height - first.y) * STAGE.width) / STAGE.height,
+            stage.width - first.x,
+            ((stage.height - first.y) * stage.width) / stage.height,
           );
-          const w = Math.round(Math.max(SMALLEST_VIEW, Math.min(widest, p.x - first.x)));
-          latest = { x: first.x, y: first.y, w, h: Math.round((w * STAGE.height) / STAGE.width) };
+          const w = Math.round(Math.max(smallestView(stage), Math.min(widest, p.x - first.x)));
+          latest = { x: first.x, y: first.y, w, h: Math.round((w * stage.height) / stage.width) };
         }
         setLive(latest);
       };

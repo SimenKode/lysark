@@ -21,7 +21,7 @@ import {
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { unzipSync, zipSync, type Zippable } from 'fflate';
 import { newId, newProject } from '../shared/format/factory';
-import { parseProject, type Asset, type Project } from '../shared/format/schema';
+import { parseProject, type Asset, type Orientation, type Project } from '../shared/format/schema';
 import { importHtml, type HtmlImport } from '../importer/html';
 import { importPptx, layOutFrontScenes, type ImportReport } from '../importer/pptx';
 import { PDF_PAGE_LIMIT_BYTES } from '../shared/limits';
@@ -113,9 +113,10 @@ function prepareFolder(dir: string): void {
   mkdirSync(join(dir, 'media'), { recursive: true });
 }
 
-export function createProject(dir: string): Project {
+export function createProject(dir: string, orientation: Orientation = 'landscape'): Project {
   prepareFolder(dir);
   const project = newProject(basename(dir));
+  if (orientation === 'portrait') project.orientation = 'portrait';
   writeProjectFile(dir, project);
   return project;
 }
@@ -143,9 +144,10 @@ export function saveProject(dir: string, project: Project): void {
 export function importPptxToFolder(
   pptxPath: string,
   dir: string,
+  orientation: Orientation = 'landscape',
 ): { project: Project; report: ImportReport } {
   const bytes = new Uint8Array(readFileSync(pptxPath));
-  const result = importPptx(bytes, { fileName: basename(pptxPath) });
+  const result = importPptx(bytes, { fileName: basename(pptxPath), orientation });
   layOutFrontScenes(result.project);
   prepareFolder(dir);
   for (const media of result.media) {

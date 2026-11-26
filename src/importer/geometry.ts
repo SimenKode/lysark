@@ -1,6 +1,6 @@
 // Positions: from EMU on the slide, through any enclosing groups, to boxes
-// on the 1920 x 1080 stage.
-import { STAGE, type Box } from '../shared/format/schema';
+// on the stage (1920 x 1080 lying, 1080 x 1920 upright).
+import type { Box, Stage } from '../shared/format/schema';
 import { boolAttr, child, children, intAttr, type XmlNode } from './xml';
 
 /** An a:xfrm (or p:xfrm) in EMU, with the rotation in degrees. */
@@ -23,7 +23,11 @@ export interface GroupFrame {
   childH: number;
 }
 
-/** How slide EMU map to the stage: uniform scale, centred. */
+/**
+ * How slide EMU map to the stage: one scale for both directions, as large
+ * as the whole slide fits, centred. A slide of another shape than the
+ * stage (a lying slide in an upright project) gets air on two sides.
+ */
 export interface StageMap {
   scale: number;
   offsetX: number;
@@ -38,12 +42,12 @@ export interface Placed {
   flipV: boolean;
 }
 
-export function stageMapFor(slideWidth: number, slideHeight: number): StageMap {
-  const scale = Math.min(STAGE.width / slideWidth, STAGE.height / slideHeight);
+export function stageMapFor(slideWidth: number, slideHeight: number, stage: Stage): StageMap {
+  const scale = Math.min(stage.width / slideWidth, stage.height / slideHeight);
   return {
     scale,
-    offsetX: (STAGE.width - slideWidth * scale) / 2,
-    offsetY: (STAGE.height - slideHeight * scale) / 2,
+    offsetX: (stage.width - slideWidth * scale) / 2,
+    offsetY: (stage.height - slideHeight * scale) / 2,
     slideWidth,
     slideHeight,
   };

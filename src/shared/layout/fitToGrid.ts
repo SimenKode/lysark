@@ -1,9 +1,8 @@
-// "Tilpass til rutenett": tidies a scene into the brand's 8 column grid.
-// Text is left aligned and takes the theme's size; boxes snap to columns
-// and stay inside the margins.
-import { STAGE } from '../format/constants';
+// "Rydd opp lysarket": tidies a scene into the theme's grid (8 columns on a
+// lying slide, 4 on an upright one). Text is left aligned and takes the
+// theme's size; boxes snap to columns and stay inside the margins.
 import type { Element, Scene } from '../format/schema';
-import { columnEdges, overlapsDecoration, roleFontSize, type Theme } from '../theme/theme';
+import { columnEdges, overlapsDecoration, roleFontSize, spanEnd, type Theme } from '../theme/theme';
 
 function nearest(values: number[], target: number): number {
   let best = values[0]!;
@@ -17,7 +16,7 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
   const left = starts[0]!;
   const right = ends[ends.length - 1]!;
   const top = theme.grid.marginTop;
-  const bottom = STAGE.height - theme.grid.marginBottom;
+  const bottom = theme.stage.height - theme.grid.marginBottom;
   const isFront = scene.kind !== 'content';
 
   const title = scene.elements.find((e) => e.type === 'text' && e.role === 'title');
@@ -34,9 +33,11 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
     title.align = 'left';
     title.box.rotation = 0;
     if (isFront) {
-      // Title and subtitle take the five left columns; the shapes get the rest.
+      // Title and subtitle take the left columns (on a lying slide; the
+      // upper half on an upright one); the shapes get the rest.
       title.valign = 'bottom';
-      title.box = { x: left, y: 220, w: ends[4]! - left, h: 360, rotation: 0 };
+      const { y, h } = theme.front.title;
+      title.box = { x: left, y, w: spanEnd(theme, theme.span.front) - left, h, rotation: 0 };
     } else {
       title.valign = 'top';
       const lines = Math.max(1, Math.round(title.box.h / (size * theme.roles.title.lineHeight)));
@@ -53,7 +54,8 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
     delete subtitle.indent;
     subtitle.align = 'left';
     subtitle.valign = 'top';
-    subtitle.box = { x: left, y: 620, w: ends[4]! - left, h: 220, rotation: 0 };
+    const { y, h } = theme.front.subtitle;
+    subtitle.box = { x: left, y, w: spanEnd(theme, theme.span.front) - left, h, rotation: 0 };
   }
 
   for (const el of scene.elements) {
@@ -73,7 +75,7 @@ export function fitToGrid(scene: Scene, theme: Theme): void {
   }
 
   if (isFront) {
-    scene.decoration = !scene.elements.some((e) => overlapsDecoration(e.box));
+    scene.decoration = !scene.elements.some((e) => overlapsDecoration(e.box, theme));
   }
 }
 

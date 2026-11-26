@@ -29,7 +29,8 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import jbig2Url from 'pdfjs-dist/wasm/jbig2.wasm?url';
 import openJpegUrl from 'pdfjs-dist/wasm/openjpeg.wasm?url';
 import type { AddedMedia } from '../../shared/api';
-import { STAGE } from '../../shared/format/constants';
+import { stageFor, type Orientation } from '../../shared/format/constants';
+import { recommendShape, type PageSize } from '../../importer/shape';
 import type { Project } from '../../shared/format/schema';
 import { THEME_REN } from '../../shared/theme/theme';
 import {
@@ -145,6 +146,8 @@ export interface PdfImportSteps {
    * made over into the program's theme.
    */
   look?: PdfLook;
+  /** The shape of the project's slides; lying when absent. */
+  orientation?: Orientation;
 }
 
 // ---------- Canvases ----------
@@ -569,7 +572,8 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
   const page = await state.doc.getPage(number);
   // The viewport takes the page's own rotation into account.
   const size = page.getViewport({ scale: 1 });
-  const fit: PageFit = fitPage(size.width, size.height);
+  const stage = stageFor(steps.orientation ?? 'landscape');
+  const fit: PageFit = fitPage(size.width, size.height, stage);
   const stageScale = fit.box.w / size.width;
   const pixelScale = fit.pixelWidth / size.width;
   const density = fit.pixelWidth / fit.box.w;
@@ -711,7 +715,7 @@ async function importPage(state: ImportState, number: number): Promise<PdfPage> 
       state.metrics,
       state.fit,
       commonColor(wholeImage),
-      fit.box.w >= STAGE.width - 1 && fit.box.h >= STAGE.height - 1,
+      fit.box.w >= stage.width - 1 && fit.box.h >= stage.height - 1,
     );
     if (plan.texts.length === 0 && plan.kept.length === 0) return wholePage('no-text');
 
@@ -1108,6 +1112,39 @@ async function bookmarks(doc: PDFDocumentProxy): Promise<PdfBookmark[]> {
  * signal fires, and an Error with a readable message when the file cannot
  * be read.
  */
+/**
+ * The shape the pages of a PDF have (see `recommendShape`), read before the
+ * lecturer is asked which shape the slides are to have. Lying when the file
+ * cannot be read; the import itself then says why.
+ */
+export async function pdfShape(data: Uint8Array): Promise<Orientation> {
+  GlobalWorkerOptions.workerSrc = workerUrl;
+  // A copy: pdf.js may hand the bytes it is given over to its worker.
+  const task = getDocument({
+    data: data.slice(),
+    BinaryDataFactory: OwnFiles,
+    useWorkerFetch: false,
+    disableWorkerRendering: true,
+    enableXfa: false,
+    verbosity: VerbosityLevel.ERRORS,
+  });
+  try {
+    const doc = await task.promise;
+    const sizes: PageSize[] = [];
+    for (let number = 1; number <= doc.numPages; number++) {
+      const page = await doc.getPage(number);
+      const { width, height } = page.getViewport({ scale: 1 });
+      sizes.push({ width, height });
+      page.cleanup();
+    }
+    return recommendShape(sizes);
+  } catch {
+    return 'landscape';
+  } finally {
+    await task.destroy().catch(() => undefined);
+  }
+}
+
 export async function importPdfPages(
   data: Uint8Array,
   steps: PdfImportSteps,
@@ -1179,7 +1216,13 @@ export async function importPdfPages(
     }
     stopIfCancelled();
     const chapters = pdfChapters(await bookmarks(doc), doc.numPages);
-    return pdfProject(documentTitle(info.Title, steps.name), pages, chapters, steps.look);
+    return pdfProject(
+      documentTitle(info.Title, steps.name),
+      pages,
+      chapters,
+      steps.look,
+      steps.orientation,
+    );
   } finally {
     await task.destroy().catch(() => undefined);
   }

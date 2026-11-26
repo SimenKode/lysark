@@ -2,6 +2,7 @@
 // there are, what will come out, and how far the export has come.
 import { useEffect, useRef, useState } from 'react';
 import type { VideoRequest } from '../../shared/api';
+import { stageOf } from '../../shared/format/constants';
 import { slideCount, slideNumbers, slideSpan } from '../../shared/layout/slides';
 import { collectCredits } from '../../shared/render/more';
 import {
@@ -9,11 +10,11 @@ import {
   GIF_MAX_SECONDS,
   GIF_WIDTHS,
   VIDEO_FPS,
-  VIDEO_SIZE,
   formatTime,
   hasSound,
   schedule,
   videoOptions,
+  videoSize,
 } from '../../shared/render/clock';
 import { cancelVideo, exportVideo, hasFfmpeg } from './actions';
 import { useStore } from './store';
@@ -47,7 +48,10 @@ export function VideoDialog() {
   const [range, setRange] = useState<Range>('all');
   const [fromText, setFromText] = useState(String(currentNumber));
   const [toText, setToText] = useState(String(currentNumber));
+  /** The GIF's width, or its height when the slides are upright. */
   const [gifWidth, setGifWidth] = useState<number>(640);
+  const video = videoSize(stageOf(project));
+  const upright = video.height > video.width;
   const running = progress !== null;
   const locked = running || busy;
 
@@ -87,7 +91,14 @@ export function VideoDialog() {
   const credits = collectCredits(project).length;
   const hasVideoElements = chosen.some((s) => s.elements.some((e) => e.type === 'video'));
   const done = progress ? Math.round((progress.frame / Math.max(1, progress.frames)) * 100) : 0;
-  const gifHeight = Math.round((gifWidth * VIDEO_SIZE.height) / VIDEO_SIZE.width);
+  // The other side, made even, as FFmpeg makes it.
+  const gifOther =
+    2 *
+    Math.round(
+      ((upright ? video.width : video.height) * gifWidth) /
+        (2 * Math.max(video.width, video.height)),
+    );
+  const gifSize = upright ? `${gifOther} × ${gifWidth}` : `${gifWidth} × ${gifOther}`;
   const again = chosen.filter((s) => s.repeat && !s.skip).length;
   const own = chosen.filter((s) => !s.repeat && !s.skip).length;
   const slides =
@@ -181,12 +192,12 @@ export function VideoDialog() {
           </p>
         ) : gif ? (
           <p>
-            GIF, {gifWidth} × {gifHeight}, {String(GIF_FPS).replace('.', ',')} bilder i sekundet,
-            uten lyd. Lengde: <strong>{formatTime(seconds)}</strong> ({slides}).
+            GIF, {gifSize}, {String(GIF_FPS).replace('.', ',')} bilder i sekundet, uten lyd. Lengde:{' '}
+            <strong>{formatTime(seconds)}</strong> ({slides}).
           </p>
         ) : (
           <p>
-            MP4, {VIDEO_SIZE.width} × {VIDEO_SIZE.height}, {VIDEO_FPS} bilder i sekundet. Lengde:{' '}
+            MP4, {video.width} × {video.height}, {VIDEO_FPS} bilder i sekundet. Lengde:{' '}
             <strong>{formatTime(seconds)}</strong> ({slides}, {withSound} med lyd).
           </p>
         )}
@@ -224,7 +235,7 @@ export function VideoDialog() {
         </label>
         {gif ? (
           <label className="field">
-            <span className="field-label">Bredde</span>
+            <span className="field-label">{upright ? 'Høyde' : 'Bredde'}</span>
             <select
               value={gifWidth}
               disabled={locked}

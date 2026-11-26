@@ -4,7 +4,7 @@
 // so nothing on it can be changed here; its sound, its manuscript and the
 // place of the camera circle are its own and are edited as on any slide.
 import { useLayoutEffect, useRef, useState } from 'react';
-import { STAGE } from '../../shared/format/constants';
+import { stageOf } from '../../shared/format/constants';
 import { slideNumbers } from '../../shared/layout/slides';
 import { sceneDuration, stepsShownAt } from '../../shared/render/clock';
 import { SceneView } from './SceneView';
@@ -28,6 +28,7 @@ export function RepeatStage() {
   const repeat = useRepeat();
   const area = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
+  const stage = stageOf(project);
   useLayoutEffect(() => {
     const el = area.current;
     if (!el) return;
@@ -35,14 +36,14 @@ export function RepeatStage() {
       setScale(
         Math.max(
           0.05,
-          Math.min((el.clientWidth - 48) / STAGE.width, (el.clientHeight - 48) / STAGE.height),
+          Math.min((el.clientWidth - 48) / stage.width, (el.clientHeight - 48) / stage.height),
         ),
       );
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [stage]);
   // Without the sound panel saying otherwise: the slide as it stood when it was left.
   const steps = previewSteps ?? stepsShownAt(scene, Math.max(0, sceneDuration(scene) - 0.001));
   return (
@@ -62,9 +63,12 @@ export function RepeatStage() {
         {scale > 0 && (
           <div
             className="recorder-stage-box"
-            style={{ width: STAGE.width * scale, height: STAGE.height * scale }}
+            style={{ width: stage.width * scale, height: stage.height * scale }}
           >
-            <div className="recorder-stage-inner" style={{ transform: `scale(${scale})` }}>
+            <div
+              className="recorder-stage-inner"
+              style={{ width: stage.width, height: stage.height, transform: `scale(${scale})` }}
+            >
               <SceneView scene={scene} project={project} logo={logo} previewSteps={steps} />
               <StageCamera scene={scene} />
             </div>

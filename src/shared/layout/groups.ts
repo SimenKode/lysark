@@ -5,7 +5,7 @@
 // editor, the HTML player and the video, never looks at groups or at what a
 // line is fastened to. The functions here keep the boxes right. They change
 // the slide they are given.
-import { STAGE } from '../format/constants';
+import { stageFor } from '../format/constants';
 import type { Box, Element, Scene, ShapeElement, Step } from '../format/schema';
 import { stepStands } from './steps';
 
@@ -136,8 +136,10 @@ export function canFasten(el: Element): boolean {
 }
 
 /** An element that fills most of the slide lies behind the rest; an end let go on it is not fastened. */
+// Both shapes of stage, lying and upright, have the same area.
 function isBackground(el: Element): boolean {
-  return el.box.w * el.box.h >= STAGE.width * STAGE.height * BACKGROUND_SHARE;
+  const stage = stageFor('landscape');
+  return el.box.w * el.box.h >= stage.width * stage.height * BACKGROUND_SHARE;
 }
 
 /** Where a line or an arrow starts and ends. The head of an arrow is at its end. */

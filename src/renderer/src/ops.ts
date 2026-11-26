@@ -13,6 +13,7 @@ import type {
   Step,
   TextRole,
 } from '../../shared/format/schema';
+import { stageFor, type Stage } from '../../shared/format/constants';
 import type { SlideFigure } from '../../shared/layout/fetch';
 import {
   HIDE_SECONDS,
@@ -28,7 +29,7 @@ import {
 } from '../../shared/layout/steps';
 import { forgetParts } from '../../shared/layout/templates';
 import { pruneTimeline } from '../../shared/render/timeline';
-import { columnEdges, type Theme } from '../../shared/theme/theme';
+import { columnEdges, spanEnd, type Theme } from '../../shared/theme/theme';
 
 export const ROLE_NAMES: Record<TextRole, string> = {
   title: 'Tittel',
@@ -139,14 +140,17 @@ export function placeNew(scene: Scene, theme: Theme, w: number, h: number): Box 
     const bottom = el.box.y + el.box.h + 24;
     if (el.box.x < x + w && el.box.x + el.box.w > x && bottom > y) y = bottom;
   }
-  const limit = 1080 - theme.grid.marginBottom - h;
+  const limit = theme.stage.height - theme.grid.marginBottom - h;
   if (y > limit) y = Math.max(theme.grid.marginTop, limit);
   return { x: Math.round(x), y: Math.round(y), w, h, rotation: 0 };
 }
 
 export function newTextElement(scene: Scene, theme: Theme, role: TextRole): Element {
   const { starts, ends } = columnEdges(theme);
-  const width = role === 'title' ? ends[7]! - starts[0]! : ends[4]! - starts[0]!;
+  const width =
+    role === 'title'
+      ? ends[ends.length - 1]! - starts[0]!
+      : spanEnd(theme, theme.span.text) - starts[0]!;
   const height = role === 'title' ? 110 : 160;
   return {
     id: newId('e'),
@@ -175,7 +179,7 @@ export function newShapeElement(
 }
 
 export function newTableElement(scene: Scene, theme: Theme): Element {
-  const { starts, ends } = columnEdges(theme);
+  const { starts } = columnEdges(theme);
   const cell = () => ({ content: richText() });
   return {
     id: newId('e'),
@@ -187,7 +191,7 @@ export function newTableElement(scene: Scene, theme: Theme): Element {
       [cell(), cell(), cell()],
       [cell(), cell(), cell()],
     ],
-    box: placeNew(scene, theme, Math.round(ends[5]! - starts[0]!), 240),
+    box: placeNew(scene, theme, Math.round(spanEnd(theme, theme.span.table) - starts[0]!), 240),
   };
 }
 
@@ -439,13 +443,18 @@ export function addKindStep(scene: Scene, kind: 'mark' | 'hide', ids: string[]):
  * A new step that zooms: in on a part of the slide, or (without one) out to
  * the whole slide again. Returns its id.
  */
-export function addZoomStep(scene: Scene, view: View | undefined): string {
+export function addZoomStep(
+  scene: Scene,
+  view: View | undefined,
+  /** The stage of the project the slide is in (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): string {
   const id = newId('t');
   scene.timeline.push({
     id,
     kind: 'zoom',
     actions: [],
-    ...(view ? { zoom: fitView(view) } : {}),
+    ...(view ? { zoom: fitView(view, stage) } : {}),
     seconds: ZOOM_SECONDS,
   });
   return id;

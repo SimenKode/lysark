@@ -13,19 +13,20 @@ import {
   defaultCameraPlace,
 } from '../../shared/render/clock';
 import { CameraCircle } from './CameraCircle';
-import { useStore } from './store';
+import { useStage, useStore } from './store';
 
 export function StageCamera({ scene }: { scene: Scene }) {
   const assets = useStore((s) => s.project?.assets);
   const soundAt = useStore((s) => s.soundAt);
   const updateScene = useStore((s) => s.updateScene);
   const [dragged, setDragged] = useState<{ x: number; y: number } | null>(null);
+  const stage = useStage();
   const t = soundAt?.t ?? 0;
   const film = assets && cameraFilmAt(scene, assets, t);
   const asset = film && assets[film.asset];
   if (!film || !asset) return null;
   const size = scene.camera?.size ?? defaultCameraPlace().size;
-  const place = dragged ?? cameraPlaceAt(scene, t);
+  const place = dragged ?? cameraPlaceAt(scene, t, undefined, stage);
   return (
     <CameraCircle
       x={place.x}
@@ -35,7 +36,7 @@ export function StageCamera({ scene }: { scene: Scene }) {
       keyboard
       onMove={(x, y, part) => {
         if (part === 'start') return;
-        const at = cameraOnStage(x, y, size);
+        const at = cameraOnStage(x, y, size, stage);
         if (part === 'move') {
           setDragged(at);
           return;

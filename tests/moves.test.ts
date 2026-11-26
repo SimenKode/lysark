@@ -246,7 +246,7 @@ describe('what the steps have done', () => {
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 15;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(18);
+    expect(FORMAT_VERSION).toBe(19);
     // A step that zooms has no elements, and stands all the same; one that marks nothing goes.
     const pruned = structuredClone(scene);
     pruned.elements = pruned.elements.filter((el) => el.id !== 'b');

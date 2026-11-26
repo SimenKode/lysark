@@ -6,7 +6,7 @@
 // manuscript, cut into short pieces and spread over the time the slide has
 // sound, in proportion to how long each piece is. That follows a reader who
 // keeps an even pace; it is an estimate, not a transcript.
-import { STAGE } from '../format/constants';
+import { stageOf } from '../format/constants';
 import type { Project, Scene } from '../format/schema';
 import { chapters } from '../layout/slides';
 import { clipDuration, sceneDuration, type Schedule } from './clock';
@@ -145,7 +145,10 @@ export function toWebVtt(cues: readonly Cue[], language: string): string {
   return lines.join('\n');
 }
 
-/** How many credits fit on one slide in the body size. */
+/**
+ * How many credits fit on one slide in the body size. On an upright slide
+ * the lines are narrower and break more often, and the list is taller.
+ */
 const CREDITS_PER_SCENE = 9;
 /** How long each credits slide stands in the video. */
 export const CREDITS_SCENE_SECONDS = 8;
@@ -163,6 +166,9 @@ export function creditScenes(
     (entry) => `${creditText(entry.credit, strings, entry.cropped)} (${texts.slide(entry.scenes)})`,
   );
   const scenes: Scene[] = [];
+  const stage = stageOf(project);
+  // Under the title, down to the theme's bottom margin.
+  const listHeight = Math.max(680, stage.height - 230 - 200);
   for (let i = 0; i < lines.length; i += CREDITS_PER_SCENE) {
     const page = Math.floor(i / CREDITS_PER_SCENE) + 1;
     const id = `s_credits_${page}`;
@@ -184,7 +190,7 @@ export function creditScenes(
           align: 'left',
           valign: 'top',
           content: { paragraphs: [{ level: 0, list: 'none', runs: [{ text: texts.heading }] }] },
-          box: { x: 120, y: 96, w: STAGE.width - 240, h: 110, rotation: 0 },
+          box: { x: 120, y: 96, w: stage.width - 240, h: 110, rotation: 0 },
         },
         {
           id: `${id}_list`,
@@ -201,7 +207,7 @@ export function creditScenes(
             })),
           },
           spaceBefore: [0.6, 0.6, 0.6, 0.6, 0.6],
-          box: { x: 120, y: 230, w: STAGE.width - 240, h: 680, rotation: 0 },
+          box: { x: 120, y: 230, w: stage.width - 240, h: listHeight, rotation: 0 },
         },
       ],
     });

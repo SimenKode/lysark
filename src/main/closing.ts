@@ -9,7 +9,7 @@
 // lecture that has it is imported.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { STAGE } from '../shared/format/constants';
+import { stageOf, type Stage } from '../shared/format/constants';
 import type { Project, Scene } from '../shared/format/schema';
 import { mediaSeconds } from './ffmpeg';
 import { mediaPath } from './projectIo';
@@ -23,7 +23,11 @@ const LONGEST_FILM_SECONDS = 30;
  * closing slide, or the last slide of the lecture with nothing else on it
  * (USN's template does not always mark its last slide as a closing slide).
  */
-function fullSlideVideo(scene: Scene, last: boolean): { index: number; asset: string } | undefined {
+function fullSlideVideo(
+  scene: Scene,
+  last: boolean,
+  stage: Stage,
+): { index: number; asset: string } | undefined {
   if (scene.kind !== 'closing' && !(last && scene.elements.length === 1)) return undefined;
   const videos = scene.elements
     .map((element, index) => ({ element, index }))
@@ -32,7 +36,7 @@ function fullSlideVideo(scene: Scene, last: boolean): { index: number; asset: st
   if (videos.length !== 1 || !only || only.element.type !== 'video') return undefined;
   const { source, box } = only.element;
   if (source.kind !== 'asset') return undefined;
-  const covered = (box.w * box.h) / (STAGE.width * STAGE.height);
+  const covered = (box.w * box.h) / (stage.width * stage.height);
   return covered >= 0.7 ? { index: only.index, asset: source.asset } : undefined;
 }
 
@@ -52,7 +56,7 @@ export function adoptClosingAnimation(
   let out = project;
   const slides: number[] = [];
   project.scenes.forEach((scene, sceneIndex) => {
-    const video = fullSlideVideo(scene, sceneIndex === project.scenes.length - 1);
+    const video = fullSlideVideo(scene, sceneIndex === project.scenes.length - 1, stageOf(project));
     const asset = video ? project.assets[video.asset] : undefined;
     if (!video || !asset) return;
     let file: string;

@@ -633,6 +633,6 @@ describe('a diagram, drawn and stored', () => {
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 12;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(18);
+    expect(FORMAT_VERSION).toBe(19);
   });
 });

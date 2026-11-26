@@ -1,7 +1,6 @@
 // Renders one scene to DOM. The editor, the HTML player and the
 // video export all use this function, so they always show the same thing.
 // The result depends only on the arguments: no clock, no randomness.
-import { STAGE } from '../format/constants';
 import {
   type DeepDiveElement,
   type DrawnElement,
@@ -26,7 +25,6 @@ import { isAllowedTextColor, isLargeText } from '../theme/contrast';
 import { PALETTE, isDarkSurface } from '../theme/palette';
 import { GRID_UNITS, SHAPE_PAIRS, decorationColors, shapePath } from '../theme/shapes';
 import {
-  DECORATION_BOX,
   defaultTextColor,
   logoVariant,
   markColors,
@@ -789,8 +787,9 @@ function renderMoreBadge(
   const x = corner.endsWith('r') ? el.box.w - BADGE_SIZE + BADGE_OUT : -BADGE_OUT;
   const y = corner.startsWith('t') ? -BADGE_OUT : el.box.h - BADGE_SIZE + BADGE_OUT;
   const rotated = el.box.rotation !== 0;
-  badge.style.left = `${rotated ? x : clamp(el.box.x + x, STAGE.width) - el.box.x}px`;
-  badge.style.top = `${rotated ? y : clamp(el.box.y + y, STAGE.height) - el.box.y}px`;
+  const stage = ctx.theme.stage;
+  badge.style.left = `${rotated ? x : clamp(el.box.x + x, stage.width) - el.box.x}px`;
+  badge.style.top = `${rotated ? y : clamp(el.box.y + y, stage.height) - el.box.y}px`;
   const dark = isDarkSurface(surface);
   badge.style.setProperty('--ls-badge-bg', PALETTE[dark ? 'hvit' : 'lilla']);
   badge.style.setProperty('--ls-badge-text', PALETTE[dark ? 'lilla' : 'hvit']);
@@ -985,7 +984,7 @@ function renderDecoration(ctx: RenderContext, scene: Scene, surface: Surface): S
   const { doc } = ctx;
   const pair = SHAPE_PAIRS[scene.shapeVariant % SHAPE_PAIRS.length]!;
   const colors = decorationColors(surface);
-  const box = DECORATION_BOX;
+  const box = ctx.theme.decoration;
   const cell = box.w / GRID_UNITS;
   const root = svg(doc, 'svg', { viewBox: `0 0 ${box.w} ${box.h}`, width: box.w, height: box.h });
   root.setAttribute('class', 'ls-decoration');
@@ -1034,6 +1033,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
   const surface = sceneSurface(theme, scene);
   const root = doc.createElement('section');
   root.className = `ls-scene ls-kind-${scene.kind}`;
+  if (theme.orientation === 'portrait') root.classList.add('ls-upright');
   root.dataset.scene = scene.id;
   root.style.background = PALETTE[surface];
   root.style.fontFamily = theme.fonts.body;
@@ -1118,7 +1118,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     logo.alt = ctx.strings.logoAlt;
     logo.draggable = false;
     logo.style.left = `${theme.logo.marginX}px`;
-    logo.style.top = `${STAGE.height - theme.logo.marginBottom - theme.logo.height}px`;
+    logo.style.top = `${theme.stage.height - theme.logo.marginBottom - theme.logo.height}px`;
     logo.style.height = `${theme.logo.height}px`;
     layer.appendChild(logo);
   }

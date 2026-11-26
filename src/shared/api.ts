@@ -1,7 +1,7 @@
 // The narrow, named set of calls the user interface can make to the main
 // process. The interface itself has no access to files or to Node.
 import type { PptxSlide } from '../importer/pptxSlides';
-import type { Asset, Credit, Project } from './format/schema';
+import type { Asset, Credit, Orientation, Project } from './format/schema';
 import type { ImportReport } from '../importer/pptx';
 
 export type { ImportReport };
@@ -182,16 +182,23 @@ export type MenuCommand =
   | 'close-while-saving';
 
 export interface LysarkApi {
-  newProject(): Promise<OpenedProject | null>;
+  /**
+   * Lets the owner say where a new, empty project is to lie. The project is
+   * made by `newProject` once the shape of its slides is chosen. Null when
+   * the owner breaks off.
+   */
+  pickNewFolder(): Promise<{ name: string } | null>;
+  /** Makes the new, empty project in the folder just picked, with slides of the shape. */
+  newProject(orientation: Orientation): Promise<OpenedProject | null>;
   openProject(dir?: string): Promise<OpenedProject | null>;
   /**
    * Lets the owner pick a PowerPoint file for import. What happens to it is
    * chosen afterwards: `importPptx` makes it over into the theme;
    * `pptxAsPdf` and `pptxSlides` let it keep its look.
    */
-  pickPptx(): Promise<{ name: string } | null>;
-  /** Imports the picked PowerPoint file into a new project folder, in the theme. */
-  importPptx(): Promise<ImportedProject | null>;
+  pickPptx(): Promise<{ name: string; shape: Orientation } | null>;
+  /** Imports the picked PowerPoint file into a new project folder, in the theme, on slides of the shape. */
+  importPptx(orientation: Orientation): Promise<ImportedProject | null>;
   /**
    * A PDF of the picked PowerPoint file, to be imported like any PDF: made
    * by PowerPoint, found next to the file, or made by LibreOffice. Null when

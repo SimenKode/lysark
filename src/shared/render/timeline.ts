@@ -2,12 +2,12 @@
 // Pure functions: the same inputs always give the same state, with no clock
 // involved.
 import type { Scene, Step, StepEffect } from '../format/schema';
-import { STAGE } from '../format/constants';
+import { stageFor, type Stage } from '../format/constants';
 import { PALETTE } from '../theme/palette';
 import {
   HIDE_SECONDS,
   MARK_SECONDS,
-  WHOLE,
+  wholeView,
   ZOOM_SECONDS,
   stepKind,
   stepStands,
@@ -75,7 +75,13 @@ function progress(since: number, seconds: number): number {
  * - A step that zooms lets the picture glide from what it showed to the
  *   part of the slide the step names.
  */
-export function movesFrom(scene: Pick<Scene, 'timeline'>, since: readonly number[]): Moves {
+export function movesFrom(
+  scene: Pick<Scene, 'timeline'>,
+  since: readonly number[],
+  /** The stage of the project (lying when not given): the whole slide a zoom goes out to. */
+  stage: Stage = stageFor('landscape'),
+): Moves {
+  const whole = wholeView(stage);
   const elements = new Map<string, Move>();
   const entered = new Set<string>();
   /** Elements that a step earlier in the list takes away. */
@@ -88,13 +94,13 @@ export function movesFrom(scene: Pick<Scene, 'timeline'>, since: readonly number
     }
     return move;
   };
-  let view: View = WHOLE;
+  let view: View = whole;
   scene.timeline.forEach((step, index) => {
     const at = since[index] ?? -1;
     const kind = stepKind(step);
     if (kind === 'zoom') {
       const p = easeInOutCubic(progress(at, step.seconds ?? ZOOM_SECONDS));
-      const to = step.zoom ?? WHOLE;
+      const to = step.zoom ?? whole;
       view = {
         x: view.x + (to.x - view.x) * p,
         y: view.y + (to.y - view.y) * p,
@@ -134,8 +140,8 @@ export function movesFrom(scene: Pick<Scene, 'timeline'>, since: readonly number
       }
     }
   });
-  const whole = view.w >= WHOLE.w - 0.01 && view.h >= WHOLE.h - 0.01;
-  return { elements, view: whole ? undefined : view };
+  const all = view.w >= whole.w - 0.01 && view.h >= whole.h - 0.01;
+  return { elements, view: all ? undefined : view };
 }
 
 /** `since` for stepping by hand: the latest step runs, those before it are done. */
@@ -157,8 +163,10 @@ export function sceneMoves(
   scene: Pick<Scene, 'timeline'>,
   stepsShown: number,
   elapsed: number,
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
 ): Moves {
-  return movesFrom(scene, sinceByHand(scene, stepsShown, elapsed));
+  return movesFrom(scene, sinceByHand(scene, stepsShown, elapsed), stage);
 }
 
 /** How visible each element in the moves is: 0 is not there, 1 is fully there. */
@@ -392,7 +400,9 @@ export function applySceneMoves(sceneEl: Element, moves: Moves): void {
   const layer = sceneEl.querySelector<HTMLElement>(':scope > .ls-zoom');
   if (layer) {
     if (moves.view) {
-      const k = STAGE.width / moves.view.w;
+      // The slide's own width: an upright slide is drawn with the class ls-upright.
+      const stage = stageFor(sceneEl.classList.contains('ls-upright') ? 'portrait' : 'landscape');
+      const k = stage.width / moves.view.w;
       layer.style.transform = `scale(${k.toFixed(5)}) translate(${(-moves.view.x).toFixed(2)}px, ${(-moves.view.y).toFixed(2)}px)`;
     } else {
       layer.style.transform = '';

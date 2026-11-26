@@ -1,6 +1,6 @@
 // The theme: everything about how content looks. Content never stores
 // fonts, sizes or surface colours; it asks the theme.
-import { STAGE } from '../format/constants';
+import { orientationOf, stageFor, type Orientation, type Stage } from '../format/constants';
 import {
   type PaletteColor,
   type Project,
@@ -22,6 +22,10 @@ export interface RoleStyle {
 
 export interface Theme {
   id: 'ren';
+  /** The shape this theme is laid out for. */
+  orientation: Orientation;
+  /** The stage of that shape, in stage pixels. */
+  stage: Stage;
   fonts: { title: string; body: string };
   /** The brand's 8 column grid. */
   grid: {
@@ -40,11 +44,22 @@ export interface Theme {
   surfaces: Record<SceneKind, Surface>;
   logo: { height: number; marginX: number; marginBottom: number };
   shape: { strokeWidth: number; cornerRadius: number };
+  /** Where the pair of brand shapes sits on title and section scenes. */
+  decoration: { x: number; y: number; w: number; h: number };
+  /**
+   * How many columns things take from the left margin: the title and
+   * subtitle of a title or section scene, a new text box, a new table.
+   */
+  span: { front: number; text: number; table: number };
+  /** Where the title and subtitle of a title or section scene stand (y and height). */
+  front: { title: { y: number; h: number }; subtitle: { y: number; h: number } };
 }
 
 // The title font is never bold (brand manual): weight comes from size.
 export const THEME_REN: Theme = {
   id: 'ren',
+  orientation: 'landscape',
+  stage: stageFor('landscape'),
   fonts: {
     title: "'Liberation Serif', 'Times New Roman', Times, serif",
     body: "'Liberation Sans', Arial, Helvetica, sans-serif",
@@ -63,10 +78,33 @@ export const THEME_REN: Theme = {
   surfaces: { title: 'lilla', section: 'lilla', content: 'lysBeige', closing: 'lilla' },
   logo: { height: 56, marginX: 120, marginBottom: 44 },
   shape: { strokeWidth: 6, cornerRadius: 28 },
+  // The left edge is the start of the sixth column, so text in the five left
+  // columns never touches the shapes.
+  decoration: { x: 1185, y: 185, w: 680, h: 680 },
+  span: { front: 5, text: 5, table: 6 },
+  front: { title: { y: 220, h: 360 }, subtitle: { y: 620, h: 220 } },
 };
 
-export function getTheme(_project: Pick<Project, 'theme'>): Theme {
-  return THEME_REN;
+/**
+ * The same theme laid out for an upright slide (1080 x 1920): the same
+ * colours, typefaces, sizes, shapes and margins. The width holds four
+ * columns instead of eight. On title and section slides the brand shapes
+ * stand in the lower half, at the right margin, above the logo, so the
+ * title has the upper half to itself.
+ */
+export const THEME_REN_UPRIGHT: Theme = {
+  ...THEME_REN,
+  orientation: 'portrait',
+  stage: stageFor('portrait'),
+  grid: { ...THEME_REN.grid, columns: 4 },
+  decoration: { x: 280, y: 1010, w: 680, h: 680 },
+  span: { front: 4, text: 4, table: 4 },
+  front: { title: { y: 300, h: 460 }, subtitle: { y: 800, h: 180 } },
+};
+
+/** The theme of a project, laid out for the shape of its slides. */
+export function getTheme(project: Pick<Project, 'theme' | 'orientation'>): Theme {
+  return orientationOf(project) === 'portrait' ? THEME_REN_UPRIGHT : THEME_REN;
 }
 
 export function sceneSurface(theme: Theme, scene: Pick<Scene, 'kind' | 'background'>): Surface {
@@ -108,7 +146,7 @@ export function markColors(surface: PaletteColor): { field: PaletteColor; text: 
 /** Left and right edge of each of the grid's columns, in stage pixels. */
 export function columnEdges(theme: Theme): { starts: number[]; ends: number[] } {
   const { columns, marginX, gutter } = theme.grid;
-  const width = (STAGE.width - 2 * marginX - (columns - 1) * gutter) / columns;
+  const width = (theme.stage.width - 2 * marginX - (columns - 1) * gutter) / columns;
   const starts: number[] = [];
   const ends: number[] = [];
   for (let i = 0; i < columns; i++) {
@@ -119,14 +157,27 @@ export function columnEdges(theme: Theme): { starts: number[]; ends: number[] } 
   return { starts, ends };
 }
 
-/** Where the pair of brand shapes sits on title and section scenes. */
-// The left edge is the start of the sixth column, so text in the five left
-// columns never touches the shapes.
-export const DECORATION_BOX = { x: 1185, y: 185, w: 680, h: 680 } as const;
+/** The width between the left and right margins, in stage pixels. */
+export function roomWidth(theme: Theme): number {
+  return theme.stage.width - 2 * theme.grid.marginX;
+}
+
+/** The right edge of the first `count` columns. */
+export function spanEnd(theme: Theme, count: number): number {
+  const { ends } = columnEdges(theme);
+  return ends[Math.min(count, ends.length) - 1]!;
+}
+
+/** Where the brand shapes sit on a lying slide. Code that works on a project uses its theme's `decoration`. */
+export const DECORATION_BOX = THEME_REN.decoration;
 
 /** True when a box and the decoration area overlap. */
-export function overlapsDecoration(box: { x: number; y: number; w: number; h: number }): boolean {
-  const d = DECORATION_BOX;
+export function overlapsDecoration(
+  box: { x: number; y: number; w: number; h: number },
+  /** The theme of the project (lying when not given). */
+  theme: Theme = THEME_REN,
+): boolean {
+  const d = theme.decoration;
   return box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y;
 }
 
@@ -151,7 +202,7 @@ export function logoArea(
   const clear = height / 2;
   return {
     x: marginX - clear,
-    y: STAGE.height - marginBottom - height - clear,
+    y: theme.stage.height - marginBottom - height - clear,
     w: height * LOGO_ASPECT[language] + 2 * clear,
     h: height + 2 * clear,
   };

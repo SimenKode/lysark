@@ -21,6 +21,7 @@ import {
   type Surface,
   type TextRole,
 } from '../../shared/format/schema';
+import { stageOf } from '../../shared/format/constants';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
 import {
   canFasten,
@@ -116,7 +117,7 @@ import {
   stepPerElement,
   type OrderMove,
 } from './ops';
-import { currentScene, useStore } from './store';
+import { currentScene, useStage, useStore } from './store';
 
 type Tab = 'element' | 'scene' | 'steps';
 
@@ -1076,6 +1077,7 @@ function ChartFields({ figure }: { figure: FigureElement }) {
 /** The form of a figure that draws itself: its rows, and how the figure is to look. */
 function FigureFields({ figure }: { figure: FigureElement }) {
   const updateScene = useStore((s) => s.updateScene);
+  const stage = useStage();
   const [added, setAdded] = useState<string | null>(null);
   const change = useFigureChange(figure);
   const name = ITEM_NAMES[figure.template];
@@ -1209,7 +1211,7 @@ function FigureFields({ figure }: { figure: FigureElement }) {
             ['down', 'Nedover'],
           ]}
           value={figure.direction ?? 'across'}
-          onChange={(value) => change((f) => setDirection(f, value))}
+          onChange={(value) => change((f) => setDirection(f, value, stage))}
         />
       )}
       <Swatches
@@ -1479,6 +1481,7 @@ function VideoFields({ el }: { el: Extract<Element, { type: 'video' }> }) {
 /** The marks of a picture: how they are drawn, what each says, and a way to add one. */
 function ImageMarks({ el, scene }: { el: Extract<Element, { type: 'image' }>; scene: Scene }) {
   const updateScene = useStore((s) => s.updateScene);
+  const stage = useStage();
   const marks = marksOf(scene, el.id);
   const style = markStyle(el);
   const [added, setAdded] = useState<string | null>(null);
@@ -1500,8 +1503,12 @@ function ImageMarks({ el, scene }: { el: Extract<Element, { type: 'image' }>; sc
           value={style}
           onChange={(e) =>
             updateScene((s) =>
-              setMarkStyle(s, el.id, e.target.value === 'labels' ? 'labels' : 'numbers', () =>
-                newId('e'),
+              setMarkStyle(
+                s,
+                el.id,
+                e.target.value === 'labels' ? 'labels' : 'numbers',
+                () => newId('e'),
+                stage,
               ),
             )
           }
@@ -1544,7 +1551,7 @@ function ImageMarks({ el, scene }: { el: Extract<Element, { type: 'image' }>; sc
           onClick={() => {
             let made: string | null = null;
             updateScene((s) => {
-              made = addMark(s, el.id, () => newId('e'))?.id ?? null;
+              made = addMark(s, el.id, () => newId('e'), stage)?.id ?? null;
             });
             setAdded(made);
           }}
@@ -2043,7 +2050,7 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
               checked={!scene.camera?.hidden}
               onChange={(e) =>
                 updateScene((s) => {
-                  const place = s.camera ?? defaultCameraPlace();
+                  const place = s.camera ?? defaultCameraPlace(stageOf(project));
                   s.camera = { x: place.x, y: place.y, size: place.size };
                   if (!e.target.checked) s.camera.hidden = true;
                 })
@@ -2056,10 +2063,11 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
               value={scene.camera?.size ?? defaultCameraPlace().size}
               onChange={(e) =>
                 updateScene((s) => {
-                  const place = s.camera ?? defaultCameraPlace();
+                  const stage = stageOf(project);
+                  const place = s.camera ?? defaultCameraPlace(stage);
                   const size = e.target.value as CameraSize;
                   // A larger circle is kept wholly on the slide.
-                  s.camera = { ...place, ...cameraOnStage(place.x, place.y, size), size };
+                  s.camera = { ...place, ...cameraOnStage(place.x, place.y, size, stage), size };
                 })
               }
             >
@@ -2080,8 +2088,8 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
           Rydd opp lysarket
         </button>
         <p className="hint">
-          Rydder lysarket inn i de åtte kolonnene, venstrestiller teksten og bruker temaets
-          skriftstørrelser. Kan angres.
+          Rydder lysarket inn i de {theme.grid.columns === 4 ? 'fire' : 'åtte'} kolonnene,
+          venstrestiller teksten og bruker temaets skriftstørrelser. Kan angres.
         </p>
       </div>
       {scene.imported && scene.imported.warnings.length > 0 && (
@@ -2132,6 +2140,7 @@ function stepDoes(step: Step): string | undefined {
 
 function StepsPanel({ scene }: { scene: Scene }) {
   const selection = useStore((s) => s.selection);
+  const stage = useStage();
   const previewSteps = useStore((s) => s.previewSteps);
   const setPreviewSteps = useStore((s) => s.setPreviewSteps);
   const zoomStep = useStore((s) => s.zoomStep);
@@ -2164,7 +2173,7 @@ function StepsPanel({ scene }: { scene: Scene }) {
     const chosen = scene.elements.filter((el) => selection.includes(el.id)).map((el) => el.box);
     let made = '';
     updateScene((s) => {
-      made = addZoomStep(s, viewAround(chosen));
+      made = addZoomStep(s, viewAround(chosen, stage), stage);
     });
     setZoomStep(made);
   };
@@ -2215,7 +2224,7 @@ function StepsPanel({ scene }: { scene: Scene }) {
           type="button"
           disabled={!zoomedBefore(scene.timeline, total)}
           title="Et steg der bildet glir ut til hele lysarket igjen."
-          onClick={() => updateScene((s) => void addZoomStep(s, undefined))}
+          onClick={() => updateScene((s) => void addZoomStep(s, undefined, stage))}
         >
           Zoom ut igjen
         </button>

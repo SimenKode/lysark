@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { mediaUrl } from '../../shared/api';
 import { newId } from '../../shared/format/factory';
+import { stageOf } from '../../shared/format/constants';
 import {
   CAMERA_SIZES,
   type CameraSize,
@@ -229,23 +230,29 @@ function FittedScene({
   const logo = useStore((s) => s.logo);
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
+  const stage = stageOf(project);
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
     const measure = (): void =>
-      setScale(Math.max(0.05, Math.min(el.clientWidth / 1920, el.clientHeight / 1080)));
+      setScale(
+        Math.max(0.05, Math.min(el.clientWidth / stage.width, el.clientHeight / stage.height)),
+      );
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [stage]);
   return (
     <div className="recorder-stage" ref={box}>
       {scale > 0 && (
-        <div className="recorder-stage-box" style={{ width: 1920 * scale, height: 1080 * scale }}>
+        <div
+          className="recorder-stage-box"
+          style={{ width: stage.width * scale, height: stage.height * scale }}
+        >
           <div
             className={`recorder-stage-inner${live ? ' is-live' : ''}`}
-            style={{ transform: `scale(${scale})` }}
+            style={{ width: stage.width, height: stage.height, transform: `scale(${scale})` }}
             ref={inner}
             onClick={(event) => onPress(event.target as HTMLElement)}
           >
@@ -350,6 +357,7 @@ function SlideMenu({
 
 export function Recorder({ keepBefore }: { keepBefore?: number }) {
   const project = useStore((s) => s.project)!;
+  const size = stageOf(project);
   const startId = useRef(useStore.getState().sceneId).current;
   // The recording begins on a slide itself, also when one of its repeats was open.
   const startIndex = useRef(
@@ -388,9 +396,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     const first = project.scenes[startIndex]!;
     const place =
       keepBefore !== undefined && first.camera
-        ? cameraPlaceAt(first, keepBefore)
-        : (first.camera ?? defaultCameraPlace());
-    return cameraOnStage(place.x, place.y, settings.cameraSize);
+        ? cameraPlaceAt(first, keepBefore, undefined, size)
+        : (first.camera ?? defaultCameraPlace(size));
+    return cameraOnStage(place.x, place.y, settings.cameraSize, size);
   });
   const root = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLSpanElement>(null);
@@ -399,8 +407,8 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   // A step that zooms while a box is open: the box goes where its element is seen now.
   useEffect(() => {
     const open = box.current;
-    if (open) open.place(sceneMoves(scene, stepsShown, Infinity).view ?? null);
-  }, [scene, stepsShown]);
+    if (open) open.place(sceneMoves(scene, stepsShown, Infinity, size).view ?? null);
+  }, [scene, stepsShown, size]);
 
   // What the sound thread fills, kept outside React's state.
   const live = useRef({
@@ -482,7 +490,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
   // The circle is kept wholly on the slide, also when its size is changed.
   useEffect(() => {
     setCircle((at) => {
-      const next = cameraOnStage(at.x, at.y, settings.cameraSize);
+      const next = cameraOnStage(at.x, at.y, settings.cameraSize, size);
       live.current.circle = next;
       return next.x === at.x && next.y === at.y ? at : next;
     });
@@ -673,7 +681,9 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     closeBox(false);
     stage.current.appendChild(made.layer);
     // Beside its element where it is seen, also when the slide is zoomed in.
-    made.place(sceneMoves(current!, live.current.stepsShown, Infinity).view ?? null);
+    made.place(
+      sceneMoves(current!, live.current.stepsShown, Infinity, stageOf(state.project)).view ?? null,
+    );
     // A picture in the box can change its height when it has been fetched.
     for (const img of Array.from(made.layer.querySelectorAll('img'))) {
       img.addEventListener('load', () => made.place(), { once: true });
@@ -1046,7 +1056,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       state.dragAt = now();
       return;
     }
-    const at = cameraOnStage(x, y, state.cameraSize);
+    const at = cameraOnStage(x, y, state.cameraSize, size);
     state.circle = at;
     setCircle(at);
     if (part !== 'end') return;

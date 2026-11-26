@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { mediaUrl } from '../../shared/api';
 import { newId, plainText, richText } from '../../shared/format/factory';
 import { MORE_CORNERS, type Element, type More, type MoreBlock } from '../../shared/format/schema';
-import { STAGE } from '../../shared/format/constants';
+import { stageOf } from '../../shared/format/constants';
 import { fetchFigure, figuresOn, type FetchedFigure } from '../../shared/layout/fetch';
 import { slideNumbers } from '../../shared/layout/slides';
 import {
@@ -18,6 +18,7 @@ import {
   popoverWish,
   renderMore,
 } from '../../shared/render/more';
+import { popView } from '../../shared/render/popover';
 import { SCENE_STRINGS, moreCorner, moreTitle, renderDrawing } from '../../shared/render/scene';
 import { embedTarget, youtubeRef } from '../../shared/render/web';
 import { RichTextField } from './RichTextField';
@@ -612,9 +613,8 @@ function BlockEditor({ elementId, block }: { elementId: string; block: MoreBlock
 
 // ---------- The preview: the slide itself, with the box popped out ----------
 
-/** The student's window in the preview: the slide at two thirds of its size. */
-const VIEW = { width: 1280, height: 720 };
-const VIEW_SCALE = VIEW.width / STAGE.width;
+/** The student's window in the preview is the slide at two thirds of its size (`popView`). */
+const VIEW_SCALE = 2 / 3;
 
 function Preview({ element }: { element: Element }) {
   const project = useStore((s) => s.project)!;
@@ -627,6 +627,8 @@ function Preview({ element }: { element: Element }) {
   const [place, setPlace] = useState({ left: 16, top: 16, width: 560 });
   const more = element.more;
   const ctx = renderContext(project, logo);
+  const stage = stageOf(project);
+  const VIEW = popView(stage);
   const { box } = element;
   const shown = fit > 0 && !!scene;
 
@@ -640,7 +642,7 @@ function Preview({ element }: { element: Element }) {
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [VIEW.width, VIEW.height]);
 
   useLayoutEffect(() => {
     if (!host.current) return;
@@ -698,14 +700,29 @@ function Preview({ element }: { element: Element }) {
             className="builder-view-box"
             style={{ width: VIEW.width * fit, height: VIEW.height * fit }}
           >
-            <div className="builder-view-inner" style={{ transform: `scale(${fit})` }}>
-              <div className="builder-slide" style={{ transform: `scale(${VIEW_SCALE})` }}>
+            <div
+              className="builder-view-inner"
+              style={{ width: VIEW.width, height: VIEW.height, transform: `scale(${fit})` }}
+            >
+              <div
+                className="builder-slide"
+                style={{
+                  width: stage.width,
+                  height: stage.height,
+                  transform: `scale(${VIEW_SCALE})`,
+                }}
+              >
                 <SceneView scene={scene} project={project} logo={logo} />
               </div>
               <div
                 className="builder-panel"
                 ref={pop}
-                style={{ left: place.left, top: place.top, width: place.width }}
+                style={{
+                  left: place.left,
+                  top: place.top,
+                  width: place.width,
+                  maxHeight: VIEW.height - 32,
+                }}
               >
                 <div className="builder-panel-head">
                   <h2>{moreTitle(ctx, element)}</h2>

@@ -156,6 +156,9 @@ ${roundScrollCss(['.lp-panel', '.lp-help'], C.lilla)}.lp-help dl { display: grid
     border-width: 4px 0 0; border-radius: 24px 24px 0 0; transform-origin: 50% 100% !important;
   }
   .lp-panel.lp-panel-wide { top: 0; max-height: none; border-radius: 0; }
+  /* An upright slide fills the width of an upright phone: it stands at the top,
+     so the room under it, where the arrows are, is not on the slide. */
+  .lp-upright .lp-viewport { align-items: flex-start; }
 }
 
 /* Life in how the player answers, calm in the content. Everything here is
@@ -214,6 +217,10 @@ ${roundScrollCss(['.lp-panel', '.lp-help'], C.lilla)}.lp-help dl { display: grid
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   .lp-print-scene > .ls-scene { transform: scale(0.5); transform-origin: 0 0; }
+  /* An upright slide on upright paper, with room for the manuscript under it. */
+  .lp-upright .lp-print-scene { width: 486px; height: 864px; }
+  .lp-upright .lp-print-scene > .ls-scene { transform: scale(0.45); }
+  .lp-upright .lp-print-script { max-width: 486px; }
   /* Paper cannot open a panel. */
   .lp-print .ls-more-badge { display: none; }
   .lp-print .ls-more-ring > .ls-image { outline: none; }

@@ -2,6 +2,8 @@
 // masters, layouts and themes, and how placeholders find what they inherit.
 import { readColorScheme } from './color';
 import { stageMapFor, type StageMap } from './geometry';
+import type { Orientation } from '../shared/format/constants';
+import { THEME_REN, THEME_REN_UPRIGHT, type Theme } from '../shared/theme/theme';
 import { PptxPackage } from './package';
 import { attr, child, children, descend, findDescendant, intAttr, type XmlNode } from './xml';
 
@@ -99,6 +101,10 @@ export function findMasterPlaceholder(
 export class Deck {
   readonly pkg: PptxPackage;
   readonly stage: StageMap;
+  /** The theme of the project the slides are imported into, laid out for its shape. */
+  readonly theme: Theme;
+  /** The size of the slides in the file, in EMU. */
+  readonly slideSize: { width: number; height: number };
   /** Slide parts in presentation order. */
   readonly slideParts: string[] = [];
   /**
@@ -112,8 +118,9 @@ export class Deck {
   private readonly layouts = new Map<string, LayoutPart>();
   private readonly masters = new Map<string, MasterPart>();
 
-  constructor(bytes: Uint8Array) {
+  constructor(bytes: Uint8Array, orientation: Orientation = 'landscape') {
     this.pkg = new PptxPackage(bytes);
+    this.theme = orientation === 'portrait' ? THEME_REN_UPRIGHT : THEME_REN;
     let presentationPart = this.pkg.relatedPart('', '/officeDocument') ?? 'ppt/presentation.xml';
     let root = this.pkg.xml(presentationPart);
     if (!root) {
@@ -127,10 +134,8 @@ export class Deck {
     const size = child(root, 'p:sldSz');
     const width = intAttr(size, 'cx') ?? 0;
     const height = intAttr(size, 'cy') ?? 0;
-    this.stage =
-      width > 0 && height > 0
-        ? stageMapFor(width, height)
-        : stageMapFor(DEFAULT_SLIDE.width, DEFAULT_SLIDE.height);
+    this.slideSize = width > 0 && height > 0 ? { width, height } : { ...DEFAULT_SLIDE };
+    this.stage = stageMapFor(this.slideSize.width, this.slideSize.height, this.theme.stage);
     this.defaultTextStyle = child(root, 'p:defaultTextStyle');
 
     const rels = this.pkg.rels(presentationPart);

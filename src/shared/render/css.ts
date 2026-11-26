@@ -1,7 +1,10 @@
 // Styles for a rendered scene. The same string is used by the editor and
 // is written into every exported HTML file.
-import { STAGE } from '../format/constants';
+import { stageFor } from '../format/constants';
 import { PALETTE } from '../theme/palette';
+
+const LYING = stageFor('landscape');
+const UPRIGHT = stageFor('portrait');
 
 /** PowerPoint's default tab stop, one inch, in stage pixels (1920 px = 13.33 in). */
 const TAB_STOP = 144;
@@ -9,8 +12,8 @@ const TAB_STOP = 144;
 export const STAGE_CSS = `
 .ls-scene {
   position: relative;
-  width: ${STAGE.width}px;
-  height: ${STAGE.height}px;
+  width: ${LYING.width}px;
+  height: ${LYING.height}px;
   overflow: hidden;
   box-sizing: border-box;
   text-rendering: geometricPrecision;
@@ -18,6 +21,7 @@ export const STAGE_CSS = `
   font-kerning: normal;
   font-synthesis: none;
 }
+.ls-scene.ls-upright { width: ${UPRIGHT.width}px; height: ${UPRIGHT.height}px; }
 .ls-scene *, .ls-scene *::before, .ls-scene *::after { box-sizing: border-box; }
 /* The layer everything on the slide lies in; a step that zooms makes it larger. */
 .ls-zoom { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
@@ -163,6 +167,9 @@ button.ls-more-badge { cursor: pointer; }
   position: absolute; left: -1px; top: -1px; width: calc(100% + 2px); height: calc(100% + 2px);
   object-fit: cover; pointer-events: none;
 }
+/* The film is lying: on an upright slide it is shown whole, as wide as the slide,
+   centred on the white of the slide, which is the white the film starts from. */
+.ls-upright .ls-closing { left: 0; width: 100%; object-fit: contain; }
 .ls-more-ring > .ls-image { outline: 6px solid var(--ls-more-ring); outline-offset: 0; }
 /* Marks on a picture: a numbered point, or a label with a line to what it points at. */
 .ls-mark { position: relative; box-sizing: border-box; width: 100%; height: 100%; margin: 0; }
@@ -245,7 +252,8 @@ ${all('-corner')} { background: transparent; }
 /**
  * The "Lær mer" box drawn on the slide itself (video export, recording
  * window): white, purple edge, on top of the slide, like the player's box.
- * Its layer is the student's window of 1280 x 720, enlarged to the stage.
+ * Its layer is the student's window of 1280 x 720, enlarged to the stage;
+ * on an upright slide 720 x 1280, set where the box is made (`createPopover`).
  */
 export const POPOVER_CSS = `
 .ls-pop-layer {

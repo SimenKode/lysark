@@ -10,8 +10,8 @@ import {
   type TextRole,
 } from '../../shared/format/schema';
 import { withGroups } from '../../shared/layout/groups';
-import { NEW_FIGURE_SIZE, newFigure } from '../../shared/layout/templates';
-import { getTheme } from '../../shared/theme/theme';
+import { newFigure, newFigureSize } from '../../shared/layout/templates';
+import { getTheme, roomWidth } from '../../shared/theme/theme';
 import { formatTime, sceneDuration } from '../../shared/render/clock';
 import { Timeline } from './Timeline';
 import { AudioPanel } from './AudioPanel';
@@ -241,7 +241,7 @@ function InsertBar() {
   };
   /** A figure that draws itself from a form: put in with an empty form, and chosen as a whole. */
   const addFigure = (template: FigureTemplate): void => {
-    const size = NEW_FIGURE_SIZE[template];
+    const size = newFigureSize(template, roomWidth(theme));
     const figure = newFigure(template, placeNew(scene, theme, size.w, size.h), () => newId('e'));
     const state = useStore.getState();
     state.updateScene((s) => {

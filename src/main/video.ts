@@ -1,5 +1,6 @@
-// Exports the lecture as an MP4 video: 1920 x 1080, 30 pictures a second,
-// H.264 and AAC, with captions as a WebVTT file next to it.
+// Exports the lecture as an MP4 video: 1920 x 1080 (1080 x 1920 for an
+// upright project), 30 pictures a second, H.264 and AAC, with captions as a
+// WebVTT file next to it.
 //
 // The video is drawn picture by picture, not recorded from the screen. A
 // window that is never shown draws the lecture as it is at time t, the
@@ -13,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { LogoStatus, VideoProgress, VideoRequest, VideoSummary } from '../shared/api';
 import type { Project, Scene } from '../shared/format/schema';
+import { stageOf } from '../shared/format/constants';
 import { cameraMask, drawCamera } from '../shared/render/cameraDraw';
 import {
   chapterMarks,
@@ -27,12 +29,12 @@ import {
   GIF_WIDTHS,
   SAMPLE_RATE,
   VIDEO_FPS,
-  VIDEO_SIZE,
   cameraAt,
   frameAt,
   schedule,
   stillUntil,
   videoOptions,
+  videoSize,
 } from '../shared/render/clock';
 import { SCENE_STRINGS } from '../shared/render/scene';
 import { filmSound, hasTracks, sampleReader, trackSound, writeLectureSound } from './audio';
@@ -101,15 +103,18 @@ function drawingSettled(window: BrowserWindow, quiet: number, longest: number): 
 }
 
 /** A picture of the hidden window as raw pixels (blue, green, red, alpha), in the video's size. */
-async function capture(window: BrowserWindow): Promise<Buffer> {
+async function capture(
+  window: BrowserWindow,
+  video: { width: number; height: number },
+): Promise<Buffer> {
   let image = await window.webContents.capturePage();
   const size = image.getSize();
-  if (size.width !== VIDEO_SIZE.width || size.height !== VIDEO_SIZE.height) {
+  if (size.width !== video.width || size.height !== video.height) {
     // A screen with another scale factor gives a larger or smaller picture.
-    image = image.resize({ ...VIDEO_SIZE, quality: 'best' });
+    image = image.resize({ ...video, quality: 'best' });
   }
   const pixels = image.toBitmap();
-  if (pixels.byteLength !== VIDEO_SIZE.width * VIDEO_SIZE.height * 4) {
+  if (pixels.byteLength !== video.width * video.height * 4) {
     throw new Error('Bildet av lysarket fikk feil størrelse.');
   }
   return pixels;
@@ -136,6 +141,8 @@ export function exportVideo(options: Options): VideoJob {
     ? request.gifWidth
     : 640;
   const { transition, evenLoudness } = videoOptions(project);
+  const video = videoSize(stageOf(project));
+  const upright = video.height > video.width;
   const totalFrames = Math.max(1, Math.ceil(plan.total * VIDEO_FPS));
 
   let cancelled = false;
@@ -145,7 +152,7 @@ export function exportVideo(options: Options): VideoJob {
   // for the face to go with).
   const films = gif ? null : new CameraFilms(options.dir, project);
   const masks = new Map<number, ReturnType<typeof cameraMask>>();
-  const withCamera = Buffer.alloc(VIDEO_SIZE.width * VIDEO_SIZE.height * 4);
+  const withCamera = Buffer.alloc(video.width * video.height * 4);
 
   const work = mkdtempSync(join(tmpdir(), 'lysark-video-'));
   const soundFile = join(work, 'lyd.pcm');
@@ -182,8 +189,8 @@ export function exportVideo(options: Options): VideoJob {
 
     window = new BrowserWindow({
       show: false,
-      width: VIDEO_SIZE.width,
-      height: VIDEO_SIZE.height,
+      width: video.width,
+      height: video.height,
       useContentSize: true,
       frame: false,
       enableLargerThanScreen: true,
@@ -202,7 +209,7 @@ export function exportVideo(options: Options): VideoJob {
     window.webContents.setFrameRate(60);
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     await options.loadFramePage(window);
-    window.setContentSize(VIDEO_SIZE.width, VIDEO_SIZE.height);
+    window.setContentSize(video.width, video.height);
     const job = { project, scenes, logo: options.logo, transition };
     await window.webContents.executeJavaScript(
       `window.lysarkFrame.load(${JSON.stringify(job)})`,
@@ -217,7 +224,7 @@ export function exportVideo(options: Options): VideoJob {
       '-pix_fmt',
       'bgra',
       '-s',
-      `${VIDEO_SIZE.width}x${VIDEO_SIZE.height}`,
+      `${video.width}x${video.height}`,
       '-r',
       String(VIDEO_FPS),
       '-i',
@@ -310,7 +317,7 @@ export function exportVideo(options: Options): VideoJob {
         const until = stillUntil(scenes, plan, time, transition);
         // A picture that will stand for a while is worth a moment's wait.
         if (until > time) await drawingSettled(window, 100, 1500);
-        pixels = await capture(window);
+        pixels = await capture(window, video);
         // The picture holds for every frame that starts before the next change.
         still = until > time ? Math.ceil(until * VIDEO_FPS - 1e-6) - 1 : frame;
       }
@@ -321,7 +328,7 @@ export function exportVideo(options: Options): VideoJob {
         // The lecturer's face is laid on top of the picture of the slide:
         // the slide can stand still while the face moves.
         const state = frameAt(plan, time, transition);
-        const circle = cameraAt(scenes, project.assets, state.index, state.t);
+        const circle = cameraAt(scenes, project.assets, state.index, state.t, stageOf(project));
         const face = circle && (await films.pictureAt(circle.asset, circle.time, circle.diameter));
         if (circle && face) {
           let mask = masks.get(circle.diameter);
@@ -329,8 +336,8 @@ export function exportVideo(options: Options): VideoJob {
           pixels.copy(withCamera);
           drawCamera(
             withCamera,
-            VIDEO_SIZE.width,
-            VIDEO_SIZE.height,
+            video.width,
+            video.height,
             face,
             circle.x,
             circle.y,
@@ -357,7 +364,9 @@ export function exportVideo(options: Options): VideoJob {
 
     if (gif) {
       options.onProgress({ phase: 'gif', frame: totalFrames, frames: totalFrames });
-      const shape = `fps=${GIF_FPS},scale=${gifWidth}:-2:flags=lanczos`;
+      // The size chosen is the GIF's width, or its height when the slides are upright.
+      const scale = upright ? `-2:${gifWidth}` : `${gifWidth}:-2`;
+      const shape = `fps=${GIF_FPS},scale=${scale}:flags=lanczos`;
       const palette = join(work, 'farger.png');
       // The colours a GIF may use (256 at the most), chosen from these very pictures.
       const first = runFfmpeg([

@@ -30,11 +30,13 @@ import type {
   TidyResult,
 } from '../shared/api';
 import type { Project } from '../shared/format/schema';
+import { orientationOf, type Orientation } from '../shared/format/constants';
 import { webPictureUrl } from '../shared/api';
 import { FETCHED_PICTURE_LIMIT_BYTES, PDF_LIMIT_BYTES } from '../shared/limits';
 import { extensionForMime, type CommonsHit } from './commons';
 import { SOUND_EXTENSIONS, addRecording, importSound, restoreSound } from './audio';
-import { importPptx } from '../importer/pptx';
+import { importPptx, pptxSlideSize } from '../importer/pptx';
+import { recommendShape } from '../importer/shape';
 import { pptxSlides, type PptxSlide } from '../importer/pptxSlides';
 import { presentationToPdf } from './office';
 import {
@@ -131,6 +133,18 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow: BrowserWindow | null = null;
 let previewWindow: BrowserWindow | null = null;
+/** The shape of the slides the preview window was last sized for. */
+let previewShape: Orientation | null = null;
+
+/**
+ * A window that holds the player with a slide of the shape as large as it
+ * fits. An upright one is wide enough that the player still puts its arrows
+ * beside the slide and a "Lær mer" box beside its element (narrower than
+ * 700 pixels, it lays itself out for a phone).
+ */
+function previewSize(shape: Orientation): { width: number; height: number } {
+  return shape === 'portrait' ? { width: 760, height: 1000 } : { width: 1280, height: 800 };
+}
 /** Folder of the project that is open; media is only served from here. */
 let currentDir: string | null = null;
 /**
@@ -141,6 +155,8 @@ let currentDir: string | null = null;
 let pdfImport: { sourceName: string; folder: ImportFolder | null } | null = null;
 /** The PowerPoint file the owner has picked for import. */
 let pptxSource: string | null = null;
+/** The folder the owner picked for a new, empty project, until it is made. */
+let newFolder: string | null = null;
 /** What the interface says about the project; `saving` while a recording is being saved. */
 let documentState = { dirty: false, title: '', saving: false };
 /** The video export that is running, if any. One at a time. */
@@ -558,10 +574,18 @@ function initialProjectDir(): string | null {
 function registerHandlers(): void {
   handle('lysark:initial', (): string | null => initialProjectDir());
 
-  handle('lysark:new', async (): Promise<OpenedProject | null> => {
-    const dir = await askForNewFolder('Ny forelesning');
+  // A new, empty project goes in two: the owner says where it is to lie,
+  // and then, in the interface, which shape its slides are to have.
+  handle('lysark:new-pick', async (): Promise<{ name: string } | null> => {
+    newFolder = await askForNewFolder('Ny forelesning');
+    return newFolder ? { name: basename(newFolder) } : null;
+  });
+
+  handle('lysark:new', (orientation: Orientation): OpenedProject | null => {
+    const dir = newFolder;
+    newFolder = null;
     if (!dir) return null;
-    return opened(dir, createProject(dir));
+    return opened(dir, createProject(dir, orientation === 'portrait' ? 'portrait' : 'landscape'));
   });
 
   handle('lysark:open', async (dir?: string): Promise<OpenedProject | null> => {
@@ -587,7 +611,7 @@ function registerHandlers(): void {
   // Import of a PowerPoint file goes in two: the owner picks the file, and
   // then says in the interface whether the slides are to keep their look
   // or be made over into the theme. Only the file's name leaves this process.
-  handle('lysark:import-pick', async (): Promise<{ name: string } | null> => {
+  handle('lysark:import-pick', async (): Promise<{ name: string; shape: Orientation } | null> => {
     if (!mainWindow) return null;
     const pick = await dialog.showOpenDialog(mainWindow, {
       title: 'Importer PowerPoint',
@@ -598,7 +622,9 @@ function registerHandlers(): void {
     const source = pick.filePaths[0];
     if (pick.canceled || !source) return null;
     pptxSource = source;
-    return { name: basename(source) };
+    // The shape of the slides in the file is what Lysark recommends.
+    const size = pptxSlideSize(new Uint8Array(readFileSync(source)));
+    return { name: basename(source), shape: recommendShape(size ? [size] : []) };
   });
 
   // The slides keep their look: a PDF of the presentation is made by a
@@ -633,13 +659,17 @@ function registerHandlers(): void {
     return pptxSlides(importPptx(bytes, { fileName: basename(source) }).project);
   });
 
-  handle('lysark:import', async (): Promise<ImportedProject | null> => {
+  handle('lysark:import', async (orientation: Orientation): Promise<ImportedProject | null> => {
     if (!mainWindow) return null;
     const source = pptxSource;
     if (!source) throw new Error('Ingen PowerPoint-fil er valgt.');
     const dir = await askForNewFolder(basename(source, '.pptx'));
     if (!dir) return null;
-    const imported = importPptxToFolder(source, dir);
+    const imported = importPptxToFolder(
+      source,
+      dir,
+      orientation === 'portrait' ? 'portrait' : 'landscape',
+    );
     // USN's closing animation on the last slide plays by itself from now on.
     const adopted = adoptClosingAnimation(dir, imported.project);
     const { project } = adopted;
@@ -1016,10 +1046,16 @@ function registerHandlers(): void {
           return { file, mime: mimeOf(file) ?? 'application/octet-stream' };
         },
       });
+      const shape = orientationOf(project);
+      if (previewWindow && !previewWindow.isDestroyed() && previewShape !== shape) {
+        // Another shape of slide than the window was made for: it takes the new shape.
+        const size = previewSize(shape);
+        previewWindow.setSize(size.width, size.height);
+      }
+      previewShape = shape;
       if (!previewWindow || previewWindow.isDestroyed()) {
         previewWindow = new BrowserWindow({
-          width: 1280,
-          height: 800,
+          ...previewSize(shape),
           show: !HIDDEN,
           title: `Forhåndsvisning – ${APP_NAME}`,
           autoHideMenuBar: true,

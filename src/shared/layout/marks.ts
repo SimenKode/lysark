@@ -2,7 +2,7 @@
 // to what they point at. A mark is an element of its own (so it can come in
 // at a step and have "Lær mer" content), but it belongs to a picture. The
 // functions here keep the two together. They change the slide they are given.
-import { STAGE } from '../format/constants';
+import { stageFor, type Stage } from '../format/constants';
 import type {
   Box,
   Element,
@@ -89,16 +89,16 @@ function numberBox(point: { x: number; y: number }): Box {
  * side the point is nearest. When there is no room there, on the other
  * side; a label is not laid on top of the picture as long as it can be helped.
  */
-function labelBoxFor(image: Box, point: { x: number; y: number }): Box {
+function labelBoxFor(stage: Stage, image: Box, point: { x: number; y: number }): Box {
   const after = image.x + image.w + GAP;
   const before = image.x - GAP - LABEL_SIZE.w;
-  const fits = (x: number): boolean => x >= 0 && x + LABEL_SIZE.w <= STAGE.width;
+  const fits = (x: number): boolean => x >= 0 && x + LABEL_SIZE.w <= stage.width;
   const right = point.x >= image.x + image.w / 2;
   const [first, second] = right ? [after, before] : [before, after];
   const x = fits(first) || !fits(second) ? first : second;
   return {
-    x: clamp(x, 0, STAGE.width - LABEL_SIZE.w),
-    y: clamp(point.y - LABEL_SIZE.h / 2, 0, STAGE.height - LABEL_SIZE.h),
+    x: clamp(x, 0, stage.width - LABEL_SIZE.w),
+    y: clamp(point.y - LABEL_SIZE.h / 2, 0, stage.height - LABEL_SIZE.h),
     w: LABEL_SIZE.w,
     h: LABEL_SIZE.h,
     rotation: 0,
@@ -106,9 +106,9 @@ function labelBoxFor(image: Box, point: { x: number; y: number }): Box {
 }
 
 /** Where a new legend is put: beside the picture when there is room, otherwise under it. */
-function legendBoxFor(image: Box, marks: number): Box {
+function legendBoxFor(stage: Stage, image: Box, marks: number): Box {
   const h = Math.max(LEGEND_ROW, marks * LEGEND_ROW);
-  const beside = image.x + image.w + GAP + LEGEND_WIDTH <= STAGE.width;
+  const beside = image.x + image.w + GAP + LEGEND_WIDTH <= stage.width;
   if (beside) {
     return { x: image.x + image.w + GAP, y: image.y, w: LEGEND_WIDTH, h, rotation: 0 };
   }
@@ -118,8 +118,8 @@ function legendBoxFor(image: Box, marks: number): Box {
   }
   return {
     x: image.x,
-    y: clamp(image.y + image.h + GAP, 0, STAGE.height - h),
-    w: Math.min(image.w, STAGE.width - image.x),
+    y: clamp(image.y + image.h + GAP, 0, stage.height - h),
+    w: Math.min(image.w, stage.width - image.x),
     h,
     rotation: 0,
   };
@@ -281,7 +281,13 @@ export function followMarks(scene: Marked): boolean {
  * side of the marks that are there already), and returns it. With numbers,
  * the picture gets its legend when it has none.
  */
-export function addMark(scene: Marked, imageId: string, newId: () => string): MarkElement | null {
+export function addMark(
+  scene: Marked,
+  imageId: string,
+  newId: () => string,
+  /** The stage of the project the slide is in (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): MarkElement | null {
   const image = scene.elements.find(
     (e): e is ImageElement => e.type === 'image' && e.id === imageId,
   );
@@ -301,7 +307,7 @@ export function addMark(scene: Marked, imageId: string, newId: () => string): Ma
     text: '',
     point,
     anchor: anchorOf(image.box),
-    box: numbers ? numberBox(point) : labelBoxFor(image.box, point),
+    box: numbers ? numberBox(point) : labelBoxFor(stage, image.box, point),
   };
   scene.elements.push(mark);
   if (numbers && !legendOf(scene, imageId)) {
@@ -309,7 +315,7 @@ export function addMark(scene: Marked, imageId: string, newId: () => string): Ma
       id: newId(),
       type: 'legend',
       on: imageId,
-      box: legendBoxFor(image.box, count + 1),
+      box: legendBoxFor(stage, image.box, count + 1),
     });
   }
   return mark;
@@ -325,6 +331,8 @@ export function setMarkStyle(
   imageId: string,
   style: MarkStyle,
   newId: () => string,
+  /** The stage of the project the slide is in (lying when not given). */
+  stage: Stage = stageFor('landscape'),
 ): void {
   const image = scene.elements.find(
     (e): e is ImageElement => e.type === 'image' && e.id === imageId,
@@ -340,7 +348,7 @@ export function setMarkStyle(
         id: newId(),
         type: 'legend',
         on: imageId,
-        box: legendBoxFor(image.box, marks.length),
+        box: legendBoxFor(stage, image.box, marks.length),
       });
     }
     return;
@@ -357,10 +365,10 @@ export function setMarkStyle(
   // Labels on the same side are spread out below one another, so they do not lie on top of each other.
   const taken: Box[] = [];
   for (const mark of [...marks].sort((a, b) => a.point.y - b.point.y)) {
-    const box = labelBoxFor(image.box, mark.point);
+    const box = labelBoxFor(stage, image.box, mark.point);
     for (const other of taken) {
       const overlaps = Math.abs(other.x - box.x) < box.w && Math.abs(other.y - box.y) < box.h + 8;
-      if (overlaps) box.y = Math.min(STAGE.height - box.h, other.y + other.h + 8);
+      if (overlaps) box.y = Math.min(stage.height - box.h, other.y + other.h + 8);
     }
     taken.push(box);
     mark.box = box;

@@ -3,7 +3,6 @@
 // editing on top.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { EditorState } from 'prosemirror-state';
-import { STAGE } from '../../shared/format/constants';
 import { isEmptyRichText, richText } from '../../shared/format/factory';
 import type { Box, Element, RichText } from '../../shared/format/schema';
 import {
@@ -119,6 +118,7 @@ export function Stage() {
   const previewSteps = useStore((s) => s.previewSteps);
   const logo = useStore((s) => s.logo);
   const theme = getTheme(project);
+  const stage = theme.stage;
 
   const area = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -155,8 +155,8 @@ export function Stage() {
     if (!el) return;
     const fit = (): void => {
       const s = Math.min(
-        (el.clientWidth - 32) / STAGE.width,
-        (el.clientHeight - 32) / STAGE.height,
+        (el.clientWidth - 32) / stage.width,
+        (el.clientHeight - 32) / stage.height,
       );
       setScale(Math.max(0.1, s));
     };
@@ -164,15 +164,18 @@ export function Stage() {
     const observer = new ResizeObserver(fit);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [stage]);
 
-  const toStage = useCallback((event: { clientX: number; clientY: number }): Point => {
-    const rect = inner.current!.getBoundingClientRect();
-    return {
-      x: ((event.clientX - rect.left) / rect.width) * STAGE.width,
-      y: ((event.clientY - rect.top) / rect.height) * STAGE.height,
-    };
-  }, []);
+  const toStage = useCallback(
+    (event: { clientX: number; clientY: number }): Point => {
+      const rect = inner.current!.getBoundingClientRect();
+      return {
+        x: ((event.clientX - rect.left) / rect.width) * stage.width,
+        y: ((event.clientY - rect.top) / rect.height) * stage.height,
+      };
+    },
+    [stage],
+  );
 
   // ---------- In-place text editing ----------
   const editingKey = editing ? `${editing.elementId}|${editing.cell ?? ''}` : '';
@@ -457,7 +460,7 @@ export function Stage() {
     const threshold = 8 / scale;
     const { starts, ends } = columnEdges(theme);
     const xTargets = [...starts, ...ends];
-    const yTargets = [theme.grid.marginTop, STAGE.height - theme.grid.marginBottom];
+    const yTargets = [theme.grid.marginTop, stage.height - theme.grid.marginBottom];
     const nextGuides: { x?: number; y?: number } = {};
 
     if (d.kind === 'move') {
@@ -473,7 +476,7 @@ export function Stage() {
         const bottom = Math.max(...boxes.map((b) => b.y + b.h)) + dy;
         const sl = snapValue(left, starts, threshold);
         const sr = snapValue(right, ends, threshold);
-        const sc = snapValue((left + right) / 2, [STAGE.width / 2], threshold);
+        const sc = snapValue((left + right) / 2, [stage.width / 2], threshold);
         if (sl !== null) {
           dx += sl - left;
           nextGuides.x = sl;
@@ -920,12 +923,12 @@ export function Stage() {
       >
         <div
           className="stage-frame"
-          style={{ width: STAGE.width * scale, height: STAGE.height * scale }}
+          style={{ width: stage.width * scale, height: stage.height * scale }}
         >
           <div
             className="stage-inner"
             ref={inner}
-            style={{ width: STAGE.width, height: STAGE.height, transform: `scale(${scale})` }}
+            style={{ width: stage.width, height: stage.height, transform: `scale(${scale})` }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -953,7 +956,7 @@ export function Stage() {
                         left: start,
                         width: ends[i]! - start,
                         top: theme.grid.marginTop,
-                        height: STAGE.height - theme.grid.marginTop - theme.grid.marginBottom,
+                        height: stage.height - theme.grid.marginTop - theme.grid.marginBottom,
                       }}
                     />
                   ))}
@@ -962,13 +965,13 @@ export function Stage() {
               {guides.x !== undefined && (
                 <div
                   className="guide"
-                  style={{ left: guides.x, top: 0, width: border, height: STAGE.height }}
+                  style={{ left: guides.x, top: 0, width: border, height: stage.height }}
                 />
               )}
               {guides.y !== undefined && (
                 <div
                   className="guide"
-                  style={{ top: guides.y, left: 0, height: border, width: STAGE.width }}
+                  style={{ top: guides.y, left: 0, height: border, width: stage.width }}
                 />
               )}
               {scene.elements.map((el) => {

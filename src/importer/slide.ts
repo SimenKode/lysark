@@ -1,7 +1,7 @@
 // One slide to one scene: walks the shape tree in z-order and builds the
 // elements, the import warnings, the scene title and the manuscript.
 import { newId, richText } from '../shared/format/factory';
-import { STAGE } from '../shared/format/constants';
+import type { Stage } from '../shared/format/constants';
 import type {
   Box,
   Crop,
@@ -23,7 +23,7 @@ import type {
 import { followFigures } from '../shared/layout/groups';
 import { followTemplates } from '../shared/layout/templates';
 import { nearestPaletteColor } from '../shared/theme/palette';
-import { THEME_REN, logoArea, overlapsDecoration } from '../shared/theme/theme';
+import { THEME_REN, logoArea, overlapsDecoration, type Theme } from '../shared/theme/theme';
 import { arrowEnds, readFill, shapeFill, shapeLine, type ColorContext, type Paint } from './color';
 import {
   basePlaceholderType,
@@ -261,31 +261,34 @@ function stretchedBox(box: Box, blipFill: XmlNode | undefined): Box {
   return { ...box, x: box.x + box.w * l, y: box.y + box.h * t, w, h };
 }
 
-const LOGO_AREA = logoArea(THEME_REN, 'nb');
-
 /**
  * True when an element lies where the logo goes. Text counts only when it
  * sits at the bottom of the slide, since a tall text box is mostly empty
  * below its text.
  */
-export function coversLogo(element: Element): boolean {
+export function coversLogoIn(theme: Theme, element: Element): boolean {
   const { x, y, w, h } = element.box;
-  const a = LOGO_AREA;
+  const a = logoArea(theme, 'nb');
   const overlaps = x < a.x + a.w && x + w > a.x && y < a.y + a.h && y + h > a.y;
   if (!overlaps) return false;
   if (element.type !== 'text') return true;
-  return element.valign === 'bottom' || y >= STAGE.height * 0.75;
+  return element.valign === 'bottom' || y >= theme.stage.height * 0.75;
+}
+
+/** `coversLogoIn` on a lying slide. */
+export function coversLogo(element: Element): boolean {
+  return coversLogoIn(THEME_REN, element);
 }
 
 /** True for a picture or video that fills the whole slide (such as USN's logo animation). */
-function coversStage(element: Element): boolean {
+function coversStage(element: Element, stage: Stage): boolean {
   const { x, y, w, h } = element.box;
   return (
     (element.type === 'image' || element.type === 'video') &&
     x <= 20 &&
     y <= 20 &&
-    x + w >= STAGE.width - 20 &&
-    y + h >= STAGE.height - 20
+    x + w >= stage.width - 20 &&
+    y + h >= stage.height - 20
   );
 }
 
@@ -356,11 +359,14 @@ class SlideImporter {
 
     const decoration =
       (kind === 'title' || kind === 'section') &&
-      !this.elements.some((element) => overlapsDecoration(element.box));
+      !this.elements.some((element) => overlapsDecoration(element.box, this.deck.theme));
     // A logo that content covers or crowds breaks the brand manual, so the
     // scene starts without it; the owner can switch it on after tidying up.
-    const showLogo = !this.elements.some(coversLogo);
-    if (!showLogo) this.warn(WARNINGS.logo(this.elements.some(coversStage)));
+    const theme = this.deck.theme;
+    const showLogo = !this.elements.some((element) => coversLogoIn(theme, element));
+    if (!showLogo) {
+      this.warn(WARNINGS.logo(this.elements.some((element) => coversStage(element, theme.stage))));
+    }
     const scene: Scene = {
       id: sceneId,
       title,

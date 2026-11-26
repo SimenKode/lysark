@@ -6,8 +6,8 @@
 // The video export draws the same circle itself (src/shared/render/cameraDraw.ts):
 // the same diameter and ring. Change the two together.
 import { useEffect, useRef } from 'react';
-import { STAGE } from '../../shared/format/constants';
 import { CAMERA_RING } from '../../shared/render/clock';
+import { useStage } from './store';
 
 interface Props {
   /** The centre of the circle and its width, in stage pixels. */
@@ -30,6 +30,7 @@ interface Props {
 export function CameraCircle({ x, y, diameter, stream, film, onMove, keyboard }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const drag = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+  const stageSize = useStage();
 
   useEffect(() => {
     const el = video.current;
@@ -64,7 +65,7 @@ export function CameraCircle({ x, y, diameter, stream, film, onMove, keyboard }:
     const stage = (event.currentTarget as HTMLElement).offsetParent as HTMLElement | null;
     const box = stage?.getBoundingClientRect();
     if (!box || box.width === 0) return { x, y };
-    const scale = box.width / STAGE.width;
+    const scale = box.width / stageSize.width;
     return { x: (event.clientX - box.left) / scale, y: (event.clientY - box.top) / scale };
   };
 

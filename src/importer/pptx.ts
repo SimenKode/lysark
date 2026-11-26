@@ -2,13 +2,13 @@
 // it refers to. Runs in the main process; synchronous and without any file
 // system access, so the caller decides where things are read and written.
 import { newId, newProject } from '../shared/format/factory';
-import type { ImportWarning, Project, Scene } from '../shared/format/schema';
+import type { ImportWarning, Orientation, Project, Scene } from '../shared/format/schema';
 import { fitToGrid } from '../shared/layout/fitToGrid';
 import { getTheme } from '../shared/theme/theme';
 import { Deck } from './deck';
 import { MediaStore, type ImportedMedia } from './media';
 import { WARNINGS } from './messages';
-import { coversLogo, importSlide } from './slide';
+import { coversLogoIn, importSlide } from './slide';
 import { child, type XmlNode } from './xml';
 
 export type { ImportedMedia } from './media';
@@ -74,7 +74,7 @@ export function layOutFrontScenes(project: Project): void {
   for (const scene of project.scenes) {
     if (!isPlainFrontScene(scene)) continue;
     fitToGrid(scene, theme);
-    if (!scene.showLogo && !scene.elements.some(coversLogo)) {
+    if (!scene.showLogo && !scene.elements.some((element) => coversLogoIn(theme, element))) {
       scene.showLogo = true;
       if (scene.imported) {
         scene.imported.warnings = scene.imported.warnings.filter(
@@ -86,16 +86,37 @@ export function layOutFrontScenes(project: Project): void {
 }
 
 /**
+ * How large the slides of a PPTX are (in EMU), for the recommendation of a
+ * shape before the import. Undefined when the file cannot be read; the
+ * import itself then says why.
+ */
+export function pptxSlideSize(bytes: Uint8Array): { width: number; height: number } | undefined {
+  try {
+    return new Deck(bytes).slideSize;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Imports a PPTX. The project is named after the document title, else the
  * title slide, else the file name. Throws an Error with a Norwegian message when the bytes
  * are not a readable PowerPoint presentation.
  */
-export function importPptx(bytes: Uint8Array, options: { fileName: string }): ImportResult {
-  const deck = new Deck(bytes);
+export function importPptx(
+  bytes: Uint8Array,
+  options: {
+    fileName: string;
+    /** The shape of the project's slides; lying when not given. */
+    orientation?: Orientation;
+  },
+): ImportResult {
+  const deck = new Deck(bytes, options.orientation);
   const corePart = deck.pkg.relatedPart('', '/metadata/core-properties') ?? 'docProps/core.xml';
   const project = newProject(
     documentTitle(deck.pkg.xml(corePart)) ?? titleFromFileName(options.fileName),
   );
+  if (options.orientation === 'portrait') project.orientation = 'portrait';
 
   // Scene ids are assigned first so links between slides can point at them.
   const sceneIds = new Map<string, string>();

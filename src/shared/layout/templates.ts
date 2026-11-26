@@ -7,7 +7,7 @@
 // those parts as the form says, after every change. Nothing here draws
 // anything: the render code sees only shapes and text boxes. The functions
 // change the slide they are given.
-import { STAGE } from '../format/constants';
+import { stageFor, type Stage } from '../format/constants';
 import { isEmptyRichText, paragraph, plainText, richText } from '../format/factory';
 import type {
   Box,
@@ -48,6 +48,15 @@ export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> =
   bars: { w: 1100, h: 620 },
   line: { w: 1100, h: 620 },
 };
+/**
+ * The size a new figure starts with where `room` stage pixels of width are
+ * free (between the margins): as `NEW_FIGURE_SIZE`, but never wider than
+ * that, so a figure put on an upright slide fits it.
+ */
+export function newFigureSize(template: FigureTemplate, room: number): { w: number; h: number } {
+  const size = NEW_FIGURE_SIZE[template];
+  return { w: Math.round(Math.min(size.w, room)), h: size.h };
+}
 /** The one part of a time axis that belongs to no row: the line itself. */
 const AXIS = 'axis:line';
 /** How wide the points on a time axis are, and how thick its line is. */
@@ -613,20 +622,26 @@ export function writePart(scene: Pick<Scene, 'elements'>, el: Element, content: 
  * the shape that suits the new way, where it stands, and is kept on the
  * slide.
  */
-export function setDirection(figure: FigureElement, direction: 'across' | 'down'): void {
+export function setDirection(
+  figure: FigureElement,
+  direction: 'across' | 'down',
+  /** The stage of the project the slide is in (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): void {
   if ((figure.direction ?? 'across') === direction) return;
   if (direction === 'down') figure.direction = 'down';
   else delete figure.direction;
   const n = Math.max(1, figure.items.length);
-  const size =
+  const wanted =
     direction !== 'down'
       ? NEW_FIGURE_SIZE[figure.template]
       : figure.template === 'timeAxis'
         ? { w: 900, h: clamp(n * 110 + (n - 1) * 20, 240, 760) }
         : { w: 460, h: clamp(n * 130 + (n - 1) * 60, 200, 760) };
+  const size = { w: Math.min(wanted.w, stage.width), h: Math.min(wanted.h, stage.height) };
   figure.box = {
-    x: Math.round(clamp(figure.box.x, 0, STAGE.width - size.w)),
-    y: Math.round(clamp(figure.box.y, 0, STAGE.height - size.h)),
+    x: Math.round(clamp(figure.box.x, 0, stage.width - size.w)),
+    y: Math.round(clamp(figure.box.y, 0, stage.height - size.h)),
     w: size.w,
     h: size.h,
     rotation: 0,

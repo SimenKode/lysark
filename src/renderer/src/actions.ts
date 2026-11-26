@@ -25,7 +25,7 @@ import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
 import type { CameraPlace, Element, Project, Scene, TrackName } from '../../shared/format/schema';
 import { formatTime, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
-import { getTheme } from '../../shared/theme/theme';
+import { getTheme, roomWidth } from '../../shared/theme/theme';
 import { placeNew } from './ops';
 import {
   WAIT_FOR_SAVING,
@@ -33,8 +33,10 @@ import {
   isDirty,
   useStore,
   type ImportLook,
+  type LookChoice,
   type LookRequest,
 } from './store';
+import type { Orientation } from '../../shared/format/constants';
 import type { Film } from './audio/camera';
 
 declare global {
@@ -79,7 +81,12 @@ async function leaveCurrent(): Promise<boolean> {
 export async function newProject(): Promise<void> {
   if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
-  const opened = await guard(() => api().newProject());
+  const folder = await guard(() => api().pickNewFolder());
+  if (!folder) return;
+  // Lying is chosen until the lecturer says otherwise.
+  const choice = await askLook('new', folder.name);
+  if (!choice) return;
+  const opened = await guard(() => api().newProject(choice.orientation));
   if (opened) useStore.getState().load(opened.dir, opened.project);
 }
 
@@ -90,10 +97,20 @@ export async function openProject(dir?: string): Promise<void> {
   if (opened) useStore.getState().load(opened.dir, opened.project);
 }
 
-/** Asks how the slides of the picked file are to look. Undefined when the owner breaks off. */
-function askLook(kind: LookRequest['kind'], name: string): Promise<ImportLook | undefined> {
+/**
+ * Asks how the slides of the picked file are to look, and which shape they
+ * are to have (with the shape of its pages recommended). Undefined when the
+ * owner breaks off.
+ */
+function askLook(
+  kind: LookRequest['kind'],
+  name: string,
+  recommended?: Orientation,
+): Promise<LookChoice | undefined> {
   return new Promise((resolve) => {
-    useStore.getState().setLookRequest({ kind, name, resolve });
+    useStore
+      .getState()
+      .setLookRequest({ kind, name, ...(recommended ? { recommended } : {}), resolve });
   });
 }
 
@@ -107,13 +124,13 @@ export async function importPptx(): Promise<void> {
   if (!(await leaveCurrent())) return;
   const picked = await guard(() => api().pickPptx());
   if (!picked) return;
-  const look = await askLook('pptx', picked.name);
-  if (!look) return;
-  if (look === 'keep') {
-    await importPptxWithItsLook(picked.name);
+  const choice = await askLook('pptx', picked.name, picked.shape);
+  if (!choice) return;
+  if (choice.look === 'keep') {
+    await importPptxWithItsLook(picked.name, choice.orientation);
     return;
   }
-  const imported = await guard(() => api().importPptx());
+  const imported = await guard(() => api().importPptx(choice.orientation));
   if (!imported) return;
   // The import may have taken USN's closing animation into the settings.
   await refreshLogo();
@@ -619,10 +636,13 @@ export async function importPdf(): Promise<void> {
   if (!(await leaveCurrent())) return;
   const picked = await guard(() => api().pickPdf());
   if (!picked) return;
-  const look = await askLook('pdf', picked.name);
-  if (!look) return;
+  // The shape of the pages is what Lysark recommends.
+  const { pdfShape } = await import('./pdfRender');
+  const shape = await pdfShape(picked.data);
+  const choice = await askLook('pdf', picked.name, shape);
+  if (!choice) return;
   pdfImport = new AbortController();
-  await importPickedPdf(picked, pdfImport, { look });
+  await importPickedPdf(picked, pdfImport, choice);
 }
 
 /**
@@ -632,7 +652,7 @@ export async function importPdf(): Promise<void> {
  * PowerPoint file itself. When no such program is there, the owner is asked
  * for a PDF of the presentation.
  */
-async function importPptxWithItsLook(name: string): Promise<void> {
+async function importPptxWithItsLook(name: string, orientation: Orientation): Promise<void> {
   const control = new AbortController();
   pdfImport = control;
   const setProgress = useStore.getState().setPdfProgress;
@@ -674,14 +694,19 @@ async function importPptxWithItsLook(name: string): Promise<void> {
         : 'by' in pdf && pdf.by === 'powerpoint'
           ? 'PowerPoint har tegnet lysarkene.'
           : undefined;
-  await importPickedPdf({ name, data: pdf.data }, control, { look: 'keep', slides, from });
+  await importPickedPdf({ name, data: pdf.data }, control, {
+    look: 'keep',
+    orientation,
+    slides,
+    from,
+  });
 }
 
 /** Reads a PDF that has been picked (or made) and opens it as a new project. */
 async function importPickedPdf(
   picked: PickedPdf,
   control: AbortController,
-  options: { look: ImportLook; slides?: PptxSlide[]; from?: string },
+  options: { look: ImportLook; orientation: Orientation; slides?: PptxSlide[]; from?: string },
 ): Promise<void> {
   const setProgress = useStore.getState().setPdfProgress;
   setProgress({ name: picked.name, page: 0, pages: 0 });
@@ -695,6 +720,7 @@ async function importPickedPdf(
       progress: (page, pages) => setProgress({ name: picked.name, page, pages }),
       store: (page, data) => api().addPdfPage(page, data),
       look: options.look,
+      orientation: options.orientation,
     });
     if (!project) return;
     // What the PowerPoint file knows that the PDF of it does not.
@@ -860,7 +886,8 @@ export async function insertImage(): Promise<void> {
   const state = useStore.getState();
   const scene = currentScene(state);
   if (!size || !state.project || !scene || scene.repeat) return;
-  const fitted = fitInside(size, 900, 620);
+  // Never wider than the room between the margins (an upright slide has less of it).
+  const fitted = fitInside(size, Math.min(900, roomWidth(getTheme(state.project))), 620);
   addElement({
     id: newId('e'),
     type: 'image',
@@ -893,7 +920,11 @@ export async function insertVideoFile(): Promise<void> {
   const state = useStore.getState();
   const scene = currentScene(state);
   if (!state.project || !scene || scene.repeat) return;
-  const fitted = fitInside({ w: size.w * 100, h: size.h * 100 }, 960, 540);
+  const fitted = fitInside(
+    { w: size.w * 100, h: size.h * 100 },
+    Math.min(960, roomWidth(getTheme(state.project))),
+    540,
+  );
   addElement({
     id: newId('e'),
     type: 'video',

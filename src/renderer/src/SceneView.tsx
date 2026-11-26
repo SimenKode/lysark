@@ -4,6 +4,7 @@
 import { memo, useLayoutEffect, useRef } from 'react';
 import { closingUrl, hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
+import { stageOf } from '../../shared/format/constants';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
 import { applySceneMoves, sceneMoves, visibility } from '../../shared/render/timeline';
 import { getTheme } from '../../shared/theme/theme';
@@ -103,7 +104,8 @@ export const SceneView = memo(function SceneView({
 
     // After some of the steps: what a step has marked is marked, what has
     // not come yet (or has been taken away) is dimmed, not hidden.
-    const moves = previewSteps === null ? null : sceneMoves(scene, previewSteps, Infinity);
+    const moves =
+      previewSteps === null ? null : sceneMoves(scene, previewSteps, Infinity, stageOf(project));
     const state = moves && visibility(moves);
     applySceneMoves(root, {
       elements: new Map(

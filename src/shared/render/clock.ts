@@ -2,7 +2,7 @@
 // project and that moment: the video export draws frame by frame from it,
 // "Spill av" in the HTML player follows it, and the editor's timeline shows
 // it. Nothing here reads a clock.
-import { STAGE } from '../format/constants';
+import { stageFor, type Stage } from '../format/constants';
 import type {
   Asset,
   AudioClip,
@@ -24,7 +24,17 @@ export const SILENT_STEP_SECONDS = 2;
 /** Length of the fade between slides, when the project asks for one. */
 export const FADE_SECONDS = 0.3;
 export const VIDEO_FPS = 30;
+/** The size of the video of a lying project; an upright one's is turned (`videoSize`). */
 export const VIDEO_SIZE = { width: 1920, height: 1080 } as const;
+
+/**
+ * The size of the video (and the pictures it is made of) for a stage: the
+ * stage itself, one video pixel to a stage pixel. 1920 x 1080 for a lying
+ * project, 1080 x 1920 for an upright one.
+ */
+export function videoSize(stage: Stage): { width: number; height: number } {
+  return { width: stage.width, height: stage.height };
+}
 /**
  * A GIF is for short clips: fewer pictures a second, no sound, and not long.
  * A GIF gives the time of each picture in hundredths of a second, so the
@@ -33,6 +43,10 @@ export const VIDEO_SIZE = { width: 1920, height: 1080 } as const;
  */
 export const GIF_FPS = 12.5;
 export const GIF_MAX_SECONDS = 120;
+/**
+ * The sizes offered for a GIF: its width when the project is lying, its
+ * height when it is upright (the longer side, either way).
+ */
 export const GIF_WIDTHS = [480, 640, 960] as const;
 /** All sound in a project is mono at this rate. */
 export const SAMPLE_RATE = 48000;
@@ -149,10 +163,16 @@ export function stepsShownBefore(scene: Timed): number {
  * How the slide stands and moves `t` seconds into it. The same rule as
  * stepping by hand (`sceneMoves`), but every step runs from its own time.
  */
-export function sceneMovesAt(scene: Timed, t: number): Moves {
+export function sceneMovesAt(
+  scene: Timed,
+  t: number,
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): Moves {
   return movesFrom(
     scene,
     stepClock(scene).map((at) => t - at),
+    stage,
   );
 }
 
@@ -405,7 +425,11 @@ export function stillUntil(
 /** The film of the face: square, this many pixels each way and pictures a second. */
 export const CAMERA_FILM_SIZE = 480;
 export const CAMERA_FPS = 30;
-/** How wide the circle is on the stage, in stage pixels. */
+/**
+ * How wide the circle is on the stage, in stage pixels. The sizes follow
+ * the stage's shorter side, which is 1080 for both shapes, so they are the
+ * same on a lying and an upright slide.
+ */
 export const CAMERA_DIAMETER: Record<CameraSize, number> = { small: 200, medium: 290, large: 400 };
 /** The white ring round the circle, in stage pixels. */
 export const CAMERA_RING = 6;
@@ -413,17 +437,26 @@ export const CAMERA_RING = 6;
 export const CAMERA_GLIDE_SECONDS = 0.4;
 
 /** Where the circle stands until the lecturer has put it somewhere: the lower right corner. */
-export function defaultCameraPlace(): CameraPlace {
+export function defaultCameraPlace(
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): CameraPlace {
   const reach = CAMERA_DIAMETER.medium / 2 + 48;
-  return { x: STAGE.width - reach, y: STAGE.height - reach, size: 'medium' };
+  return { x: stage.width - reach, y: stage.height - reach, size: 'medium' };
 }
 
 /** A place for the circle's centre that keeps the whole circle on the stage. */
-export function cameraOnStage(x: number, y: number, size: CameraSize): { x: number; y: number } {
+export function cameraOnStage(
+  x: number,
+  y: number,
+  size: CameraSize,
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
+): { x: number; y: number } {
   const r = CAMERA_DIAMETER[size] / 2;
   return {
-    x: Math.round(Math.max(r, Math.min(STAGE.width - r, x))),
-    y: Math.round(Math.max(r, Math.min(STAGE.height - r, y))),
+    x: Math.round(Math.max(r, Math.min(stage.width - r, x))),
+    y: Math.round(Math.max(r, Math.min(stage.height - r, y))),
   };
 }
 
@@ -521,8 +554,10 @@ export function cameraPlaceAt(
   scene: Filmed,
   t: number,
   from?: { x: number; y: number },
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
 ): { x: number; y: number } {
-  const base = scene.camera ?? defaultCameraPlace();
+  const base = scene.camera ?? defaultCameraPlace(stage);
   let a = from ?? { x: base.x, y: base.y };
   let b = { x: base.x, y: base.y };
   let since = from ? 0 : -Infinity;
@@ -557,6 +592,8 @@ export function cameraAt(
   assets: Assets,
   index: number,
   t: number,
+  /** The stage of the project (lying when not given). */
+  stage: Stage = stageFor('landscape'),
 ): CameraAt | undefined {
   const scene = scenes[index];
   if (!scene) return undefined;
@@ -570,9 +607,9 @@ export function cameraAt(
   let from: { x: number; y: number } | undefined;
   if (before) {
     const end = sceneDuration(before);
-    if (cameraFilmAt(before, assets, end)) from = cameraPlaceAt(before, end);
+    if (cameraFilmAt(before, assets, end)) from = cameraPlaceAt(before, end, undefined, stage);
   }
-  const place = cameraPlaceAt(scene, t, from);
+  const place = cameraPlaceAt(scene, t, from, stage);
   const size = scene.camera?.size ?? defaultCameraPlace().size;
   return { ...film, x: place.x, y: place.y, diameter: CAMERA_DIAMETER[size] };
 }

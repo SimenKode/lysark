@@ -5,8 +5,8 @@
 // editor and the HTML player, driven by the shared clock.
 import { closingUrl, hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Project, Scene } from '../../shared/format/schema';
+import { stageFor } from '../../shared/format/constants';
 import {
-  VIDEO_SIZE,
   frameAt,
   moreAt,
   popProgress,
@@ -52,12 +52,15 @@ declare global {
   }
 }
 
+const LYING = stageFor('landscape');
+const UPRIGHT = stageFor('portrait');
 const style = document.createElement('style');
 style.textContent = `${STAGE_CSS}
 ${MORE_CSS}
 ${POPOVER_CSS}
 html, body { margin: 0; overflow: hidden; background: #000; }
-#frame { position: relative; width: ${VIDEO_SIZE.width}px; height: ${VIDEO_SIZE.height}px; overflow: hidden; }
+#frame { position: relative; width: ${LYING.width}px; height: ${LYING.height}px; overflow: hidden; }
+#frame.is-upright { width: ${UPRIGHT.width}px; height: ${UPRIGHT.height}px; }
 #frame > .layer { position: absolute; inset: 0; }
 /* Nobody can open a panel in a video: no "+" marks, no rings and no "Lær mer"
    buttons, except on what the lecturer opened while reading the slide in. */
@@ -153,7 +156,7 @@ function showBoxes(index: number, t: number | null): void {
   const scene = job!.scenes[index]!;
   const open = t === null ? undefined : moreAt(scene, t);
   // The box lies beside its element where it is seen, also when the picture is zoomed in.
-  const view = t === null ? null : (sceneMovesAt(scene, t).view ?? null);
+  const view = t === null ? null : (sceneMovesAt(scene, t, context!.theme.stage).view ?? null);
   for (const [element, box] of boxes.get(index) ?? []) {
     const shown = t === null || open?.element === element;
     box.layer.style.display = shown ? '' : 'none';
@@ -217,7 +220,7 @@ async function place(
     ready.add(index);
     return true;
   }
-  applySceneMoves(el, sceneMovesAt(job!.scenes[index]!, t));
+  applySceneMoves(el, sceneMovesAt(job!.scenes[index]!, t, context!.theme.stage));
   layer.style.opacity = String(opacity);
   showBoxes(index, t);
   await seekFilm(el, t);
@@ -261,6 +264,8 @@ window.lysarkFrame = {
       strings: SCENE_STRINGS[language],
       closing: logo.closing ? closingUrl(logo.version) : undefined,
     };
+    // The picture has the shape of the slides: 1080 x 1920 for an upright project.
+    host.classList.toggle('is-upright', context.theme.orientation === 'portrait');
     await document.fonts.ready;
   },
 

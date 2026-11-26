@@ -30,10 +30,12 @@ export const FORMAT_NAME = 'lysark';
  *    take away and zoom.
  * 17: tables keep PowerPoint's row heights, spacing, alignment and the
  *    font size of each cell.
+ * 18: how long a slide without sound stands, and slides left out of the video.
+ * 19: upright projects (9:16).
  */
-export const FORMAT_VERSION = 18;
+export const FORMAT_VERSION = 19;
 
-export { STAGE } from './constants';
+export { stageOf, stageFor, orientationOf, type Stage, type Orientation } from './constants';
 
 export const PALETTE_COLORS = [
   'lilla',
@@ -941,6 +943,12 @@ export const Project = z.object({
     language: z.enum(['nb', 'en']),
   }),
   theme: z.object({ style: z.enum(['ren']) }),
+  /**
+   * The shape of the slides, chosen when the project is made: 'portrait'
+   * for upright slides (9:16, a stage of 1080 x 1920). Absent: lying (16:9,
+   * 1920 x 1080), as every project before format 19.
+   */
+  orientation: z.literal('portrait').optional(),
   export: z.object({
     /** Let students open the manuscript panel in the exported HTML. */
     showScript: z.boolean(),

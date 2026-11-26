@@ -100,5 +100,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 16) project.version = 17;
   // 17 -> 18 only added things (how long a slide without sound stands, and slides left out of the video).
   if (project.version === 17) project.version = 18;
+  // 18 -> 19 only added a thing (the shape of the slides; absent is lying, as before).
+  if (project.version === 18) project.version = 19;
   return project;
 }

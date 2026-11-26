@@ -11,9 +11,8 @@ import { slideNumbers } from '../../shared/layout/slides';
 import { Icon } from './Icon';
 import { SceneView } from './SceneView';
 import { KIND_NAMES, cloneScene, playClosingAnimation } from './ops';
-import { useStore } from './store';
+import { useStage, useStore } from './store';
 
-const STAGE_WIDTH = 1920;
 /** The sign on a slide that is left out of the video and "Spill av". */
 export const SKIPPED = 'Ikke med i videoen';
 
@@ -29,19 +28,21 @@ export function SceneList() {
   // The thumbnails fill the width the list has left after margins, the
   // number column and the scrollbar (whose width differs between systems).
   const [thumbScale, setThumbScale] = useState(0);
+  const stage = useStage();
+  const upright = stage.height > stage.width;
 
   useEffect(() => {
     const ol = list.current;
     if (!ol) return;
     const measure = (): void => {
       const width = ol.querySelector<HTMLElement>('.scene-thumb')?.clientWidth ?? 0;
-      if (width > 0) setThumbScale(width / STAGE_WIDTH);
+      if (width > 0) setThumbScale(width / stage.width);
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(ol);
     return () => observer.disconnect();
-  }, [project.scenes.length]);
+  }, [project.scenes.length, stage]);
 
   useEffect(() => {
     current.current?.scrollIntoView({ block: 'nearest' });
@@ -255,11 +256,15 @@ export function SceneList() {
                 onClick={() => setScene(scene.id)}
               >
                 <span className="scene-number">{repeat ? '↩' : numbers[i]}</span>
-                <span className="scene-thumb">
+                <span className={`scene-thumb${upright ? ' is-upright' : ''}`}>
                   {thumbScale > 0 && (
                     <span
                       className="scene-thumb-inner"
-                      style={{ transform: `scale(${thumbScale})` }}
+                      style={{
+                        width: stage.width,
+                        height: stage.height,
+                        transform: `scale(${thumbScale})`,
+                      }}
                     >
                       <SceneView scene={scene} project={project} logo={logo} />
                     </span>
