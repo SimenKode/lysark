@@ -1575,6 +1575,30 @@ legend {
 .dialog-wide {
   width: min(720px, 92vw);
 }
+/* A box with round corners that scrolls: the scrollbar keeps inside the corners
+   (the same rules as roundScrollCss in src/shared/render/css.ts). */
+.dialog::-webkit-scrollbar,
+.builder-panel::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+.dialog::-webkit-scrollbar-track,
+.builder-panel::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 12px;
+}
+.dialog::-webkit-scrollbar-thumb,
+.builder-panel::-webkit-scrollbar-thumb {
+  background: var(--lilla);
+  background-clip: padding-box;
+  border: 4px solid transparent;
+  border-radius: 999px;
+  min-height: 48px;
+}
+.dialog::-webkit-scrollbar-corner,
+.builder-panel::-webkit-scrollbar-corner {
+  background: transparent;
+}
 .dialog::backdrop {
   background: rgba(47, 11, 99, 0.7);
 }

@@ -2,6 +2,7 @@
 // USN's palette and follow the manual's contrast table; interactive
 // elements are rounded, as the manual asks.
 import { PALETTE as C } from '../shared/theme/palette';
+import { roundScrollCss } from '../shared/render/css';
 
 export const PLAYER_CSS = `
 html, body { margin: 0; height: 100%; }
@@ -123,7 +124,7 @@ body { background: ${C.indigo}; }
   width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 24px 28px;
   background: ${C.hvit}; color: ${C.sort}; border-radius: 28px;
 }
-.lp-help dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; margin: 0 0 16px; }
+${roundScrollCss(['.lp-panel', '.lp-help'], C.lilla)}.lp-help dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; margin: 0 0 16px; }
 .lp-help dt { font-weight: 700; white-space: nowrap; }
 .lp-help dd { margin: 0; }
 .lp-help p { margin: 0 0 16px; }

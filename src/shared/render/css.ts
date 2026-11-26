@@ -221,6 +221,27 @@ button.ls-mark { cursor: pointer; font-family: inherit; }
 `;
 
 /**
+ * The scrollbar of a box with round corners. An ordinary scrollbar is a
+ * rectangle as tall as the box, so at the corners it lay across the box's
+ * edge (the owner saw it on the "Lær mer" box, 26.11.2026). This one is a
+ * narrow thumb whose track begins and ends inside the corners. Browsers
+ * that do not know these rules keep their own scrollbar.
+ */
+export function roundScrollCss(selectors: string[], thumb = '#7800f0'): string {
+  const all = (part: string): string =>
+    selectors.map((s) => `${s}::-webkit-scrollbar${part}`).join(', ');
+  return `
+${all('')} { width: 16px; height: 16px; }
+${all('-track')} { background: transparent; margin: 12px; }
+${all('-thumb')} {
+  background: ${thumb}; background-clip: padding-box;
+  border: 4px solid transparent; border-radius: 999px; min-height: 48px;
+}
+${all('-corner')} { background: transparent; }
+`;
+}
+
+/**
  * The "Lær mer" box drawn on the slide itself (video export, recording
  * window): white, purple edge, on top of the slide, like the player's box.
  * Its layer is the student's window of 1280 x 720, enlarged to the stage.
@@ -253,7 +274,7 @@ export const POPOVER_CSS = `
   .ls-pop.ls-pop-in { animation: ls-pop 0.28s cubic-bezier(0.2, 1.35, 0.4, 1) both; }
   @keyframes ls-pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 }
-`;
+${roundScrollCss(['.ls-pop'])}`;
 
 /**
  * Styles for "Lær mer" content (the panel). Used by the player and by the

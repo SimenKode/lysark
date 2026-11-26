@@ -456,6 +456,14 @@ describe.skipIf(!built)('"Lær mer", end to end', () => {
       })
       .toBe('1');
     await shot(player, 'm07-spiller-panel');
+    // The box scrolls here. Its scrollbar is the narrow one that keeps inside the round
+    // corners: 16 px wide, on a track that begins and ends 12 px in.
+    const bar = await panel.evaluate((el: HTMLElement) => ({
+      scrolls: el.scrollHeight > el.clientHeight,
+      width: el.offsetWidth - el.clientWidth - 8, // less the edge of 4 px on each side
+      track: getComputedStyle(el, '::-webkit-scrollbar-track').marginTop,
+    }));
+    expect(bar).toEqual({ scrolls: true, width: 16, track: '12px' });
 
     await panel.getByRole('button', { name: 'Utvid' }).click();
     expect(await panel.evaluate((el) => el.classList.contains('lp-panel-wide'))).toBe(true);
