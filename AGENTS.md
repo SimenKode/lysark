@@ -569,8 +569,8 @@ instead of choosing silently.
   through and rewritten. Do not change its visibility, create other
   remote repositories or publish anything (releases, packages) unless
   the owner asks. He asked for a release on 22.11.2026 (version 0.2.0),
-  on 23.11.2026 (version 0.3.0), on 25.11.2026 (version 0.4.0) and on
-  26.11.2026 (version 0.5.0): each is a release with the packaged
+  on 23.11.2026 (version 0.3.0), on 25.11.2026 (version 0.4.0) and
+  twice on 26.11.2026 (versions 0.5.0 and 0.6.0): each is a release with the packaged
   program for Linux and Windows (from 0.4.0 the Windows installer too)
   and FFmpeg's source. Make a new
   release only when he asks for one.

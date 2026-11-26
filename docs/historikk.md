@@ -3623,6 +3623,40 @@ hoppes over. Ingen fil måtte kjøres alene denne gangen.
 - Tekst på en kobling er ikke laget (eieren valgte det ikke).
 - Endret skriftstørrelse gjør ikke nodene som finnes, større.
 
+### 6.57 Versjon 0.6.0 er gitt ut (26.11.2026)
+
+Eieren svarte «Ja, gi ut 0.6.0» da alt han hadde meldt etter 0.5.0, var
+bygget: <https://github.com/SimenKode/lysark/releases/tag/v0.6.0>.
+
+- Filene: `Lysark-0.6.0-windows-installasjon.exe` (161 MB),
+  `Lysark-0.6.0-win.zip` (222 MB), `Lysark-0.6.0.AppImage` (203 MB), og
+  de tre filene med FFmpegs kildekode, de samme som før (samme
+  FFmpeg-bygg). De ligger også i `release/`.
+- Utgivelsen inneholder alt i 6.52 til 6.56. Prosjektformatet er 20; i
+  0.5.0 var det 16, så et prosjekt lagret med 0.6.0 kan ikke åpnes i
+  0.5.0.
+- Forsiden (README) beskriver det nye: formen ved import, nettverk og
+  streker, lagring i bakgrunnen, «Tid uten lyd», og «Rydd i
+  prosjektmappa». Ni bilder er tatt på nytt av testene og sett på før
+  de ble lagt inn; to er nye (`import.png`, `nettverk.png`). Ingen viser
+  USNs logo.
+- Før utgivelsen, på Linux Mint: typekontrollen er ren, hele
+  testsamlingen besto i én kjøring (694 tester, 2 hoppes over), og de
+  157 ende-til-ende-testene besto en gang til mot det pakkede
+  Linux-programmet (156, 1 hoppes over; utpakket, ikke selve
+  AppImage-fila).
+- Kontrollert: begge pakkene sier versjon 0.6.0 og har FFmpeg med seg.
+  De seks filene på GitHub har samme størrelse som dem på disken.
+- Økta ble avbrutt én gang midt i den første testkjøringen for
+  utgivelsen. Den ble kjørt på nytt fra start; ingenting ble pakket
+  eller pushet på en halv kjøring.
+- **Ikke prøvd i den utgitte utgaven:** Windows. Verken
+  installasjonsfila eller zip-fila for 0.6.0 er startet i VM-en, og
+  ingenting av det som er nytt i 0.6.0, er prøvd der. Selve
+  AppImage-fila er ikke startet. Ellers det samme som før: ekte kamera
+  og mikrofon, nedlastet fil på Windows, USN-PC, Openverse mot ekte
+  nett.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

@@ -14,47 +14,25 @@ PowerPoint eller PDF, og får
 begge i USNs visuelle profil. Programmet skal kunne brukes av en
 foreleser uten opplæring. Det styrer ordvalg og knapper.
 
-## Versjon 0.5.0 er gitt ut (26.11.2026)
+## Versjon 0.6.0 er gitt ut (26.11.2026)
 
-Du ba om en utgivelse, nye bilder på GitHub og et rullefelt som ikke
-stikker ut over den lilla kanten. Alt tre er gjort (historikken, 6.48).
-Installasjonsfila er prøvd i Windows-VM-en etterpå, rett over 0.4.0,
-og rullefeltet er sett på der (historikken, 6.49).
+Du ba om utgivelsen etter at alt du hadde meldt, var bygget.
 
-- **Utgivelsen:** <https://github.com/SimenKode/lysark/releases/tag/v0.5.0>
+- **Utgivelsen:** <https://github.com/SimenKode/lysark/releases/tag/v0.6.0>
 - **Du kan prøve den nå.** Filene ligger i `release/`:
-  `Lysark-0.5.0.AppImage` (Linux), og
-  `Lysark-0.5.0-windows-installasjon.exe` og `Lysark-0.5.0-win.zip`
+  `Lysark-0.6.0.AppImage` (Linux), og
+  `Lysark-0.6.0-windows-installasjon.exe` og `Lysark-0.6.0-win.zip`
   (Windows).
-- **Rullefeltet** i «Lær mer»-boksen er nå en smal lilla stripe som
-  holder seg innenfor de runde hjørnene. Det samme gjelder «Hjelp»,
-  «Bildekilder», boksen i byggeren og dialogene.
-- **Forsiden på GitHub** beskriver det 0.5.0 kan, med sju nye bilder
-  (to av dem er nye: et diagram og fanen «Steg»).
+- **Forsiden på GitHub** beskriver det 0.6.0 kan, med ni nye bilder (to
+  av dem er nye: valget ved import, og et nettverk).
 
-**Dette er nytt i 0.5.0, siden 0.4.0:**
+Versjon 0.5.0, gitt ut tidligere samme dag, hadde figurer og diagrammer,
+steg med bevegelse, fritt opptak, kapitler, merket bilde, figur i «Lær
+mer» og valget mellom «Behold utseendet» og «Gjør om til USN-stil».
 
-- **Valg ved import:** «Behold utseendet» eller «Gjør om til USN-stil»,
-  for både PowerPoint og PDF.
-- **PDF-import** der tekst, bilder og lenker er egne elementer.
-- **Kapitler** fra seksjoner og bokmerker.
-- **Figurer:** prosess, lagvis oppbygging, sammenligning, tidsakse,
-  søylediagram og linjediagram fra et skjema, og fri figur med piler
-  som fester seg til bokser.
-- **Diagrammer fra PowerPoint** blir Lysark-diagram med USN-stil.
-- **Steg med bevegelse:** ting tegnes, vokser, teller opp eller toner
-  inn. Et steg kan også markere, ta bort og zoome.
-- **Fritt opptak:** pil venstre, «Velg lysark», og et lysark kan vises
-  igjen. Hele opptaket er én film.
-- **Merket bilde** og **figur i «Lær mer»**.
-
-Detaljene står i historikken, 6.25 til 6.48.
-
-## Nytt etter 0.5.0, bygget 26.11.2026 (ikke gitt ut)
-
-Du meldte ni ting etter utgivelsen og svarte på fire spørsmål
-(historikken, 6.50 og 6.51). Alt er bygget av Opus-agenter etter
-designet mitt. Detaljene står i historikken, 6.52 til 6.56.
+**Dette er nytt i 0.6.0.** Du meldte ni ting etter 0.5.0 og svarte på
+fire spørsmål (historikken, 6.50 og 6.51). Alt er bygget av Opus-agenter
+etter designet mitt. Detaljene står i historikken, 6.52 til 6.57.
 
 | Du meldte | Slik ble det |
 | --- | --- |
@@ -132,8 +110,7 @@ designet mitt. Detaljene står i historikken, 6.52 til 6.56.
 
 ## Det jeg trenger fra deg
 
-Det nye er ikke gitt ut. Prøv det med `npm run dev` i mappa, eller be
-om en utgivelse, så ligger det i `release/`.
+Prøv 0.6.0 fra `release/`.
 
 1. **Les inn med kameraet på, og bytt lysark.** Står sirkelen fortsatt
    stille? Det er målt med prøvekamera, ikke med et ekte.
@@ -156,10 +133,10 @@ om en utgivelse, så ligger det i `release/`.
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd.
-2. **Windows:** ingenting av det som er bygget etter 0.5.0, er prøvd
-   der. Fra før gjenstår innlesing, fritt opptak, PDF-import og grupper.
-3. **Ny utgivelse** når du ber om det. Forsiden (README) og bildene må
-   da få med det nye.
+2. **Windows:** ingenting av det som er nytt i 0.6.0, er prøvd der,
+   heller ikke installasjonsfila. Fra før gjenstår innlesing, fritt
+   opptak, PDF-import og grupper.
+3. **Ny utgivelse** når du ber om det.
 4. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
    tavle, og på spørsmål til deg før den bygges.
 5. **Ikke bygget, fordi det er nye funksjoner:** ekte formler, SmartArt,
@@ -170,8 +147,8 @@ om en utgivelse, så ligger det i `release/`.
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (696) | Ja, alle besto 26.11 på det som er bygget etter 0.5.0 | – |
-| **Den pakkede utgaven 0.5.0** | Ja: 115 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Ja, 26.11:** installasjonsfila kjørt rett over 0.4.0, start, «Om Lysark», et prosjekt åpnet, og rullefeltet i «Lær mer» sett på. Zip-fila er ikke prøvd |
+| Automatiske tester (696) | Ja, alle besto 26.11 på 0.6.0 | – |
+| **Den pakkede utgaven 0.6.0** | Ja: 157 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Nei.** Verken installasjonsfila eller zip-fila for 0.6.0 er startet der. 0.5.0 ble installert og startet der 26.11 |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -191,19 +168,19 @@ om en utgivelse, så ligger det i `release/`.
 | **Figur i «Lær mer»** | Ja, i programmet, i forhåndsvisningen og målt i en videofil: en prosess. Gruppe og bilde med merker bare i enhetstester | **Ja, 26.11:** byggeren, velgeren, et søylediagram hentet inn, og boksen hos studenten |
 | **Linjediagram med navn langs aksen** | Ja, i programmet, og importen på fila fra PowerPoint | **Ja, 26.11:** sett i programmet og etter import. Valget «Tall / Navn» er ikke prøvd der |
 | **Bevegelser, og steg som markerer, tar bort og zoomer** | Ja, i programmet, hos studenten, og målt i en videofil. Ikke i innlesingsvinduet, ikke «Spill av» i en nettleser | **Ja, 26.11:** sett steg for steg i forhåndsvisningen, og målt i en videofil laget der. Stegene var laget på forhånd, ikke for hånd der |
-| **Kamerasirkelen under lysarkskifte** (etter 0.5.0) | Ja, målt med prøvekamera: sirkelen får bilder hele tiden | **Nei** |
-| **Lagring av opptak i bakgrunnen** (etter 0.5.0) | Ja, i det bygde programmet uten vindu | **Nei** |
-| **«Tid uten lyd», og lysark utenfor videoen** (etter 0.5.0) | Ja, også et opptak som hopper over et lysark, og målt lengde på videoen | **Nei** |
-| **Stående lysark, 9:16** (etter 0.5.0) | Ja: import av en stående PDF, «Forhåndsvis», HTML-fila, og en video målt til 1080 × 1920. Ikke innlesingsvinduet, ikke GIF | **Nei** |
-| **Streker med punkter, festepunkter og T-kryss** (etter 0.5.0) | Ja, liggende og stående, i programmet og målt i en videofil | **Nei** |
-| **Figuren «Nettverk»** (etter 0.5.0) | Ja, liggende og stående, i programmet, «Forhåndsvis» og HTML-fila | **Nei** |
-| **Tabeller fra PowerPoint** (etter 0.5.0) | Ja, på alle forelesningene dine, og bilder mot PDF-ene | **Nei** |
-| **«Rydd i prosjektmappa»** (etter 0.5.0) | Ja, der testen svarer for papirkurven | **Nei** |
+| **Kamerasirkelen under lysarkskifte** (nytt i 0.6.0) | Ja, målt med prøvekamera: sirkelen får bilder hele tiden | **Nei** |
+| **Lagring av opptak i bakgrunnen** (nytt i 0.6.0) | Ja, i det bygde programmet uten vindu | **Nei** |
+| **«Tid uten lyd», og lysark utenfor videoen** (nytt i 0.6.0) | Ja, også et opptak som hopper over et lysark, og målt lengde på videoen | **Nei** |
+| **Stående lysark, 9:16** (nytt i 0.6.0) | Ja: import av en stående PDF, «Forhåndsvis», HTML-fila, og en video målt til 1080 × 1920. Ikke innlesingsvinduet, ikke GIF | **Nei** |
+| **Streker med punkter, festepunkter og T-kryss** (nytt i 0.6.0) | Ja, liggende og stående, i programmet og målt i en videofil | **Nei** |
+| **Figuren «Nettverk»** (nytt i 0.6.0) | Ja, liggende og stående, i programmet, «Forhåndsvis» og HTML-fila | **Nei** |
+| **Tabeller fra PowerPoint** (nytt i 0.6.0) | Ja, på alle forelesningene dine, og bilder mot PDF-ene | **Nei** |
+| **«Rydd i prosjektmappa»** (nytt i 0.6.0) | Ja, der testen svarer for papirkurven | **Nei** |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
-advare) og en USN-styrt PC. **Av det som er nytt i 0.5.0, er dette prøvd på Windows:** «Behold
+advare) og en USN-styrt PC. **Av det som kom i 0.5.0, er dette prøvd på Windows:** «Behold
 utseendet» gjennom PowerPoint, kapitlene i lysarklista, og det som står
 med «Ja, 26.11» i tabellen. Fritt opptak, PDF-import, grupper og
 festede piler er ikke prøvd der.
@@ -283,8 +260,8 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 
 | Hva | Hvor |
 | --- | --- |
-| Utgivelsen, gitt ut 26.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.5.0> |
-| Programmet, ferdig pakket | `release/Lysark-0.5.0-windows-installasjon.exe` og `release/Lysark-0.5.0-win.zip` (Windows), `release/Lysark-0.5.0.AppImage` (Linux) |
+| Utgivelsen, gitt ut 26.11.2026 da du ba om det | <https://github.com/SimenKode/lysark/releases/tag/v0.6.0> |
+| Programmet, ferdig pakket | `release/Lysark-0.6.0-windows-installasjon.exe` og `release/Lysark-0.6.0-win.zip` (Windows), `release/Lysark-0.6.0.AppImage` (Linux) |
 | Koden | `~/Forelesningsverktoy/lysark`, offentlig på GitHub (<https://github.com/SimenKode/lysark>) |
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
@@ -302,13 +279,11 @@ Du fortsetter arbeidet med Lysark, et skrivebordsprogram (Electron) for
 forelesere. Det gjør forelesninger i PowerPoint eller PDF om til
 interaktiv HTML og video med stemmen min, i USNs visuelle profil.
 Prosjektet ligger i ~/Forelesningsverktoy/lysark, har sitt eget git-repo
-og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.5.0 er gitt
-ut (26.11.2026). Etter det er dette bygget, og ikke gitt ut: lagring av
-opptak i bakgrunnen, kamerasirkelen som sto stille ved lysarkskifte
-(rettet), stående lysark 9:16 valgt ved import, «Tid uten lyd» på
-lysarket, lysark som kan stå utenfor videoen, streker med punkter,
-festepunkter og T-kryss, figuren «Nettverk», tabeller fra PowerPoint som
-holder seg på lysarket, og «Rydd i prosjektmappa».
+og ligger offentlig på GitHub (SimenKode/lysark). Versjon 0.6.0 er gitt
+ut (26.11.2026), med stående lysark 9:16 valgt ved import, figuren
+«Nettverk», streker med punkter, festepunkter og T-kryss, lagring av
+opptak i bakgrunnen, «Tid uten lyd», lysark som kan stå utenfor videoen,
+og «Rydd i prosjektmappa». Ingenting er bygget etter den.
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -329,7 +304,8 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (kamerasirkelen når jeg bytter lysark,
+Det jeg har funnet siden sist (versjon 0.6.0 fra release/,
+kamerasirkelen når jeg bytter lysark,
 lagring i bakgrunnen, stående PDF og stående video, «Tid uten lyd»,
 nettverk og streker, tabellene, rullefeltet i «Lær mer», bevegelsene, figur i «Lær mer», figurene
 og diagrammene, en PowerPoint-fil med diagram, opptak med ekte kamera,
