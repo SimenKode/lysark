@@ -5,7 +5,7 @@
 // the student sees it in a window of 1280 x 720, like the builder's preview.
 import { STAGE } from '../format/constants';
 import type { Element as SceneElement } from '../format/schema';
-import { fitDrawings, placePopover, popoverWidth, renderMore } from './more';
+import { fitDrawings, placePopover, popoverWidth, popoverWish, renderMore } from './more';
 import { moreCorner, moreOf, moreTitle, type RenderContext } from './scene';
 
 /** The student's window the box is drawn for: the slide at two thirds of its size. */
@@ -80,7 +80,8 @@ export function createPopover(
     x: corner.endsWith('r') ? anchor.right : anchor.left,
     y: corner.startsWith('t') ? anchor.top : anchor.bottom,
   };
-  const width = popoverWidth(anchor, POP_VIEW.width);
+  const wish = popoverWish(more);
+  const width = popoverWidth(anchor, POP_VIEW.width, wish.preferred, wish.least);
   panel.style.width = `${width}px`;
   panel.style.left = '16px';
   panel.style.top = '16px';

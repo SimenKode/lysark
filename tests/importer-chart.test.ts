@@ -156,19 +156,65 @@ describe('a chart in a PowerPoint file', () => {
     ]);
     expect(said(result)).toEqual([CONVERTED]);
 
-    // With names along the axis PowerPoint gives them the same distance. Lysark
-    // would have to make up where they stand, so the chart stays as it was.
+    // With names along the axis PowerPoint gives them the same distance, and
+    // so does Lysark: the diagram keeps the names, and its points stand in order.
     const named = load(
       space(
         `<c:lineChart><c:grouping val="standard"/>` +
-          series('En', strings(['A', 'B', 'C']), [1, 2, 3]) +
+          series('En', strings(['A', 'B', 'C']), [1, null, 3]) +
+          series('To', strings(['A', 'B', 'C']), [3, 2, 1]) +
           `</c:lineChart>` +
-          axes(),
+          axes(title('X')),
       ),
     );
-    expect(figureOf(named)).toBeUndefined();
-    expect(said(named)).toEqual([NOT]);
-    // So does one with dates along the axis, and one whose series has no line.
+    const byName = figureOf(named)!;
+    expect(byName).toMatchObject({ template: 'line', along: 'names', xTitle: 'X' });
+    expect(byName.items.map((row) => [row.text, row.x, row.values])).toEqual([
+      ['A', undefined, [1, 3]],
+      ['B', undefined, [null, 2]],
+      ['C', undefined, [3, 1]],
+    ]);
+    const namedScene = named.project.scenes[0]!;
+    const namedCurves = partsOf(namedScene, byName.id).filter(
+      (el): el is ShapeElement => el.type === 'shape' && el.geometry === 'curve',
+    );
+    // Each point stands in the middle of its third of the plot.
+    expect(namedCurves.map((el) => el.points!.map((point) => point?.[0]))).toEqual([
+      [0.16667, undefined, 0.83333],
+      [0.16667, 0.5, 0.83333],
+    ]);
+    expect(said(named)).toEqual([CONVERTED]);
+    expect(followTemplates(structuredClone(namedScene))).toBe(false);
+    // A name that is not a number among numbers: names, all of them.
+    const mixed = figureOf(
+      load(
+        space(
+          `<c:lineChart><c:grouping val="standard"/>` +
+            series('En', strings(['1', 'B', '3']), [1, 2, 3]) +
+            `</c:lineChart>` +
+            axes(),
+        ),
+      ),
+    )!;
+    expect(mixed.along).toBe('names');
+    expect(mixed.items.map((row) => row.text)).toEqual(['1', 'B', '3']);
+    // Nothing along the axis at all: PowerPoint numbers the points from 1.
+    const bare = figureOf(
+      load(
+        space(
+          `<c:lineChart><c:grouping val="standard"/>` +
+            `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx>${strings(['En'])}</c:tx>` +
+            `<c:val>${numbers([4, 5])}</c:val></c:ser></c:lineChart>` +
+            axes(),
+        ),
+      ),
+    )!;
+    expect(bare.along).toBe('names');
+    expect(bare.items.map((row) => [row.text, row.values])).toEqual([
+      ['1', [4]],
+      ['2', [5]],
+    ]);
+    // A chart with dates along the axis stays as it was, and so does one whose series has no line.
     const dated = space(
       `<c:lineChart><c:grouping val="standard"/>${series('En', numbers([1, 2]), [1, 2])}</c:lineChart>` +
         `<c:dateAx><c:axId val="1"/></c:dateAx><c:valAx><c:axId val="2"/><c:axPos val="l"/></c:valAx>`,

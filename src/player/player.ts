@@ -9,6 +9,7 @@ import {
   fitDrawings,
   placePopover,
   popoverWidth,
+  popoverWish,
   renderCredit,
   renderMore,
 } from '../shared/render/more';
@@ -153,6 +154,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   let stepsShown = 0;
   let frame = 0;
   let moreOpener: HTMLElement | null = null;
+  /** How wide the box that is open would like to be. */
+  let panelWish = popoverWish(undefined);
   /** Videos the voice has started, so they can be stopped with it. */
   const voiceVideos = new Set<HTMLVideoElement>();
   /** When (on the slide) the box the student put away during "Spill av" was opened. */
@@ -441,6 +444,8 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const width = popoverWidth(
       { left: anchor.left - area.left, right: anchor.right - area.left },
       area.width,
+      panelWish.preferred,
+      panelWish.least,
     );
     panel.style.setProperty('--lp-pop-w', `${width}px`);
     panel.style.setProperty('--lp-pop-h', `${area.height - 32}px`);
@@ -777,6 +782,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     if (moreOpener && moreOpener !== opener) moreOpener.setAttribute('aria-expanded', 'false');
     moreOpener = opener;
     panelTitle.textContent = moreTitle(ctx, element);
+    panelWish = popoverWish(more);
     panelBody.replaceChildren(renderMore(ctx, more));
     activateWebFrames(panelBody);
     panel.hidden = false;

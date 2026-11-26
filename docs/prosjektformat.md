@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 14), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 15), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -52,6 +52,22 @@ stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
 
+## Format 15: navn langs aksen i et linjediagram
+
+```ts
+interface FigureElement {
+  // ... som før
+  along?: 'names';   // linjediagram: navn langs den vannrette aksen
+}
+```
+
+Uten `along` står hvert punkt i et linjediagram der radens `x` sier.
+Med `along: 'names'` står radene i tabellens rekkefølge, med lik avstand,
+hver over navnet sitt (`text`), slik PowerPoints vanlige linjediagram er.
+Eieren valgte dette 26.11.2026. `x` beholdes når det byttes, så ingenting
+går tapt ved å bytte fram og tilbake. Eldre prosjekter løftes ved at
+versjonsnummeret økes.
+
 ## Format 14: figur i en «Lær mer»-boks
 
 En «Lær mer»-boks kan holde en figur. Figuren lages på et lysark og
@@ -87,7 +103,8 @@ type MoreBlock =
   boksens hvite flate. Tegningen er i lysarkets egne piksler og krympes
   til bredden boksen har, men blir aldri større enn tre firedeler av
   størrelsen på lysarket (hele størrelsen når studenten har utvidet
-  boksen).
+  boksen). En boks med en figur er bredere enn andre bokser (760 mot
+  560), så figuren kan leses; det valgte eieren 26.11.2026.
 - Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 13: søyle- og linjediagram

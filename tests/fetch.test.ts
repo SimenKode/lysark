@@ -19,7 +19,13 @@ import { fetchFigure, figuresOn } from '../src/shared/layout/fetch';
 import { connect, followFigures, groupElements } from '../src/shared/layout/groups';
 import { addMark, followMarks } from '../src/shared/layout/marks';
 import { NEW_FIGURE_SIZE, followTemplates, newFigure } from '../src/shared/layout/templates';
-import { fitDrawings, moreAssets, renderMore } from '../src/shared/render/more';
+import {
+  fitDrawings,
+  moreAssets,
+  popoverWidth,
+  popoverWish,
+  renderMore,
+} from '../src/shared/render/more';
 import { createPopover } from '../src/shared/render/popover';
 import { SCENE_STRINGS, type RenderContext } from '../src/shared/render/scene';
 import { THEME_REN } from '../src/shared/theme/theme';
@@ -240,7 +246,7 @@ describe('a figure in a "Lær mer" box', () => {
     old.version = 13;
     old.scenes[0]!.elements.pop();
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(14);
+    expect(FORMAT_VERSION).toBe(15);
   });
 
   it('is drawn by the code that draws the slide, in a holder that makes it fit', () => {
@@ -311,6 +317,21 @@ describe('a figure in a "Lær mer" box', () => {
       delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
       body.remove();
     }
+  });
+
+  it('makes its box wider, so that the figure can be read', () => {
+    const { scene } = withBox();
+    const wish = popoverWish(scene.elements.at(-1)!.more);
+    expect(wish).toEqual({ preferred: 760, least: 560 });
+    expect(popoverWish({ title: '', blocks: [{ id: 'b', kind: 'heading', text: 'A' }] })).toEqual({
+      preferred: 560,
+      least: 400,
+    });
+    const width = (anchor: { left: number; right: number }): number =>
+      popoverWidth(anchor, 1280, wish.preferred, wish.least);
+    expect(width({ left: 80, right: 413 })).toBe(760); // room enough beside the element
+    expect(width({ left: 80, right: 640 })).toBe(608); // a little less room: narrower, beside it
+    expect(width({ left: 300, right: 900 })).toBe(760); // no room beside it: over the slide
   });
 
   it('brings its pictures and its typefaces along in the export', () => {

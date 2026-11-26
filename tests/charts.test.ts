@@ -25,6 +25,8 @@ import {
   parseNumber,
   pasteTable,
   removeSeries,
+  rowsByName,
+  setAlong,
 } from '../src/shared/layout/charts';
 import { followFigures } from '../src/shared/layout/groups';
 import {
@@ -476,6 +478,74 @@ describe('a line diagram', () => {
     expect(figure.items.map((row) => row.values)).toEqual([[4], [3], [null], [null], [9]]);
     expect(scene.timeline).toHaveLength(1);
   });
+
+  it('can have names along its axis, with the same distance between the points', () => {
+    const { scene, figure } = slide('line', '0\t1\n1\t\n4\t3');
+    expect(rowsByName(figure)).toBe(false);
+    setAlong(figure, 'names');
+    settle(scene);
+    expect(rowsByName(figure)).toBe(true);
+    // What stood as x is now the name of each row; the x is kept, should the lecturer go back.
+    expect(figure.items.map((row) => [row.text, row.x])).toEqual([
+      ['0', 0],
+      ['1', 1],
+      ['4', 4],
+    ]);
+    figure.items.forEach((row, i) => (row.text = ['A', 'B', 'C'][i]!));
+    figure.items[1]!.values = [2];
+    settle(scene);
+    // Each point stands in the middle of its third of the plot, whatever its x was.
+    const curve = part(scene, figure, `curve:${figure.series![0]!.id}`);
+    expect(curve.points).toEqual([
+      [0.16667, 1],
+      [0.5, 0.5],
+      [0.83333, 0],
+    ]);
+    // The names stand under the points, and no numbers along the axis.
+    const labels = figure.items.map((row) => part<TextElement>(scene, figure, `label:${row.id}`));
+    expect(labels.map(said)).toEqual(['A', 'B', 'C']);
+    labels.forEach((label, i) => {
+      const point = curve.box.x + curve.box.w * curve.points![i]![0];
+      expect(Math.abs(label.box.x + label.box.w / 2 - point)).toBeLessThan(2);
+    });
+    expect(kinds(scene, figure)).not.toContain('xtick');
+    // A missing number is a break in the curve, as with numbers along the axis.
+    figure.items[1]!.values = [null];
+    settle(scene);
+    expect(part(scene, figure, `curve:${figure.series![0]!.id}`).points).toEqual([
+      [0.16667, 1],
+      null,
+      [0.83333, 0],
+    ]);
+    // What is pasted from a spreadsheet: the first column is names now.
+    pasteTable(figure, 0, 0, 'Uke 1\t5\nUke 2\t6', newId);
+    expect(figure.items.map((row) => [row.text, row.values])).toEqual([
+      ['Uke 1', [5]],
+      ['Uke 2', [6]],
+      ['C', [3]],
+    ]);
+    expect(chartTable(figure).rows).toEqual([
+      ['Uke 1', '5'],
+      ['Uke 2', '6'],
+      ['C', '3'],
+    ]);
+    // A name written on the slide goes into the table.
+    settle(scene);
+    const first = part<TextElement>(scene, figure, `label:${figure.items[0]!.id}`);
+    expect(writePart(scene, first, richText('Uke A'))).toBe(true);
+    expect(figure.items[0]!.text).toBe('Uke A');
+    // Back to numbers: a name that is a number becomes the x where there was none.
+    figure.items.push({ id: newId(), text: '7,5', values: [1], x: null });
+    setAlong(figure, 'numbers');
+    expect(figure.along).toBeUndefined();
+    expect(figure.items.map((row) => row.x)).toEqual([0, 1, 4, 7.5]);
+    setAlong(figure, 'names');
+    expect(() =>
+      parseProject(
+        JSON.parse(JSON.stringify({ ...newProject('A'), scenes: [{ ...scene }] })) as unknown,
+      ),
+    ).not.toThrow();
+  });
 });
 
 describe('a diagram, drawn and stored', () => {
@@ -563,6 +633,6 @@ describe('a diagram, drawn and stored', () => {
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 12;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(14);
+    expect(FORMAT_VERSION).toBe(15);
   });
 });

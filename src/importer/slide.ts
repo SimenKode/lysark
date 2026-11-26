@@ -973,8 +973,8 @@ class SlideImporter {
   }
 
   /**
-   * A chart that Lysark can draw itself (standing bars, or lines with numbers
-   * along the axis) becomes a diagram with the chart's own numbers, which the
+   * A chart that Lysark can draw itself (standing bars, or lines) becomes a
+   * diagram with the chart's own numbers and names, which the
    * lecturer can change (the owner's choice, 26.11.2026). Returns false for
    * any other chart; it is then kept as the picture it was.
    */
@@ -1014,10 +1014,19 @@ class SlideImporter {
         id: newId('e'),
         text: row.text,
         values: row.values,
-        ...(table.template === 'line' ? { x: row.x } : {}),
+        ...(table.template === 'line' && !table.along ? { x: row.x } : {}),
       })),
     };
-    for (const key of ['xTitle', 'yTitle', 'xMin', 'xMax', 'yMin', 'yMax', 'dots'] as const) {
+    for (const key of [
+      'xTitle',
+      'yTitle',
+      'xMin',
+      'xMax',
+      'yMin',
+      'yMax',
+      'dots',
+      'along',
+    ] as const) {
       if (table[key] !== undefined) Object.assign(figure, { [key]: table[key] });
     }
     this.elements.push(figure);

@@ -276,6 +276,36 @@ describe.skipIf(!built)('bar and line diagrams, end to end', () => {
     ]);
     expect(part(scene, `curve:${two!.id}`).points).toHaveLength(3);
 
+    // Names along the axis instead: the points stand with the same distance between them.
+    const along = page.locator('fieldset.segmented', { hasText: 'Langs den vannrette aksen' });
+    expect(await along.getByRole('button', { name: 'Tall' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    await along.getByRole('button', { name: 'Navn' }).click();
+    // What stood as x is the name of each row until another is written.
+    await expect.poll(() => page.getByLabel('Navn på rad 3').inputValue()).toBe('4');
+    await page.getByLabel('Navn på rad 1').fill('A');
+    expect(await page.getByLabel('Laveste tall på den vannrette aksen').count()).toBe(0);
+    scene = await save(1);
+    figure = figureIn(scene);
+    expect(figure.along).toBe('names');
+    expect(part(scene, `curve:${one!.id}`).points!.map((point) => point![0])).toEqual([
+      0.16667, 0.5, 0.83333,
+    ]);
+    expect(kind(scene, 'label').map((el) => plainText((el as TextElement).content))).toEqual([
+      'A',
+      '1',
+      '4',
+    ]);
+    expect(kind(scene, 'xtick')).toHaveLength(0);
+    expect(settled(scene)).toBe(true);
+    await shot(page, 'd04-linjer-med-navn');
+    // And back to numbers: the points stand where their numbers say again.
+    await along.getByRole('button', { name: 'Tall' }).click();
+    scene = await save(1);
+    expect(figureIn(scene).along).toBeUndefined();
+    expect(part(scene, `curve:${one!.id}`).points!.map((point) => point![0])).toEqual([0, 0.25, 1]);
+
     // A series taken away, and the diagram made into a free figure: the curve is a shape.
     await page.getByRole('button', { name: 'Fjern serie 2' }).click();
     await page.getByRole('button', { name: 'Gjør om til fri figur' }).click();

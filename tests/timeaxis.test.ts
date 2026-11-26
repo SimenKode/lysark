@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { newProject, newScene, plainText, richText } from '../src/shared/format/factory';
 import {
   parseProject,
+  FORMAT_VERSION,
   type Box,
   type Element,
   type FigureElement,
@@ -450,6 +451,6 @@ describe('a time axis, drawn and stored', () => {
     expect(settle(parsed.scenes[0]!)).toBe(false);
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 11;
-    expect(parseProject(old).version).toBe(14);
+    expect(parseProject(old).version).toBe(FORMAT_VERSION);
   });
 });

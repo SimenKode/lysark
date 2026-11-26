@@ -122,6 +122,15 @@ button[aria-expanded='true'] {
   background: var(--indigo);
   color: #fff;
 }
+/* A button that is pressed in keeps its look while the pointer rests on it.
+   Without this its white text stands on the light colour of a button that is
+   pointed at, and cannot be read just after it has been pressed. */
+button[aria-pressed='true']:hover:not(:disabled, .swatch, .track-pause, .media-tile, .tl-clip),
+button[aria-expanded='true']:hover:not(:disabled, .recorder-pick),
+.swatch.swatch-none[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--indigo);
+  color: #fff;
+}
 button.link-button {
   min-height: 0;
   padding: 0;

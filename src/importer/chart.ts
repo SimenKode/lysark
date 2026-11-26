@@ -4,10 +4,13 @@
 // embedded spreadsheet is never opened.
 //
 // Only what Lysark draws truthfully is read: standing bars side by side, and
-// lines whose points have numbers along the horizontal axis. Anything else
-// (stacked or lying bars, pie, area, 3D, several kinds in one chart, a line
-// chart with names or dates along the axis, points without lines) gives
-// `undefined`, and the caller keeps the chart as the picture it was.
+// lines. A line chart with numbers along its axis has its points placed by
+// them; one with names along it (PowerPoint's ordinary line chart) keeps the
+// names, with the same distance between the points, as PowerPoint draws it
+// (the owner's choice, 26.11.2026). Anything else (stacked or lying bars,
+// pie, area, 3D, several kinds in one chart, a line chart with dates along
+// the axis, points without lines) gives `undefined`, and the caller keeps
+// the chart as what it was.
 import { attr, child, children, descend, type XmlNode } from './xml';
 
 export interface ChartTable {
@@ -24,6 +27,8 @@ export interface ChartTable {
   xMin?: number;
   xMax?: number;
   dots?: boolean;
+  /** A line diagram whose rows stand by name, with the same distance between them. */
+  along?: 'names';
 }
 
 /** The text of a rich-text title, its paragraphs joined by spaces. */
@@ -132,23 +137,23 @@ export function readChart(root: XmlNode | undefined): ChartTable | undefined {
       ...(y.max === undefined ? {} : { yMax: y.max }),
     };
     if (bars) return table({ template: 'bars', rows, ...common });
-    // A line chart in PowerPoint has names along the axis, with the same
-    // distance between them. Only when every name is a number can the points
-    // be placed by it; otherwise the picture is the truthful one.
     if (all.some(withoutLine)) return undefined;
-    for (const row of rows) {
-      row.x = /^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(row.text)
-        ? Number(row.text)
-        : null;
-      if (row.x === null) return undefined;
-      row.text = '';
+    const dots = hasMarkers(chart, all, false) ? { dots: true } : {};
+    // Numbers along the axis: the points stand where the numbers say.
+    const isNumber = (text: string): boolean =>
+      /^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(text);
+    if (names && rows.every((row) => isNumber(row.text))) {
+      for (const row of rows) {
+        row.x = Number(row.text);
+        row.text = '';
+      }
+      return table({ template: 'line', rows, ...common, ...dots });
     }
-    return table({
-      template: 'line',
-      rows,
-      ...common,
-      ...(hasMarkers(chart, all, false) ? { dots: true } : {}),
-    });
+    // Names along the axis, as in PowerPoint's ordinary line chart: the
+    // points stand in order, with the same distance between them. A chart
+    // with nothing along its axis is numbered by PowerPoint, from 1.
+    if (!names) rows.forEach((row, i) => (row.text = String(i + 1)));
+    return table({ template: 'line', along: 'names', rows, ...common, ...dots });
   }
 
   if (chart.name === 'c:scatterChart') {

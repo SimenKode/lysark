@@ -331,9 +331,10 @@ describe.skipIf(!built || !existsSync(ffmpeg))('a figure in a "Lær mer" box, in
       (el): el is ShapeElement => el.type === 'shape' && el.fill === 'lilla',
     );
     expect(boxes).toHaveLength(3);
-    // The box is 560 wide in the student's window of 1280; its edge and its
-    // margins take 52 of that, and the window is drawn 1.5 times as large.
-    const inBox = 560 - 52;
+    // A box with a figure is 760 wide in the student's window of 1280; its
+    // edge and its margins take 52 of that, and the window is drawn 1.5 times
+    // as large.
+    const inBox = 760 - 52;
     expect(copy.frame.w * 0.75).toBeGreaterThan(inBox);
     const left = Math.min(...boxes.map((el) => el.box.x));
     const right = Math.max(...boxes.map((el) => el.box.x + el.box.w));

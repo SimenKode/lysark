@@ -47,6 +47,8 @@ import {
   parseNumber,
   pasteTable,
   removeSeries,
+  rowsByName,
+  setAlong,
 } from '../../shared/layout/charts';
 import {
   figureFontSize,
@@ -763,6 +765,8 @@ function ChartFields({ figure }: { figure: FigureElement }) {
   const updateScene = useStore((s) => s.updateScene);
   const change = useFigureChange(figure);
   const bars = figure.template === 'bars';
+  /** The first column holds names: a bar diagram, and a line diagram with names along its axis. */
+  const named = rowsByName(figure);
   const series = figure.series ?? [];
   const seriesName = (k: number): string => series[k]!.name.trim() || `Serie ${k + 1}`;
   /** Several cells copied from a spreadsheet are laid into the table from the cell they are pasted in. */
@@ -810,11 +814,34 @@ function ChartFields({ figure }: { figure: FigureElement }) {
         Diagrammet tegner seg selv fra tallene du skriver her. Du kan lime inn rett fra Excel. Dra i
         rammen rundt diagrammet for å flytte det eller endre størrelsen.
       </p>
+      {!bars && (
+        <fieldset className="segmented">
+          <legend>Langs den vannrette aksen</legend>
+          <div className="segmented-row">
+            <button
+              type="button"
+              aria-pressed={!named}
+              title="Punktene står der tallet sier, så avstanden mellom dem følger tallene."
+              onClick={() => change((f) => setAlong(f, 'numbers'))}
+            >
+              Tall
+            </button>
+            <button
+              type="button"
+              aria-pressed={named}
+              title="Punktene står med lik avstand, hvert over navnet sitt."
+              onClick={() => change((f) => setAlong(f, 'names'))}
+            >
+              Navn
+            </button>
+          </div>
+        </fieldset>
+      )}
       <div className="chart-table-wrap">
         <table className="chart-table">
           <thead>
             <tr>
-              <th scope="col">{bars ? 'Navn' : 'X'}</th>
+              <th scope="col">{named ? 'Navn' : 'X'}</th>
               {series.map((one, k) => (
                 <th key={one.id} scope="col">
                   <input
@@ -837,7 +864,7 @@ function ChartFields({ figure }: { figure: FigureElement }) {
             {figure.items.map((row, r) => (
               <tr key={row.id}>
                 <td>
-                  {bars ? (
+                  {named ? (
                     <input
                       type="text"
                       aria-label={`Navn på rad ${r + 1}`}
@@ -959,12 +986,14 @@ function ChartFields({ figure }: { figure: FigureElement }) {
       <p className="hint">
         {bars
           ? 'Søylene starter alltid på null. Aksen følger ellers tallene, om du ikke skriver noe her.'
-          : 'Aksene følger tallene, om du ikke skriver noe her.'}
+          : named
+            ? 'Den loddrette aksen følger tallene, om du ikke skriver noe her.'
+            : 'Aksene følger tallene, om du ikke skriver noe her.'}
       </p>
       {end('yMin', 'Laveste tall på den loddrette aksen')}
       {end('yMax', 'Høyeste tall på den loddrette aksen')}
-      {!bars && end('xMin', 'Laveste tall på den vannrette aksen')}
-      {!bars && end('xMax', 'Høyeste tall på den vannrette aksen')}
+      {!named && end('xMin', 'Laveste tall på den vannrette aksen')}
+      {!named && end('xMax', 'Høyeste tall på den vannrette aksen')}
       {!bars && (
         <label className="check">
           <input

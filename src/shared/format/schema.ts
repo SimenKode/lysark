@@ -25,8 +25,9 @@ export const FORMAT_NAME = 'lysark';
  * 12: the time axis among the figures with a form.
  * 13: bar and line diagrams, and the curve they draw.
  * 14: a "Lær mer" box can hold a figure fetched from a slide.
+ * 15: a line diagram can have names along its axis.
  */
-export const FORMAT_VERSION = 14;
+export const FORMAT_VERSION = 15;
 
 export { STAGE } from './constants';
 
@@ -444,6 +445,14 @@ const figureElement = z.object({
   xMax: z.number().optional(),
   /** For a line diagram: a dot at each point. */
   dots: z.boolean().optional(),
+  /**
+   * For a line diagram: names stand along the horizontal axis instead of
+   * numbers (the owner's choice, 26.11.2026). The rows then stand in the
+   * order of the table, with the same distance between them, each over its
+   * name (`text`), as PowerPoint's own line charts do. When absent, each
+   * row's points stand where its `x` says.
+   */
+  along: z.literal('names').optional(),
 });
 
 /**

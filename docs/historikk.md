@@ -2787,7 +2787,7 @@ ble tettet.
 | --- | --- | --- |
 | 1 | Stående søyler, urørt (tre serier, fire navn) | Søylediagram, alle tolv tallene riktige |
 | 2 | Stående søyler, to serier, et hull, et negativt tall, overskrift, aksetekster, høyeste tall 10 | Søylediagram med alt dette |
-| 3 | Linjediagram med navn langs aksen | **Ikke gjort om** (med vilje, se under) |
+| 3 | Linjediagram med navn langs aksen | **Ikke gjort om** (med vilje den gangen, se under; gjøres om fra 6.44) |
 | 4 | Linjediagram med tall langs aksen, et hull | Linjediagram, punktene på 0, 1 og 4 |
 | 5 | Det samme med prikker, overskrift og aksetekster | Linjediagram med prikker og tekstene |
 | 6 | Punktdiagram med rette linjer, x fra 0 til 8 | Linjediagram med aksen fra 0 til 8 |
@@ -2807,7 +2807,8 @@ ble tettet.
   og så videre) og gjøres derfor ikke om. Du valgte i 6.37 at et
   linjediagram i Lysark har tall langs aksen, plassert etter verdi.
   Skriver foreleseren tall i første kolonne (årstall, for eksempel),
-  gjøres det om. Dette er spørsmål 2 i 6.43.
+  gjøres det om. Dette ble spørsmål 2 i 6.43, og er endret i 6.44:
+  linjediagram med navn gjøres nå om.
 
 **Prøvd:** PowerPoint 16.0 (bygg 20625) i VM-en laget fila. Importen ble
 kjørt på Linux Mint, av testen, som sammenligner tallene. Fila er også
@@ -2874,7 +2875,8 @@ Bygget på svaret i 6.32, spørsmål 3: figuren **hentes fra et lysark**.
 **Svakheten du bør se selv:** en figur som er bred på lysarket, blir
 **liten i boksen**. En prosess i full bredde krympes til under en
 tredel, og teksten i boksene blir omtrent 10 piksler høy hos studenten.
-«Utvid» gjør den stor og tydelig. Dette er spørsmål 1 i 6.43.
+«Utvid» gjør den stor og tydelig. Dette ble spørsmål 1 i 6.43, og
+boksen er gjort bredere i 6.44.
 
 **To feil funnet av skjermbildene og rettet før noe ble sendt ut:**
 miniatyren i velgeren var tom (den ble målt før dialogen var åpnet), og
@@ -2935,20 +2937,63 @@ seg hver gang. Før: fire av fem kjøringer hang.
 ingen vinduer på skjermen. Jeg startet den ikke i denne økta og har ikke
 rørt den; si fra om jeg skal stoppe den.
 
-### 6.43 Spørsmål som venter på svar (26.11.2026)
+### 6.43 Fire spørsmål, og eierens svar (26.11.2026)
 
-Samlet her, hvert med én anbefaling. Svarene avgjør hva som bygges
-videre.
+Stilt samlet, hvert med én anbefaling. Eieren svarte samme dag, og
+valgte anbefalingen på alle fire:
 
-1. **Skal «Lær mer»-boksen bli bredere når den har en figur i seg?**
-   Anbefaling: **ja.** I dag er boksen 560 bred hos studenten, og en
-   bred figur blir liten. Bredere boks dekker mer av lysarket.
-2. **Skal et linjediagram kunne ha navn langs aksen, med lik avstand
-   mellom punktene?** Anbefaling: **ja, som et valg ved siden av tall.**
-   Da kan PowerPoints vanlige linjediagram gjøres om ved import. I dag
-   forsvinner det fra lysarket med en merknad.
-3. **Bevegelsene** (neste punkt på lista). Fire spørsmål stilles før de
-   bygges; se sluttrapporten fra økta.
+| Spørsmål | Svar |
+| --- | --- |
+| Skal «Lær mer»-boksen bli bredere når den har en figur i seg? | **Ja, bredere boks.** (De andre valgene var «som nå» og «åpne den utvidet».) |
+| Skal et linjediagram kunne ha navn langs aksen, med lik avstand mellom punktene? | **Ja, som et valg** ved siden av tall. Da kan PowerPoints vanlige linjediagram gjøres om ved import |
+| Hvordan skal du velge hvilken bevegelse et element får når det kommer inn i et steg? | **Programmet foreslår:** streker og piler tegnes, søyler vokser fra null, store tall telles opp, resten toner og glir inn som nå. Du kan bytte bevegelse, og velge rask, vanlig eller langsom, i egenskapene for steget |
+| Hvordan skal markere, forsvinne og zoome lages? | **Som egne steg:** et steg kan vise noe (som nå), markere noe, ta noe bort, eller zoome. Zoom: du drar en ramme på lysarket, og et senere steg zoomer ut igjen |
+
+### 6.44 Bredere boks for figur, og linjediagram med navn langs aksen (26.11.2026)
+
+Bygget rett etter svarene i 6.43.
+
+**Bredere boks.** En «Lær mer»-boks som har en figur i seg, er nå 760
+bred hos studenten i stedet for 560 (i et vindu på 1280). Har elementet
+litt mindre plass ved siden av seg, gjøres boksen smalere for å få plass
+der, men ikke smalere enn 560; ellers legger den seg oppå lysarket. Det
+gjelder i byggeren, hos studenten, i videoen og i innlesingsvinduet.
+Prosessen fra 6.41 blir en tredel større enn før.
+
+**Linjediagram med navn langs aksen.**
+
+- Skjemaet for et linjediagram har fått valget **«Langs den vannrette
+  aksen: Tall / Navn»**. Med «Navn» er første kolonne i tabellen navn, og
+  punktene står med lik avstand, hvert over navnet sitt. «Tall» er som
+  før.
+- Bytter du, beholdes det du har skrevet: x-tallet blir navnet der det
+  ikke står noe navn, og et navn som er et tall, blir x-tallet der det
+  mangler. Du kan bytte fram og tilbake uten å miste noe.
+- Laveste og høyeste tall på den vannrette aksen vises ikke med «Navn»;
+  de har ingen mening der.
+- **Importen:** PowerPoints linjediagram med navn langs aksen blir nå et
+  linjediagram med de samme navnene. Står det bare tall langs aksen,
+  plasseres punktene etter tallene, som før. Er ett av dem ikke et tall,
+  blir alle navn. Har diagrammet ingenting langs aksen, nummererer
+  PowerPoint punktene fra 1, og det gjør Lysark også. Datoer langs aksen
+  gjøres fortsatt ikke om.
+- Formatet er 15.
+
+**Rettet i samme slengen:** en knapp som var trykket inn (for eksempel
+«Navn» rett etter at du trykket på den), fikk hvit tekst på lys bunn
+så lenge pekeren sto over den, og kunne ikke leses. Den beholder nå den
+mørke fargen. Feilen var gammel og gjaldt alle slike knapper.
+
+**Prøvd på Linux Mint:** enhetstester for oppsettet, byttet og
+innlimingen (`tests/charts.test.ts`), importen på filer bygd i testen og
+på fila PowerPoint laget i VM-en (lysark 3 er nå et linjediagram med
+navnene A, B og C), og valget i det bygde programmet uten vindu
+(`tests/e2e-charts.test.ts`). To skjermbilder er sett på: diagrammet
+med navn, og den bredere boksen hos studenten.
+
+**Ikke prøvd:** Windows. Mange eller lange navn (de kan gå over
+hverandre, som under søyler). Den rettede knappefargen er ikke sett på
+et skjermbilde etter rettingen.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

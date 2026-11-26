@@ -15,6 +15,7 @@ import {
   hasCredit,
   placePopover,
   popoverWidth,
+  popoverWish,
   renderMore,
 } from '../../shared/render/more';
 import { SCENE_STRINGS, moreCorner, moreTitle, renderDrawing } from '../../shared/render/scene';
@@ -667,7 +668,8 @@ function Preview({ element }: { element: Element }) {
         x: corner.endsWith('r') ? anchor.right : anchor.left,
         y: corner.startsWith('t') ? anchor.top : anchor.bottom,
       };
-      const width = popoverWidth(anchor, VIEW.width);
+      const wish = popoverWish(more);
+      const width = popoverWidth(anchor, VIEW.width, wish.preferred, wish.least);
       const next = placePopover(anchor, from, VIEW, {
         width,
         height: Math.min(el.offsetHeight, VIEW.height - 32),
@@ -683,7 +685,7 @@ function Preview({ element }: { element: Element }) {
     observer.observe(el);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [box.x, box.y, box.w, box.h, more?.corner, shown]);
+  }, [box.x, box.y, box.w, box.h, more?.corner, popoverWish(more).preferred, shown]);
 
   return (
     <section className="builder-preview" aria-label="Slik ser studenten det">

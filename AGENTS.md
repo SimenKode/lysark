@@ -334,14 +334,23 @@ instead of choosing silently.
   For those who cannot see it, the numbers are in the HTML as a table
   that is read and not shown. `charts.ts` takes only types from the
   format, like `rows.ts`.
+- A line diagram has numbers along its axis, with each point where its x
+  says, or names, with the same distance between the points
+  (`FigureElement.along`, `rowsByName` and `setAlong` in `charts.ts`). The
+  owner first chose numbers only, and added names on 26.11.2026, when a
+  file from PowerPoint showed that PowerPoint's ordinary line chart has
+  names and was lost at import.
 - A chart in a PowerPoint file becomes such a diagram when it is made
   over into the theme and Lysark can draw it truthfully (the owner's
-  choice, 26.11.2026): standing bars side by side, and lines whose
-  points have numbers along the axis (`src/importer/chart.ts`). Every
-  other chart stays what it was. A line chart with names along its axis
-  is not made over: where its points stand would have to be made up.
-  A presentation that keeps its look keeps its charts in the picture of
-  the page; the owner chose that too (26.11.2026).
+  choice, 26.11.2026): standing bars side by side, and lines
+  (`src/importer/chart.ts`). A line chart with numbers along its axis
+  has its points placed by them; one with names keeps the names. Every
+  other chart stays what it was, and PowerPoint stores no picture of a
+  chart, so such a chart is gone from the slide, with a note. A line
+  chart with dates along its axis is not made over: where its points
+  stand would have to be made up. A presentation that keeps its look
+  keeps its charts in the picture of the page; the owner chose that too
+  (26.11.2026).
 - A figure in a "Lær mer" box is fetched from a slide (the owner's
   choice, 25.11.2026): it is made on a slide, with the tools that are
   there, and the builder puts a copy of it in the box (a block of the
@@ -354,7 +363,9 @@ instead of choosing silently.
   "+ Lær mer" button (`DrawnElement`). It is drawn by the code that draws
   a slide (`renderDrawing` in `src/shared/render/scene.ts`), in stage
   pixels, and made to fit the box (`fitDrawings` in
-  `src/shared/render/more.ts`). The box drawn on the slide for the video
+  `src/shared/render/more.ts`). A box that holds a figure is wider than
+  other boxes, so the figure can be read (the owner's choice, 26.11.2026;
+  `popoverWish`). The box drawn on the slide for the video
   fits it when the box is placed, never later, so the picture does not
   wait for the window. The text rules of a box stop at the box's own text
   and tables (`:is(.lm-text, .lm-table)` in `MORE_CSS`), so that a figure

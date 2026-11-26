@@ -22,6 +22,37 @@ export function isChart(figure: Pick<FigureElement, 'template'>): boolean {
   return figure.template === 'bars' || figure.template === 'line';
 }
 
+/**
+ * True when the rows of the diagram stand in the order of the table, each
+ * with its name under it: a bar diagram, and a line diagram with names along
+ * its axis. Otherwise (a line diagram with numbers along its axis) each row
+ * stands where its `x` says.
+ */
+export function rowsByName(figure: Pick<FigureElement, 'template' | 'along'>): boolean {
+  return figure.template === 'bars' || figure.along === 'names';
+}
+
+/**
+ * Lets names, or numbers, stand along the axis of a line diagram. What is
+ * written is kept: where a row has no name, its x becomes the name, and
+ * where it has no x, a name that is a number becomes the x.
+ */
+export function setAlong(figure: FigureElement, along: 'numbers' | 'names'): void {
+  if (figure.template !== 'line') return;
+  if (along === 'names') {
+    figure.along = 'names';
+    for (const row of figure.items) {
+      if (row.text.trim() === '' && typeof row.x === 'number') row.text = formatNumber(row.x);
+    }
+    return;
+  }
+  delete figure.along;
+  for (const row of figure.items) {
+    const value = parseNumber(row.text);
+    if (typeof row.x !== 'number' && typeof value === 'number') row.x = value;
+  }
+}
+
 // ---------- Numbers as they are written ----------
 
 /**
@@ -126,8 +157,8 @@ export function removeSeries(figure: FigureElement, index: number): void {
 /**
  * Lays what was copied from a spreadsheet (lines of cells with tabs
  * between) into the table from one cell and on, with new rows and series
- * where the table ends. Column 0 is the name of a bar diagram's row or the
- * x of a line diagram's; the series follow. A first line that holds no
+ * where the table ends. Column 0 is the name of the row, or the x of a line
+ * diagram with numbers along its axis; the series follow. A first line that holds no
  * numbers, pasted at the top, is taken as the names of the series.
  * A cell that is not a number where one belongs is left as it was.
  */
@@ -144,7 +175,7 @@ export function pasteTable(
     .split('\n')
     .map((line) => line.split('\t'));
   if (lines.length === 0) return;
-  const bars = figure.template === 'bars';
+  const named = rowsByName(figure);
   const isNumber = (cell: string): boolean => typeof parseNumber(cell) === 'number';
   const first = lines[0]!;
   const values = (line: string[]): string[] => line.slice(column === 0 ? 1 : 0);
@@ -172,7 +203,7 @@ export function pasteTable(
     );
     line.forEach((cell, i) => {
       const at = column + i;
-      if (at === 0 && bars) {
+      if (at === 0 && named) {
         item.text = cell.trim();
         return;
       }
@@ -195,7 +226,7 @@ export function chartTable(figure: FigureElement): { head: string[]; rows: strin
   return {
     head: [(figure.xTitle ?? '').trim(), ...series.map((one) => one.name.trim())],
     rows: figure.items.map((row) => [
-      figure.template === 'line' ? cell(row.x) : row.text.trim(),
+      rowsByName(figure) ? row.text.trim() : cell(row.x),
       ...series.map((_, i) => cell(row.values?.[i])),
     ]),
   };
@@ -253,9 +284,10 @@ export function chartParts(figure: FigureElement): PartSpec[] {
   };
 
   // The rows that can be drawn, and the axes their numbers ask for.
-  const rows = bars ? figure.items : figure.items.filter((row) => typeof row.x === 'number');
+  const byName = rowsByName(figure);
+  const rows = byName ? figure.items : figure.items.filter((row) => typeof row.x === 'number');
   const ys = numbers(rows.flatMap((row) => series.map((_, i) => row.values?.[i])));
-  const xs = bars ? [] : numbers(rows.map((row) => row.x));
+  const xs = byName ? [] : numbers(rows.map((row) => row.x));
   const fixed = (value: number | undefined, zero: (v: number) => number): number | undefined =>
     value === undefined ? undefined : bars ? zero(value) : value;
   const sy =
@@ -294,10 +326,10 @@ export function chartParts(figure: FigureElement): PartSpec[] {
       )
     : 12;
   const under = Math.round(small * 1.7);
-  const hasUnder = bars ? figure.items.some((row) => row.text.trim() !== '') : sx !== undefined;
+  const hasUnder = byName ? figure.items.some((row) => row.text.trim() !== '') : sx !== undefined;
   const titleH = Math.round(size * 1.7);
   const bottom = (hasUnder ? under : 8) + (xTitle ? titleH : 0);
-  const right = bars
+  const right = byName
     ? 6
     : Math.round(clamp(Math.max(small * 0.8, half(xTexts[xTexts.length - 1])), 8, w * 0.2));
   const plot = {
@@ -332,9 +364,41 @@ export function chartParts(figure: FigureElement): PartSpec[] {
     });
   }
 
+  // Rows that stand in the order of the table each have a slot of the plot, with the name under it.
+  const n = Math.max(1, figure.items.length);
+  const slot = plot.w / n;
+  const nameUnder = (row: FigureItem, r: number): void => {
+    if (row.text.trim() === '') return;
+    text(
+      `label:${row.id}`,
+      row.text.trim(),
+      { x: plot.x + slot * r, y: plot.y + plot.h + 6, w: slot, h: under - 6 },
+      'center',
+      'top',
+    );
+  };
+  /** One curve of a line diagram, through the points given; a missing point is a break in it. */
+  const curve = (one: { id: string }, k: number, points: Array<[number, number] | null>): void => {
+    const tidy = points.filter(
+      (point, i) => point !== null || (i > 0 && points[i - 1] !== null && i < points.length - 1),
+    );
+    while (tidy.length > 0 && tidy[tidy.length - 1] === null) tidy.pop();
+    if (tidy.length === 0) return;
+    specs.push({
+      part: `curve:${one.id}`,
+      look: {
+        geometry: 'curve',
+        stroke: seriesColor(figure, k),
+        strokeWidth: 5,
+        points: tidy,
+        ...(figure.dots ? { dots: true } : {}),
+      },
+      box: whole(plot),
+    });
+  };
+  const fraction = (value: number): number => Number(value.toFixed(5));
+
   if (bars) {
-    const n = Math.max(1, figure.items.length);
-    const slot = plot.w / n;
     const group = slot * 0.72;
     const each = group / Math.max(1, series.length);
     const gap = series.length > 1 ? Math.min(6, each * 0.12) : 0;
@@ -357,16 +421,26 @@ export function chartParts(figure: FigureElement): PartSpec[] {
           }),
         });
       });
-      if (row.text.trim() !== '') {
-        text(
-          `label:${row.id}`,
-          row.text.trim(),
-          { x: plot.x + slot * r, y: plot.y + plot.h + 6, w: slot, h: under - 6 },
-          'center',
-          'top',
-        );
-      }
+      nameUnder(row, r);
     });
+  } else if (byName) {
+    // A line diagram with names along its axis: each row's points stand in
+    // the middle of its slot, so the distance between them is the same.
+    figure.items.forEach(nameUnder);
+    if (sy) {
+      series.forEach((one, k) => {
+        curve(
+          one,
+          k,
+          figure.items.map((row, r): [number, number] | null => {
+            const value = row.values?.[k];
+            if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+            if (value < sy.min || value > sy.max) return null;
+            return [fraction((r + 0.5) / n), fraction(1 - (value - sy.min) / (sy.max - sy.min))];
+          }),
+        );
+      });
+    }
   } else if (sx && sy) {
     const room = Math.min(220, plot.w / Math.max(1, sx.ticks.length - 1));
     sx.ticks.forEach((tick, i) => {
@@ -383,33 +457,20 @@ export function chartParts(figure: FigureElement): PartSpec[] {
     });
     series.forEach((one, k) => {
       // A point without a number, or outside an axis that is fixed, is a break in the curve.
-      const points = rows.map((row): [number, number] | null => {
-        const value = row.values?.[k];
-        const at = row.x as number;
-        if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-        if (value < sy.min || value > sy.max || at < sx.min || at > sx.max) return null;
-        const round = (fraction: number): number => Number(fraction.toFixed(5));
-        return [
-          round((at - sx.min) / (sx.max - sx.min)),
-          round(1 - (value - sy.min) / (sy.max - sy.min)),
-        ];
-      });
-      const tidy = points.filter(
-        (point, i) => point !== null || (i > 0 && points[i - 1] !== null && i < points.length - 1),
+      curve(
+        one,
+        k,
+        rows.map((row): [number, number] | null => {
+          const value = row.values?.[k];
+          const at = row.x as number;
+          if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+          if (value < sy.min || value > sy.max || at < sx.min || at > sx.max) return null;
+          return [
+            fraction((at - sx.min) / (sx.max - sx.min)),
+            fraction(1 - (value - sy.min) / (sy.max - sy.min)),
+          ];
+        }),
       );
-      while (tidy.length > 0 && tidy[tidy.length - 1] === null) tidy.pop();
-      if (tidy.length === 0) return;
-      specs.push({
-        part: `curve:${one.id}`,
-        look: {
-          geometry: 'curve',
-          stroke: seriesColor(figure, k),
-          strokeWidth: 5,
-          points: tidy,
-          ...(figure.dots ? { dots: true } : {}),
-        },
-        box: whole(plot),
-      });
     });
   }
 

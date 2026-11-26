@@ -77,6 +77,18 @@ export function popoverWidth(
   return room >= widest ? widest : room >= least ? room : widest;
 }
 
+/**
+ * How wide the box of this content would like to be, and how narrow it may
+ * be made to fit beside its element. A box that holds a figure fetched from
+ * a slide is wider (the owner's choice, 26.11.2026): at the ordinary width
+ * a figure that is wide on the slide is drawn too small to read.
+ */
+export function popoverWish(more: More | undefined): { preferred: number; least: number } {
+  return more?.blocks.some((block) => block.kind === 'figure')
+    ? { preferred: 760, least: 560 }
+    : { preferred: 560, least: 400 };
+}
+
 /** True when a credit says anything at all. */
 export function hasCredit(credit: Credit | undefined): credit is Credit {
   return !!credit && !!(credit.author?.trim() || credit.license?.trim() || credit.title?.trim());

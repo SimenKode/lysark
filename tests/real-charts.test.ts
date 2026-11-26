@@ -69,10 +69,22 @@ describe.skipIf(!existsSync(file))('charts made by PowerPoint itself', () => {
     expect(said(2)).toEqual([CONVERTED]);
   });
 
-  it('makes a line chart into a line diagram only when numbers stand along its axis', () => {
-    // Names along the axis: where the points stand would have to be made up.
-    expect(figure(3)).toBeUndefined();
-    expect(said(3)).toEqual([NOT]);
+  it('makes a line chart into a line diagram, with names or with numbers along its axis', () => {
+    // Names along the axis, as PowerPoint's line charts have: the names are kept.
+    const named = figure(3)!;
+    expect(named).toMatchObject({ template: 'line', along: 'names', dots: true });
+    expect({
+      series: named.series!.map((s) => s.name),
+      rows: named.items.map((row) => [row.text, row.values]),
+    }).toEqual({
+      series: ['Serie A', 'Serie B'],
+      rows: [
+        ['A', [1, 3]],
+        ['B', [2, 1]],
+        ['C', [3, 4]],
+      ],
+    });
+    expect(said(3)).toEqual([CONVERTED]);
     const rows = [
       [0, [0, 4]],
       [1, [2, null]],
@@ -80,6 +92,7 @@ describe.skipIf(!existsSync(file))('charts made by PowerPoint itself', () => {
     ];
     const plain = figure(4)!;
     expect(plain.template).toBe('line');
+    expect(plain.along).toBeUndefined();
     expect(table(plain)).toEqual({ series: ['Serie A', 'Serie B'], rows });
     expect(plain.dots).toBeUndefined();
     const marked = figure(5)!;
