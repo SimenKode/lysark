@@ -411,6 +411,6 @@ describe('groups and fastened lines in the format', () => {
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 9;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(16);
+    expect(FORMAT_VERSION).toBe(17);
   });
 });

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { zipSync, strToU8 } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { importPptx, type ImportResult } from '../src/importer/pptx';
+import { MIN_TABLE_FONT, tableHeight } from '../src/importer/tableFit';
 import { parseXml } from '../src/importer/xml';
 import {
   Project,
@@ -1887,7 +1888,7 @@ describe('graphic frames', () => {
             100,
             200,
             600,
-            120,
+            180,
             URI.table,
             table(
               [200, 300, 100],
@@ -1905,7 +1906,7 @@ describe('graphic frames', () => {
     const text = (value: string, list = 'none') => ({
       paragraphs: [{ level: 0, list, runs: value ? [{ text: value }] : [] }],
     });
-    expect(element.box).toEqual({ x: 100, y: 200, w: 600, h: 120, rotation: 0 });
+    expect(element.box).toEqual({ x: 100, y: 200, w: 600, h: 180, rotation: 0 });
     expect(element.columns).toEqual([200, 300, 100]);
     expect(element.headerRow).toBe(true);
     expect(element.rows).toEqual([
@@ -1915,6 +1916,9 @@ describe('graphic frames', () => {
     ]);
     // 18 pt from the master's style for other text.
     expect(element.fontSize).toBe(36);
+    // PowerPoint's row heights and single line spacing.
+    expect(element.rowHeights).toEqual([40, 40, 40]);
+    expect(element.lineHeight).toBe(1.2);
     expect(result.report.tables).toBe(1);
     expect(codesOf(result)).toEqual([]);
   });
@@ -1936,6 +1940,132 @@ describe('graphic frames', () => {
       ],
     });
     expect(ofType<TableElement>(result, 'table')[0]!.headerRow).toBe(false);
+  });
+
+  /** a:tbl whose rows have their own heights (stage pixels) and cells as written. */
+  const rawTable = (columns: number[], rows: Array<[number, string[]]>, tblPr = 'bandRow="1"') =>
+    `<a:tbl><a:tblPr ${tblPr}/><a:tblGrid>${columns.map((w) => `<a:gridCol w="${emu(w)}"/>`).join('')}</a:tblGrid>` +
+    rows.map(([h, cells]) => `<a:tr h="${emu(h)}">${cells.join('')}</a:tr>`).join('') +
+    '</a:tbl>';
+  const tc = (paragraphs: string, tcPr = '<a:tcPr/>') =>
+    `<a:tc>${txBody(paragraphs, { tag: 'a:txBody' })}${tcPr}</a:tc>`;
+  const tableOn = (h: number, data: string) =>
+    load({
+      layouts: [LAYOUT_BLANK],
+      slides: [{ shapes: graphicFrame(0, 0, 400, h, URI.table, data) }],
+    });
+
+  it("keeps a table's row heights, the size of each cell, its alignment and its spacing", () => {
+    const centred = '<a:pPr algn="ctr"/>';
+    const result = tableOn(
+      220,
+      rawTable(
+        [200, 200],
+        [
+          [30, [tc(para(run('A', 'sz="1400"'))), tc(para(run('B', 'sz="1400"')))]],
+          [
+            50,
+            [
+              tc(
+                para(run('1', 'sz="2800"'), centred) + para(run('2', 'sz="2800"'), centred),
+                '<a:tcPr anchor="ctr"/>',
+              ),
+              tc(para(run('3', 'sz="1400"'), '<a:pPr algn="r"/>'), '<a:tcPr anchor="b"/>'),
+            ],
+          ],
+        ],
+        'firstRow="1" bandRow="1"',
+      ),
+    );
+    const element = ofType<TableElement>(result, 'table')[0]!;
+    // Most of the text is 14 pt; the cell with 28 pt is twice as large.
+    expect(element.fontSize).toBe(28);
+    expect(element.rowHeights).toEqual([30, 50]);
+    expect(element.lineHeight).toBe(1.2);
+    expect(element.spaceBefore).toEqual([0, 0, 0, 0, 0]);
+    const [first, second] = element.rows;
+    expect(first![0]).toEqual({ content: expect.anything() });
+    expect(second![0]).toMatchObject({ scale: 2, align: 'center', valign: 'middle' });
+    expect(second![1]).toMatchObject({ align: 'right', valign: 'bottom' });
+    expect(second![1]!.scale).toBeUndefined();
+    expect(codesOf(result)).toEqual([]);
+  });
+
+  it('makes the text of a table smaller, evenly, so that the table keeps inside its box', () => {
+    const four = ['A', 'B', 'C', 'D'].map((text) => para(text)).join('');
+    const result = tableOn(120, rawTable([400], [[20, [tc(four)]]]));
+    const element = ofType<TableElement>(result, 'table')[0]!;
+    // At 18 pt (36 px) the four lines would need 187 px; 21.8 px is the largest size that fits.
+    expect(element.fontSize).toBeGreaterThan(20);
+    expect(element.fontSize).toBeLessThan(22);
+    expect(
+      tableHeight(
+        {
+          columns: [400],
+          rowHeights: [20],
+          cells: [
+            {
+              row: 0,
+              column: 0,
+              colSpan: 1,
+              rowSpan: 1,
+              content: element.rows[0]![0]!.content,
+              scale: 1,
+              header: false,
+            },
+          ],
+          lineHeight: element.lineHeight,
+          spaceBefore: element.spaceBefore,
+          levelScale: [1, 1, 1, 1, 1],
+        },
+        element.fontSize!,
+      ),
+    ).toBeLessThanOrEqual(121);
+    expect(codesOf(result)).toEqual([]);
+  });
+
+  it('notes a table that does not fit even with the smallest text that can be read', () => {
+    const many = Array.from({ length: 12 }, (_, i) => para(String(i + 1))).join('');
+    const result = tableOn(60, rawTable([400], [[20, [tc(many)]]]));
+    const element = ofType<TableElement>(result, 'table')[0]!;
+    expect(element.fontSize).toBe(MIN_TABLE_FONT);
+    expect(result.report.warnings).toEqual([
+      expect.objectContaining({
+        slide: 1,
+        code: 'other',
+        message: expect.stringMatching(/^En tabell /),
+      }),
+    ]);
+  });
+
+  it('breaks a word that is wider than its cell inside the cell, and a line after a hyphen', () => {
+    const height = (text: string, width: number): number =>
+      tableHeight(
+        {
+          columns: [width],
+          rowHeights: [0],
+          inset: { l: 0, t: 0, r: 0, b: 0 },
+          lineHeight: 1,
+          cells: [
+            {
+              row: 0,
+              column: 0,
+              colSpan: 1,
+              rowSpan: 1,
+              content: { paragraphs: [{ level: 0, list: 'none', runs: [{ text }] }] },
+              scale: 1,
+              header: true,
+            },
+          ],
+          levelScale: [1, 1, 1, 1, 1],
+        },
+        10,
+      );
+    // Ten A's are 66.7 px wide at 10 px: one line in a wide cell, three in a cell 30 px wide.
+    expect(height('AAAAAAAAAA', 100)).toBe(10);
+    expect(height('AAAAAAAAAA', 30)).toBe(30);
+    // "AAAA-AAAA" breaks after the hyphen when the whole does not fit.
+    expect(height('AAAA-AAAA', 40)).toBe(20);
   });
 
   it('warns about charts, SmartArt and embedded objects', () => {

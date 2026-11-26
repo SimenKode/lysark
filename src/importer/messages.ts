@@ -89,6 +89,11 @@ export const WARNINGS = {
     code: 'media',
     message: 'En video som er lenket til en fil utenfor presentasjonen, følger ikke med.',
   }),
+  tableTooTall: (): ImportWarning => ({
+    code: 'other',
+    message:
+      'En tabell har mer tekst enn det er plass til, selv med minste lesbare skrift. Den går ut over plassen den hadde i PowerPoint. Kort ned teksten eller del tabellen.',
+  }),
   noPosition: (): ImportWarning => ({
     code: 'other',
     message: 'Et tekstfelt manglet plassering og er lagt over hele lysbildet.',

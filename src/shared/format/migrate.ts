@@ -96,5 +96,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 14) project.version = 15;
   // 15 -> 16 only added things (more movements, and steps that mark, take away and zoom).
   if (project.version === 15) project.version = 16;
+  // 16 -> 17 only added things (row heights, spacing, alignment and cell sizes of tables).
+  if (project.version === 16) project.version = 17;
   return project;
 }

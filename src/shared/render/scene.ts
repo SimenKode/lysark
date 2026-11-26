@@ -385,7 +385,7 @@ function renderTable(ctx: RenderContext, surface: Surface, el: TableElement): No
   table.className = 'ls-table';
   table.style.fontFamily = theme.fonts.body;
   table.style.fontSize = `${size}px`;
-  table.style.lineHeight = '1.3';
+  table.style.lineHeight = String(el.lineHeight ?? 1.3);
   const text = defaultTextColor(theme, surface, 'body', size);
   table.style.color = PALETTE[text];
   const headBg: PaletteColor = surface === 'lilla' ? 'indigo' : 'lilla';
@@ -409,6 +409,9 @@ function renderTable(ctx: RenderContext, surface: Surface, el: TableElement): No
   const body = doc.createElement('tbody');
   el.rows.forEach((row, rowIndex) => {
     const tr = doc.createElement('tr');
+    // The least height of the row; its text can make it taller.
+    const least = el.rowHeights?.[rowIndex];
+    if (least) tr.style.height = `${least}px`;
     row.forEach((cell, cellIndex) => {
       const header = el.headerRow && rowIndex === 0;
       const td = doc.createElement(header ? 'th' : 'td');
@@ -416,7 +419,10 @@ function renderTable(ctx: RenderContext, surface: Surface, el: TableElement): No
       if (cell.colSpan && cell.colSpan > 1) td.colSpan = cell.colSpan;
       if (cell.rowSpan && cell.rowSpan > 1) td.rowSpan = cell.rowSpan;
       td.dataset.cell = `${rowIndex}:${cellIndex}`;
-      richTextInto(ctx, td, cell.content);
+      if (cell.scale && cell.scale !== 1) td.style.fontSize = `${cell.scale}em`;
+      if (cell.align && cell.align !== 'left') td.style.textAlign = cell.align;
+      if (cell.valign && cell.valign !== 'top') td.style.verticalAlign = cell.valign;
+      richTextInto(ctx, td, cell.content, undefined, el.spaceBefore);
       tr.appendChild(td);
     });
     body.appendChild(tr);

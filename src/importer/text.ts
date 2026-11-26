@@ -214,7 +214,7 @@ function paragraphText(paragraph: Paragraph): string {
 }
 
 /** The value with the largest weight; the first one wins a tie. */
-function heaviest<T>(weights: Map<T, number>): T | undefined {
+export function heaviest<T>(weights: Map<T, number>): T | undefined {
   let best: T | undefined;
   let bestWeight = 0;
   for (const [value, weight] of weights) {

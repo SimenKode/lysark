@@ -85,8 +85,9 @@ export const STAGE_CSS = `
   /* PowerPoint's own cell margins (0.1 and 0.05 inch), so imported tables keep their proportions. */
   padding: var(--ls-cell-pad, 7px 14px); text-align: left; vertical-align: top;
   border-bottom: 2px solid var(--ls-rule); font-weight: 400;
-  /* Never break inside a word or a number: "B10" must not become "B1" and "0". */
-  overflow-wrap: normal; word-break: normal; hyphens: manual;
+  /* A word or a number is broken only when it is wider than its cell, as PowerPoint does,
+     so that it never runs into the next cell. Short ones ("B10") always stay whole. */
+  overflow-wrap: break-word; word-break: normal; hyphens: manual;
 }
 .ls-table th { background: var(--ls-th-bg); color: var(--ls-th-text); font-weight: 700; border-bottom: 0; }
 .ls-video { position: relative; width: 100%; height: 100%; margin: 0; background: #000; }

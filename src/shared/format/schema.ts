@@ -28,8 +28,10 @@ export const FORMAT_NAME = 'lysark';
  * 15: a line diagram can have names along its axis.
  * 16: more ways for an element to come in at a step, and steps that mark,
  *    take away and zoom.
+ * 17: tables keep PowerPoint's row heights, spacing, alignment and the
+ *    font size of each cell.
  */
-export const FORMAT_VERSION = 16;
+export const FORMAT_VERSION = 17;
 
 export { STAGE } from './constants';
 
@@ -123,6 +125,12 @@ export const TableCell = z.object({
   content: RichText,
   colSpan: z.number().int().min(1).optional(),
   rowSpan: z.number().int().min(1).optional(),
+  /** Font size as a factor on the table's. Imported cells keep their own size from PowerPoint this way. */
+  scale: z.number().positive().optional(),
+  /** When absent the text stands to the left. */
+  align: z.enum(['left', 'center', 'right']).optional(),
+  /** When absent the text stands at the top. */
+  valign: z.enum(['top', 'middle', 'bottom']).optional(),
 });
 export type TableCell = z.infer<typeof TableCell>;
 
@@ -354,6 +362,20 @@ const tableElement = z.object({
   fontSize: z.number().positive().optional(),
   /** Margins inside each cell, in stage pixels. When absent the theme's are used. */
   cellInset: Inset.optional(),
+  /**
+   * The least height of each row, in stage pixels, as PowerPoint has it. A
+   * row is taller when its text needs it. Rows without one are as tall as
+   * their text.
+   */
+  rowHeights: z.array(z.number().min(0)).optional(),
+  /** Line height as a factor of the font size. When absent the theme's is used. */
+  lineHeight: z.number().positive().optional(),
+  /**
+   * Space above a paragraph of each list level (0-4) in a cell, as a factor
+   * of the cell's font size. The first paragraph of a cell never has space
+   * above it. When absent the theme's spacing is used.
+   */
+  spaceBefore: z.array(z.number().min(0)).length(5).optional(),
 });
 
 const videoElement = z.object({

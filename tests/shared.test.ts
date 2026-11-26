@@ -39,6 +39,7 @@ import {
   isLargeText,
 } from '../src/shared/theme/contrast';
 import { PALETTE, SERIES_ORDER, nearestPaletteColor } from '../src/shared/theme/palette';
+import { STAGE_CSS } from '../src/shared/render/css';
 import { SHAPE_PAIRS, decorationColors, shapePath } from '../src/shared/theme/shapes';
 import {
   DECORATION_BOX,
@@ -577,6 +578,57 @@ describe('shapes with text', () => {
     expect([content.style.width, content.style.height]).toEqual(['300px', '80px']);
     expect([content.style.left, content.style.top]).toEqual(['-110px', '110px']);
     expect(content.style.padding).toBe('1px 2px 3px 0px');
+  });
+});
+
+describe('tables', () => {
+  const words = (...texts: string[]) => ({
+    paragraphs: texts.map((text) => ({ level: 0, list: 'none' as const, runs: [{ text }] })),
+  });
+
+  it('draws the row heights, spacing, alignment and cell sizes a table has', () => {
+    const { project } = sampleProject();
+    const scene = project.scenes[1]!;
+    scene.elements = [
+      {
+        id: 'e_table',
+        type: 'table',
+        box: { x: 0, y: 0, w: 400, h: 200, rotation: 0 },
+        columns: [1, 1],
+        headerRow: false,
+        fontSize: 20,
+        lineHeight: 1.2,
+        spaceBefore: [0, 0, 0, 0, 0],
+        rowHeights: [60, 0],
+        rows: [
+          [
+            { content: words('A', 'B'), align: 'center', valign: 'middle', scale: 1.5 },
+            { content: words('1') },
+          ],
+          [{ content: words('2') }, { content: words('3'), align: 'right', valign: 'bottom' }],
+        ],
+      },
+    ];
+    scene.timeline = [];
+    const el = renderScene(context(project), scene);
+    const table = el.querySelector<HTMLElement>('table.ls-table')!;
+    expect(table.style.lineHeight).toBe('1.2');
+    const rows = [...table.querySelectorAll<HTMLElement>('tr')];
+    expect(rows.map((row) => row.style.height)).toEqual(['60px', '']);
+    const cells = [...table.querySelectorAll<HTMLElement>('td')];
+    expect(cells[0]!.style.fontSize).toBe('1.5em');
+    expect(cells[0]!.style.textAlign).toBe('center');
+    expect(cells[0]!.style.verticalAlign).toBe('middle');
+    expect(cells[1]!.style.cssText).toBe('');
+    expect(cells[3]!.style.textAlign).toBe('right');
+    expect(cells[3]!.style.verticalAlign).toBe('bottom');
+    // The second paragraph has no space above it: the table's spacing, not the theme's.
+    const second = cells[0]!.querySelectorAll<HTMLElement>('.ls-p')[1]!;
+    expect(second.style.marginTop).toBe('0em');
+  });
+
+  it('breaks a word inside its cell only when it is wider than the cell', () => {
+    expect(STAGE_CSS).toMatch(/\.ls-table th, \.ls-table td \{[^}]*overflow-wrap: break-word/);
   });
 });
 

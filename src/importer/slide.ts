@@ -54,8 +54,10 @@ import { imageFormat, isAudioExtension, videoFormat, type MediaStore } from './m
 import { readChart } from './chart';
 import { WARNINGS } from './messages';
 import { extensionOf, type Relationship } from './package';
+import { fitTable, type FitCell } from './tableFit';
 import {
   autofitScale,
+  heaviest,
   indentsFor,
   insetsOf,
   isDefaultInsets,
@@ -1081,17 +1083,25 @@ class SlideImporter {
     };
     const sizeWeights = new Map<number, number>();
     const rows: TableCell[][] = [];
+    /** What is known of each cell that is kept: where it stands, its text and its own size (1/100 pt). */
+    const read: Array<{ cell: TableCell; fit: FitCell; text: TextBody; size?: number }> = [];
+    const leastHeights: number[] = [];
+    const headerRow = boolAttr(child(table, 'a:tblPr'), 'firstRow') || hasFilledFirstRow(table);
     let widest = 0;
     for (const tr of children(table, 'a:tr')) {
       const row: TableCell[] = [];
+      const rowIndex = rows.length;
+      leastHeights.push(Math.max(0, (intAttr(tr, 'h') ?? 0) * this.deck.stage.scale));
       let span = 0;
       for (const tc of children(tr, 'a:tc')) {
+        const column = span;
         span += 1;
         // Cells covered by a merged neighbour are left out of the row.
         if (boolAttr(tc, 'hMerge') || boolAttr(tc, 'vMerge')) continue;
         const colSpan = Math.max(1, intAttr(tc, 'gridSpan') ?? 1);
         const rowSpan = Math.max(1, intAttr(tc, 'rowSpan') ?? 1);
-        const text = readTextBody(child(tc, 'a:txBody'), environment);
+        const body = child(tc, 'a:txBody');
+        const text = readTextBody(body, environment);
         for (const [size, weight] of text.sizeWeights) {
           sizeWeights.set(size, (sizeWeights.get(size) ?? 0) + weight);
         }
@@ -1102,6 +1112,24 @@ class SlideImporter {
         };
         if (colSpan > 1) cell.colSpan = colSpan;
         if (rowSpan > 1) cell.rowSpan = rowSpan;
+        if (!text.isEmpty && text.align !== 'left') cell.align = text.align;
+        const valign = valignOf([child(tc, 'a:tcPr')]);
+        if (valign !== 'top') cell.valign = valign;
+        // An empty cell is as tall as the mark at the end of its paragraph.
+        const size =
+          heaviest(text.sizeWeights) ??
+          intAttr(child(child(body, 'a:p'), 'a:endParaRPr'), 'sz') ??
+          text.levelSizes[0];
+        const fit: FitCell = {
+          row: rowIndex,
+          column,
+          colSpan,
+          rowSpan,
+          content: cell.content,
+          scale: 1,
+          header: headerRow && rowIndex === 0,
+        };
+        read.push({ cell, fit, text, size });
         row.push(cell);
       }
       widest = Math.max(widest, span);
@@ -1118,15 +1146,93 @@ class SlideImporter {
       box: this.place(this.xfrmOf(frame) ?? wholeSlide(this.deck.stage), groups).box,
       type: 'table',
       columns: widths.length > 0 ? widths : new Array<number>(widest).fill(1),
-      headerRow: boolAttr(child(table, 'a:tblPr'), 'firstRow') || hasFilledFirstRow(table),
+      headerRow,
       rows,
     };
     const fontSize = stageFontSize(sizeWeights, this.sansFactor, this.pixelsPerPoint);
     if (fontSize !== undefined) element.fontSize = fontSize;
     const cellInset = this.cellInset(table);
     if (cellInset) element.cellInset = cellInset;
+    // The rows keep the heights PowerPoint gave them, as the least they can be.
+    // (A table in a group is scaled with the group.)
+    const frameHeight = (this.xfrmOf(frame)?.h ?? 0) * this.deck.stage.scale;
+    const boxScale = frameHeight > 0 ? element.box.h / frameHeight : 1;
+    if (leastHeights.some((height) => height > 0)) {
+      element.rowHeights = leastHeights.map((height) => Math.round(height * boxScale * 10) / 10);
+    }
+
+    // Each cell keeps its own size, as a factor on the table's.
+    const tableSize = heaviest(sizeWeights);
+    for (const { cell, fit, size } of read) {
+      if (tableSize === undefined || size === undefined) continue;
+      const scale = Math.round((size / tableSize) * 100) / 100;
+      if (scale !== 1) {
+        cell.scale = scale;
+        fit.scale = scale;
+      }
+    }
+    Object.assign(element, this.tableSpacing(read, tableSize));
+
+    // Text that needs more room than PowerPoint gave the table is made
+    // smaller, evenly, so that the table stays inside its box.
+    const size = element.fontSize ?? 30;
+    const total = element.columns.reduce((a, b) => a + b, 0);
+    const fitted = fitTable(
+      {
+        columns: element.columns.map((width) => (width / total) * element.box.w),
+        rowHeights: rows.map((_, i) => element.rowHeights?.[i] ?? 0),
+        cells: read.map(({ fit }) => fit),
+        inset: element.cellInset,
+        lineHeight: element.lineHeight,
+        spaceBefore: element.spaceBefore,
+        levelScale: THEME_REN.levelScale,
+      },
+      size,
+      // The box, or the rows' own heights where they add up to more; a
+      // pixel is given for the rounding of the heights.
+      Math.max(element.box.h, element.rowHeights?.reduce((a, b) => a + b, 0) ?? 0) + 1,
+    );
+    if (fitted.fontSize !== size) element.fontSize = fitted.fontSize;
+    if (!fitted.fits) this.warn(WARNINGS.tableTooTall());
     this.elements.push(element);
     this.counts.tables += 1;
+  }
+
+  /**
+   * PowerPoint's spacing in the cells of a table, in the units of the
+   * project format: the line height that covers most text, and the space
+   * above a paragraph of each level, as factors of the cell's font size.
+   * Left out where the theme's would do as well.
+   */
+  private tableSpacing(
+    cells: ReadonlyArray<{ text: TextBody; size?: number }>,
+    tableSize: number | undefined,
+  ): { lineHeight?: number; spaceBefore?: number[] } {
+    const lines = new Map<number, number>();
+    const before = Array.from({ length: 5 }, () => new Map<number, number>());
+    let paragraphs = 0;
+    for (const { text, size } of cells) {
+      const sizePt = (size ?? tableSize ?? 1800) / 100;
+      text.content.paragraphs.forEach((paragraph, index) => {
+        const spacing = text.spacing[index];
+        if (!spacing) return;
+        const weight = Math.max(1, spacing.chars);
+        const line = Math.round((spacing.line / this.sansFactor) * 100) / 100;
+        lines.set(line, (lines.get(line) ?? 0) + weight);
+        if (index === 0) return;
+        paragraphs += 1;
+        const em = Math.round((spacing.before / (sizePt * this.sansFactor)) * 100) / 100;
+        const weights = before[paragraph.level]!;
+        weights.set(em, (weights.get(em) ?? 0) + weight);
+      });
+    }
+    const result: { lineHeight?: number; spaceBefore?: number[] } = {};
+    const lineHeight = heaviest(lines);
+    // The theme's line height of a table (renderTable).
+    if (lineHeight !== undefined && Math.abs(lineHeight - 1.3) > 0.02)
+      result.lineHeight = lineHeight;
+    if (paragraphs > 0) result.spaceBefore = before.map((weights) => heaviest(weights) ?? 0);
+    return result;
   }
 }
 
