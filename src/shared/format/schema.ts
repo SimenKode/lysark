@@ -33,7 +33,8 @@ export const FORMAT_NAME = 'lysark';
  * 18: how long a slide without sound stands, and slides left out of the video.
  * 19: upright projects (9:16).
  * 20: a line or an arrow can bend through points, and its ends can be
- *    fastened to a fastening point of an element or to another line.
+ *    fastened to a fastening point of an element or to another line; the
+ *    figure "network", with nodes and connections.
  */
 export const FORMAT_VERSION = 20;
 
@@ -418,6 +419,7 @@ export const FIGURE_TEMPLATES = [
   'timeAxis',
   'bars',
   'line',
+  'network',
 ] as const;
 export type FigureTemplate = (typeof FIGURE_TEMPLATES)[number];
 
@@ -443,6 +445,22 @@ export const FigureItem = z.object({
   x: z.number().nullable().optional(),
 });
 export type FigureItem = z.infer<typeof FigureItem>;
+
+/**
+ * One connection of a network: a line (or, with `arrow`, an arrow) from one
+ * node to another, by the ids of their rows.
+ */
+export const FigureLink = z.object({
+  id: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  arrow: z.boolean().optional(),
+});
+export type FigureLink = z.infer<typeof FigureLink>;
+
+/** The shapes the nodes of a network can have. */
+export const NODE_SHAPES = ['roundRect', 'ellipse', 'rect'] as const;
+export type NodeShape = (typeof NODE_SHAPES)[number];
 
 /** One series of a diagram: the bars of one colour, or one curve. */
 export const FigureSeries = z.object({
@@ -501,6 +519,14 @@ const figureElement = z.object({
    * row's points stand where its `x` says.
    */
   along: z.literal('names').optional(),
+  /**
+   * For a network: its connections. The rows of the form (`items`) are its
+   * nodes. The form says what there is; where each node stands, and how each
+   * connection runs, is the lecturer's (the boxes and paths of the parts).
+   */
+  links: z.array(FigureLink).optional(),
+  /** For a network: the shape of its nodes. Rounded rectangles when absent. */
+  nodeShape: z.enum(NODE_SHAPES).optional(),
 });
 
 /**

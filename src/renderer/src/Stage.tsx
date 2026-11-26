@@ -26,6 +26,7 @@ import {
   type PathSnap,
 } from '../../shared/layout/groups';
 import { markStyle, pictureOf } from '../../shared/layout/marks';
+import { takeLinkEnds } from '../../shared/layout/network';
 import { wholeFigure, writePart } from '../../shared/layout/templates';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
@@ -674,6 +675,11 @@ export function Stage() {
     setGuides({});
     if (d && !d.moved && d.enter) useStore.getState().select([d.enter]);
     setSnap(null);
+    if (d?.moved && d.kind === 'path') {
+      // An end of a connection of a network let go on another node goes to that node in the form too.
+      const id = [...d.boxes.keys()][0]!;
+      useStore.getState().updateScene((s) => takeLinkEnds(s, id), `path-${d.seq}`, true);
+    }
     if (!d || !d.moved || d.kind === 'path' || d.kind === 'point') {
       setTransient(null);
       return;

@@ -1,6 +1,6 @@
 // Figures that draw themselves from a form: a process, layers, a comparison,
-// a time axis, and bar and line diagrams (whose parts are worked out in
-// ./charts.ts). The figure element holds the form and a frame; what is seen
+// a time axis, bar and line diagrams (whose parts are worked out in
+// ./charts.ts), and a network (./network.ts). The figure element holds the form and a frame; what is seen
 // are ordinary shapes (and, on a time axis, ordinary text boxes), each an
 // element of its own (so it can come in at a step and have "Lær mer"
 // content) that carries `of`. One function makes, lays out and takes away
@@ -22,7 +22,8 @@ import type {
   TextElement,
 } from '../format/schema';
 import { CHART_FONT_SIZE, chartParts, emptyRow, isChart, removeSeries } from './charts';
-import { edgePoint, setLineEnds } from './groups';
+import { edgePoint, fastenEnd, isLine, setLineEnds } from './groups';
+import { freePlace, linkPart, nodePart, nodeSize, removeNode, validLinks } from './network';
 import { partSource } from './rows';
 import { stepStands } from './steps';
 
@@ -38,6 +39,8 @@ const NEW_ITEMS: Record<FigureTemplate, number> = {
   timeAxis: 3,
   bars: 3,
   line: 3,
+  // A new network has no nodes and no connections.
+  network: 0,
 };
 /** The size a new figure starts with, in stage pixels. */
 export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> = {
@@ -47,6 +50,7 @@ export const NEW_FIGURE_SIZE: Record<FigureTemplate, { w: number; h: number }> =
   timeAxis: { w: 1500, h: 360 },
   bars: { w: 1100, h: 620 },
   line: { w: 1100, h: 620 },
+  network: { w: 1200, h: 640 },
 };
 /**
  * The size a new figure starts with where `room` stage pixels of width are
@@ -111,6 +115,7 @@ export function newFigure(template: FigureTemplate, box: Box, newId: () => strin
   };
   // A diagram starts with one series without a name, and no numbers.
   if (isChart(figure)) figure.series = [{ id: newId(), name: '' }];
+  if (template === 'network') figure.links = [];
   figure.items = Array.from({ length: NEW_ITEMS[template] }, () =>
     isChart(figure) ? emptyRow(figure, newId()) : { id: newId(), text: '' },
   );
@@ -149,6 +154,16 @@ export interface PartSpec {
   /** Where it stands. An arrow has none: it lies between the two parts it is fastened to. */
   box?: Box;
   between?: { start: string; end: string };
+  /**
+   * Where it stands is the lecturer's (a node of a network): `box` gives
+   * only its size, and it is put in a free place in the frame when it is made.
+   */
+  free?: boolean;
+  /**
+   * How it runs is the lecturer's (a connection of a network): its points,
+   * the fastening points it uses, and an end he has fastened to another line.
+   */
+  own?: boolean;
 }
 type Part = ShapeElement | TextElement;
 
@@ -190,6 +205,33 @@ export function figureParts(figure: FigureElement): PartSpec[] {
   const specs: PartSpec[] = [];
   if (n === 0) return specs;
   if (isChart(figure)) return chartParts(figure);
+
+  if (figure.template === 'network') {
+    // Each node a shape with its text, each connection a line or an arrow between two of them.
+    const shape = nodeSize(figure, size);
+    for (const item of figure.items) {
+      specs.push({
+        part: nodePart(item.id),
+        look: {
+          geometry: figure.nodeShape ?? 'roundRect',
+          fill: figure.color ?? 'lilla',
+          content: lines(item.text),
+          fontSize: size,
+        },
+        box: { x: x, y: y, ...shape, rotation: 0 },
+        free: true,
+      });
+    }
+    for (const link of validLinks(figure)) {
+      specs.push({
+        part: linkPart(link.id),
+        look: { geometry: link.arrow ? 'arrow' : 'line' },
+        between: { start: nodePart(link.from), end: nodePart(link.to) },
+        own: true,
+      });
+    }
+    return specs;
+  }
 
   if (figure.template === 'process') {
     const down = figure.direction === 'down';
@@ -439,14 +481,19 @@ export function followTemplates(scene: Templated): boolean {
         while (taken.has(id)) id += 'x';
         taken.add(id);
         const of = { figure: figure.id, part: spec.part };
-        const box = spec.box ?? { x: figure.box.x, y: figure.box.y, w: 1, h: 1, rotation: 0 };
+        const box = spec.free
+          ? freePlace(figure.box, spec.box!, [
+              ...[...have.entries()].filter(([part]) => wanted.has(part)).map(([, el]) => el.box),
+              ...made.map((el) => el.box),
+            ])
+          : (spec.box ?? { x: figure.box.x, y: figure.box.y, w: 1, h: 1, rotation: 0 });
         el = spec.words
           ? { id, type: 'text', role: 'body', ...spec.words, of, box }
           : { id, type: 'shape', geometry: spec.look!.geometry, of, box };
         if (spec.between && el.type === 'shape') {
           // Laid where `followFigures` would lay it, so it is in place from the start.
-          const from = boxes.get(spec.between.start);
-          const to = boxes.get(spec.between.end);
+          const from = boxes.get(spec.between.start) ?? have.get(spec.between.start)?.box;
+          const to = boxes.get(spec.between.end) ?? have.get(spec.between.end)?.box;
           if (from && to) {
             const a = { type: 'shape', geometry: 'rect', box: from } as Element;
             const b = { type: 'shape', geometry: 'rect', box: to } as Element;
@@ -477,6 +524,20 @@ export function followTemplates(scene: Templated): boolean {
       );
       for (const el of made) {
         const source = partSource(el.of!.part);
+        if (source?.kind === 'link') {
+          // A new connection comes in with the later of its two nodes, when both come in at steps.
+          const link = figure.links?.find((one) => one.id === source.link);
+          const ends = link ? [link.from, link.to].map((item) => have.get(nodePart(item))?.id) : [];
+          const at = ends.map((id) =>
+            scene.timeline.findIndex((step) => step.actions.some((action) => action.target === id)),
+          );
+          if (at.length === 2 && at.every((index) => index >= 0)) {
+            const step = scene.timeline[Math.max(...at)]!;
+            const like = step.actions.find((action) => action.target === ends[at.indexOf(Math.max(...at))])!;
+            step.actions.push({ ...like, target: el.id });
+          }
+          continue;
+        }
         for (const key of ['item', 'series'] as const) {
           const mine = source?.[key];
           if (mine === undefined) continue;
@@ -512,6 +573,8 @@ export function followTemplates(scene: Templated): boolean {
       }
       const look = spec.look!;
       for (const key of LOOK_KEYS) {
+        // The path of a connection of a network is the lecturer's.
+        if (spec.own && key === 'points') continue;
         // A part being written in for the first time has an empty text; that is no text.
         const blank =
           key === 'content' &&
@@ -520,9 +583,33 @@ export function followTemplates(scene: Templated): boolean {
           isEmptyRichText(el.content);
         if (!blank && put(el, key, look[key] as never)) changed = true;
       }
-      if (spec.between) {
+      if (spec.between && spec.own) {
+        // An end the lecturer has fastened to a node of the network, or to a
+        // line, stays there; one that is loose or fastened elsewhere goes to
+        // the node the form names (the form says what there is).
+        for (const end of ['start', 'end'] as const) {
+          const key = end === 'start' ? 'startAt' : 'endAt';
+          const id = el[key];
+          const target = id === undefined ? undefined : scene.elements.find((one) => one.id === id);
+          const kept =
+            target !== undefined &&
+            target.id !== el.id &&
+            (isLine(target) ||
+              (target.of?.figure === figure.id && target.of.part.startsWith('node:')));
+          if (kept) continue;
+          const node = have.get(spec.between[end]);
+          if (node) {
+            fastenEnd(el, end, { at: node.id });
+            changed = true;
+          }
+        }
+      } else if (spec.between) {
         if (put(el, 'startAt', have.get(spec.between.start)?.id)) changed = true;
         if (put(el, 'endAt', have.get(spec.between.end)?.id)) changed = true;
+      } else if (spec.free) {
+        for (const key of ['startAt', 'endAt', 'flipH', 'flipV'] as const) {
+          if (put(el, key, undefined)) changed = true;
+        }
       } else {
         if (put(el, 'box', spec.box)) changed = true;
         for (const key of ['startAt', 'endAt', 'flipH', 'flipV'] as const) {
@@ -562,6 +649,15 @@ export function forgetParts(scene: Pick<Scene, 'elements'>, ids: readonly string
     const figure = figureOf(scene, el);
     const source = partSource(el.of.part);
     if (!figure || !source || source.kind === 'arrow') continue;
+    // In a network a connection deleted by itself takes its row of connections; a node takes its connections with it.
+    if (source.kind === 'link') {
+      figure.links = figure.links?.filter((link) => link.id !== source.link);
+      continue;
+    }
+    if (source.kind === 'node') {
+      removeNode(figure, source.item!);
+      continue;
+    }
     if (figure.template === 'timeAxis' && source.kind === 'body') {
       delete figure.items.find((item) => item.id === source.item)?.detail;
       continue;
@@ -609,7 +705,9 @@ export function writePart(scene: Pick<Scene, 'elements'>, el: Element, content: 
     return true;
   }
   const item = figure?.items.find((row) => row.id === source?.item);
-  if (!item || !source || source.kind === 'arrow' || source.kind === 'dot') return false;
+  if (!item || !source || source.kind === 'arrow' || source.kind === 'dot' || source.kind === 'link') {
+    return false;
+  }
   if (source.kind === 'body') {
     if (text) item.detail = text;
     else delete item.detail;
@@ -673,6 +771,21 @@ export function stepPerItem(
   if (!figure) return;
   const parts = partsOf(scene, figureId);
   dropFromSteps(scene, new Set([figureId, ...parts.map((el) => el.id)]));
+  if (figure.template === 'network') {
+    // One step per node, in the order of the form; a connection comes in with the later of its two nodes.
+    const turn = new Map(figure.items.map((item, i) => [item.id, i]));
+    const steps: string[][] = figure.items.map(() => []);
+    for (const el of parts) {
+      const source = partSource(el.of!.part);
+      if (source?.kind === 'node' && turn.has(source.item!)) steps[turn.get(source.item!)!]!.unshift(el.id);
+      if (source?.kind !== 'link') continue;
+      const link = figure.links?.find((one) => one.id === source.link);
+      if (!link || !turn.has(link.from) || !turn.has(link.to)) continue;
+      steps[Math.max(turn.get(link.from)!, turn.get(link.to)!)]!.push(el.id);
+    }
+    for (const targets of steps) if (targets.length > 0) scene.timeline.push(newStep(targets));
+    return;
+  }
   const of = (one: { id: string }): string[] =>
     parts.filter((el) => partSource(el.of!.part)?.[by] === one.id).map((el) => el.id);
   for (const one of by === 'series' ? (figure.series ?? []) : figure.items) {

@@ -69,6 +69,7 @@ export const TEMPLATE_NAMES: Record<FigureTemplate, string> = {
   timeAxis: 'Tidsakse',
   bars: 'Søylediagram',
   line: 'Linjediagram',
+  network: 'Nettverk',
 };
 
 /** What a figure on a slide is called where it is fetched into a "Lær mer" box. */
@@ -86,6 +87,7 @@ export const ITEM_NAMES: Record<FigureTemplate, string> = {
   timeAxis: 'hendelse',
   bars: 'rad',
   line: 'rad',
+  network: 'node',
 };
 
 export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {

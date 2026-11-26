@@ -34,7 +34,7 @@ import {
 } from '../theme/theme';
 import { labelLineStart, markNumber, markStyle, marksOf, pictureOf } from '../layout/marks';
 import { chartTable, isChart } from '../layout/charts';
-import { barGrowsFrom, rowOrder } from '../layout/rows';
+import { barGrowsFrom, connectionList, rowOrder } from '../layout/rows';
 import { classifyLink, renderRichText } from './richtext';
 import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
 
@@ -69,6 +69,8 @@ export interface SceneStrings {
   markEmpty: string;
   /** Shown in the editor in a figure whose form has no rows. */
   figureEmpty: string;
+  /** A connection of a network, as it is read: with direction (an arrow) or without. */
+  connection: (from: string, to: string, arrow: boolean) => string;
   creditBy: string;
   creditSource: string;
   creditCropped: string;
@@ -967,6 +969,26 @@ function renderFigure(ctx: RenderContext, el: FigureElement): Node {
     frame.textContent = ctx.strings.figureEmpty;
     return frame;
   }
+  if (el.template === 'network' && ctx.mode !== 'edit') {
+    // The nodes are read as the shapes they are, in the order of the form; the
+    // connections are here as a list that is read and not shown.
+    const said = connectionList(el, ctx.strings.connection);
+    if (said.length === 0) {
+      frame.setAttribute('aria-hidden', 'true');
+      return frame;
+    }
+    const read = doc.createElement('div');
+    read.className = 'ls-figure-table';
+    const list = doc.createElement('ul');
+    for (const text of said) {
+      const item = doc.createElement('li');
+      item.textContent = text;
+      list.appendChild(item);
+    }
+    read.appendChild(list);
+    frame.appendChild(read);
+    return frame;
+  }
   if (!isChart(el) || ctx.mode === 'edit') {
     frame.setAttribute('aria-hidden', 'true');
     return frame;
@@ -1243,6 +1265,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     moreAbout: (title) => (title ? `Lær mer om: ${title}` : 'Lær mer'),
     markEmpty: 'Skriv hva merket peker på',
     figureEmpty: 'Figuren er tom. Legg til i skjemaet.',
+    connection: (from, to, arrow) => (arrow ? `${from} til ${to}` : `${from} og ${to}`),
     creditBy: 'av',
     creditSource: 'Kilde',
     creditCropped: 'beskåret',
@@ -1269,6 +1292,7 @@ export const SCENE_STRINGS: Record<Project['meta']['language'], SceneStrings> = 
     moreAbout: (title) => (title ? `Learn more about: ${title}` : 'Learn more'),
     markEmpty: 'Write what the mark points at',
     figureEmpty: 'The figure is empty. Add to it in the form.',
+    connection: (from, to, arrow) => (arrow ? `${from} to ${to}` : `${from} and ${to}`),
     creditBy: 'by',
     creditSource: 'Source',
     creditCropped: 'cropped',

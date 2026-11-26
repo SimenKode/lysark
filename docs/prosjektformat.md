@@ -52,7 +52,7 @@ stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
 
-## Format 20: streker som bøyes og festes til punkter og til andre streker
+## Format 20: streker som bøyes og festes, og figuren «Nettverk»
 
 ```ts
 interface ShapeElement {
@@ -96,6 +96,38 @@ interface ShapeElement {
   størrelse, skaleres strekene i den med punktene.
 - Kopier («Lag kopi», kopi av et lysark, en figur hentet inn i en «Lær
   mer»-boks) beholder veien og festene, med id-ene til kopiene.
+
+**Nettverk** er en ny figur med skjema (`template: 'network'`):
+
+```ts
+interface FigureElement {
+  // ... som før
+  links?: { id: string; from: string; to: string; arrow?: boolean }[];  // koblingene
+  nodeShape?: 'roundRect' | 'ellipse' | 'rect';  // formen på nodene; avrundet uten feltet
+}
+```
+
+- `items` er nodene (`text`), og `links` koblingene mellom dem, med id-ene
+  til nodene (`from`, `to`) og om koblingen er en pil. Et nytt nettverk har
+  ingen noder og ingen koblinger.
+- **Skjemaet sier hva som finnes; foreleseren sier hvor det er.** Hver node
+  er en vanlig form med `of` (`node:<rad>`), og hver kobling en vanlig strek
+  eller pil (`link:<kobling>`) som er festet i begge ender. `followTemplates`
+  lager og fjerner dem og bestemmer tekst, form, farge og skriftstørrelse.
+  Men boksen til en node, og veien og festepunktene til en kobling, er
+  foreleserens og legges aldri ut på nytt av en endring i skjemaet. En ny
+  node settes på en ledig plass i rammen, og en ny kobling går rett.
+- En ende av en kobling som foreleseren har festet til en annen strek
+  (et T-kryss), eller til en annen node i nettverket, blir der; den siste
+  skrives da inn i skjemaet. En ende som er løs eller festet til noe annet,
+  festes igjen til noden skjemaet sier.
+- «Ordne nodene» er det eneste som flytter nodene: pent inni rammen, i
+  ring, eller i lag etter pilene (bortover på et liggende lysark, nedover på
+  et stående), med koblingene rettet ut.
+- Den som ikke ser, får nodene lest i skjemaets rekkefølge (`rowOrder`), og
+  koblingene som en liste som leses og ikke vises («A til B», «A og B»).
+- «Gjør om til fri figur» fjerner figurelementet; nodene og koblingene står
+  igjen som en gruppe, med veier og fester.
 
 Et prosjekt i format 19 leses som det er.
 

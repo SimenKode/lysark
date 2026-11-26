@@ -13,6 +13,7 @@ import {
   type CameraSize,
   type Element,
   type FigureElement,
+  type NodeShape,
   type PaletteColor,
   type Scene,
   type SceneKind,
@@ -23,6 +24,12 @@ import {
 } from '../../shared/format/schema';
 import { stageOf } from '../../shared/format/constants';
 import { fitToGrid } from '../../shared/layout/fitToGrid';
+import {
+  arrangeNodes,
+  linkEndOnLink,
+  removeNode,
+  setLinkEnd,
+} from '../../shared/layout/network';
 import {
   canFasten,
   canGroup,
@@ -1114,6 +1121,296 @@ function ChartFields({ figure }: { figure: FigureElement }) {
 }
 
 /** The form of a figure that draws itself: its rows, and how the figure is to look. */
+/** What a node is called in the lists of the form: its text, or its number when it has none. */
+function nodeName(figure: FigureElement, item: string): string {
+  const index = figure.items.findIndex((one) => one.id === item);
+  const text = figure.items[index]?.text.replace(/\s+/g, ' ').trim();
+  return text || `Node ${index + 1}`;
+}
+
+const NODE_SHAPE_NAMES: Array<[NodeShape, string]> = [
+  ['roundRect', 'Avrundet'],
+  ['ellipse', 'Rund'],
+  ['rect', 'Firkantet'],
+];
+
+/**
+ * The form of a network: its nodes, and the connections between them. The
+ * form says what there is; where the nodes stand and how the connections
+ * run is done on the slide.
+ */
+function NetworkFields({ figure }: { figure: FigureElement }) {
+  const updateScene = useStore((s) => s.updateScene);
+  const scene = useStore(currentScene);
+  const stage = useStage();
+  const [added, setAdded] = useState<string | null>(null);
+  const change = useFigureChange(figure);
+  const links = figure.links ?? [];
+  const enough = figure.items.length >= 2;
+  /** The first two nodes that have no connection between them yet, or the first two. */
+  const freePair = (): [string, string] => {
+    const ids = figure.items.map((item) => item.id);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const taken = links.some(
+          (link) =>
+            (link.from === ids[i] && link.to === ids[j]) ||
+            (link.from === ids[j] && link.to === ids[i]),
+        );
+        if (!taken) return [ids[i]!, ids[j]!];
+      }
+    }
+    return [ids[0]!, ids[1]!];
+  };
+  /** Where an end of a connection lies when it was dragged onto another line, in plain words. */
+  const lying = (linkId: string, end: 'start' | 'end'): string | undefined => {
+    if (!scene) return undefined;
+    const on = linkEndOnLink(scene, figure, linkId, end);
+    if (!on) return undefined;
+    const what = end === 'start' ? 'Starten' : 'Slutten';
+    if (!on.link) return `${what} ligger på en annen strek.`;
+    const word = on.link.arrow ? 'til' : 'og';
+    return `${what} ligger på koblingen ${nodeName(figure, on.link.from)} ${word} ${nodeName(figure, on.link.to)}.`;
+  };
+  return (
+    <div className="group">
+      <p className="hint">
+        Skjemaet sier hvilke noder og koblinger figuren har. Dra nodene dit du vil ha dem på
+        lysarket, og form koblingene der, som andre streker.
+      </p>
+      <h3>Noder</h3>
+      <ol className="figure-form">
+        {figure.items.map((item, index) => (
+          <li key={item.id}>
+            <span className="mark-list-number" aria-hidden="true">
+              {index + 1}
+            </span>
+            <div className="figure-form-fields">
+              <input
+                type="text"
+                aria-label={`Tekst i node ${index + 1}`}
+                placeholder="Tekst"
+                value={item.text}
+                autoFocus={item.id === added}
+                onChange={(e) =>
+                  change((f) => {
+                    f.items[index]!.text = e.target.value;
+                  }, `item-text-${item.id}`)
+                }
+              />
+            </div>
+            <div className="figure-form-buttons">
+              <button
+                type="button"
+                className="icon-only"
+                disabled={index === 0}
+                aria-label={`Flytt node ${index + 1} opp`}
+                title="Flytt opp"
+                onClick={() => change((f) => moveItem(f, index, index - 1))}
+              >
+                <Icon name="up" />
+              </button>
+              <button
+                type="button"
+                className="icon-only"
+                disabled={index === figure.items.length - 1}
+                aria-label={`Flytt node ${index + 1} ned`}
+                title="Flytt ned"
+                onClick={() => change((f) => moveItem(f, index, index + 1))}
+              >
+                <Icon name="down" />
+              </button>
+              <button
+                type="button"
+                className="danger"
+                aria-label={`Fjern node ${index + 1}`}
+                title="Koblingene til noden blir borte med den."
+                onClick={() => change((f) => removeNode(f, item.id))}
+              >
+                Fjern
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="button-row">
+        <button
+          type="button"
+          className="strong"
+          onClick={() => {
+            const id = newId('e');
+            change((f) => {
+              f.items.push({ id, text: '' });
+            });
+            setAdded(id);
+          }}
+        >
+          Legg til node
+        </button>
+      </div>
+      <h3>Koblinger</h3>
+      {links.length === 0 && (
+        <p className="hint">
+          {enough
+            ? 'En kobling er en strek eller en pil mellom to noder.'
+            : 'Legg til minst to noder, så kan du koble dem sammen.'}
+        </p>
+      )}
+      <ol className="figure-form network-links">
+        {links.map((link, index) => (
+          <li key={link.id}>
+            <span className="mark-list-number" aria-hidden="true">
+              {index + 1}
+            </span>
+            <div className="figure-form-fields">
+              {(['start', 'end'] as const).map((end) => (
+                <label key={end} className="field">
+                  <span className="field-label">{end === 'start' ? 'Fra' : 'Til'}</span>
+                  <select
+                    aria-label={`${end === 'start' ? 'Fra' : 'Til'} i kobling ${index + 1}`}
+                    value={end === 'start' ? link.from : link.to}
+                    onChange={(e) => {
+                      const item = e.target.value;
+                      updateScene((s) => {
+                        const f = s.elements.find((el) => el.id === figure.id);
+                        if (f?.type === 'figure') setLinkEnd(s, f, link.id, end, item);
+                      });
+                    }}
+                  >
+                    {figure.items.map((item) => (
+                      <option
+                        key={item.id}
+                        value={item.id}
+                        disabled={item.id === (end === 'start' ? link.to : link.from)}
+                      >
+                        {nodeName(figure, item.id)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              <Segmented
+                label="Slik ser den ut"
+                options={[
+                  ['line', 'Strek'],
+                  ['arrow', 'Pil'],
+                ]}
+                value={link.arrow ? 'arrow' : 'line'}
+                onChange={(value) =>
+                  change((f) => {
+                    const own = f.links?.find((one) => one.id === link.id);
+                    if (!own) return;
+                    if (value === 'arrow') own.arrow = true;
+                    else delete own.arrow;
+                  })
+                }
+              />
+              {(['start', 'end'] as const).map((end) => {
+                const text = lying(link.id, end);
+                return text ? (
+                  <p key={end} className="hint">
+                    {text}
+                  </p>
+                ) : null;
+              })}
+            </div>
+            <div className="figure-form-buttons">
+              <button
+                type="button"
+                className="danger"
+                aria-label={`Fjern kobling ${index + 1}`}
+                onClick={() =>
+                  change((f) => {
+                    f.links = (f.links ?? []).filter((one) => one.id !== link.id);
+                  })
+                }
+              >
+                Fjern
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="button-row">
+        <button
+          type="button"
+          className="strong"
+          disabled={!enough}
+          onClick={() => {
+            const [from, to] = freePair();
+            change((f) => {
+              f.links = [...(f.links ?? []), { id: newId('e'), from, to }];
+            });
+          }}
+        >
+          Legg til kobling
+        </button>
+      </div>
+      <div className="button-row">
+        <button
+          type="button"
+          disabled={figure.items.length === 0}
+          title="Nodene legges pent inni rammen, og koblingene rettes ut: i ring, eller i lag etter pilene."
+          onClick={() => updateScene((s) => arrangeNodes(s, figure.id, stage))}
+        >
+          Ordne nodene
+        </button>
+        {enough && (
+          <button
+            type="button"
+            title="Nodene kommer inn én etter én, i rekkefølgen i skjemaet. En kobling kommer sammen med den siste av de to nodene den går mellom."
+            onClick={() => updateScene((s) => stepPerItem(s, figure.id, stepMaker(s)))}
+          >
+            Ett steg per node
+          </button>
+        )}
+      </div>
+      <Segmented
+        label="Form på nodene"
+        options={NODE_SHAPE_NAMES}
+        value={figure.nodeShape ?? 'roundRect'}
+        onChange={(value) =>
+          change((f) => {
+            if (value === 'roundRect') delete f.nodeShape;
+            else f.nodeShape = value;
+          })
+        }
+      />
+      <Swatches
+        label="Farge"
+        colors={SERIES_ORDER}
+        value={figure.color}
+        noneLabel="Malens"
+        onChange={(value) =>
+          change((f) => {
+            if (value) f.color = value;
+            else delete f.color;
+          })
+        }
+      />
+      <NumberField
+        label="Skriftstørrelse"
+        value={figureFontSize(figure)}
+        min={10}
+        max={200}
+        onChange={(value) =>
+          change((f) => {
+            f.fontSize = value;
+          }, 'figure-size')
+        }
+      />
+      <div className="button-row">
+        <button type="button" onClick={() => releaseToFree(figure)}>
+          Gjør om til fri figur
+        </button>
+      </div>
+      <p className="hint">
+        En fri figur kan du flytte og endre del for del. Skjemaet blir da borte for godt.
+      </p>
+    </div>
+  );
+}
+
 function FigureFields({ figure }: { figure: FigureElement }) {
   const updateScene = useStore((s) => s.updateScene);
   const stage = useStage();
@@ -1135,6 +1432,7 @@ function FigureFields({ figure }: { figure: FigureElement }) {
       : undefined;
   const release = (): void => releaseToFree(figure);
   if (isChart(figure)) return <ChartFields figure={figure} />;
+  if (figure.template === 'network') return <NetworkFields figure={figure} />;
   return (
     <div className="group">
       <p className="hint">
@@ -1791,13 +2089,28 @@ function ElementPanel({ scene }: { scene: Scene }) {
   }
   if (figure) {
     const part = selected[0]!;
+    const network = figure.template === 'network';
+    const link = network && part.type === 'shape' && part.of?.part.startsWith('link:');
     return (
       <div className="panel-body">
         <h3>{describeElement(part)}</h3>
-        <p className="hint">
-          Dette er en del av en figur ({TEMPLATE_NAMES[figure.template].toLowerCase()}). Tekst,
-          farge og plass styres av skjemaet til figuren. «Lær mer» og steg er delens egne.
-        </p>
+        {!network ? (
+          <p className="hint">
+            Dette er en del av en figur ({TEMPLATE_NAMES[figure.template].toLowerCase()}). Tekst,
+            farge og plass styres av skjemaet til figuren. «Lær mer» og steg er delens egne.
+          </p>
+        ) : link ? (
+          <p className="hint">
+            Dette er en kobling i et nettverk. Skjemaet sier hvilke noder den går mellom; hvordan
+            den går, bestemmer du her. Dra en ende inn på en annen kobling for å lage et T-kryss.
+          </p>
+        ) : (
+          <p className="hint">
+            Dette er en node i et nettverk. Teksten står i skjemaet. Dra noden dit du vil ha den;
+            koblingene følger med.
+          </p>
+        )}
+        {link && part.type === 'shape' && <LineShape el={part} />}
         <div className="button-row">
           <button
             type="button"

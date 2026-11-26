@@ -5,11 +5,11 @@
 // only from the format.
 import type { Box, Element, FigureElement } from '../format/schema';
 
-/** Parts that show one row of the form. An arrow leads to the row it names. */
-const ROW_KINDS = ['box', 'head', 'body', 'arrow', 'dot', 'label'] as const;
+/** Parts that show one row of the form. An arrow leads to the row it names. A node is a row of a network. */
+const ROW_KINDS = ['box', 'head', 'body', 'arrow', 'dot', 'label', 'node'] as const;
 /** Parts that show one series of a diagram: its curve, and its colour and name in the legend. */
 const SERIES_KINDS = ['curve', 'key', 'name'] as const;
-type PartKind = (typeof ROW_KINDS)[number] | (typeof SERIES_KINDS)[number] | 'bar';
+type PartKind = (typeof ROW_KINDS)[number] | (typeof SERIES_KINDS)[number] | 'bar' | 'link';
 
 export interface PartSource {
   kind: PartKind;
@@ -17,6 +17,8 @@ export interface PartSource {
   item?: string;
   /** The series, when the part shows one. A bar shows both. */
   series?: string;
+  /** For a connection of a network: which one. */
+  link?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function partSource(part: string): PartSource | undefined {
   if (row) return { kind: row, item: rest };
   const series = SERIES_KINDS.find((known) => known === name);
   if (series) return { kind: series, series: rest };
+  if (name === 'link') return { kind: 'link', link: rest };
   if (name === 'bar') {
     const split = rest.indexOf(':');
     return { kind: 'bar', item: rest.slice(0, split), series: rest.slice(split + 1) };
@@ -66,7 +69,12 @@ export function rowOrder(elements: readonly Element[]): Map<string, RowPlace> {
     if (!figure) continue;
     const source = partSource(el.of!.part);
     const row =
-      source?.item === undefined ? -1 : figure.items.findIndex((i) => i.id === source.item);
+      source?.kind === 'link'
+        ? // The connections of a network after its nodes.
+          figure.items.length + (figure.links ?? []).findIndex((l) => l.id === source.link)
+        : source?.item === undefined
+          ? -1
+          : figure.items.findIndex((i) => i.id === source.item);
     order.set(el.id, {
       figure: figure.id,
       at: figure.box,
@@ -89,4 +97,21 @@ export function barGrowsFrom(
   const figure = el.of.figure;
   const axis = elements.find((one) => one.of?.figure === figure && one.of.part === 'axis:x');
   return !axis || el.box.y + el.box.h / 2 <= axis.box.y ? 'bottom' : 'top';
+}
+
+/**
+ * The connections of a network as they are read by those who cannot see
+ * it, in the order of the form: «A til B» for an arrow, «A og B» for a line
+ * without direction. A connection with a node that has no text is left out.
+ */
+export function connectionList(
+  figure: FigureElement,
+  say: (from: string, to: string, arrow: boolean) => string,
+): string[] {
+  const text = new Map(figure.items.map((item) => [item.id, item.text.replace(/\s+/g, ' ').trim()]));
+  return (figure.links ?? []).flatMap((link) => {
+    const from = text.get(link.from);
+    const to = text.get(link.to);
+    return link.from !== link.to && from && to ? [say(from, to, !!link.arrow)] : [];
+  });
 }

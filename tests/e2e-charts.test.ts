@@ -125,6 +125,7 @@ describe.skipIf(!built)('bar and line diagrams, end to end', () => {
       'Tidsakse',
       'Søylediagram',
       'Linjediagram',
+      'Nettverk',
     ]);
     await page.locator('.insertbar .menu').getByRole('menuitem', { name: 'Søylediagram' }).click();
     expect(await heading()).toBe('Figur: Søylediagram');

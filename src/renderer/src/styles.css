@@ -2449,8 +2449,13 @@ button.figure-choice:focus-visible {
   gap: 6px;
 }
 .figure-form-fields input,
-.figure-form-fields textarea {
+.figure-form-fields textarea,
+.figure-form-fields select {
   width: 100%;
+}
+/* A connection of a network: «Fra» and «Til» close together. */
+.network-links .field {
+  margin: 0;
 }
 .figure-form-buttons {
   display: flex;
