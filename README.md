@@ -51,6 +51,13 @@ spør hvordan lysarkene skal se ut:
   utseende. Stående søylediagram og linjediagram fra PowerPoint tegnes
   da på nytt, med de samme tallene.
 
+Så spør Lysark hvilken form lysarkene skal ha: **«Liggende (16:9)»**
+for skjerm, prosjektor og vanlige videoer, eller **«Stående (9:16)»**
+for mobil og for videoer til TikTok, Reels og Shorts. Lysark ser på
+sidene i fila og merker formen som passer, med «Anbefalt».
+
+![Valget ved import: utseende og form](docs/bilder/import.png)
+
 Uansett hva du velger, kan tekst og bilder flyttes og endres etterpå.
 Seksjonene i PowerPoint og bokmerkene i en PDF blir kapitler. Lysark
 sier fra om det som ikke kom med.
@@ -62,11 +69,18 @@ Klikk for å velge, dra for å flytte, dobbeltklikk for å skrive.
 **Figurer.** «Sett inn» og «Figur» gir deg en prosess, en lagvis
 oppbygging, en sammenligning, en tidsakse, et søylediagram eller et
 linjediagram. Du fyller ut et skjema, og figuren tegner seg selv. Tall
-til et diagram kan du lime rett inn fra et regneark. Du kan også lage
-en figur fritt: piler fester seg til bokser og følger dem når du
-flytter dem.
+til et diagram kan du lime rett inn fra et regneark.
 
 ![Et søylediagram, med tabellen for tallene til høyre](docs/bilder/figur.png)
+
+**Nettverk og streker.** «Nettverk» er en figur med noder og koblinger.
+I skjemaet skriver du hvilke noder og koblinger som finnes, og på
+lysarket drar du nodene dit du vil. Koblingene følger med. Alle streker
+og piler kan formes: dra i midten av en strek for å bøye den. En ende
+fester seg til en boks, eller til en annen strek, og følger med når den
+flyttes.
+
+![Et nettverk med tre noder, og skjemaet til høyre](docs/bilder/nettverk.png)
 
 **Steg.** Under «Steg» bestemmer du hva som skal skje, ett trykk om
 gangen: noe kommer inn, noe markeres, noe tas bort, eller bildet zoomer
@@ -100,8 +114,13 @@ den ikke dekker noe, også mens du leser inn.
 
 ![Innlesing: lysarket til venstre, manuset til høyre](docs/bilder/les-inn.png)
 
+Når du trykker «Ferdig», lagres opptaket i bakgrunnen, og du kan
+arbeide videre med lysarkene imens.
+
 Etterpå kan du klippe bort feil, legge inn pauser og ta om et stykke.
-Opptaket ditt endres aldri, så alt kan angres.
+Opptaket ditt endres aldri, så alt kan angres. Et lysark uten lyd står
+så lenge du sier i feltet «Tid uten lyd», og du kan velge at et lysark
+ikke skal være med i videoen.
 
 ![Lyden til et lysark, med stegene som merker](docs/bilder/lyd.png)
 
@@ -120,7 +139,8 @@ til å bruke.
   lest inn stemmen, kan de trykke «Spill av».
 - **«Eksporter video»** gir en MP4-fil med kapitler og med teksting
   ved siden av, eller en GIF av et kort klipp. Du kan også lage en
-  video av bare noen få lysark.
+  video av bare noen få lysark. Et stående prosjekt gir en stående
+  video.
 
 ### Dette får studentene
 
@@ -147,6 +167,11 @@ har lagt i «Lær mer», og «Innhold» viser kapitlene.
   ikke godkjent eller støttet av Openverse.
 - **YouTube** spiller rett i lysarket hos studentene. I videofila står
   en YouTube-video som stillbilde.
+- **Formen** (liggende eller stående) velger du når prosjektet lages,
+  og den gjelder hele prosjektet.
+- **Plass på disken.** Opptak du har tatt om, blir liggende i
+  prosjektmappa. «Fil» og «Rydd i prosjektmappa» legger det som ikke
+  brukes, i papirkurven.
 
 ## Om prosjektet
 
