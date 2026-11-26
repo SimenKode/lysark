@@ -24,6 +24,7 @@ import type {
 import { CHART_FONT_SIZE, chartParts, emptyRow, isChart, removeSeries } from './charts';
 import { edgePoint, setLineEnds } from './groups';
 import { partSource } from './rows';
+import { stepStands } from './steps';
 
 export { partSource };
 
@@ -356,7 +357,7 @@ function dropFromSteps(scene: Templated, gone: ReadonlySet<string>): void {
   for (const step of scene.timeline) {
     step.actions = step.actions.filter((action) => !gone.has(action.target));
   }
-  scene.timeline = scene.timeline.filter((step) => step.actions.length > 0);
+  scene.timeline = scene.timeline.filter(stepStands);
 }
 
 /**

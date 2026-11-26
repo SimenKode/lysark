@@ -14,6 +14,18 @@ import type {
   TextRole,
 } from '../../shared/format/schema';
 import type { SlideFigure } from '../../shared/layout/fetch';
+import {
+  HIDE_SECONDS,
+  MARK_SECONDS,
+  ZOOM_SECONDS,
+  fitView,
+  proposedAction,
+  showStep,
+  stepKind,
+  stepSeconds,
+  stepStands,
+  type View,
+} from '../../shared/layout/steps';
 import { forgetParts } from '../../shared/layout/templates';
 import { pruneTimeline } from '../../shared/render/timeline';
 import { columnEdges, type Theme } from '../../shared/theme/theme';
@@ -356,43 +368,87 @@ export function reorderElement(scene: Scene, id: string, move: OrderMove): void 
 
 // ---------- Steps ----------
 
-const DEFAULT_FADE = 0.4;
-
-export function newStep(targets: string[]): Step {
-  return {
-    id: newId('t'),
-    actions: targets.map((target) => ({ target, effect: 'fade' as const, duration: DEFAULT_FADE })),
-  };
+/**
+ * A new step that brings the elements in, each with the movement the
+ * program proposes for it: a line is drawn, a bar grows, a large number
+ * counts up, and anything else tones in.
+ */
+export function newStep(scene: Pick<Scene, 'elements'>, targets: string[]): Step {
+  return showStep(scene, targets, newId('t'));
 }
 
-/** Removes elements from whatever step they are in. */
+/** For the functions that make several steps of a slide: they are given this to make each with. */
+export function stepMaker(scene: Pick<Scene, 'elements'>): (targets: string[]) => Step {
+  return (targets) => newStep(scene, targets);
+}
+
+/**
+ * Takes elements out of the steps that bring them in, so that they are
+ * there from the start. Steps that mark them or take them away are left.
+ */
 export function removeFromSteps(scene: Scene, ids: string[]): void {
   for (const step of scene.timeline) {
+    if (stepKind(step) !== 'show') continue;
     step.actions = step.actions.filter((a) => !ids.includes(a.target));
   }
-  scene.timeline = scene.timeline.filter((s) => s.actions.length > 0);
+  scene.timeline = scene.timeline.filter(stepStands);
+}
+
+/** Takes elements out of one step. A step that is left with nothing goes. */
+export function removeFromStep(scene: Scene, stepId: string, ids: string[]): void {
+  const step = scene.timeline.find((s) => s.id === stepId);
+  if (!step) return;
+  step.actions = step.actions.filter((a) => !ids.includes(a.target));
+  scene.timeline = scene.timeline.filter(stepStands);
 }
 
 export function addStep(scene: Scene, ids: string[]): void {
   if (ids.length === 0) return;
   removeFromSteps(scene, ids);
-  scene.timeline.push(newStep(ids));
+  scene.timeline.push(newStep(scene, ids));
 }
 
 export function addToStep(scene: Scene, stepId: string, ids: string[]): void {
-  removeFromSteps(
-    scene,
-    ids.filter(
-      (id) => !scene.timeline.find((s) => s.id === stepId)?.actions.some((a) => a.target === id),
-    ),
-  );
   const step = scene.timeline.find((s) => s.id === stepId);
-  if (!step) return;
-  for (const id of ids) {
-    if (!step.actions.some((a) => a.target === id)) {
-      step.actions.push({ target: id, effect: 'fade', duration: DEFAULT_FADE });
-    }
+  if (!step || step.kind === 'zoom') return;
+  const fresh = ids.filter((id) => !step.actions.some((a) => a.target === id));
+  // An element comes in at one step only; it can be marked or taken away at several.
+  if (stepKind(step) === 'show') removeFromSteps(scene, fresh);
+  for (const id of fresh) {
+    const el = scene.elements.find((one) => one.id === id);
+    if (!el) continue;
+    if (stepKind(step) === 'show') step.actions.push(proposedAction(el));
+    else step.actions.push({ target: id, effect: 'fade', duration: stepSeconds(step) });
   }
+  if (!scene.timeline.includes(step) && step.actions.length > 0) scene.timeline.push(step);
+}
+
+/** A new step that marks the elements, or takes them away. */
+export function addKindStep(scene: Scene, kind: 'mark' | 'hide', ids: string[]): void {
+  const targets = ids.filter((id) => scene.elements.some((el) => el.id === id));
+  if (targets.length === 0) return;
+  const duration = kind === 'mark' ? MARK_SECONDS : HIDE_SECONDS;
+  scene.timeline.push({
+    id: newId('t'),
+    kind,
+    actions: targets.map((target) => ({ target, effect: 'fade' as const, duration })),
+  });
+}
+
+/**
+ * A new step that zooms: in on a part of the slide, or (without one) out to
+ * the whole slide again. Returns its id.
+ */
+export function addZoomStep(scene: Scene, view: View | undefined): string {
+  const id = newId('t');
+  scene.timeline.push({
+    id,
+    kind: 'zoom',
+    actions: [],
+    ...(view ? { zoom: fitView(view) } : {}),
+    seconds: ZOOM_SECONDS,
+  });
+  return id;
 }
 
 /** One step per element, in reading order; titles stay visible from the start. */
@@ -400,9 +456,12 @@ export function stepPerElement(scene: Scene): void {
   const order = scene.elements
     .filter((e) => !(e.type === 'text' && e.role === 'title'))
     .sort((a, b) => (Math.abs(a.box.y - b.box.y) > 40 ? a.box.y - b.box.y : a.box.x - b.box.x));
-  scene.timeline = order.map((e) => newStep([e.id]));
+  scene.timeline = order.map((e) => newStep(scene, [e.id]));
 }
 
+/** The step that brings an element in; -1 when it is there from the start. */
 export function stepOf(scene: Scene, elementId: string): number {
-  return scene.timeline.findIndex((s) => s.actions.some((a) => a.target === elementId));
+  return scene.timeline.findIndex(
+    (s) => stepKind(s) === 'show' && s.actions.some((a) => a.target === elementId),
+  );
 }

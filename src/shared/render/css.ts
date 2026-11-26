@@ -19,6 +19,8 @@ export const STAGE_CSS = `
   font-synthesis: none;
 }
 .ls-scene *, .ls-scene *::before, .ls-scene *::after { box-sizing: border-box; }
+/* The layer everything on the slide lies in; a step that zooms makes it larger. */
+.ls-zoom { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
 .ls-decoration { position: absolute; z-index: 0; pointer-events: none; }
 .ls-logo { position: absolute; z-index: 9000; width: auto; pointer-events: none; }
 .ls-el { position: absolute; }

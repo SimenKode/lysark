@@ -18,12 +18,18 @@ function repeatSteps(repeat: Scene, of: Scene): { timeline: Step[]; shown: strin
     const own = mine.get(step.id);
     // A step that was made after the recording was there, as far as the recording goes.
     if (!own) shown.add(step.id);
-    if (own && own.actions === step.actions) return own;
-    return {
-      id: step.id,
-      actions: step.actions,
-      ...(own?.at === undefined ? {} : { at: own.at }),
-    };
+    if (
+      own &&
+      own.actions === step.actions &&
+      own.kind === step.kind &&
+      own.zoom === step.zoom &&
+      own.seconds === step.seconds
+    ) {
+      return own;
+    }
+    // What the step does is the slide's; when it happens is the repeat's own.
+    const { at: _at, ...does } = step;
+    return { ...does, ...(own?.at === undefined ? {} : { at: own.at }) };
   });
   const ids = new Set(of.timeline.map((step) => step.id));
   const kept = of.timeline.filter((step) => shown.has(step.id) && ids.has(step.id));

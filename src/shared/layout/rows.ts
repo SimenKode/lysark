@@ -75,3 +75,18 @@ export function rowOrder(elements: readonly Element[]): Map<string, RowPlace> {
   }
   return order;
 }
+
+/**
+ * Which end a bar of a diagram grows from when it comes in at a step: the
+ * bottom when it stands on the horizontal axis, the top when it hangs
+ * under it. Undefined for anything that is not such a bar.
+ */
+export function barGrowsFrom(
+  elements: readonly Element[],
+  el: Element,
+): 'bottom' | 'top' | undefined {
+  if (!el.of?.part.startsWith('bar:')) return undefined;
+  const figure = el.of.figure;
+  const axis = elements.find((one) => one.of?.figure === figure && one.of.part === 'axis:x');
+  return !axis || el.box.y + el.box.h / 2 <= axis.box.y ? 'bottom' : 'top';
+}

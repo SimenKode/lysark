@@ -26,8 +26,10 @@ export const FORMAT_NAME = 'lysark';
  * 13: bar and line diagrams, and the curve they draw.
  * 14: a "Lær mer" box can hold a figure fetched from a slide.
  * 15: a line diagram can have names along its axis.
+ * 16: more ways for an element to come in at a step, and steps that mark,
+ *    take away and zoom.
  */
-export const FORMAT_VERSION = 15;
+export const FORMAT_VERSION = 16;
 
 export { STAGE } from './constants';
 
@@ -587,7 +589,19 @@ export type ElementType = Element['type'];
 
 // ---------- Timeline ----------
 
-export const STEP_EFFECTS = ['appear', 'fade'] as const;
+/**
+ * How an element comes in at a step (the owner's choices, 26.11.2026):
+ * - "appear": it is there at once.
+ * - "fade": it tones in, and glides up the last bit to its place.
+ * - "slide": it glides in from the left.
+ * - "grow": it grows out to its size; a bar of a diagram grows from the axis.
+ * - "draw": a line, an arrow or a curve is drawn from its start to its end.
+ * - "count": a number in a text counts up from zero.
+ * The program proposes the one that suits the element, and the lecturer can
+ * choose another (`src/shared/layout/steps.ts`).
+ */
+export const STEP_EFFECTS = ['appear', 'fade', 'slide', 'grow', 'draw', 'count'] as const;
+export type StepEffect = (typeof STEP_EFFECTS)[number];
 export const StepAction = z.object({
   target: z.string(),
   effect: z.enum(STEP_EFFECTS),
@@ -597,16 +611,37 @@ export const StepAction = z.object({
 });
 export type StepAction = z.infer<typeof StepAction>;
 
+/** What a step does, other than bringing something in. */
+export const STEP_KINDS = ['mark', 'hide', 'zoom'] as const;
+export type StepKind = (typeof STEP_KINDS)[number] | 'show';
+
 /**
- * A step is "now this comes in". In HTML a key press goes to the next step;
+ * A step is "now this happens". In HTML a key press goes to the next step;
  * in video and in "Spill av" each step has a time, `at`, in seconds from the
- * start of the scene. Elements not targeted by any step are visible from
- * the start.
+ * start of the scene.
+ *
+ * Without `kind` a step brings its elements in; elements that no such step
+ * brings in are visible from the start. A step can instead do one of three
+ * other things (the owner's choice, 26.11.2026):
+ * - "mark": its elements are marked, until the next step comes.
+ * - "hide": its elements go away. A later step can bring them in again.
+ * - "zoom": the picture glides in on a part of the slide (`zoom`), or out
+ *   to the whole slide again (no `zoom`). Such a step has no elements.
  */
 export const Step = z.object({
   id: z.string().min(1),
   at: z.number().min(0).optional(),
   actions: z.array(StepAction),
+  kind: z.enum(STEP_KINDS).optional(),
+  /**
+   * For a zoom step: the part of the slide that comes to fill the picture,
+   * in stage pixels, in the shape of the slide. The whole slide when absent.
+   */
+  zoom: z
+    .object({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() })
+    .optional(),
+  /** For a zoom step: how many seconds the glide takes. */
+  seconds: z.number().min(0).optional(),
 });
 export type Step = z.infer<typeof Step>;
 

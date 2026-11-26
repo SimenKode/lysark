@@ -36,7 +36,7 @@ import {
 } from '../theme/theme';
 import { labelLineStart, markNumber, markStyle, marksOf, pictureOf } from '../layout/marks';
 import { chartTable, isChart } from '../layout/charts';
-import { rowOrder } from '../layout/rows';
+import { barGrowsFrom, rowOrder } from '../layout/rows';
 import { classifyLink, renderRichText } from './richtext';
 import { embedTarget, youtubeEmbedUrl, youtubeRef, youtubeWatchUrl, type YouTubeRef } from './web';
 
@@ -1029,7 +1029,14 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
   root.style.color = PALETTE[defaultTextColor(theme, surface, 'body', theme.roles.body.size)];
   setMarkVars(root, surface);
 
-  if (scene.decoration) root.appendChild(renderDecoration(ctx, scene, surface));
+  // Everything on the slide lies in one layer, which a step that zooms makes
+  // larger round the part it shows (`applySceneMoves` in ./timeline.ts). The
+  // slide itself keeps its size and its colour, and cuts what goes outside.
+  const layer = doc.createElement('div');
+  layer.className = 'ls-zoom';
+  root.appendChild(layer);
+
+  if (scene.decoration) layer.appendChild(renderDecoration(ctx, scene, surface));
 
   // The brand's closing animation: a film that fills the slide, with no
   // controls and no sound. The player starts it when the slide is shown;
@@ -1050,7 +1057,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
         if (Number.isFinite(film.duration)) film.currentTime = Math.max(0, film.duration - 0.05);
       });
     }
-    root.appendChild(film);
+    layer.appendChild(film);
   }
 
   const zIndex = new Map(scene.elements.map((el, i) => [el.id, i + 1]));
@@ -1066,6 +1073,9 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     if (el.type === 'image' && el.blend) wrap.style.mixBlendMode = el.blend;
     if (el.box.rotation) wrap.style.transform = `rotate(${el.box.rotation}deg)`;
     wrap.appendChild(renderElement(ctx, scene, surface, el));
+    // A bar of a diagram that grows in at a step grows from the axis.
+    const grows = barGrowsFrom(scene.elements, el);
+    if (grows) wrap.dataset.grows = grows;
     if (el.type === 'mark' || el.type === 'legend') {
       // What belongs to a picture is not shown before the picture is.
       wrap.dataset.on = el.on;
@@ -1086,7 +1096,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
       }
       wrap.appendChild(renderMoreBadge(ctx, surface, el, more));
     }
-    root.appendChild(wrap);
+    layer.appendChild(wrap);
   }
 
   const logoUrl = scene.showLogo ? ctx.logo[logoVariant(surface)] : undefined;
@@ -1099,7 +1109,7 @@ export function renderScene(ctx: RenderContext, scene: Scene): HTMLElement {
     logo.style.left = `${theme.logo.marginX}px`;
     logo.style.top = `${STAGE.height - theme.logo.marginBottom - theme.logo.height}px`;
     logo.style.height = `${theme.logo.height}px`;
-    root.appendChild(logo);
+    layer.appendChild(logo);
   }
   return root;
 }

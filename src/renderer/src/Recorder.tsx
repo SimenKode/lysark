@@ -198,7 +198,7 @@ function FittedScene({
             ref={inner}
             onClick={(event) => onPress(event.target as HTMLElement)}
           >
-            <SceneView scene={scene} project={project} logo={logo} previewSteps={steps} />
+            <SceneView scene={scene} project={project} logo={logo} previewSteps={steps} zoomed />
             {children}
           </div>
         </div>

@@ -16,7 +16,7 @@ import type {
   TrackClip,
   TrackName,
 } from '../format/schema';
-import { stepDuration } from './timeline';
+import { movesFrom, stepDuration, visibility, type Moves } from './timeline';
 
 /** A slide without sound stands this long, plus a little for each step. */
 export const SILENT_SCENE_SECONDS = 5;
@@ -108,11 +108,6 @@ export function stepTimes(scene: Timed): number[] {
   return stepClock(scene).map((at) => Math.max(0, Math.min(duration, at)));
 }
 
-function easeOutCubic(t: number): number {
-  const u = 1 - t;
-  return 1 - u * u * u;
-}
-
 /** How many steps have been triggered `t` seconds into the slide. */
 export function stepsShownAt(scene: Timed, t: number): number {
   return stepClock(scene).filter((at) => at <= t).length;
@@ -124,27 +119,22 @@ export function stepsShownBefore(scene: Timed): number {
 }
 
 /**
+ * How the slide stands and moves `t` seconds into it. The same rule as
+ * stepping by hand (`sceneMoves`), but every step runs from its own time.
+ */
+export function sceneMovesAt(scene: Timed, t: number): Moves {
+  return movesFrom(
+    scene,
+    stepClock(scene).map((at) => t - at),
+  );
+}
+
+/**
  * Opacity (0..1) of every element that takes part in the timeline, `t`
- * seconds into the slide. The same rule as stepping by hand
- * (`sceneState`), but every step runs from its own time.
+ * seconds into the slide.
  */
 export function sceneStateAt(scene: Timed, t: number): Map<string, number> {
-  const times = stepClock(scene);
-  const state = new Map<string, number>();
-  scene.timeline.forEach((step, index) => {
-    const since = t - times[index]!;
-    for (const action of step.actions) {
-      if (state.has(action.target)) continue; // the first step that brings it in decides
-      let opacity: number;
-      const local = since - (action.delay ?? 0);
-      if (since < 0 || local < 0) opacity = 0;
-      else if (since === Infinity || action.effect === 'appear' || action.duration <= 0)
-        opacity = 1;
-      else opacity = easeOutCubic(Math.min(1, local / action.duration));
-      state.set(action.target, opacity);
-    }
-  });
-  return state;
+  return visibility(sceneMovesAt(scene, t));
 }
 
 // ---------- What was opened and played while the slide was read in ----------

@@ -63,6 +63,8 @@ interface State {
   showGrid: boolean;
   /** Step preview in the editor: how many steps are shown; null = everything. */
   previewSteps: number | null;
+  /** The step that zooms whose frame is shown on the slide, to be dragged into place. */
+  zoomStep: string | null;
   /**
    * Where in the slide's sound the sound panel or the timeline stands, and
    * whether it is playing: the camera circle on the stage shows that moment.
@@ -112,6 +114,7 @@ interface State {
   setEditing(editing: Editing | null): void;
   toggleGrid(): void;
   setPreviewSteps(steps: number | null): void;
+  setZoomStep(id: string | null): void;
   setSoundAt(at: { t: number; playing: boolean } | null): void;
   setClipboard(elements: Element[]): void;
   setLogo(logo: LogoStatus): void;
@@ -142,6 +145,7 @@ export const useStore = create<State>((set, get) => ({
   coalesce: null,
   showGrid: false,
   previewSteps: null,
+  zoomStep: null,
   soundAt: null,
   clipboard: [],
   logo: { nb: { light: false, dark: false }, en: { light: false, dark: false }, version: 0 },
@@ -289,6 +293,10 @@ export const useStore = create<State>((set, get) => ({
 
   setPreviewSteps(steps) {
     set({ previewSteps: steps });
+  },
+
+  setZoomStep(id) {
+    set({ zoomStep: id });
   },
 
   setSoundAt(at) {

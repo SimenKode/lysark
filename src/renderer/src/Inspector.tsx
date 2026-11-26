@@ -16,6 +16,8 @@ import {
   type PaletteColor,
   type Scene,
   type SceneKind,
+  type Step,
+  type StepEffect,
   type Surface,
   type TextRole,
 } from '../../shared/format/schema';
@@ -51,6 +53,16 @@ import {
   setAlong,
 } from '../../shared/layout/charts';
 import {
+  SPEEDS,
+  effectSeconds,
+  effectsFor,
+  setStepSpeed,
+  stepSpeed,
+  viewAround,
+  zoomedBefore,
+  type Speed,
+} from '../../shared/layout/steps';
+import {
   figureFontSize,
   figureOf,
   moveItem,
@@ -76,16 +88,19 @@ import {
   KIND_NAMES,
   ROLE_NAMES,
   TEMPLATE_NAMES,
+  addKindStep,
   addStep,
   addToStep,
+  addZoomStep,
   cloneElements,
   deleteElements,
   newStep,
   describeElement,
   describeMore,
   playClosingAnimation,
-  removeFromSteps,
+  removeFromStep,
   reorderElement,
+  stepMaker,
   stepOf,
   stepPerElement,
   type OrderMove,
@@ -635,7 +650,7 @@ function GroupFields({ scene, selected }: { scene: Scene; selected: Element[] })
   };
   const steps = (): void => {
     if (!whole) return;
-    useStore.getState().updateScene((s) => stepPerPart(s, whole, newStep));
+    useStore.getState().updateScene((s) => stepPerPart(s, whole, stepMaker(s)));
   };
   if (!canGroup(scene, ids) && !grouped && !pair) return null;
   return (
@@ -965,7 +980,7 @@ function ChartFields({ figure }: { figure: FigureElement }) {
             <button
               type="button"
               title="Søylene kommer inn rad for rad, hver med navnet sitt. Aksene står der fra start."
-              onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep))}
+              onClick={() => updateScene((s) => stepPerItem(s, figure.id, stepMaker(s)))}
             >
               Ett steg per rad
             </button>
@@ -974,7 +989,7 @@ function ChartFields({ figure }: { figure: FigureElement }) {
             <button
               type="button"
               title="Seriene kommer inn én etter én. Aksene står der fra start."
-              onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep, 'series'))}
+              onClick={() => updateScene((s) => stepPerItem(s, figure.id, stepMaker(s), 'series'))}
             >
               Ett steg per serie
             </button>
@@ -1169,7 +1184,7 @@ function FigureFields({ figure }: { figure: FigureElement }) {
                   ? 'Hendelsene kommer inn én etter én. Selve aksen står der fra start.'
                   : undefined
             }
-            onClick={() => updateScene((s) => stepPerItem(s, figure.id, newStep))}
+            onClick={() => updateScene((s) => stepPerItem(s, figure.id, stepMaker(s)))}
           >
             Ett steg per {name}
           </button>
@@ -1528,7 +1543,7 @@ function ImageMarks({ el, scene }: { el: Extract<Element, { type: 'image' }>; sc
         {marks.length > 1 && (
           <button
             type="button"
-            onClick={() => updateScene((s) => stepPerMark(s, el.id, (id) => newStep([id])))}
+            onClick={() => updateScene((s) => stepPerMark(s, el.id, (id) => newStep(s, [id])))}
           >
             Ett steg per merke
           </button>
@@ -2020,15 +2035,40 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
 
 // ---------- Steps ----------
 
+/** What the movements are called where the lecturer chooses one. */
+const EFFECT_NAMES: Record<StepEffect, string> = {
+  fade: 'Toner inn',
+  slide: 'Glir inn fra siden',
+  grow: 'Vokser fram',
+  draw: 'Tegnes',
+  count: 'Teller opp',
+  appear: 'Vises med en gang',
+};
+const SPEED_NAMES: Record<Speed, string> = { fast: 'Rask', normal: 'Vanlig', slow: 'Langsom' };
+
+/** What a step does, in a word, for one that does something else than bring elements in. */
+function stepDoes(step: Step): string | undefined {
+  if (step.kind === 'mark') return 'markerer';
+  if (step.kind === 'hide') return 'tar bort';
+  if (step.kind === 'zoom') return step.zoom ? 'zoomer inn' : 'zoomer ut';
+  return undefined;
+}
+
 function StepsPanel({ scene }: { scene: Scene }) {
   const selection = useStore((s) => s.selection);
   const previewSteps = useStore((s) => s.previewSteps);
   const setPreviewSteps = useStore((s) => s.setPreviewSteps);
+  const zoomStep = useStore((s) => s.zoomStep);
+  const setZoomStep = useStore((s) => s.setZoomStep);
   const updateScene = useStore((s) => s.updateScene);
   const select = useStore((s) => s.select);
   const byId = new Map(scene.elements.map((e) => [e.id, e]));
   const fromStart = scene.elements.filter((e) => stepOf(scene, e.id) < 0);
   const total = scene.timeline.length;
+
+  // The frame of a zoom lies on top of the slide and takes the pointer. It is
+  // put away when the steps are left, so it is never in the way of the slide.
+  useEffect(() => () => useStore.getState().setZoomStep(null), []);
 
   const move = (index: number, delta: number) => () =>
     updateScene((s) => {
@@ -2037,12 +2077,27 @@ function StepsPanel({ scene }: { scene: Scene }) {
       const [step] = s.timeline.splice(index, 1);
       s.timeline.splice(to, 0, step!);
     });
+  const change = (index: number, recipe: (step: Step) => void): void =>
+    updateScene((s) => {
+      const step = s.timeline[index];
+      if (step) recipe(step);
+    });
+  const zoomIn = (): void => {
+    // Round what is chosen, when something is; otherwise the middle of the slide.
+    const chosen = scene.elements.filter((el) => selection.includes(el.id)).map((el) => el.box);
+    let made = '';
+    updateScene((s) => {
+      made = addZoomStep(s, viewAround(chosen));
+    });
+    setZoomStep(made);
+  };
 
   return (
     <div className="panel-body">
       <p className="hint">
-        Et steg er «nå kommer dette inn». I HTML går studenten til neste steg med piltast. Elementer
-        som ikke ligger i noe steg, er synlige fra starten.
+        Et steg er «nå skjer dette»: noe kommer inn, blir markert eller tatt bort, eller bildet
+        zoomer. I HTML går studenten til neste steg med piltast. Elementer som ikke kommer inn i noe
+        steg, er synlige fra starten.
       </p>
       <div className="button-row">
         <button
@@ -2051,6 +2106,41 @@ function StepsPanel({ scene }: { scene: Scene }) {
           onClick={() => updateScene((s) => addStep(s, selection))}
         >
           Nytt steg med det som er valgt
+        </button>
+      </div>
+      <div className="button-row">
+        <button
+          type="button"
+          disabled={selection.length === 0}
+          title="Et steg som setter en ramme rundt det som er valgt, til neste steg kommer."
+          onClick={() => updateScene((s) => addKindStep(s, 'mark', selection))}
+        >
+          Marker det som er valgt
+        </button>
+        <button
+          type="button"
+          disabled={selection.length === 0}
+          title="Et steg som lar det som er valgt, tone bort."
+          onClick={() => updateScene((s) => addKindStep(s, 'hide', selection))}
+        >
+          Ta bort det som er valgt
+        </button>
+      </div>
+      <div className="button-row">
+        <button
+          type="button"
+          title="Et steg der bildet glir inn på en del av lysarket. Du drar rammen dit du vil."
+          onClick={zoomIn}
+        >
+          Zoom inn
+        </button>
+        <button
+          type="button"
+          disabled={!zoomedBefore(scene.timeline, total)}
+          title="Et steg der bildet glir ut til hele lysarket igjen."
+          onClick={() => updateScene((s) => void addZoomStep(s, undefined))}
+        >
+          Zoom ut igjen
         </button>
       </div>
       <div className="button-row">
@@ -2115,75 +2205,142 @@ function StepsPanel({ scene }: { scene: Scene }) {
             {fromStart.length === 0 && <li className="hint">Ingenting</li>}
           </ul>
         </li>
-        {scene.timeline.map((step, index) => (
-          <li key={step.id} className="step-item">
-            <div className="step-head">
-              <strong>Steg {index + 1}</strong>
-              <select
-                aria-label={`Hvordan steg ${index + 1} kommer inn`}
-                value={step.actions[0]?.effect ?? 'fade'}
-                onChange={(e) =>
-                  updateScene((s) => {
-                    const target = s.timeline[index];
-                    if (!target) return;
-                    for (const action of target.actions) {
-                      action.effect = e.target.value as 'fade' | 'appear';
-                      action.duration = action.effect === 'fade' ? 0.4 : 0;
-                    }
-                  })
-                }
-              >
-                <option value="fade">Tones inn</option>
-                <option value="appear">Vises med en gang</option>
-              </select>
-              <button
-                type="button"
-                title="Tidligere"
-                disabled={index === 0}
-                onClick={move(index, -1)}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                title="Senere"
-                disabled={index === total - 1}
-                onClick={move(index, 1)}
-              >
-                ↓
-              </button>
-            </div>
-            <ul>
-              {step.actions.map((action) => {
-                const el = byId.get(action.target);
-                if (!el) return null;
-                return (
-                  <li key={action.target}>
-                    <button type="button" className="link-button" onClick={() => select([el.id])}>
-                      {describeElement(el)}
-                    </button>
+        {scene.timeline.map((step, index) => {
+          const does = stepDoes(step);
+          const moves = step.kind === 'zoom' || step.actions.some((a) => a.effect !== 'appear');
+          return (
+            <li key={step.id} className="step-item">
+              <div className="step-head">
+                <strong>
+                  Steg {index + 1}
+                  {does ? `: ${does}` : ''}
+                </strong>
+                {moves && (
+                  <select
+                    aria-label={`Fart på steg ${index + 1}`}
+                    value={stepSpeed(step)}
+                    onChange={(e) => change(index, (s) => setStepSpeed(s, e.target.value as Speed))}
+                  >
+                    {SPEEDS.map((speed) => (
+                      <option key={speed} value={speed}>
+                        {SPEED_NAMES[speed]}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  type="button"
+                  title="Tidligere"
+                  disabled={index === 0}
+                  onClick={move(index, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  title="Senere"
+                  disabled={index === total - 1}
+                  onClick={move(index, 1)}
+                >
+                  ↓
+                </button>
+              </div>
+              {step.kind === 'zoom' ? (
+                <>
+                  <p className="hint">
+                    {step.zoom
+                      ? 'Bildet glir inn på utsnittet i rammen på lysarket.'
+                      : 'Bildet glir ut til hele lysarket igjen.'}
+                  </p>
+                  <div className="button-row">
+                    {step.zoom && (
+                      <button
+                        type="button"
+                        aria-pressed={zoomStep === step.id}
+                        onClick={() => setZoomStep(zoomStep === step.id ? null : step.id)}
+                      >
+                        {zoomStep === step.id ? 'Ferdig med rammen' : 'Flytt utsnittet'}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className="link-button quiet"
-                      title="Ta ut av steget (blir synlig fra starten)"
-                      onClick={() => updateScene((s) => removeFromSteps(s, [el.id]))}
+                      className="danger"
+                      aria-label={`Fjern steg ${index + 1}`}
+                      onClick={() =>
+                        updateScene((s) => {
+                          s.timeline.splice(index, 1);
+                        })
+                      }
                     >
-                      Ta ut
+                      Fjern steget
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
-            <button
-              type="button"
-              className="link-button"
-              disabled={selection.length === 0}
-              onClick={() => updateScene((s) => addToStep(s, step.id, selection))}
-            >
-              Legg det som er valgt i dette steget
-            </button>
-          </li>
-        ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <ul>
+                    {step.actions.map((action) => {
+                      const el = byId.get(action.target);
+                      if (!el) return null;
+                      return (
+                        <li key={action.target}>
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={() => select([el.id])}
+                          >
+                            {describeElement(el)}
+                          </button>
+                          {!step.kind && (
+                            <select
+                              aria-label={`Hvordan ${describeElement(el)} kommer inn`}
+                              value={action.effect}
+                              onChange={(e) =>
+                                change(index, (s) => {
+                                  const target = s.actions.find((a) => a.target === el.id);
+                                  if (!target) return;
+                                  const speed = stepSpeed(s);
+                                  target.effect = e.target.value as StepEffect;
+                                  target.duration = effectSeconds(target.effect, speed);
+                                })
+                              }
+                            >
+                              {effectsFor(el).map((effect) => (
+                                <option key={effect} value={effect}>
+                                  {EFFECT_NAMES[effect]}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          <button
+                            type="button"
+                            className="link-button quiet"
+                            title={
+                              step.kind
+                                ? 'Ta ut av dette steget'
+                                : 'Ta ut av steget (blir synlig fra starten)'
+                            }
+                            onClick={() => updateScene((s) => removeFromStep(s, step.id, [el.id]))}
+                          >
+                            Ta ut
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <button
+                    type="button"
+                    className="link-button"
+                    disabled={selection.length === 0}
+                    onClick={() => updateScene((s) => addToStep(s, step.id, selection))}
+                  >
+                    Legg det som er valgt i dette steget
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );

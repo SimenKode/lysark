@@ -5,7 +5,7 @@ import { memo, useLayoutEffect, useRef } from 'react';
 import { closingUrl, hasLogo, logoUrl, mediaUrl, type LogoStatus } from '../../shared/api';
 import type { Element, Project, Scene } from '../../shared/format/schema';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
-import { sceneState } from '../../shared/render/timeline';
+import { applySceneMoves, sceneMoves, visibility } from '../../shared/render/timeline';
 import { getTheme } from '../../shared/theme/theme';
 
 export function renderContext(project: Project, logo: LogoStatus): RenderContext {
@@ -60,6 +60,12 @@ interface Props {
   editingId?: string | null;
   /** Show the scene as it is after this many steps; later elements are dimmed. */
   previewSteps?: number | null;
+  /**
+   * With `previewSteps`: also show the part of the slide a step has zoomed
+   * in on, as the video will. Where the slide is edited it is left whole,
+   * so what is chosen stands where its frame is drawn.
+   */
+  zoomed?: boolean;
 }
 
 export const SceneView = memo(function SceneView({
@@ -68,6 +74,7 @@ export const SceneView = memo(function SceneView({
   logo,
   editingId = null,
   previewSteps = null,
+  zoomed = false,
 }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const kept = useRef<Kept | null>(null);
@@ -94,7 +101,16 @@ export const SceneView = memo(function SceneView({
       }
     }
 
-    const state = previewSteps === null ? null : sceneState(scene, previewSteps, Infinity);
+    // After some of the steps: what a step has marked is marked, what has
+    // not come yet (or has been taken away) is dimmed, not hidden.
+    const moves = previewSteps === null ? null : sceneMoves(scene, previewSteps, Infinity);
+    const state = moves && visibility(moves);
+    applySceneMoves(root, {
+      elements: new Map(
+        [...(moves?.elements ?? [])].map(([id, move]) => [id, { ...move, shown: 1, gone: 0 }]),
+      ),
+      view: zoomed ? moves?.view : undefined,
+    });
     for (const [id, { node }] of nodes) {
       node.style.opacity = state && (state.get(id) ?? 1) < 1 ? '0.16' : '';
     }
@@ -103,7 +119,7 @@ export const SceneView = memo(function SceneView({
     kept.current = { key, editingId, nodes };
     // `project` itself is deliberately not a dependency: only these parts matter here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, assets, theme, meta.language, logo, editingId, previewSteps]);
+  }, [scene, assets, theme, meta.language, logo, editingId, previewSteps, zoomed]);
 
   return <div ref={host} className="scene-host" />;
 });

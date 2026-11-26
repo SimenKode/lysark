@@ -25,14 +25,14 @@ import {
   hasSound,
   moreAt,
   sceneDuration,
-  sceneStateAt,
+  sceneMovesAt,
   stepTimes,
   stepsShownAt,
   stepsShownBefore,
   videosAt,
 } from '../shared/render/clock';
 import { chapters, ownIndex, slideCount, slideNumbers, slideSpan } from '../shared/layout/slides';
-import { applySceneState, sceneState, stepDuration } from '../shared/render/timeline';
+import { applySceneMoves, sceneMoves, stepDuration } from '../shared/render/timeline';
 import { PLAYER_STRINGS } from './strings';
 
 /** How the player finds the bytes of an asset. */
@@ -470,16 +470,16 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const step = scene.timeline[stepsShown - 1];
     const total = step ? stepDuration(step) : 0;
     if (!step || reducedMotion || total <= 0) {
-      applySceneState(el, sceneState(scene, stepsShown, Infinity));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
       return;
     }
     const start = performance.now();
     const tick = (now: number): void => {
       const elapsed = (now - start) / 1000;
-      applySceneState(el, sceneState(scene, stepsShown, elapsed));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, elapsed));
       if (elapsed < total) frame = requestAnimationFrame(tick);
     };
-    applySceneState(el, sceneState(scene, stepsShown, 0));
+    applySceneMoves(el, sceneMoves(scene, stepsShown, 0));
     frame = requestAnimationFrame(tick);
   }
 
@@ -559,7 +559,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     } else if (animate) animateStep(scene, el);
     else {
       cancelAnimationFrame(frame);
-      applySceneState(el, sceneState(scene, stepsShown, Infinity));
+      applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
     }
     updateChrome();
   }
@@ -676,13 +676,13 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
         show(index + 1, stepsShownBefore(scenes[index + 1]!), false);
       } else {
         stepsShown = scene.timeline.length;
-        applySceneState(el, sceneState(scene, stepsShown, Infinity));
+        applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
         updateChrome();
         setPlaying(false);
       }
       return false;
     }
-    applySceneState(el, sceneStateAt(scene, now));
+    applySceneMoves(el, sceneMovesAt(scene, now));
     followEvents(scene, now);
     const shown = stepsShownAt(scene, now);
     if (shown !== stepsShown) {
@@ -713,7 +713,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       voice.pause();
       stopVoiceVideos();
       // What has come in stays; the rest waits for the keys again.
-      applySceneState(sceneElement(scene), sceneState(scene, stepsShown, Infinity));
+      applySceneMoves(sceneElement(scene), sceneMoves(scene, stepsShown, Infinity));
     }
   }
 

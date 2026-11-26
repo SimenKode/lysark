@@ -21,6 +21,7 @@ import { wholeFigure, writePart } from '../../shared/layout/templates';
 import { columnEdges, getTheme } from '../../shared/theme/theme';
 import { SceneView } from './SceneView';
 import { StageCamera } from './StageCamera';
+import { ZoomFrame } from './ZoomFrame';
 import { newId } from '../../shared/format/factory';
 import { cloneElements, deleteElements, stepOf } from './ops';
 import { createTextEditor, type TextEditor } from './richtext/editor';
@@ -941,6 +942,7 @@ export function Stage() {
             />
             <StageCamera scene={scene} />
             <div className={`stage-overlay${editing ? ' is-editing' : ''}`}>
+              <ZoomFrame scene={scene} scale={scale} />
               {showGrid && (
                 <>
                   {starts.map((start, i) => (

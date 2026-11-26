@@ -7,6 +7,7 @@
 // the slide they are given.
 import { STAGE } from '../format/constants';
 import type { Box, Element, Scene, ShapeElement, Step } from '../format/schema';
+import { stepStands } from './steps';
 
 type Figured = Pick<Scene, 'elements' | 'timeline'>;
 export interface Point {
@@ -109,7 +110,7 @@ export function stepPerPart(
   for (const step of scene.timeline) {
     step.actions = step.actions.filter((action) => !ids.has(action.target));
   }
-  scene.timeline = scene.timeline.filter((step) => step.actions.length > 0);
+  scene.timeline = scene.timeline.filter(stepStands);
   const joins = (el: Element): string[] =>
     isLine(el) ? [el.startAt, el.endAt].filter((id): id is string => !!id && ids.has(id)) : [];
   const own = members

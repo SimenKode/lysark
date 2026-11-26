@@ -1643,6 +1643,34 @@ legend {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* The frame of a step that zooms: the part of the slide the picture glides in on. */
+.zoom-frame {
+  position: absolute;
+  z-index: 5;
+  outline: 3px dashed var(--oransje);
+  background: rgba(255, 98, 0, 0.06);
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+.zoom-frame-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: var(--oransje);
+  color: #000;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.zoom-frame-corner {
+  position: absolute;
+  border: 3px solid var(--oransje);
+  border-radius: 50%;
+  background: #fff;
+  cursor: nwse-resize;
+}
+
 /* ---------- Right-click menu on the stage ---------- */
 .context-menu {
   position: fixed;

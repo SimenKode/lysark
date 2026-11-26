@@ -12,7 +12,7 @@ import {
   popProgress,
   sceneDuration,
   sceneEvents,
-  sceneStateAt,
+  sceneMovesAt,
   schedule,
   videoKey,
   videosAt,
@@ -21,7 +21,7 @@ import {
 import { MORE_CSS, POPOVER_CSS, STAGE_CSS } from '../../shared/render/css';
 import { createPopover, type SlidePopover } from '../../shared/render/popover';
 import { SCENE_STRINGS, renderScene, type RenderContext } from '../../shared/render/scene';
-import { applySceneState } from '../../shared/render/timeline';
+import { applySceneMoves } from '../../shared/render/timeline';
 import { PALETTE } from '../../shared/theme/palette';
 import { getTheme, sceneSurface } from '../../shared/theme/theme';
 import './fonts.css';
@@ -207,14 +207,14 @@ async function place(
     // The first time, everything on the slide is shown, also what a later
     // step brings in: a picture that is first drawn in the middle of a fade
     // would otherwise be missing from the first frames it should be in.
-    applySceneState(el, new Map());
+    applySceneMoves(el, { elements: new Map(), view: undefined });
     layer.style.opacity = '1';
     showBoxes(index, null);
     await settle(el);
     ready.add(index);
     return true;
   }
-  applySceneState(el, sceneStateAt(job!.scenes[index]!, t));
+  applySceneMoves(el, sceneMovesAt(job!.scenes[index]!, t));
   layer.style.opacity = String(opacity);
   showBoxes(index, t);
   await seekFilm(el, t);

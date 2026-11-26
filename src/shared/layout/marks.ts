@@ -12,6 +12,7 @@ import type {
   MarkStyle,
   Scene,
 } from '../format/schema';
+import { stepStands } from './steps';
 
 /** How wide a numbered mark is, in stage pixels. */
 export const MARK_SIZE = 52;
@@ -156,7 +157,7 @@ export function followMarks(scene: Marked): boolean {
     for (const step of scene.timeline) {
       step.actions = step.actions.filter((action) => ids.has(action.target));
     }
-    scene.timeline = scene.timeline.filter((step) => step.actions.length > 0);
+    scene.timeline = scene.timeline.filter(stepStands);
     changed = true;
   }
 
@@ -351,7 +352,7 @@ export function setMarkStyle(
     for (const step of scene.timeline) {
       step.actions = step.actions.filter((action) => action.target !== legend.id);
     }
-    scene.timeline = scene.timeline.filter((step) => step.actions.length > 0);
+    scene.timeline = scene.timeline.filter(stepStands);
   }
   // Labels on the same side are spread out below one another, so they do not lie on top of each other.
   const taken: Box[] = [];
@@ -377,7 +378,7 @@ export function stepPerMark(
   for (const step of scene.timeline) {
     step.actions = step.actions.filter((action) => !ids.has(action.target));
   }
-  scene.timeline = scene.timeline.filter((step) => step.actions.length > 0);
+  scene.timeline = scene.timeline.filter(stepStands);
   for (const mark of marks) scene.timeline.push(newStep(mark.id));
 }
 
