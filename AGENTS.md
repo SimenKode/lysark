@@ -464,6 +464,11 @@ instead of choosing silently.
   22.11.2026): no logs, no test details, no long tables. What was built
   and tried in detail, and his feedback word for word, goes into
   `docs/historikk.md`, which is the log.
+- A box with round corners that scrolls uses the narrow scrollbar
+  (`roundScrollCss` in `src/shared/render/css.ts`, and the same rules
+  for the dialogs and the builder in `styles.css`). An ordinary
+  scrollbar lies across the round corners; the owner saw that on the
+  "Lær mer" box on 26.11.2026.
 - Buttons never end in "…" (the owner, 22.11.2026). A button that opens
   a file dialog says what happens ("Velg fil og eksporter"). Icons are
   the program's own line drawings in `src/renderer/src/Icon.tsx`; no icon
@@ -502,9 +507,10 @@ instead of choosing silently.
   through and rewritten. Do not change its visibility, create other
   remote repositories or publish anything (releases, packages) unless
   the owner asks. He asked for a release on 22.11.2026 (version 0.2.0),
-  on 23.11.2026 (version 0.3.0) and on 25.11.2026 (version 0.4.0): each
-  is a release with the packaged program for Linux and Windows (from
-  0.4.0 the Windows installer too) and FFmpeg's source. Make a new
+  on 23.11.2026 (version 0.3.0), on 25.11.2026 (version 0.4.0) and on
+  26.11.2026 (version 0.5.0): each is a release with the packaged
+  program for Linux and Windows (from 0.4.0 the Windows installer too)
+  and FFmpeg's source. Make a new
   release only when he asks for one.
 - The README is the front page for lecturers (the owner, 25.11.2026):
   installation first, then how the program is used, with pictures, in

@@ -3186,6 +3186,60 @@ videre. Testen svarer selv; dialogen er aldri vist på skjermen.
 **Ikke prøvd:** Windows, og dialogen sett med øynene (testen leser hva
 den ber om, den ser den ikke).
 
+### 6.48 Eieren ber om en utgivelse, nye bilder og et rullefelt som holder seg innenfor (26.11.2026)
+
+Startmeldingen til denne chatten hadde ingen funn («(skriv her)» sto
+igjen). Innspillet, ord for ord:
+
+> Jeg vil nå egentlig bare får en release, oppdaterer med nye bilder på
+> GH og fikser scrollbaren på bildet. Den clipper iver i den lilla
+> borden. Si ifra når jeg kan gå på
+> /home/simen/Forelesningsverktoy/lysark/release og teste nyeste versjon
+
+Med meldingen fulgte et skjermbilde av «Lær mer»-boksen i
+forhåndsvisningen: rullefeltet sto over den lilla kanten i de runde
+hjørnene, oppe og nede.
+
+**Rullefeltet.** Boksen ruller selv, og et vanlig rullefelt er en
+firkant like høy som boksen. Der hjørnene er runde, ble firkanten
+derfor liggende over kanten. Nå er rullefeltet en smal lilla stripe som
+begynner og slutter innenfor hjørnene. Det gjelder alle bokser med
+runde hjørner som kan rulle:
+
+- «Lær mer»-boksen hos studentene og i forhåndsvisningen,
+- boksene «Hjelp» og «Bildekilder» hos studentene,
+- «Lær mer»-boksen i innlesingsvinduet,
+- boksen i «Lær mer»-byggeren, og
+- dialogene i programmet.
+
+Reglene står ett sted (`roundScrollCss` i `src/shared/render/css.ts`).
+Videoen er uendret; der har boksen aldri hatt rullefelt.
+
+**Prøvd på Linux Mint:** i det bygde programmet uten vindu. Bildet av
+boksen i forhåndsvisningen er sett på: stripa står innenfor hjørnene.
+Testen for «Lær mer» måler nå at boksen ruller, at rullefeltet er 16
+piksler bredt og at sporet slutter 12 piksler fra endene.
+
+**Ikke prøvd:** Windows. Firefox: reglene er de Chrome, Edge og Safari
+bruker, så i Firefox er rullefeltet som før. Boksene i byggeren,
+innlesingsvinduet og dialogene er ikke sett på med et rullefelt i; de
+har samme regler, men ingen prøve får dem til å rulle.
+
+**Hele testsamlingen etter rettingen:** 578 av 580 besto i hele
+kjøringen, 1 hoppes over som før. De to som feilet, er begge i testen
+for «Lær mer» og video under innlesing (`tests/e2e-events.test.ts`):
+videoeksporten ble ikke ferdig innen tidsfristen mens maskinen var
+tungt belastet av annet arbeid (belastning rundt 30). Den besto alene
+rett etterpå (3 av 3).
+
+**Nye bilder på forsiden.** Forsiden (README) beskriver nå det 0.5.0
+inneholder: valget ved import, kapitler, figurer og diagrammer, steg
+med bevegelse, merker på bilder, figur i «Lær mer», og opptak der du
+går fram og tilbake. De fem bildene er tatt på nytt av testene, og to
+er nye: et søylediagram med tabellen for tallene (`figur.png`) og fanen
+«Steg» (`steg.png`). Alle sju er sett på før de ble lagt inn. De har
+bare prøveinnhold, og ingen viser USNs logo.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

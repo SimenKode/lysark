@@ -44,24 +44,55 @@ på `-win.zip`, pakke den ut og dobbeltklikke på `Lysark.exe`.
 ### 1. Hent inn forelesningen
 
 Trykk «Importer PowerPoint» eller «Importer PDF» og velg fila. Lysark
-lager et prosjekt med ett lysark per side, og sier fra om det som ikke
-kom med.
+spør hvordan lysarkene skal se ut:
+
+- **«Behold utseendet»**: lysarkene ser ut som i fila di.
+- **«Gjør om til USN-stil»**: innholdet settes inn i Lysarks eget
+  utseende. Stående søylediagram og linjediagram fra PowerPoint tegnes
+  da på nytt, med de samme tallene.
+
+Uansett hva du velger, kan tekst og bilder flyttes og endres etterpå.
+Seksjonene i PowerPoint og bokmerkene i en PDF blir kapitler. Lysark
+sier fra om det som ikke kom med.
 
 ### 2. Rett opp lysarkene
 
-Klikk for å velge, dra for å flytte, dobbeltklikk for å skrive. Under
-«Steg» bestemmer du hva som skal komme inn ett for ett.
+Klikk for å velge, dra for å flytte, dobbeltklikk for å skrive.
 
-Høyreklikk på hva som helst og velg «Legg til «Lær mer»» for å gi
-studentene mer stoff: tekst, bilder, video, tabeller og nettsider.
-Bilder kan du søke fram i Wikimedia Commons og Openverse, og Lysark
-setter inn hvem som har laget dem.
-Studenten trykker på «+», og en boks spretter ut ved siden av.
+**Figurer.** «Sett inn» og «Figur» gir deg en prosess, en lagvis
+oppbygging, en sammenligning, en tidsakse, et søylediagram eller et
+linjediagram. Du fyller ut et skjema, og figuren tegner seg selv. Tall
+til et diagram kan du lime rett inn fra et regneark. Du kan også lage
+en figur fritt: piler fester seg til bokser og følger dem når du
+flytter dem.
+
+![Et søylediagram, med tabellen for tallene til høyre](docs/bilder/figur.png)
+
+**Steg.** Under «Steg» bestemmer du hva som skal skje, ett trykk om
+gangen: noe kommer inn, noe markeres, noe tas bort, eller bildet zoomer
+inn på et utsnitt. Lysark foreslår hvordan hver ting kommer inn: en pil
+tegnes, søyler vokser, et stort tall teller opp. Du kan velge noe annet.
+
+![Fanen «Steg» med stegene til et lysark](docs/bilder/steg.png)
+
+**«Lær mer».** Høyreklikk på hva som helst og velg «Legg til «Lær mer»»
+for å gi studentene mer stoff: tekst, bilder, video, tabeller,
+nettsider og figurer du har laget på et lysark. Bilder kan du søke fram
+i Wikimedia Commons og Openverse, og Lysark setter inn hvem som har
+laget dem. Studenten trykker på «+», og en boks spretter ut ved siden
+av.
+
+**Merker på et bilde.** Velg et bilde og trykk «Legg til merke» for å
+peke ut det viktige i bildet, med tall og forklaring eller med
+etiketter.
 
 ### 3. Les inn stemmen
 
 Trykk «Les inn» i fanen «Lyd». Manuset står ved siden av lysarket mens
-du snakker. Pil høyre går til neste steg eller neste lysark.
+du snakker. Pil høyre går til neste steg eller neste lysark, pil venstre
+går tilbake, og «Velg lysark» hopper dit du vil. Opptaket går hele
+tiden, som et vanlig videoopptak: går du tilbake til et lysark, vises
+det en gang til i videoen.
 
 Vil du være med i bildet, krysser du av for «Kamera». Da vises ansiktet
 ditt i en sirkel på lysarket, og blir med i videoen. Dra sirkelen dit
@@ -87,13 +118,14 @@ til å bruke.
 
 - **«Eksporter HTML»** gir én fil du legger ut til studentene. Har du
   lest inn stemmen, kan de trykke «Spill av».
-- **«Eksporter video»** gir en MP4-fil med teksting ved siden av, eller
-  en GIF av et kort klipp.
+- **«Eksporter video»** gir en MP4-fil med kapitler og med teksting
+  ved siden av, eller en GIF av et kort klipp. Du kan også lage en
+  video av bare noen få lysark.
 
 ### Dette får studentene
 
 En forelesning de blar i selv, med piltaster eller mus. «+» åpner det du
-har lagt i «Lær mer».
+har lagt i «Lær mer», og «Innhold» viser kapitlene.
 
 ![Forelesningen i nettleseren, med en «Lær mer»-boks åpen](docs/bilder/student.png)
 
