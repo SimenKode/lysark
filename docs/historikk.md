@@ -3527,6 +3527,45 @@ feltene i fanen «Lysark», men ikke sett dem på et bilde.
 hver gang den åpnes. Et gammelt lysark med bare pauser beholder pausene
 til du skriver et tall.
 
+### 6.55 Stående lysark, 9:16 (26.11.2026)
+
+Bygget av en Opus-agent etter designet mitt, og sett over av meg (tre
+av de sju bildene er sett på). Prosjektformatet er nå 19.
+
+**Valget ved import.** Under «Hvordan skal lysarkene se ut?» står nå
+«Hvilken form skal lysarkene ha?», med «Liggende (16:9)» («For skjerm,
+prosjektor og vanlige videoer.») og «Stående (9:16)» («For mobil, og for
+videoer til TikTok, Reels og Shorts.»). Lysark ser på sidene i fila
+først. Formen som passer, er merket «Anbefalt» og er valgt, og en linje
+sier hvorfor: «Sidene i fila er stående.» Under står «Formen gjelder
+hele prosjektet og kan ikke endres etterpå.» «Nytt, tomt prosjekt» spør
+om det samme, med liggende valgt.
+
+**Et stående prosjekt** er stående overalt: der du redigerer,
+miniatyrene, «Forhåndsvis», innlesingsvinduet, HTML-fila hos studentene
+og «Lær mer»-boksen. Videoen blir 1080 × 1920, og en GIF får samme form.
+Tittellysarket har tittelen øverst og profilformene nederst. «Rydd opp
+lysarket» bruker fire kolonner i stedet for åtte. En side med annen form
+enn lysarket settes inn hel, midt på, uten at noe kuttes. USNs
+avslutningsfilm vises hel, i lysarkets bredde.
+
+**Prøvd på Linux Mint:** 17 enhetstester og 8 prøver i det bygde
+programmet uten vindu: en stående PDF anbefaler «Stående», lysarket er
+1080 × 1920 der du redigerer, i «Forhåndsvis» og i HTML-fila, og FFmpeg
+sier at videoen er 1080 × 1920 med 30 bilder i sekundet. Importen av
+alle PowerPoint-filene dine gir nøyaktig samme resultat som før. Hele
+testsamlingen besto, bortsett fra de to tidsmålingene i testen for fritt
+opptak, som igjen besto alene.
+
+**Ikke prøvd:** Windows. Innlesingsvinduet med et stående lysark.
+Avslutningsfilmen på et stående lysark. En stående GIF. «Behold
+utseendet» for en stående PowerPoint-fil. Utskrift. Logoen på et stående
+lysark (testene har ikke logofilene).
+
+**Kjent:** formen kan ikke byttes etter importen. Det finnes bare disse
+to formene. På en mobil som holdes stående, står lysarket øverst, og de
+små pilene havner under det.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

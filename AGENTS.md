@@ -115,6 +115,17 @@ instead of choosing silently.
 - One project format (scenes -> elements -> timeline) is read by the
   editor, the HTML player and the video export. No output has its own
   private copy of the content.
+- A project is lying (16:9, a stage of 1920 x 1080) or upright (9:16,
+  1080 x 1920; the owner asked for it on 26.11.2026, for videos to phones).
+  The shape is chosen when the project is made, in the dialog at import
+  and for a new, empty project, and stays for that project. At import
+  Lysark recommends the shape the pages of the file have, and both
+  choices are always there. The size of the stage is never a constant:
+  it comes from the project (`stageOf` in
+  `src/shared/format/constants.ts`), and everything follows it, the
+  editor, the player, the recording window, the "Lær mer" box and the
+  video. A page of another shape than the slide is put in whole,
+  centred, never cut.
 - Style is a theme. Switching theme never changes the content of a
   project; content refers to theme roles, not to raw colours or fonts.
 - Rendering is a pure function of (project, theme, time). Render code
