@@ -118,44 +118,81 @@ export function stepPerPart(
     .sort((a, b) => (Math.abs(a.box.y - b.box.y) > 40 ? a.box.y - b.box.y : a.box.x - b.box.x));
   const steps = own.map((el) => [el.id]);
   const place = new Map(own.map((el, index) => [el.id, index]));
+  // A line fastened to another line comes in with what that line comes in with.
+  const byId = new Map(members.map((el) => [el.id, el]));
+  const stepOfLine = (el: Element, seen: Set<string>): number => {
+    if (place.has(el.id)) return place.get(el.id)!;
+    if (seen.has(el.id)) return 0;
+    seen.add(el.id);
+    const at = Math.max(0, ...joins(el).map((id) => stepOfLine(byId.get(id)!, seen)));
+    place.set(el.id, at);
+    return at;
+  };
   for (const el of members) {
-    const ends = joins(el);
-    if (ends.length === 0) continue;
-    const at = Math.max(...ends.map((id) => place.get(id) ?? 0));
-    steps[at]!.push(el.id);
+    if (joins(el).length === 0) continue;
+    const at = Math.max(0, Math.min(stepOfLine(el, new Set()), steps.length - 1));
+    (steps[at] ??= []).push(el.id);
   }
   for (const targets of steps) scene.timeline.push(newStep(targets));
 }
 
-// ---------- Lines fastened to elements ----------
+// ---------- The path of a line ----------
 
-/** True when a line can be fastened to the element. */
-export function canFasten(el: Element): boolean {
-  // The frame of a figure with a form shows nothing; a line is fastened to its parts.
-  return el.type !== 'mark' && el.type !== 'legend' && el.type !== 'figure' && !isLine(el);
+/** The four fastening points of a box: the middle of each side. */
+export type Side = 'top' | 'right' | 'bottom' | 'left';
+export const SIDES: readonly Side[] = ['top', 'right', 'bottom', 'left'];
+
+type Pathed = Pick<ShapeElement, 'box' | 'flipH' | 'flipV' | 'points'>;
+
+/** The points a line or an arrow runs through as fractions of its box, when it has them. */
+function ownPoints(el: Pick<ShapeElement, 'points'>): Array<[number, number]> {
+  const points = (el.points ?? []).filter((p): p is [number, number] => p !== null);
+  return points.length >= 2 ? points : [];
 }
 
-/** An element that fills most of the slide lies behind the rest; an end let go on it is not fastened. */
-// Both shapes of stage, lying and upright, have the same area.
-function isBackground(el: Element): boolean {
-  const stage = stageFor('landscape');
-  return el.box.w * el.box.h >= stage.width * stage.height * BACKGROUND_SHARE;
+/** True when a line or an arrow runs through points of its own, not only along the diagonal of its box. */
+export function hasPath(el: Pick<ShapeElement, 'points'>): boolean {
+  return ownPoints(el).length >= 2;
+}
+
+/**
+ * The points a line or an arrow runs through, in stage pixels, from its
+ * start to its end. A line without points of its own is the diagonal of
+ * its box. The head of an arrow is at the last point.
+ */
+export function linePath(el: Pathed): Point[] {
+  const { x, y, w, h } = el.box;
+  const own = ownPoints(el);
+  // To a hundredth of a pixel: what a fraction loses is far less, so a point stays where it was put.
+  const exact = (value: number): number => Math.round(value * 100) / 100;
+  if (own.length >= 2) return own.map(([fx, fy]) => ({ x: exact(x + fx * w), y: exact(y + fy * h) }));
+  return [
+    { x: el.flipH ? x + w : x, y: el.flipV ? y + h : y },
+    { x: el.flipH ? x : x + w, y: el.flipV ? y : y + h },
+  ];
+}
+
+/**
+ * The path as it is drawn: a straight line that lies flat or stands upright
+ * has a box one pixel thin, and is drawn through the middle of that pixel.
+ * Where a line begins to bend, it bends from there.
+ */
+export function drawnPath(el: Pathed): Point[] {
+  const path = linePath(el);
+  if (hasPath(el)) return path;
+  const { x, y, w, h } = el.box;
+  return path.map((p) => ({ x: w <= 1 ? x + w / 2 : p.x, y: h <= 1 ? y + h / 2 : p.y }));
 }
 
 /** Where a line or an arrow starts and ends. The head of an arrow is at its end. */
-export function lineEnds(el: Pick<ShapeElement, 'box' | 'flipH' | 'flipV'>): {
-  start: Point;
-  end: Point;
-} {
-  const { x, y, w, h } = el.box;
-  return {
-    start: { x: el.flipH ? x + w : x, y: el.flipV ? y + h : y },
-    end: { x: el.flipH ? x : x + w, y: el.flipV ? y : y + h },
-  };
+export function lineEnds(el: Pathed): { start: Point; end: Point } {
+  const path = linePath(el);
+  return { start: path[0]!, end: path[path.length - 1]! };
 }
 
 /** Lays a line between two points. A box always has some width and height, so a line is never quite upright. */
 export function setLineEnds(el: ShapeElement, start: Point, end: Point): void {
+  delete el.points;
   el.box = {
     x: Math.round(Math.min(start.x, end.x)),
     y: Math.round(Math.min(start.y, end.y)),
@@ -167,6 +204,127 @@ export function setLineEnds(el: ShapeElement, start: Point, end: Point): void {
   else delete el.flipH;
   if (start.y > end.y) el.flipV = true;
   else delete el.flipV;
+}
+
+/**
+ * Lays a line through the points given, from its start to its end. With
+ * two points it is the diagonal of its box, as every line was before it
+ * could bend (whose corners are whole pixels); with more, the box is the smallest that holds them all (in
+ * whole pixels) and the points are stored as fractions of it, so they stand
+ * exactly where they were given.
+ */
+export function setLinePath(
+  el: ShapeElement,
+  path: readonly Point[],
+  /** Two points are stored as points too, so that the ends lie exactly where they are given. */
+  exact = false,
+): void {
+  if (path.length < 2) return;
+  if (path.length === 2 && !exact) {
+    setLineEnds(el, path[0]!, path[1]!);
+    return;
+  }
+  const xs = path.map((p) => p.x);
+  const ys = path.map((p) => p.y);
+  const x = Math.floor(Math.min(...xs));
+  const y = Math.floor(Math.min(...ys));
+  const w = Math.max(1, Math.ceil(Math.max(...xs)) - x);
+  const h = Math.max(1, Math.ceil(Math.max(...ys)) - y);
+  const share = (value: number): number => Math.round(value * 1e6) / 1e6;
+  el.box = { x, y, w, h, rotation: 0 };
+  el.points = path.map((p) => [share((p.x - x) / w), share((p.y - y) / h)]);
+  delete el.flipH;
+  delete el.flipV;
+}
+
+/** How long a path is, in stage pixels. */
+export function pathLength(path: readonly Point[]): number {
+  let length = 0;
+  for (let i = 1; i < path.length; i++) {
+    length += Math.hypot(path[i]!.x - path[i - 1]!.x, path[i]!.y - path[i - 1]!.y);
+  }
+  return length;
+}
+
+/** The point that lies the share `t` (0 to 1) of the way along a path, by length. */
+export function pointAlong(path: readonly Point[], t: number): Point {
+  const total = pathLength(path);
+  if (total <= 0 || path.length < 2) return { ...path[0]! };
+  let left = Math.max(0, Math.min(1, t)) * total;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1]!;
+    const b = path[i]!;
+    const piece = Math.hypot(b.x - a.x, b.y - a.y);
+    if (left <= piece || i === path.length - 1) {
+      const k = piece > 0 ? Math.min(1, left / piece) : 0;
+      return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+    }
+    left -= piece;
+  }
+  return { ...path[path.length - 1]! };
+}
+
+/** The share of the way along a path, by length, at which one of its own points lies. */
+export function shareAt(path: readonly Point[], index: number): number {
+  const total = pathLength(path);
+  return total > 0 ? pathLength(path.slice(0, index + 1)) / total : 0;
+}
+
+export interface OnPath {
+  /** The nearest point on the path. */
+  point: Point;
+  /** How far along the path it lies, by length (0 to 1). */
+  along: number;
+  /** The stretch it lies on: between point `segment` and the next. */
+  segment: number;
+  distance: number;
+}
+
+/** The point on a path that lies nearest to `p`. */
+export function nearestOnPath(path: readonly Point[], p: Point): OnPath {
+  const total = pathLength(path);
+  let best: OnPath = {
+    point: { ...path[0]! },
+    along: 0,
+    segment: 0,
+    distance: Math.hypot(p.x - path[0]!.x, p.y - path[0]!.y),
+  };
+  let before = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1]!;
+    const b = path[i]!;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const piece2 = dx * dx + dy * dy;
+    const k = piece2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / piece2)) : 0;
+    const q = { x: a.x + dx * k, y: a.y + dy * k };
+    const distance = Math.hypot(p.x - q.x, p.y - q.y);
+    if (distance < best.distance) {
+      best = {
+        point: q,
+        along: total > 0 ? (before + Math.sqrt(piece2) * k) / total : 0,
+        segment: i - 1,
+        distance,
+      };
+    }
+    before += Math.sqrt(piece2);
+  }
+  return best;
+}
+
+// ---------- Lines fastened to elements, and to other lines ----------
+
+/** True when a line can be fastened to the element (the box itself; lines are fastened to lines by `canFastenToLine`). */
+export function canFasten(el: Element): boolean {
+  // The frame of a figure with a form shows nothing; a line is fastened to its parts.
+  return el.type !== 'mark' && el.type !== 'legend' && el.type !== 'figure' && !isLine(el);
+}
+
+/** An element that fills most of the slide lies behind the rest; an end let go on it is not fastened. */
+// Both shapes of stage, lying and upright, have the same area.
+export function isBackground(el: Element): boolean {
+  const stage = stageFor('landscape');
+  return el.box.w * el.box.h >= stage.width * stage.height * BACKGROUND_SHARE;
 }
 
 function centre(box: Box): Point {
@@ -200,11 +358,32 @@ export function edgePoint(el: Element, toward: Point, gap = LINE_GAP): Point {
   return { x: mid.x + out.x, y: mid.y + out.y };
 }
 
+/**
+ * A fastening point of an element: the middle of one of its sides, `gap`
+ * outside it (a fastened end stops that far from the edge), turned with it.
+ */
+export function sidePoint(el: Pick<Element, 'box'>, side: Side, gap = LINE_GAP): Point {
+  const { w, h, rotation } = el.box;
+  const mid = centre(el.box);
+  const local =
+    side === 'top'
+      ? { x: 0, y: -(h / 2 + gap) }
+      : side === 'bottom'
+        ? { x: 0, y: h / 2 + gap }
+        : side === 'left'
+          ? { x: -(w / 2 + gap), y: 0 }
+          : { x: w / 2 + gap, y: 0 };
+  const out = turn(local, rotation);
+  return { x: mid.x + out.x, y: mid.y + out.y };
+}
+
 /** True when a point lies on the element's box. */
-function covers(el: Element, p: Point): boolean {
+export function covers(el: Pick<Element, 'box'>, p: Point, margin = 0): boolean {
   const mid = centre(el.box);
   const local = turn({ x: p.x - mid.x, y: p.y - mid.y }, -el.box.rotation);
-  return Math.abs(local.x) <= el.box.w / 2 && Math.abs(local.y) <= el.box.h / 2;
+  return (
+    Math.abs(local.x) <= el.box.w / 2 + margin && Math.abs(local.y) <= el.box.h / 2 + margin
+  );
 }
 
 /** The element an end of a line is fastened to when it is let go at a point: the one in front there. */
@@ -212,12 +391,82 @@ export function fastenTargetAt(
   scene: Pick<Scene, 'elements'>,
   p: Point,
   lineId: string,
+  /** How far outside its box an element still counts as under the point. */
+  margin = 0,
 ): Element | undefined {
   for (let i = scene.elements.length - 1; i >= 0; i--) {
     const el = scene.elements[i]!;
-    if (el.id !== lineId && canFasten(el) && !isBackground(el) && covers(el, p)) return el;
+    if (el.id !== lineId && canFasten(el) && !isBackground(el) && covers(el, p, margin)) return el;
   }
   return undefined;
+}
+
+type End = 'start' | 'end';
+const AT = { start: 'startAt', end: 'endAt' } as const;
+const SIDE = { start: 'startSide', end: 'endSide' } as const;
+const ALONG = { start: 'startAlong', end: 'endAlong' } as const;
+
+/** Lets one end of a line go: it is fastened to nothing, and lies where it lies. */
+export function letGoEnd(el: ShapeElement, end: End): boolean {
+  let changed = false;
+  for (const key of [AT[end], SIDE[end], ALONG[end]]) {
+    if (el[key] !== undefined) {
+      delete el[key];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+/** Where an end of a line is to be fastened: to an element, at one of its fastening points or by itself, or to a line, so far along it. */
+export interface Fastening {
+  at: string;
+  side?: Side;
+  along?: number;
+}
+
+/** Fastens one end of a line as given, or lets it go (`null`). */
+export function fastenEnd(el: ShapeElement, end: End, to: Fastening | null): void {
+  letGoEnd(el, end);
+  if (!to) return;
+  el[AT[end]] = to.at;
+  if (to.side) el[SIDE[end]] = to.side;
+  if (to.along !== undefined) el[ALONG[end]] = Math.max(0, Math.min(1, to.along));
+}
+
+/** The lines a line is fastened to, by their ids. */
+function lineTargets(el: ShapeElement, byId: ReadonlyMap<string, Element>): string[] {
+  return [el.startAt, el.endAt].filter((id): id is string => {
+    const target = id === undefined ? undefined : byId.get(id);
+    return target !== undefined && target.id !== el.id && isLine(target);
+  });
+}
+
+/**
+ * True when an end of the line can be fastened to the other line: it is
+ * not the line itself, and that line is not fastened to this one, directly
+ * or through others (an end that would close such a ring is not fastened).
+ */
+export function canFastenToLine(
+  scene: Pick<Scene, 'elements'>,
+  lineId: string,
+  targetId: string,
+): boolean {
+  if (lineId === targetId) return false;
+  const byId = new Map(scene.elements.map((el) => [el.id, el]));
+  const target = byId.get(targetId);
+  if (!target || !isLine(target)) return false;
+  const seen = new Set<string>();
+  const queue = [targetId];
+  while (queue.length > 0) {
+    const id = queue.pop()!;
+    if (id === lineId) return false;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const el = byId.get(id);
+    if (el && isLine(el)) queue.push(...lineTargets(el, byId));
+  }
+  return true;
 }
 
 function near(a: Point, b: Point): boolean {
@@ -230,10 +479,17 @@ function near(a: Point, b: Point): boolean {
  * - a group with fewer than two members is no group, and marks and legends
  *   are not members of one;
  * - a line that was fastened to something that is gone, or that a line
- *   cannot be fastened to, is let go there and lies where it lay;
- * - a fastened end is put on the edge of what it is fastened to, on the
- *   side that faces the line's other end. With both ends fastened the line
- *   runs between the two elements, the way their middles lie.
+ *   cannot be fastened to, is let go there and lies where it lay; so is an
+ *   end that would close a ring of lines fastened to each other;
+ * - an end fastened to a fastening point of an element lies there; one
+ *   fastened to the element by itself lies on its edge, on the side that
+ *   faces the line's next point (for a straight line, its other end; with
+ *   both ends fastened so, the line runs between the two elements, the way
+ *   their middles lie);
+ * - an end fastened to another line lies on it, as far along it as it
+ *   says. Lines that others are fastened to are laid first.
+ *
+ * The points between the ends of a line stay where they are.
  *
  * Returns true when anything was changed.
  */
@@ -253,32 +509,102 @@ export function followFigures(scene: Pick<Scene, 'elements'>): boolean {
     }
   }
 
-  let byId: Map<string, Element> | undefined;
-  for (const el of scene.elements) {
-    if (el.type !== 'shape' || (el.startAt === undefined && el.endAt === undefined)) continue;
-    byId ??= new Map(scene.elements.map((e) => [e.id, e]));
-    const target = (id: string | undefined): Element | undefined => {
-      const found = id === undefined ? undefined : byId!.get(id);
-      return found && found.id !== el.id && canFasten(found) ? found : undefined;
-    };
-    const from = isLine(el) ? target(el.startAt) : undefined;
-    let to = isLine(el) ? target(el.endAt) : undefined;
-    // A line does not run from an element to itself.
-    if (from && to && from.id === to.id) to = undefined;
-    if (!from && el.startAt !== undefined) {
-      delete el.startAt;
-      changed = true;
+  const fastened = scene.elements.filter(
+    (el): el is ShapeElement =>
+      el.type === 'shape' &&
+      (['start', 'end'] as const).some(
+        (end) => el[AT[end]] !== undefined || el[SIDE[end]] !== undefined || el[ALONG[end]] !== undefined,
+      ),
+  );
+  if (fastened.length === 0) return changed;
+  const byId = new Map(scene.elements.map((e) => [e.id, e]));
+
+  // What each end is fastened to, when it can be.
+  for (const el of fastened) {
+    for (const end of ['start', 'end'] as const) {
+      const id = el[AT[end]];
+      const found = id === undefined ? undefined : byId.get(id);
+      const ok =
+        isLine(el) && found && found.id !== el.id && (canFasten(found) || isLine(found));
+      if (!ok || !found) {
+        if (letGoEnd(el, end)) changed = true;
+        continue;
+      }
+      if (isLine(found)) {
+        if (el[SIDE[end]] !== undefined) {
+          delete el[SIDE[end]];
+          changed = true;
+        }
+        const along = el[ALONG[end]];
+        if (along === undefined || along < 0 || along > 1) {
+          // Fastened to a line without saying where: where the end lies now.
+          const here = end === 'start' ? lineEnds(el).start : lineEnds(el).end;
+          el[ALONG[end]] =
+            along === undefined
+              ? nearestOnPath(linePath(found), here).along
+              : Math.max(0, Math.min(1, along));
+          changed = true;
+        }
+      } else if (el[ALONG[end]] !== undefined) {
+        delete el[ALONG[end]];
+        changed = true;
+      }
     }
-    if (!to && el.endAt !== undefined) {
-      delete el.endAt;
-      changed = true;
+    // A line does not run from an element to itself (it may run from a line back to the same line).
+    const from = el.startAt === undefined ? undefined : byId.get(el.startAt);
+    if (from && el.startAt === el.endAt && !isLine(from)) {
+      if (letGoEnd(el, 'end')) changed = true;
     }
+  }
+
+  // Lines fastened to lines: a ring is broken where it closes, and the
+  // lines that others are fastened to come first.
+  const order: ShapeElement[] = [];
+  const state = new Map<string, 'busy' | 'done'>();
+  const visit = (el: ShapeElement): void => {
+    state.set(el.id, 'busy');
+    for (const end of ['start', 'end'] as const) {
+      const id = el[AT[end]];
+      const target = id === undefined ? undefined : byId.get(id);
+      if (!target || !isLine(target)) continue;
+      if (state.get(target.id) === 'busy') {
+        if (letGoEnd(el, end)) changed = true;
+      } else if (!state.has(target.id)) visit(target);
+    }
+    state.set(el.id, 'done');
+    order.push(el);
+  };
+  for (const el of fastened) if (!state.has(el.id)) visit(el);
+
+  for (const el of order) {
+    if (!isLine(el)) continue;
+    const from = el.startAt === undefined ? undefined : byId.get(el.startAt);
+    const to = el.endAt === undefined ? undefined : byId.get(el.endAt);
     if (!from && !to) continue;
-    const now = lineEnds(el);
-    const start = from ? edgePoint(from, to ? centre(to.box) : now.end) : now.start;
-    const end = to ? edgePoint(to, from ? centre(from.box) : now.start) : now.end;
-    if (near(start, now.start) && near(end, now.end) && el.box.rotation === 0) continue;
-    setLineEnds(el, start, end);
+    const path = linePath(el);
+    const n = path.length;
+    // Where an end must lie, when that does not depend on the rest of the line.
+    const fixed = (end: End, target: Element | undefined): Point | undefined => {
+      if (!target) return undefined;
+      if (isLine(target)) return pointAlong(linePath(target), el[ALONG[end]] ?? 0.5);
+      const side = el[SIDE[end]];
+      return side ? sidePoint(target, side) : undefined;
+    };
+    const startFixed = fixed('start', from);
+    const endFixed = fixed('end', to);
+    // An end on a line lies exactly on it, not on the nearest whole pixel.
+    const exact = (!!from && isLine(from)) || (!!to && isLine(to));
+    const start = !from
+      ? path[0]!
+      : (startFixed ??
+        edgePoint(from, n > 2 ? path[1]! : (endFixed ?? (to ? centre(to.box) : path[n - 1]!))));
+    const end = !to
+      ? path[n - 1]!
+      : (endFixed ??
+        edgePoint(to, n > 2 ? path[n - 2]! : (startFixed ?? (from ? centre(from.box) : path[0]!))));
+    const still = near(start, path[0]!) && near(end, path[n - 1]!) && el.box.rotation === 0;
+    if (still && (!exact || hasPath(el))) continue;
+    setLinePath(el, [start, ...path.slice(1, n - 1), end], exact);
     changed = true;
   }
   return changed;
@@ -286,13 +612,14 @@ export function followFigures(scene: Pick<Scene, 'elements'>): boolean {
 
 /**
  * A line that is moved by itself is let go from what it was fastened to;
- * one that is moved together with what it is fastened to stays fastened.
+ * one that is moved together with what it is fastened to stays fastened,
+ * with its points.
  */
 export function letGoMoved(scene: Pick<Scene, 'elements'>, moved: readonly string[]): void {
   for (const el of scene.elements) {
     if (!isLine(el) || !moved.includes(el.id)) continue;
-    if (el.startAt !== undefined && !moved.includes(el.startAt)) delete el.startAt;
-    if (el.endAt !== undefined && !moved.includes(el.endAt)) delete el.endAt;
+    if (el.startAt !== undefined && !moved.includes(el.startAt)) letGoEnd(el, 'start');
+    if (el.endAt !== undefined && !moved.includes(el.endAt)) letGoEnd(el, 'end');
   }
 }
 
@@ -321,6 +648,174 @@ export function connect(
   setLineEnds(arrow, edgePoint(from, centre(to.box)), edgePoint(to, centre(from.box)));
   scene.elements.push(arrow);
   return arrow;
+}
+
+/**
+ * Where an end or a point of a line is put when it is dragged to `p`, and
+ * what that shows. In this order, it snaps to:
+ * 1. a fastening point of an element it comes near (an end let go
+ *    elsewhere on the element is fastened to it by itself);
+ * 2. another line: its own points and ends first, otherwise anywhere along
+ *    it (an end is fastened there);
+ * 3. straight across or straight up from the point before or after it;
+ * 4. the lines of the grid given.
+ * Only ends are fastened; a point between them only snaps to places.
+ */
+export interface PathSnap {
+  point: Point;
+  /** For an end: what it is fastened to when let go here, or null when it is let go. */
+  fasten: Fastening | null;
+  /** The element whose fastening points are shown, and the one that is taken. */
+  box?: { id: string; chosen?: Side };
+  /** The line that is lit, and the place on it. */
+  line?: { id: string; at: Point };
+  /** Thin guides from the point before or after it. */
+  guides: Array<{ from: Point; to: Point }>;
+  /** Lines of the grid it lies on. */
+  grid: { x?: number; y?: number };
+}
+
+export function snapPathPoint(
+  scene: Pick<Scene, 'elements'>,
+  lineId: string,
+  /** The path of the line as it is, and which of its points is dragged. */
+  path: readonly Point[],
+  index: number,
+  p: Point,
+  options: {
+    /** How near, in stage pixels, a place must be to be snapped to. */
+    reach: number;
+    grid?: { x: readonly number[]; y: readonly number[] };
+  },
+): PathSnap {
+  const isEnd = index === 0 || index === path.length - 1;
+  const { reach } = options;
+  const result: PathSnap = { point: { ...p }, fasten: null, guides: [], grid: {} };
+
+  // 1. The fastening points of an element it comes near.
+  const box = fastenTargetAt(scene, p, lineId, reach * 2);
+  if (box) {
+    let chosen: Side | undefined;
+    let best = reach;
+    for (const side of SIDES) {
+      const at = sidePoint(box, side, 0);
+      const distance = Math.hypot(p.x - at.x, p.y - at.y);
+      if (distance <= best) {
+        best = distance;
+        chosen = side;
+      }
+    }
+    result.box = { id: box.id, ...(chosen ? { chosen } : {}) };
+    if (chosen) {
+      result.point = sidePoint(box, chosen);
+      if (isEnd) result.fasten = { at: box.id, side: chosen };
+      return result;
+    }
+    if (covers(box, p)) {
+      if (isEnd) result.fasten = { at: box.id };
+      return result;
+    }
+  }
+
+  // 2. Another line: its own points first, otherwise along it.
+  let found: { id: string; at: Point; along: number; distance: number } | undefined;
+  for (let i = scene.elements.length - 1; i >= 0; i--) {
+    const other = scene.elements[i]!;
+    if (!isLine(other) || other.id === lineId) continue;
+    if (isEnd && !canFastenToLine(scene, lineId, other.id)) continue;
+    const otherPath = linePath(other);
+    for (let k = 0; k < otherPath.length; k++) {
+      const q = otherPath[k]!;
+      const distance = Math.hypot(p.x - q.x, p.y - q.y);
+      // A point counts for more than a place between points, so lines meet in a point.
+      if (distance <= reach * 1.5 && (!found || distance - reach < found.distance)) {
+        found = { id: other.id, at: q, along: shareAt(otherPath, k), distance: distance - reach };
+      }
+    }
+    const on = nearestOnPath(otherPath, p);
+    if (on.distance <= reach && (!found || on.distance < found.distance)) {
+      found = { id: other.id, at: on.point, along: on.along, distance: on.distance };
+    }
+  }
+  if (found) {
+    result.point = { ...found.at };
+    result.line = { id: found.id, at: found.at };
+    if (isEnd) result.fasten = { at: found.id, along: found.along };
+    return result;
+  }
+
+  // 3. Straight across or straight up from the points beside it.
+  const point = result.point;
+  let snappedX = false;
+  let snappedY = false;
+  for (const k of [index - 1, index + 1]) {
+    const nb = path[k];
+    if (!nb) continue;
+    if (!snappedX && Math.abs(point.x - nb.x) <= reach) {
+      point.x = nb.x;
+      snappedX = true;
+      result.guides.push({ from: nb, to: point });
+    } else if (!snappedY && Math.abs(point.y - nb.y) <= reach) {
+      point.y = nb.y;
+      snappedY = true;
+      result.guides.push({ from: nb, to: point });
+    }
+  }
+  // The guides end where the point ends.
+  result.guides = result.guides.map((guide) => ({ from: guide.from, to: { ...point } }));
+
+  // 4. The grid.
+  if (options.grid) {
+    if (!snappedX) {
+      const x = nearestValue(point.x, options.grid.x, reach);
+      if (x !== undefined) {
+        point.x = x;
+        result.grid.x = x;
+      }
+    }
+    if (!snappedY) {
+      const y = nearestValue(point.y, options.grid.y, reach);
+      if (y !== undefined) {
+        point.y = y;
+        result.grid.y = y;
+      }
+    }
+  }
+  return result;
+}
+
+function nearestValue(value: number, targets: readonly number[], reach: number): number | undefined {
+  let best: number | undefined;
+  for (const target of targets) {
+    if (Math.abs(target - value) <= reach && (best === undefined || Math.abs(target - value) < Math.abs(best - value))) {
+      best = target;
+    }
+  }
+  return best;
+}
+
+/** Puts a new point on a line where it is nearest to `p`. Returns the index of the new point. */
+export function addPathPoint(el: ShapeElement, p: Point): number {
+  const path = drawnPath(el);
+  const on = nearestOnPath(path, p);
+  const at = { x: Math.round(on.point.x * 100) / 100, y: Math.round(on.point.y * 100) / 100 };
+  path.splice(on.segment + 1, 0, at);
+  setLinePath(el, path);
+  return on.segment + 1;
+}
+
+/** Takes a point between the ends of a line away. */
+export function removePathPoint(el: ShapeElement, index: number): void {
+  const path = linePath(el);
+  if (index <= 0 || index >= path.length - 1) return;
+  path.splice(index, 1);
+  setLinePath(el, path);
+}
+
+/** Takes every point between the ends of a line away: it runs straight from its start to its end. */
+export function straighten(el: ShapeElement): void {
+  const { start, end } = lineEnds(el);
+  setLineEnds(el, start, end);
 }
 
 // ---------- Resizing several elements as one ----------

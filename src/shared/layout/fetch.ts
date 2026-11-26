@@ -5,7 +5,7 @@
 // What counts as a figure is what the lecturer made as one thing: a group
 // (a figure with a form is one, with its parts), and a picture with marks.
 import type { DrawnElement, Element, FigureTemplate, Scene } from '../format/schema';
-import { unionBox } from './groups';
+import { letGoEnd, unionBox } from './groups';
 import { isMark } from './marks';
 
 export interface SlideFigure {
@@ -73,8 +73,9 @@ export interface FetchedFigure {
 /**
  * A copy of a figure, for a "Lær mer" box: its elements with ids of their
  * own, where they stood on the slide, and the part of the slide they fill.
- * A copy has no steps and no "Lær mer" content inside it, and nothing in it
- * is held together or fastened: it is only drawn. Undefined when nothing of
+ * A copy has no steps and no "Lær mer" content inside it. Its lines keep
+ * their paths, and what they are fastened to is the copy of it, but nothing
+ * in a box is laid anew: it is only drawn. Undefined when nothing of
  * the figure can be drawn.
  */
 export function fetchFigure(
@@ -97,8 +98,15 @@ export function fetchFigure(
       else delete copy.of;
     }
     if (copy.type === 'shape') {
-      delete copy.startAt;
-      delete copy.endAt;
+      // The path and the fastenings come along, to the copies; nothing in a box is laid anew.
+      for (const end of ['start', 'end'] as const) {
+        const key = end === 'start' ? 'startAt' : 'endAt';
+        const id = copy[key];
+        if (id === undefined) continue;
+        const to = ids.get(id);
+        if (to) copy[key] = to;
+        else letGoEnd(copy, end);
+      }
     }
     if (copy.type === 'mark' || copy.type === 'legend') copy.on = ids.get(copy.on) ?? copy.on;
     return copy as DrawnElement;

@@ -67,12 +67,12 @@ describe('the stage of a project', () => {
   });
 
   it('is kept in the project file, and a file without it stays lying', () => {
-    expect(FORMAT_VERSION).toBe(19);
+    expect(FORMAT_VERSION).toBe(20);
     const upright = { ...newProject('A'), orientation: 'portrait' as const };
     expect(parseProject(JSON.parse(JSON.stringify(upright))).orientation).toBe('portrait');
     const old = { ...JSON.parse(JSON.stringify(newProject('B'))), version: 18 };
     const lifted = parseProject(old);
-    expect(lifted.version).toBe(19);
+    expect(lifted.version).toBe(FORMAT_VERSION);
     expect(lifted.orientation).toBeUndefined();
     expect(() => parseProject({ ...upright, orientation: 'landscape' })).toThrow();
   });

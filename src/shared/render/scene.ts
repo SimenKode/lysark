@@ -207,6 +207,51 @@ function renderShape(ctx: RenderContext, surface: Surface, el: ShapeElement): No
   root.setAttribute('aria-hidden', 'true');
   const lineColor = PALETTE[el.stroke ?? defaultTextColor(theme, surface, 'body', 36)];
 
+  const path = (el.points ?? []).filter((p): p is [number, number] => p !== null);
+  if ((el.geometry === 'line' || el.geometry === 'arrow') && path.length >= 2) {
+    // A line through points of its own. The head of an arrow sits at the
+    // last point and points the way the last stretch runs.
+    const at = (value: number): string => String(Number(value.toFixed(2)));
+    const points = path.map(([fx, fy]) => ({ x: fx * w, y: fy * h }));
+    const tip = points[points.length - 1]!;
+    let from = points[points.length - 2]!;
+    for (let i = points.length - 2; i >= 0 && Math.hypot(tip.x - from.x, tip.y - from.y) < 1e-6; i--) {
+      from = points[i]!;
+    }
+    const last = Math.hypot(tip.x - from.x, tip.y - from.y);
+    const ux = last > 0 ? (tip.x - from.x) / last : 1;
+    const uy = last > 0 ? (tip.y - from.y) / last : 0;
+    const head = el.geometry === 'arrow' ? arrowHeadLength(sw) : 0;
+    // The line stops where the arrow head begins so the tip stays sharp.
+    const cut = Math.min(head * 0.9, last);
+    const drawn = [...points.slice(0, -1), { x: tip.x - ux * cut, y: tip.y - uy * cut }];
+    root.appendChild(
+      svg(doc, 'polyline', {
+        points: drawn.map((p) => `${at(p.x)},${at(p.y)}`).join(' '),
+        fill: 'none',
+        stroke: lineColor,
+        'stroke-width': sw,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'butt',
+      }),
+    );
+    if (head) {
+      const bx = tip.x - ux * head;
+      const by = tip.y - uy * head;
+      const half = head * 0.55;
+      const corners = [
+        [tip.x, tip.y],
+        [bx - uy * half, by + ux * half],
+        [bx + uy * half, by - ux * half],
+      ]
+        .map((p) => `${at(p[0]!)},${at(p[1]!)}`)
+        .join(' ');
+      root.appendChild(svg(doc, 'polygon', { points: corners, fill: lineColor }));
+    }
+    wrap.appendChild(root);
+    return wrap;
+  }
+
   if (el.geometry === 'line' || el.geometry === 'arrow') {
     // A line that lies flat or stands upright has a box one pixel thin. It is
     // drawn through the middle of that pixel, not from corner to corner: the

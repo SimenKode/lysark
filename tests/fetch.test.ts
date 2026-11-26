@@ -156,12 +156,13 @@ describe('a copy of a figure', () => {
     expect(copy.elements).toHaveLength(3);
     const old = new Set(scene.elements.map((el) => el.id));
     expect(copy.elements.every((el) => !old.has(el.id))).toBe(true);
-    // Nothing is held together or fastened in the copy.
+    // Nothing is held together in the copy; a line is fastened to the copies of what it joined.
+    const copied = new Map(free.ids.map((id, i) => [id, copy.elements[i]!.id]));
     for (const el of copy.elements) {
       expect(el.group).toBeUndefined();
-      if (el.type === 'shape') {
-        expect(el.startAt).toBeUndefined();
-        expect(el.endAt).toBeUndefined();
+      if (el.type === 'shape' && el.geometry === 'arrow') {
+        expect(el.startAt).toBe(copied.get('en'));
+        expect(el.endAt).toBe(copied.get('to'));
       }
     }
     expect(copy.elements.map((el) => el.box)).toEqual(
@@ -246,7 +247,7 @@ describe('a figure in a "Lær mer" box', () => {
     old.version = 13;
     old.scenes[0]!.elements.pop();
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(19);
+    expect(FORMAT_VERSION).toBe(20);
   });
 
   it('is drawn by the code that draws the slide, in a holder that makes it fit', () => {

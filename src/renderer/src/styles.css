@@ -2390,6 +2390,45 @@ button.figure-choice:focus-visible {
   position: absolute;
   outline: dashed var(--lilla);
 }
+/* A point on a line, and the paler handle in the middle of a stretch that bends it. */
+.handle-point {
+  border-radius: 3px;
+}
+.handle-mid {
+  opacity: 0.6;
+  border-style: dashed;
+}
+/* What an end or a point of a line that is dragged snaps to. */
+.snap-marks {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.snap-guide {
+  stroke: var(--oransje);
+  stroke-dasharray: 6 6;
+}
+.snap-line {
+  fill: none;
+  stroke: var(--oransje);
+  stroke-opacity: 0.45;
+  stroke-linejoin: round;
+}
+.snap-place {
+  fill: #fff;
+  stroke: var(--oransje);
+}
+.fasten-dot {
+  fill: #fff;
+  stroke: var(--lilla);
+}
+.fasten-dot.is-chosen {
+  fill: var(--lilla);
+}
 /* The form of a figure that draws itself. */
 .figure-form {
   list-style: none;

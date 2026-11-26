@@ -4,16 +4,26 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { EditorState } from 'prosemirror-state';
 import { isEmptyRichText, richText } from '../../shared/format/factory';
-import type { Box, Element, RichText } from '../../shared/format/schema';
+import type { Box, Element, RichText, ShapeElement } from '../../shared/format/schema';
 import {
+  SIDES,
+  addPathPoint,
   canGroup,
-  fastenTargetAt,
+  drawnPath,
+  fastenEnd,
   groupElements,
   letGoMoved,
+  linePath,
   membersOf,
+  nearestOnPath,
+  removePathPoint,
   scaleInto,
+  setLinePath,
+  sidePoint,
+  snapPathPoint,
   ungroupElements,
   unionBox,
+  type PathSnap,
 } from '../../shared/layout/groups';
 import { markStyle, pictureOf } from '../../shared/layout/marks';
 import { wholeFigure, writePart } from '../../shared/layout/templates';
@@ -28,14 +38,22 @@ import { TextToolbar } from './TextToolbar';
 import { currentScene, useStore } from './store';
 
 type Point = { x: number; y: number };
-type Handle = { hx: -1 | 0 | 1; hy: -1 | 0 | 1 } | { end: 'start' | 'end' } | { point: true };
+/**
+ * A handle: on the frame of a box; at a point of a line's path (its ends are
+ * the first and the last, and `insert` makes a new point there, in the
+ * middle of the stretch before it); or what a label points at.
+ */
+type Handle =
+  | { hx: -1 | 0 | 1; hy: -1 | 0 | 1 }
+  | { index: number; insert?: boolean }
+  | { point: true };
 
 interface Drag {
   /**
    * 'point' is what a label on a picture points at; 'resize-many' changes
    * the size of everything that is chosen, as one.
    */
-  kind: 'move' | 'resize' | 'resize-many' | 'endpoint' | 'point';
+  kind: 'move' | 'resize' | 'resize-many' | 'path' | 'point';
   start: Point;
   boxes: Map<string, Box>;
   handle?: Handle;
@@ -65,32 +83,19 @@ const HANDLES: Array<{ hx: -1 | 0 | 1; hy: -1 | 0 | 1; cursor: string }> = [
 
 const isLine = (el: Element): boolean =>
   el.type === 'shape' && (el.geometry === 'line' || el.geometry === 'arrow');
+/** The element as a line or an arrow, when it is one. */
+const asLine = (el: Element | undefined): ShapeElement | undefined =>
+  el && el.type === 'shape' && isLine(el) ? el : undefined;
 
 function rotate(p: Point, degrees: number): Point {
   const a = (degrees * Math.PI) / 180;
   return { x: p.x * Math.cos(a) - p.y * Math.sin(a), y: p.x * Math.sin(a) + p.y * Math.cos(a) };
 }
 
-function lineEnds(el: Element): { start: Point; end: Point } {
-  const { x, y, w, h } = el.box;
-  const flipH = el.type === 'shape' && !!el.flipH;
-  const flipV = el.type === 'shape' && !!el.flipV;
-  return {
-    start: { x: flipH ? x + w : x, y: flipV ? y + h : y },
-    end: { x: flipH ? x : x + w, y: flipV ? y : y + h },
-  };
-}
-
 function hits(el: Element, p: Point, tolerance: number): boolean {
   const { x, y, w, h, rotation } = el.box;
-  if (isLine(el)) {
-    const { start, end } = lineEnds(el);
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length2 = dx * dx + dy * dy || 1;
-    const t = Math.max(0, Math.min(1, ((p.x - start.x) * dx + (p.y - start.y) * dy) / length2));
-    return Math.hypot(p.x - (start.x + t * dx), p.y - (start.y + t * dy)) <= tolerance * 1.5;
-  }
+  const line = asLine(el);
+  if (line) return nearestOnPath(linePath(line), p).distance <= tolerance * 1.5;
   const centre = { x: x + w / 2, y: y + h / 2 };
   const local = rotate({ x: p.x - centre.x, y: p.y - centre.y }, -rotation);
   return Math.abs(local.x) <= w / 2 + tolerance / 2 && Math.abs(local.y) <= h / 2 + tolerance / 2;
@@ -125,6 +130,8 @@ export function Stage() {
   const [scale, setScale] = useState(0.5);
   const [transient, setTransient] = useState<Map<string, Box> | null>(null);
   const [guides, setGuides] = useState<{ x?: number; y?: number }>({});
+  /** While an end or a point of a line is dragged: what it snaps to. */
+  const [snap, setSnap] = useState<PathSnap | null>(null);
   const drag = useRef<Drag | null>(null);
   const dragSeq = useRef(0);
   const editor = useRef<TextEditor | null>(null);
@@ -356,18 +363,24 @@ export function Stage() {
       const handle: Handle =
         raw === 'point'
           ? { point: true }
-          : raw === 'start' || raw === 'end'
-            ? { end: raw }
-            : {
-                hx: Number(raw.split(',')[0]) as -1 | 0 | 1,
-                hy: Number(raw.split(',')[1]) as -1 | 0 | 1,
-              };
+          : raw === 'start'
+            ? { index: 0 }
+            : raw === 'end'
+              ? { index: -1 }
+              : raw.startsWith('p:')
+                ? { index: Number(raw.slice(2)) }
+                : raw.startsWith('mid:')
+                  ? { index: Number(raw.slice(4)) + 1, insert: true }
+                  : {
+                      hx: Number(raw.split(',')[0]) as -1 | 0 | 1,
+                      hy: Number(raw.split(',')[1]) as -1 | 0 | 1,
+                    };
       drag.current = {
-        kind: 'point' in handle ? 'point' : 'end' in handle ? 'endpoint' : 'resize',
+        kind: 'point' in handle ? 'point' : 'index' in handle ? 'path' : 'resize',
         start: p,
         boxes: new Map([[el.id, el.box]]),
         handle,
-        live: !('point' in handle) && !('end' in handle) && pullsLines(new Set([el.id])),
+        live: 'hx' in handle && pullsLines(new Set([el.id])),
         moved: false,
         seq: ++dragSeq.current,
       };
@@ -574,53 +587,85 @@ export function Stage() {
         rotation: box.rotation,
       };
       place(d, new Map([[id, next]]));
-    } else if (d.kind === 'endpoint' && d.handle && 'end' in d.handle) {
-      const id = [...d.boxes.keys()][0]!;
-      const el = scene.elements.find((e) => e.id === id);
-      if (!el) return;
-      const ends2 = lineEnds(el);
-      const fixed = d.handle.end === 'start' ? ends2.end : ends2.start;
-      let moving = { x: p.x, y: p.y };
-      if (event.shiftKey) {
-        // Hold Shift for horizontal, vertical or 45 degrees.
-        const ddx = moving.x - fixed.x;
-        const ddy = moving.y - fixed.y;
-        if (Math.abs(ddx) > 2 * Math.abs(ddy)) moving.y = fixed.y;
-        else if (Math.abs(ddy) > 2 * Math.abs(ddx)) moving.x = fixed.x;
-        else {
-          const m = Math.max(Math.abs(ddx), Math.abs(ddy));
-          moving = { x: fixed.x + Math.sign(ddx) * m, y: fixed.y + Math.sign(ddy) * m };
-        }
-      }
-      const which = d.handle.end;
-      const start = which === 'start' ? moving : fixed;
-      const end = which === 'start' ? fixed : moving;
-      const fasten = !event.altKey;
-      useStore.getState().updateScene(
-        (s) => {
-          const target = s.elements.find((e) => e.id === id);
-          if (!target || target.type !== 'shape') return;
-          // An end that is let go on an element is fastened to it, and follows it from then on.
-          const under = fasten ? fastenTargetAt(s, moving, id) : undefined;
-          const other = which === 'start' ? target.endAt : target.startAt;
-          const key = which === 'start' ? 'startAt' : 'endAt';
-          if (under && under.id !== other) target[key] = under.id;
-          else delete target[key];
-          target.box = {
-            x: Math.round(Math.min(start.x, end.x)),
-            y: Math.round(Math.min(start.y, end.y)),
-            w: Math.max(1, Math.round(Math.abs(end.x - start.x))),
-            h: Math.max(1, Math.round(Math.abs(end.y - start.y))),
-            rotation: 0,
-          };
-          target.flipH = start.x > end.x;
-          target.flipV = start.y > end.y;
-        },
-        `endpoint-${d.seq}`,
-        true,
-      );
+    } else if (d.kind === 'path' && d.handle && 'index' in d.handle) {
+      dragPathPoint(d, d.handle, p, event);
+      return;
     }
     setGuides(nextGuides);
+  }
+
+  /**
+   * An end or a point of a line follows the pointer, and snaps (Alt switches
+   * snapping off): to the fastening points of a box it comes near, to
+   * another line, straight across or up from the points beside it, and to
+   * the grid when it is shown. An end is fastened to what it snaps to; let
+   * go on a box elsewhere, it is fastened to the box by itself. Dragging the
+   * middle of a stretch makes a new point there first.
+   */
+  function dragPathPoint(
+    d: Drag,
+    handle: { index: number; insert?: boolean },
+    p: Point,
+    event: { altKey: boolean; shiftKey: boolean },
+  ): void {
+    const id = [...d.boxes.keys()][0]!;
+    const now = currentScene(useStore.getState());
+    const el = asLine(now?.elements.find((e) => e.id === id));
+    if (!now || !el) return;
+    const path = drawnPath(el);
+    if (handle.insert) {
+      const at = handle.index;
+      if (at <= 0 || at >= path.length) return;
+      path.splice(at, 0, {
+        x: (path[at - 1]!.x + path[at]!.x) / 2,
+        y: (path[at - 1]!.y + path[at]!.y) / 2,
+      });
+    }
+    const index = handle.index < 0 ? path.length - 1 : handle.index;
+    const isEnd = index === 0 || index === path.length - 1;
+    let moving = { x: p.x, y: p.y };
+    if (event.shiftKey) {
+      // Hold Shift for horizontal, vertical or 45 degrees from the point before (or after) it.
+      const fixed = path[index === 0 ? 1 : index - 1]!;
+      const ddx = moving.x - fixed.x;
+      const ddy = moving.y - fixed.y;
+      if (Math.abs(ddx) > 2 * Math.abs(ddy)) moving.y = fixed.y;
+      else if (Math.abs(ddy) > 2 * Math.abs(ddx)) moving.x = fixed.x;
+      else {
+        const m = Math.max(Math.abs(ddx), Math.abs(ddy));
+        moving = { x: fixed.x + Math.sign(ddx) * m, y: fixed.y + Math.sign(ddy) * m };
+      }
+    }
+    let found: PathSnap | null = null;
+    if (!event.altKey && !event.shiftKey) {
+      const { starts, ends } = columnEdges(theme);
+      found = snapPathPoint(now, id, path, index, moving, {
+        reach: 10 / scale,
+        grid: useStore.getState().showGrid
+          ? {
+              x: [...starts, ...ends],
+              y: [theme.grid.marginTop, stage.height - theme.grid.marginBottom],
+            }
+          : undefined,
+      });
+      moving = found.point;
+    }
+    path[index] = { x: Math.round(moving.x * 100) / 100, y: Math.round(moving.y * 100) / 100 };
+    const fasten = found?.fasten ?? null;
+    useStore.getState().updateScene(
+      (s) => {
+        const target = s.elements.find((e) => e.id === id);
+        if (!target || target.type !== 'shape') return;
+        setLinePath(target, path);
+        if (isEnd) fastenEnd(target, index === 0 ? 'start' : 'end', fasten);
+      },
+      `path-${d.seq}`,
+      true,
+    );
+    // The new point is there now: from here on it is that point that is dragged.
+    if (handle.insert) d.handle = { index: handle.index };
+    setSnap(found);
+    setGuides(found ? found.grid : {});
   }
 
   function onPointerUp(): void {
@@ -628,7 +673,8 @@ export function Stage() {
     drag.current = null;
     setGuides({});
     if (d && !d.moved && d.enter) useStore.getState().select([d.enter]);
-    if (!d || !d.moved || d.kind === 'endpoint' || d.kind === 'point') {
+    setSnap(null);
+    if (!d || !d.moved || d.kind === 'path' || d.kind === 'point') {
       setTransient(null);
       return;
     }
@@ -672,6 +718,22 @@ export function Stage() {
     const state = useStore.getState();
     if (state.editing) return;
     const p = toStage(event);
+    // A double click on a point of a line takes it away; on the line, it puts a point there.
+    // The stage holds the pointer while it is pressed, so the handle is found where the click was.
+    const handleEl = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>('[data-handle]');
+    const chosen = state.selection.length === 1 ? state.selection[0]! : undefined;
+    if (chosen && handleEl?.dataset.handle?.startsWith('p:')) {
+      const index = Number(handleEl.dataset.handle.slice(2));
+      state.updateScene((s) => {
+        const target = asLine(s.elements.find((e) => e.id === chosen));
+        if (target) removePathPoint(target, index);
+      });
+      return;
+    }
+    // A double click on the paler handle in the middle of a stretch puts a point there, as on the line.
+    if (handleEl && !handleEl.dataset.handle?.startsWith('mid:')) return;
     let hit: Element | undefined;
     for (let i = scene.elements.length - 1; i >= 0; i--) {
       if (hits(scene.elements[i]!, p, 10 / scale)) {
@@ -680,6 +742,15 @@ export function Stage() {
       }
     }
     if (!hit) return;
+    if (isLine(hit)) {
+      const id = hit.id;
+      state.updateScene((s) => {
+        const target = asLine(s.elements.find((e) => e.id === id));
+        if (target) addPathPoint(target, p);
+      });
+      state.select([id]);
+      return;
+    }
     startEditing(hit, event);
   }
 
@@ -974,6 +1045,7 @@ export function Stage() {
                   style={{ top: guides.y, left: 0, height: border, width: stage.width }}
                 />
               )}
+              {snap && <SnapMarks snap={snap} scene={scene} border={border} />}
               {scene.elements.map((el) => {
                 const index = stepOf(scene, el.id);
                 if (index < 0) return null;
@@ -1051,36 +1123,69 @@ export function Stage() {
                 .filter(() => !wholeFigure(scene, selection))
                 .map((el) => {
                   const box = boxOf(el);
-                  if (isLine(el)) {
-                    const pts = lineEnds({ ...el, box } as Element);
-                    const fastened = {
-                      start: el.type === 'shape' && el.startAt !== undefined,
-                      end: el.type === 'shape' && el.endAt !== undefined,
-                    };
+                  const line = asLine(el);
+                  if (line) {
+                    const path = linePath({ ...line, box });
+                    const last = path.length - 1;
+                    const fastened = { start: line.startAt !== undefined, end: line.endAt !== undefined };
+                    const handle = (
+                      key: string,
+                      at: { x: number; y: number },
+                      className: string,
+                      title: string,
+                      size = handleSize,
+                    ) => (
+                      <div
+                        key={key}
+                        className={className}
+                        title={title}
+                        data-handle={key}
+                        style={{
+                          left: at.x - size / 2,
+                          top: at.y - size / 2,
+                          width: size,
+                          height: size,
+                          borderWidth: border,
+                          cursor: 'move',
+                        }}
+                      />
+                    );
                     return (
                       <div key={el.id}>
-                        {single &&
-                          !editing &&
-                          (['start', 'end'] as const).map((which) => (
-                            <div
-                              key={which}
-                              className={`handle${fastened[which] ? ' handle-fastened' : ''}`}
-                              title={
+                        {single && !editing && (
+                          <>
+                            {/* A paler handle in the middle of each stretch: dragged, it bends the line there. */}
+                            {path.slice(1).map((to, i) => {
+                              const from = path[i]!;
+                              if (Math.hypot(to.x - from.x, to.y - from.y) < handleSize * 3) return null;
+                              return handle(
+                                `mid:${i}`,
+                                { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 },
+                                'handle handle-mid',
+                                'Dra for å bøye streken her.',
+                                handleSize * 0.75,
+                              );
+                            })}
+                            {path.slice(1, last).map((at, i) =>
+                              handle(
+                                `p:${i + 1}`,
+                                at,
+                                'handle handle-point',
+                                'Dra punktet for å flytte det. Dobbeltklikk for å ta det bort.',
+                              ),
+                            )}
+                            {(['start', 'end'] as const).map((which) =>
+                              handle(
+                                which,
+                                which === 'start' ? path[0]! : path[last]!,
+                                `handle${fastened[which] ? ' handle-fastened' : ''}`,
                                 fastened[which]
                                   ? 'Enden er festet. Dra den bort for å løsne den.'
-                                  : 'Dra enden inn på en boks for å feste den.'
-                              }
-                              data-handle={which}
-                              style={{
-                                left: pts[which].x - handleSize / 2,
-                                top: pts[which].y - handleSize / 2,
-                                width: handleSize,
-                                height: handleSize,
-                                borderWidth: border,
-                                cursor: 'move',
-                              }}
-                            />
-                          ))}
+                                  : 'Dra enden inn på en boks eller en annen strek for å feste den.',
+                              ),
+                            )}
+                          </>
+                        )}
                       </div>
                     );
                   }
@@ -1142,5 +1247,73 @@ export function Stage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * What an end or a point of a line that is dragged snaps to: the four
+ * fastening points of a box (the one it takes is filled), another line
+ * that is lit with a mark at the place, and thin guides straight across or
+ * up from the points beside it.
+ */
+function SnapMarks({
+  snap,
+  scene,
+  border,
+}: {
+  snap: PathSnap;
+  scene: { elements: Element[] };
+  border: number;
+}) {
+  const box = snap.box && scene.elements.find((e) => e.id === snap.box!.id);
+  const line = asLine(snap.line && scene.elements.find((e) => e.id === snap.line!.id));
+  const dot = border * 4;
+  return (
+    <svg className="snap-marks" aria-hidden="true">
+      {snap.guides.map((guide, i) => (
+        <line
+          key={`guide-${i}`}
+          className="snap-guide"
+          x1={guide.from.x}
+          y1={guide.from.y}
+          x2={guide.to.x}
+          y2={guide.to.y}
+          strokeWidth={border * 0.75}
+        />
+      ))}
+      {line && (
+        <polyline
+          className="snap-line"
+          points={linePath(line)
+            .map((p) => `${p.x},${p.y}`)
+            .join(' ')}
+          strokeWidth={border * 4}
+        />
+      )}
+      {snap.line && (
+        <circle
+          className="snap-place"
+          cx={snap.line.at.x}
+          cy={snap.line.at.y}
+          r={dot * 1.3}
+          strokeWidth={border}
+        />
+      )}
+      {box &&
+        SIDES.map((side) => {
+          const at = sidePoint(box, side, 0);
+          return (
+            <circle
+              key={side}
+              className={`fasten-dot${snap.box!.chosen === side ? ' is-chosen' : ''}`}
+              cx={at.x}
+              cy={at.y}
+              // The one that is taken is larger, so it is seen round the handle of the end on it.
+              r={snap.box!.chosen === side ? dot * 2.2 : dot}
+              strokeWidth={border}
+            />
+          );
+        })}
+    </svg>
   );
 }

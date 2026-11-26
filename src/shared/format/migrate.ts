@@ -102,5 +102,7 @@ export function migrateProject(data: unknown, currentVersion: number): unknown {
   if (project.version === 17) project.version = 18;
   // 18 -> 19 only added a thing (the shape of the slides; absent is lying, as before).
   if (project.version === 18) project.version = 19;
+  // 19 -> 20 only added things (lines that bend and are fastened to points and lines, and networks).
+  if (project.version === 19) project.version = 20;
   return project;
 }

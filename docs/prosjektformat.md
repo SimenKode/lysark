@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 19), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 20), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,53 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 20: streker som bøyes og festes til punkter og til andre streker
+
+```ts
+interface ShapeElement {
+  // ... som før
+  points?: [number, number][];            // for en strek eller pil: hele veien den går
+  startSide?: 'top' | 'right' | 'bottom' | 'left';  // festepunktet starten er festet til
+  endSide?: 'top' | 'right' | 'bottom' | 'left';
+  startAlong?: number;                    // hvor langt langs en annen strek starten ligger (0–1)
+  endAlong?: number;
+}
+```
+
+- **Veien.** En strek eller pil (`geometry` er `line` eller `arrow`) kan gå
+  gjennom punkter mellom de to endene. Hele veien lagres i `points`, slik en
+  kurve gjør: punktene som brøkdeler av boksen, det første er starten og det
+  siste slutten, uten brudd. Boksen er den minste (i hele punkter) som
+  rommer veien. Uten `points` er streken diagonalen i boksen, som før
+  (`flipH`, `flipV`), så alle prosjekter som fantes fra før, er uendret.
+- Det som tegner lysarket, kjenner bare boksen og punktene. Spissen på en
+  pil står i slutten og peker den veien den siste strekningen går. «Tegnes»
+  tegner streken langs veien. Tykkelse og farge er som før.
+- **Hvor en ende er festet.** `startAt` og `endAt` er fortsatt id-en til
+  det enden er festet til, og nå også hvor på det:
+  - på en boks (alt en strek kunne festes til før): ett av de fire
+    festepunktene, midt på hver side (`startSide`, `endSide`), eller uten
+    feltet «av seg selv» som før: på kanten, på den siden som vender mot
+    strekens neste punkt (for en rett strek: den andre enden);
+  - på en annen strek eller pil: hvor langt langs veien dens enden ligger,
+    målt etter lengde fra 0 til 1 (`startAlong`, `endAlong`). Enden ligger da
+    nøyaktig på den streken (et T-kryss), og følger med når den flyttes
+    eller formes. En strek med en ende på en annen strek lagres med
+    `points` også når den er rett, så enden ligger nøyaktig der.
+- En strek kan ikke festes til seg selv, eller til en strek som er festet
+  til den, direkte eller gjennom andre. En ende som ville lukket en slik
+  ring, festes ikke (og en ring i en fil brytes der den lukkes).
+- `followFigures` i `src/shared/layout/groups.ts` legger alt riktig etter
+  hver endring, streker som andre er festet til først. Punktene mellom
+  endene blir stående. Flyttes en boks, flyttes bare endene som er festet
+  til den. En strek som flyttes alene, løsner; en som flyttes sammen med
+  det den er festet til, sitter, med punktene sine. Endrer en gruppe
+  størrelse, skaleres strekene i den med punktene.
+- Kopier («Lag kopi», kopi av et lysark, en figur hentet inn i en «Lær
+  mer»-boks) beholder veien og festene, med id-ene til kopiene.
+
+Et prosjekt i format 19 leses som det er.
 
 ## Format 19: stående lysark (9:16)
 

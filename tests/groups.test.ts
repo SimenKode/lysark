@@ -243,10 +243,8 @@ describe('a line fastened to elements', () => {
     expect(arrow.endAt).toBeUndefined();
     expect(arrow.startAt).toBe('a');
     expect(arrow.box).toEqual(before);
-    // A line is never fastened to a line, to itself, or twice to the same element.
-    const other = line('m', [0, 0], [50, 50]);
-    scene.elements.push(other);
-    arrow.endAt = 'm';
+    // A line is never fastened to itself, or twice to the same element (to a line it can be).
+    arrow.endAt = arrow.id;
     followFigures(scene);
     expect(arrow.endAt).toBeUndefined();
     arrow.endAt = 'a';
@@ -411,6 +409,6 @@ describe('groups and fastened lines in the format', () => {
     const old = JSON.parse(JSON.stringify(newProject('A'))) as { version: number };
     old.version = 9;
     expect(parseProject(old).version).toBe(FORMAT_VERSION);
-    expect(FORMAT_VERSION).toBe(19);
+    expect(FORMAT_VERSION).toBe(20);
   });
 });

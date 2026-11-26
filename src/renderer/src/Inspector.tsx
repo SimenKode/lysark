@@ -28,6 +28,9 @@ import {
   canGroup,
   connect,
   groupElements,
+  hasPath,
+  letGoEnd,
+  straighten,
   membersOf,
   stepPerPart,
   ungroupElements,
@@ -485,6 +488,8 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
                   delete s.fill;
                   delete s.content;
                 } else if (line) {
+                  // A box has no path and is fastened to nothing.
+                  if (s.points) straighten(s);
                   s.fill = 'lilla';
                   s.box.h = Math.max(s.box.h, 120);
                   s.box.w = Math.max(s.box.w, 120);
@@ -533,7 +538,7 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
       )}
       {(line || !el.fill) && (
         <Swatches
-          label="Strek"
+          label={line ? 'Farge' : 'Strek'}
           colors={SERIES_ORDER}
           value={el.stroke}
           noneLabel="Temaets"
@@ -562,6 +567,7 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
           }
         />
       )}
+      {line && !curve && <LineShape el={el} />}
       {line && !curve && <LineEnds el={el} />}
       {!line && (
         <>
@@ -583,39 +589,72 @@ function ShapeFields({ el }: { el: Extract<Element, { type: 'shape' }> }) {
   );
 }
 
+/** How a line or an arrow is shaped: the one sentence that says how, and the way back to a straight line. */
+function LineShape({ el }: { el: Extract<Element, { type: 'shape' }> }) {
+  const update = useElementUpdate(el.id);
+  return (
+    <>
+      <p className="hint">
+        Dra i midten av streken for å bøye den. Dobbeltklikk på et punkt for å ta det bort.
+      </p>
+      {hasPath(el) && (
+        <div className="button-row">
+          <button type="button" onClick={() => update<typeof el>((s) => straighten(s))}>
+            Rett ut streken
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Where on an element an end is fastened, in plain words. */
+const SIDE_NAMES = {
+  top: 'festepunktet oppe',
+  right: 'festepunktet til høyre',
+  bottom: 'festepunktet nede',
+  left: 'festepunktet til venstre',
+} as const;
+
 /** What the ends of a line or an arrow are fastened to, and how to let them go. */
 function LineEnds({ el }: { el: Extract<Element, { type: 'shape' }> }) {
   const scene = useStore(currentScene);
   const update = useElementUpdate(el.id);
   const arrow = el.geometry === 'arrow';
-  const ends: Array<['startAt' | 'endAt', string]> = [
-    ['startAt', 'Starten'],
-    ['endAt', arrow ? 'Spissen' : 'Slutten'],
+  const ends: Array<['start' | 'end', string]> = [
+    ['start', 'Starten'],
+    ['end', arrow ? 'Spissen' : 'Slutten'],
   ];
-  const fastened = ends.filter(([key]) => el[key] !== undefined);
+  const fastened = ends.filter(([end]) => el[end === 'start' ? 'startAt' : 'endAt'] !== undefined);
   return (
     <div className="group">
       <h3>Festet til</h3>
       {fastened.length === 0 ? (
         <p className="hint">
-          Dra en ende av {arrow ? 'pila' : 'linja'} inn på en boks, så fester den seg og følger
-          boksen når du flytter den. Hold Alt nede for å la være.
+          Dra en ende av {arrow ? 'pila' : 'streken'} inn på en boks eller en annen strek, så
+          fester den seg og følger med når du flytter den. Hold Alt nede for å la være.
         </p>
       ) : (
         <ul className="fastened-list">
-          {fastened.map(([key, name]) => {
-            const target = scene?.elements.find((e) => e.id === el[key]);
+          {fastened.map(([end, name]) => {
+            const target = scene?.elements.find(
+              (e) => e.id === el[end === 'start' ? 'startAt' : 'endAt'],
+            );
+            const side = el[end === 'start' ? 'startSide' : 'endSide'];
+            const onLine =
+              target?.type === 'shape' && (target.geometry === 'line' || target.geometry === 'arrow');
             return (
-              <li key={key}>
+              <li key={end}>
                 <span>
                   {name}: {target ? describeElement(target) : 'ukjent'}
+                  {side ? `, ${SIDE_NAMES[side]}` : onLine ? ', et sted langs den' : ''}
                 </span>
                 <button
                   type="button"
                   aria-label={`Løsne ${name.toLowerCase()}`}
                   onClick={() =>
                     update<typeof el>((s) => {
-                      delete s[key];
+                      letGoEnd(s, end);
                     })
                   }
                 >

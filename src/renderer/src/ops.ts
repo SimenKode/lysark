@@ -15,6 +15,7 @@ import type {
 } from '../../shared/format/schema';
 import { stageFor, type Stage } from '../../shared/format/constants';
 import type { SlideFigure } from '../../shared/layout/fetch';
+import { letGoEnd } from '../../shared/layout/groups';
 import {
   HIDE_SECONDS,
   MARK_SECONDS,
@@ -92,7 +93,7 @@ export const GEOMETRY_NAMES: Record<ShapeElement['geometry'], string> = {
   roundRect: 'Avrundet rektangel',
   ellipse: 'Ellipse',
   sign: 'Skilt (rektangel med spiss)',
-  line: 'Linje',
+  line: 'Strek',
   arrow: 'Pil',
   curve: 'Kurve',
 };
@@ -272,8 +273,9 @@ export function moveBlock(more: More, from: number, to: number): void {
  * A copy with new ids, nudged so it does not hide the original. What is
  * copied together stays together: a mark belongs to the copy of its
  * picture, a group that is copied becomes a group of its own, and a line
- * stays fastened to the copies of what it was fastened to. A line whose
- * element was not copied with it is let go there.
+ * stays fastened to the copies of what it was fastened to (at the same
+ * fastening point, or as far along the copy of a line), with its points. A
+ * line whose element was not copied with it is let go there.
  */
 export function cloneElements(elements: Element[], offset: number): Element[] {
   const ids = new Map(elements.map((el) => [el.id, newId('e')]));
@@ -295,15 +297,16 @@ export function cloneElements(elements: Element[], offset: number): Element[] {
       else delete copy.of;
     }
     if (copy.type === 'shape') {
+      // Its points are fractions of its box, so they come along as they are.
       if (copy.startAt) {
         const to = ids.get(copy.startAt);
         if (to) copy.startAt = to;
-        else delete copy.startAt;
+        else letGoEnd(copy, 'start');
       }
       if (copy.endAt) {
         const to = ids.get(copy.endAt);
         if (to) copy.endAt = to;
-        else delete copy.endAt;
+        else letGoEnd(copy, 'end');
       }
     }
     if (copy.type === 'mark' || copy.type === 'legend') {

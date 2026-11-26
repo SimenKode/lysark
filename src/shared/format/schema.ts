@@ -32,8 +32,10 @@ export const FORMAT_NAME = 'lysark';
  *    font size of each cell.
  * 18: how long a slide without sound stands, and slides left out of the video.
  * 19: upright projects (9:16).
+ * 20: a line or an arrow can bend through points, and its ends can be
+ *    fastened to a fastening point of an element or to another line.
  */
-export const FORMAT_VERSION = 19;
+export const FORMAT_VERSION = 20;
 
 export { stageOf, stageFor, orientationOf, type Stage, type Orientation } from './constants';
 
@@ -321,21 +323,41 @@ const shapeElement = z.object({
    * of an arrow grows with it. When absent the theme's thickness is used.
    */
   strokeWidth: z.number().min(STROKE_WIDTH.min).max(STROKE_WIDTH.max).optional(),
-  /** For line and arrow: which diagonal of the box, and the arrow direction. For sign: the point is on the left. */
+  /**
+   * For line and arrow without `points`: which diagonal of the box, and the
+   * arrow direction. For sign: the point is on the left.
+   */
   flipH: z.boolean().optional(),
   flipV: z.boolean().optional(),
   /**
-   * For line and arrow: the element each end is fastened to. A fastened end
-   * lies on the edge of that element, on the side that faces the line's
-   * other end, and follows it wherever it goes (`followFigures` in
-   * src/shared/layout/groups.ts). The head of an arrow is at its end.
+   * For line and arrow: the element each end is fastened to, an element
+   * with a box or another line or arrow. The end follows it wherever it
+   * goes (`followFigures` in src/shared/layout/groups.ts). The head of an
+   * arrow is at its end.
    */
   startAt: z.string().min(1).optional(),
   endAt: z.string().min(1).optional(),
   /**
+   * For an end fastened to an element with a box: the fastening point it
+   * lies at, the middle of one side. When absent the end lies by itself on
+   * the edge, on the side that faces the line's next point.
+   */
+  startSide: z.enum(['top', 'right', 'bottom', 'left']).optional(),
+  endSide: z.enum(['top', 'right', 'bottom', 'left']).optional(),
+  /**
+   * For an end fastened to another line: how far along that line's path it
+   * lies, by length, from its start (0) to its end (1).
+   */
+  startAlong: z.number().min(0).max(1).optional(),
+  endAlong: z.number().min(0).max(1).optional(),
+  /**
    * For a curve: the points it runs through, each as fractions of the box
    * (x to the right, y down). `null` is a break: the curve stops there and
    * begins again at the next point.
+   *
+   * For a line or an arrow: the whole path, from its start (the first
+   * point) to its end (the last), without breaks; the box is the smallest
+   * that holds it. Without points a line is the diagonal of its box.
    */
   points: z.array(z.tuple([z.number(), z.number()]).nullable()).optional(),
   /** For a curve: a dot is drawn at each point. */
