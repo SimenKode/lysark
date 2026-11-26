@@ -3097,6 +3097,75 @@ enhetstester). Firefox og Safari. En skjermleser.
 - En form med omriss kan ikke tegnes; bare linjer, piler og kurver.
 - Zoom vises ikke der lysarket redigeres, bare rammen.
 
+### 6.46 Det nye prøvd på Windows (26.11.2026)
+
+Eieren svarte «Ja, prøv Windows» da økta var ferdig med bevegelsene.
+VM-en var ledig. Dagens kode ble pakket for Windows og kjørt fra en
+CD-avbildning, med et prøveprosjekt jeg hadde laget på forhånd (tre
+lysark: en prosess og en tekst med figuren i «Lær mer»-boksen; en boks,
+en pil, et stort tall og et søylediagram med sju steg; og et
+linjediagram med navn langs aksen). Alt ble gjort for hånd med mus og
+tastatur, og sett på i skjermbilder.
+
+**Prøvd i Lysark på Windows 11, og det virket:**
+
+| Hva | Hva jeg så |
+| --- | --- |
+| Åpne prosjektet (format 16) | Tre lysark med miniatyrer. Prosessen, søylediagrammet og linjediagrammet tegnet riktig |
+| Linjediagram med navn | A, B og C med lik avstand, to linjer med prikker |
+| «Lær mer»-byggeren med en figur | Figurkortet med miniatyr, beskrivelse og figurtekst. Boksen er den nye, brede, og prosessen er lesbar i den |
+| «Legg til → Figur» | Velgeren viste «Lysark 1: Prosess», «Lysark 2: Søylediagram» og «Lysark 3: Linjediagram» med miniatyrer. Søylediagrammet ble hentet inn og tegnet i boksen. **Et diagram i en boks var ikke prøvd noe sted før** |
+| Fanen «Steg» | De sju stegene, og de nye knappene |
+| Forhåndsvisning, steg for steg | Pila fanget halvveis tegnet, uten spiss. Tallet fanget midt i tellingen («1 163»). Søylene på vei opp. Oransje ramme rundt boksen. Zoomet inn til dobbel størrelse. Zoomet ut, og boksen tatt bort |
+| «Lær mer» hos studenten | Boksen med prosessen og søylediagrammet, lesbar |
+| Videoeksport av lysarket med stegene | «Videoen er lagret (0:19, 0,5 MB)». **Fila ble hentet ut av VM-en og målt:** H.264, 1920 × 1080, 30 bilder i sekundet, 19 sekunder. Bildene viser pila halvveis tegnet, tallet midt i tellingen («907»), søylene på vei opp, rammen rundt boksen, og zoomen. Boksen er fire ganger så stor i bildet mens det er zoomet inn, og borte etter at den er tatt bort |
+| Import av `diagram.pptx` (fila PowerPoint laget, 6.40) med «Gjør om til USN-stil» | 13 lysark. Lysark 1 til 8 gjort om til Lysark-diagram, 9 til 13 med merknaden «Diagrammet følger ikke med». Lysark 3, PowerPoints linjediagram med navn, er et linjediagram med A, B og C |
+
+**En feil funnet på Windows, og rettet:** «Lagre» feilet med
+«EPERM: operation not permitted, rename …prosjekt.json.ny →
+…prosjekt.json». Prosjektfila var skrivebeskyttet, fordi jeg hadde
+kopiert prosjektet fra en CD, og da nekter Windows å erstatte den. Det
+samme ville skjedd for en foreleser som kopierer et prosjekt fra en CD.
+Nå tar Lysark av skrivebeskyttelsen og lagrer likevel. Går det fortsatt
+ikke (mappa kan ikke skrives i, eller fila er åpen i et annet program),
+kommer en melding på norsk som sier hva du kan gjøre. **Bekreftet på
+Windows** med en ny pakke: samme skrivebeskyttede prosjekt, en endring,
+«Lagre», og knappen viste «Lagret» uten feilmelding.
+
+**To småting sett underveis, og rettet:**
+
+- Akselinjene i diagrammer så ujevne ut. En linje som ligger flatt, ble
+  tegnet fra hjørne til hjørne i en boks som er én piksel høy, altså en
+  piksel på skrå. Flate og loddrette linjer tegnes nå rett.
+- Lista «Fra starten» i fanen «Steg» ramset opp hver eneste del av et
+  diagram («Brødtekst: 0,5», «Linje», …). Nå står figuren på én linje.
+
+**Testene etter rettingene:** 577 av 579 besto i hele kjøringen, 1
+hoppes over som før. De to som feilet, er begge i testen for fritt
+opptak (`tests/e2e-free.test.ts`), på tidsmålinger, mens maskinen var
+belastet av annet arbeid. Den besto alene rett etterpå (6 av 6). Det er
+samme test som i 6.32 og 6.36; koden den prøver, er ikke rørt.
+
+**Sett, ikke rettet. Du bør si hva du vil:** når du importerer eller
+åpner noe annet med ulagrede endringer, spør Lysark «Vil du lagre dem
+først?» med knappene OK og Cancel, og så «Fortsette uten å lagre?» med de
+samme knappene. Det er to spørsmål etter hverandre, og knappene sier
+ikke hva de gjør. Slik har det vært lenge; én dialog med «Lagre», «Ikke
+lagre» og «Avbryt» ville vært klarere.
+
+**Ikke prøvd på Windows, fortsatt:** å lage steg og dra zoom-rammen for
+hånd (prosjektet hadde stegene fra før; bare fanen ble sett). Bytte av
+bevegelse og fart. «Marker» og «Ta bort» laget for hånd. «Hent på nytt».
+Tabellen og valget «Tall / Navn» for et diagram. Innlesingsvinduet,
+fritt opptak og kamerasirkelen. PDF-import. Grupper og festede piler.
+«Behold utseendet» med dagens kode. Den nye norske feilmeldingen ved
+lagring (den kommer bare når lagringen fortsatt ikke går, og det fikk
+jeg ikke fram). Installasjonsfila; dette var en utpakket mappe.
+
+**I VM-en ligger igjen:** `lysark-test\nytt\` (prøveprosjektet og
+`film.mp4`) og `lysark-test\diagram-usn\` (det importerte prosjektet).
+CD-en er tatt ut, og avbildningen er slettet. Lysark er lukket.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

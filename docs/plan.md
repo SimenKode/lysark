@@ -12,7 +12,7 @@ prøvd på både Linux Mint og Windows 11.
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
-| 4 | Figurer og bevegelser | Bygget 25. og 26.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse), søyle- og linjediagram, figur i «Lær mer» og bevegelsene. Gjenstår: eierens utprøving, og Windows |
+| 4 | Figurer og bevegelser | Bygget 25. og 26.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse), søyle- og linjediagram, figur i «Lær mer» og bevegelsene. Det meste av det nye er prøvd på Windows 11 samme dag (historikk.md 6.46). Gjenstår: eierens utprøving |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML

@@ -49,10 +49,16 @@ Bygget i to økter denne dagen. Detaljene står i historikken, 6.32 til
 - Virker i HTML-fila, i «Spill av», i videoen og i innlesingsvinduet.
 - Steg du hadde fra før, er som de var.
 
+**Prøvd på Windows samme dag** (historikken, 6.46): figur i «Lær mer»,
+bevegelsene i forhåndsvisningen og i en videofil, linjediagram med navn,
+og import av diagrammer fra PowerPoint. Alt virket.
+
 **Rettet:** «Lag kopi» av et lysark mistet merkene på bildene. Lysark
 kunne gi en feilmelding hvis det ble lukket i samme øyeblikk som
 forhåndsvisningen. En knapp som var trykket inn, var uleselig så lenge
-pekeren sto over den.
+pekeren sto over den. **På Windows kunne et prosjekt kopiert fra en CD
+ikke lagres** (fila var skrivebeskyttet); nå lagres det. Akselinjene i
+diagrammer var ujevne.
 
 **Beklager:** under testingen 26.11 sto en feilboks («Error») på
 skjermen din fem ganger, til jeg stoppet den. Årsaken er rettet, og
@@ -166,12 +172,16 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
    står nederst.
 9. **En gammel testprosess** fra 22.11 står og går på maskinen din
    (historikken, 6.42). Si fra om jeg skal stoppe den.
+10. **Spørsmålet ved ulagrede endringer** har knappene OK og Cancel, to
+    ganger etter hverandre (historikken, 6.46). Skal det bli én dialog
+    med «Lagre», «Ikke lagre» og «Avbryt»?
 
 ## Neste steg, i rekkefølge
 
 1. **Det du melder** etter å ha prøvd.
-2. **Windows:** ingenting av det som er bygget 26.11, er prøvd der,
-   utenom at en prosessfigur kan settes inn.
+2. **Resten av Windows:** det meste av det nye er prøvd der nå
+   (historikken, 6.46). Gjenstår: å lage steg og dra zoom-rammen for
+   hånd, innlesing, fritt opptak, PDF-import og grupper.
 3. **Håndlaget stil** (leveranse 5). Venter på USNs svar om indigo
    tavle, og på spørsmål til deg før den bygges.
 4. **Ny utgivelse** når du ber om det. Mye er bygget siden 0.4.0.
@@ -180,7 +190,7 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (578) | Ja | – |
+| Automatiske tester (579) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -196,18 +206,18 @@ det meste fra sist står fortsatt. Du svarte på fire spørsmål underveis
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
 | **Maler med skjema** (også tidsaksen) | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
 | **Søyle- og linjediagram** | Ja, i programmet og i forhåndsvisningen. Ikke limt inn fra et ekte regneark, ikke målt i videoen | **Nei** |
-| **Diagram fra PowerPoint** | Ja, på 13 diagrammer PowerPoint laget i VM-en (tallene kontrollert av en test, og fire av bildene sett på) | PowerPoint laget fila der. Selve importen er kjørt på Linux |
-| **Figur i «Lær mer»** | Ja, i programmet, i forhåndsvisningen og målt i en videofil: en prosess. Gruppe og bilde med merker bare i enhetstester | **Nei** |
-| **Linjediagram med navn langs aksen** | Ja, i programmet, og importen på fila fra PowerPoint | **Nei** |
-| **Bevegelser, og steg som markerer, tar bort og zoomer** | Ja, i programmet, hos studenten, og målt i en videofil. Ikke i innlesingsvinduet, ikke «Spill av» i en nettleser | **Nei** |
+| **Diagram fra PowerPoint** | Ja, på 13 diagrammer PowerPoint laget i VM-en (tallene kontrollert av en test, og fire av bildene sett på) | **Ja, 26.11:** PowerPoint laget fila der, og Lysark importerte den der. Lysark 3 sett på |
+| **Figur i «Lær mer»** | Ja, i programmet, i forhåndsvisningen og målt i en videofil: en prosess. Gruppe og bilde med merker bare i enhetstester | **Ja, 26.11:** byggeren, velgeren, et søylediagram hentet inn, og boksen hos studenten |
+| **Linjediagram med navn langs aksen** | Ja, i programmet, og importen på fila fra PowerPoint | **Ja, 26.11:** sett i programmet og etter import. Valget «Tall / Navn» er ikke prøvd der |
+| **Bevegelser, og steg som markerer, tar bort og zoomer** | Ja, i programmet, hos studenten, og målt i en videofil. Ikke i innlesingsvinduet, ikke «Spill av» i en nettleser | **Ja, 26.11:** sett steg for steg i forhåndsvisningen, og målt i en videofil laget der. Stegene var laget på forhånd, ikke for hånd der |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
 nettstedet, en installasjonsfil lastet ned fra nettet (da kan Windows
-advare), en USN-styrt PC, og Canvas. **Av det som er nytt etter 0.4.0, er bare dette prøvd på Windows:**
-«Behold utseendet» gjennom PowerPoint, kapitlene i lysarklista og at en
-prosessfigur kan settes inn. Figur i «Lær mer», linjediagram med navn og
-bevegelsene er ikke prøvd der.
+advare), en USN-styrt PC, og Canvas. **Av det som er nytt etter 0.4.0, er dette prøvd på Windows:** «Behold
+utseendet» gjennom PowerPoint, kapitlene i lysarklista, og det som står
+med «Ja, 26.11» i tabellen. Fritt opptak, PDF-import, grupper og
+festede piler er ikke prøvd der.
 
 ## Kjente svakheter
 
@@ -283,7 +293,7 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
 | Reglene for den som bygger | [AGENTS.md](AGENTS.md) |
-| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappa `diagram` |
+| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappene `diagram`, `diagram-usn` og `nytt` |
 | Prøvefila med diagrammer fra PowerPoint | `eksempler/fra-powerpoint/diagram.pptx` (ikke i git) |
 
 ## Sjekkliste for Canvas

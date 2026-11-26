@@ -442,6 +442,10 @@ instead of choosing silently.
   The VM has no way out but its screen, so a file is fetched from it by
   showing it there as pictures that `tools/windows-vm.py read` reads off
   screenshots (`tools/vm/ut.ps1`).
+  A file copied from the CD image is marked read-only there, as it would
+  be for a lecturer who copies a project from a CD; saving takes that
+  mark off (`writeProjectFile` in `src/main/projectIo.ts`), since
+  Windows will not replace such a file.
   The owner has said (22.11.2026) that you may set up a microphone in
   that VM yourself (the libvirt domain's sound input), so that recording
   can be tried on Windows. That leave covers the microphone and nothing
