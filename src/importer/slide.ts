@@ -67,6 +67,7 @@ import {
   readTextBody,
   spacingFor,
   stageFontSize,
+  titleCompensation,
   verticalTurnOf,
   widthCompensation,
   valignOf,
@@ -306,6 +307,8 @@ class SlideImporter {
   private readonly pixelsPerPoint: number;
   /** Factor on sizes of running text, see widthCompensation. */
   private readonly sansFactor: number;
+  /** Factor on sizes of titles, see titleCompensation. */
+  private readonly titleFactor: number;
 
   constructor(
     private readonly deck: Deck,
@@ -321,6 +324,7 @@ class SlideImporter {
     this.master = this.layout?.master;
     this.pixelsPerPoint = EMU_PER_POINT * deck.stage.scale;
     this.sansFactor = widthCompensation(this.master?.bodyTypeface);
+    this.titleFactor = titleCompensation(this.master?.titleTypeface);
   }
 
   run(sceneId: string): ImportedSlide {
@@ -603,7 +607,8 @@ class SlideImporter {
 
   /** The factor on imported font sizes for a role (see widthCompensation). */
   private compensation(role: TextRole): number {
-    return role === 'title' || role === 'number' ? 1 : this.sansFactor;
+    if (role === 'title') return this.titleFactor;
+    return role === 'number' ? 1 : this.sansFactor;
   }
 
   private placeholder(node: XmlNode, type: string, groups: GroupFrame[]): void {

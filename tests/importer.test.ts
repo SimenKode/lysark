@@ -1132,6 +1132,16 @@ describe('text', () => {
     });
   });
 
+  it("sets a title written in Calibri at 0.95 of its size, since the theme's serif is wider", () => {
+    const title = (titleTypeface?: string) =>
+      textsOf(load({ titleTypeface, slides: [{ shapes: titleSp('A') }] })).find(
+        (text) => text.role === 'title',
+      )!.fontSize!;
+    const own = title();
+    expect(title('Calibri Light')).toBeCloseTo(own * 0.95, 1);
+    expect(title('Liberation Serif')).toBe(own);
+  });
+
   it('keeps the size of each list level where it differs from the theme', () => {
     const level = (n: number, size: number): string =>
       `<a:lvl${n}pPr><a:buChar char="-"/><a:defRPr sz="${size}"/></a:lvl${n}pPr>`;

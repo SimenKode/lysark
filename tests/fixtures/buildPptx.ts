@@ -361,6 +361,8 @@ export interface DeckSpec {
   themeColors?: Record<string, string>;
   /** Typeface of running text in the theme. Default "Liberation Sans". */
   bodyTypeface?: string;
+  /** Typeface of titles in the theme. Default "Liberation Serif". */
+  titleTypeface?: string;
   /** dc:title in docProps/core.xml; no core properties part when undefined. */
   coreTitle?: string;
   /** Content of p:defaultTextStyle in the presentation. */
@@ -408,7 +410,11 @@ function shapeTree(shapes: string): string {
   );
 }
 
-function themeXml(colors: Record<string, string>, bodyTypeface: string): string {
+function themeXml(
+  colors: Record<string, string>,
+  bodyTypeface: string,
+  titleTypeface = 'Liberation Serif',
+): string {
   const order = [
     'dk1',
     'lt1',
@@ -435,7 +441,7 @@ function themeXml(colors: Record<string, string>, bodyTypeface: string): string 
   return (
     `${XML_HEADER}<a:theme xmlns:a="${NS_A}" name="Testtema"><a:themeElements>` +
     `<a:clrScheme name="Test">${scheme}</a:clrScheme>` +
-    '<a:fontScheme name="Test"><a:majorFont><a:latin typeface="Liberation Serif"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>' +
+    `<a:fontScheme name="Test"><a:majorFont><a:latin typeface="${escapeXml(titleTypeface)}"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>` +
     `<a:minorFont><a:latin typeface="${escapeXml(bodyTypeface)}"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>` +
     '<a:fmtScheme name="Test"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>' +
     '<a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>' +
@@ -541,7 +547,11 @@ export function buildPptx(spec: DeckSpec): Uint8Array {
   add('ppt/slideMasters/_rels/slideMaster1.xml.rels', relationships(masterRels));
   add(
     'ppt/theme/theme1.xml',
-    themeXml({ ...THEME_COLORS, ...spec.themeColors }, spec.bodyTypeface ?? 'Liberation Sans'),
+    themeXml(
+      { ...THEME_COLORS, ...spec.themeColors },
+      spec.bodyTypeface ?? 'Liberation Sans',
+      spec.titleTypeface,
+    ),
   );
 
   // Layouts.

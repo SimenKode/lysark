@@ -16,6 +16,8 @@ export interface Placeholder {
 export interface MasterPart {
   /** Typeface of running text in the theme (a:minorFont), e.g. "Calibri". */
   bodyTypeface?: string;
+  /** Typeface of titles in the theme (a:majorFont). */
+  titleTypeface?: string;
   placeholders: Placeholder[];
   titleStyle?: XmlNode;
   bodyStyle?: XmlNode;
@@ -183,6 +185,10 @@ export class Deck {
     const master: MasterPart = {
       bodyTypeface: attr(
         descend(theme, 'a:themeElements', 'a:fontScheme', 'a:minorFont', 'a:latin'),
+        'typeface',
+      ),
+      titleTypeface: attr(
+        descend(theme, 'a:themeElements', 'a:fontScheme', 'a:majorFont', 'a:latin'),
         'typeface',
       ),
       placeholders: collectPlaceholders(root),

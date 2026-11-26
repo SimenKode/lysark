@@ -432,6 +432,18 @@ export function widthCompensation(bodyTypeface: string | undefined): number {
   return bodyTypeface && NARROW_TYPEFACE.test(bodyTypeface.trim()) ? 0.9 : 1;
 }
 
+/**
+ * Factor on imported sizes of titles, which Lysark sets in Liberation
+ * Serif. Measured on 273 titles of one line in the PDF exports of the
+ * owner's lectures, a title is 1.5 % wider than in PowerPoint's Calibri at
+ * the same size (half the titles), and up to 5.6 % (85 % of them), so a
+ * title that ran right up to a picture had its last letter covered. At
+ * 0.95, 85 % of the titles are no wider than in PowerPoint.
+ */
+export function titleCompensation(titleTypeface: string | undefined): number {
+  return titleTypeface && NARROW_TYPEFACE.test(titleTypeface.trim()) ? 0.95 : 1;
+}
+
 export function stageFontSize(
   sizeWeights: Map<number, number>,
   fontScale: number,
