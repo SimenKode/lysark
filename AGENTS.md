@@ -340,6 +340,8 @@ instead of choosing silently.
   points have numbers along the axis (`src/importer/chart.ts`). Every
   other chart stays what it was. A line chart with names along its axis
   is not made over: where its points stand would have to be made up.
+  A presentation that keeps its look keeps its charts in the picture of
+  the page; the owner chose that too (26.11.2026).
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

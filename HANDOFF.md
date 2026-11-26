@@ -159,8 +159,8 @@ punktene fra sist står fortsatt.
    «Gjør om til USN-stil», og se om tallene stemmer. Forelesningene dine
    i `eksempler/` har ingen diagrammer, og VM-en var opptatt da jeg
    skulle prøve med PowerPoint der, så dette er bare prøvd på filer jeg
-   har bygd selv. **Ett valg:** med «Behold utseendet» blir diagrammet
-   liggende i bildet bak. Skal det gjøres om der også?
+   har bygd selv. Med «Behold utseendet» blir diagrammet liggende i
+   bildet bak; det valgte du 26.11.
 3. **Prøv «Behold utseendet» på Windows med en av dine egne
    forelesninger.** Veien gjennom PowerPoint er prøvd i VM-en og virker
    (historikken, 6.35), men bare med én liten prøvefil. Glitchen i

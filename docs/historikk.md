@@ -2735,6 +2735,10 @@ USN-stil»**. Med «Behold utseendet» hentes lysarkene inn via en PDF, og
 da ligger diagrammet i bildet bak, som resten av det som ikke er tekst
 eller bilder.
 
+**Eierens valg (26.11.2026):** slik skal det være. Jeg spurte om
+diagrammer skal gjøres om også når lysarkene beholder utseendet, og
+svaret var **«Nei, bare USN-stil»**.
+
 **Prøvd på Linux Mint:** 4 nye tester (`tests/importer-chart.test.ts`)
 med PowerPoint-filer bygd i testen: søyler med to serier, hull, negativt
 tall, aksetekster, fast høyeste tall og overskrift; linjediagram med
