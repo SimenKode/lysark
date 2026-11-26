@@ -3472,6 +3472,61 @@ lysarkene mot PDF-ene.
 annenhver rad farget, fet første kolonne). På Betong 42 ligger en
 tekstlinje fortsatt delvis under et bilde.
 
+### 6.54 Grunntid, lysark utenfor videoen, og sju kjente feil (26.11.2026)
+
+Bygget av en Opus-agent etter designet mitt, og sett over av meg.
+Prosjektformatet er nå 18.
+
+**«Tid uten lyd».** I fanen «Lysark» står feltet «Tid uten lyd», i
+sekunder. Det viser lengden som gjelder nå (for eksempel 7 for et lysark
+med ett steg), og det du skriver, blir lysarkets egen lengde (0,5 til
+600 sekunder). I fanen «Lyd» står det samme tallet i en setning:
+«Lysarket har ingen lyd. Det står i [ 5 ] sekunder.», med knappen «Bruk
+på alle lysark uten lyd». På tidslinja setter du tallet ved å dra i
+kanten av lysarket. Et lysark med lyd sier i stedet hvor lang lyden er.
+Et lysark som bare hadde pauser (den gamle måten), viser summen av
+dem, og et nytt tall erstatter pausene.
+
+**Et lysark kan stå utenfor videoen.** I fanen «Lysark» står haken «Ta
+med i videoen og i «Spill av»». Uten haken er lysarket ikke med i
+videoen, GIF-en eller «Spill av», og tar ingen tid der. Studenter som
+blar selv i HTML-fila, ser det likevel. I lysarklista står det da «Ikke
+med i videoen». **Hopper du framover under et opptak,** tas lysarkene
+du hoppet over, ut av videoen hvis de ikke har lyd, og meldingen etter
+opptaket sier det: «Lysark 3 er ikke med i videoen, fordi du hoppet over
+det i opptaket. Du kan ta det med igjen i fanen «Lysark».» Dette valgte
+jeg selv, ut fra at du ville ha opptaket «som et vanlig videoopptak»;
+si fra om det er feil.
+
+**Sju feil rettet:**
+
+| Feil | Nå |
+| --- | --- |
+| Piltastene virket ikke etter et klikk i YouTube-spilleren | Tastaturet går tilbake til forelesningen når pekeren forlater videoen |
+| Musikken hadde et lite opphold mellom lysark i «Spill av» i HTML-fila | Musikken er én lydfil for hele forelesningen og spiller uten opphold. Stemmen kan fortsatt starte noen millisekunder sent ved et skifte |
+| Lagre-dialogene husket ikke mappa | Mappa du sist eksporterte til, foreslås neste gang |
+| «Lær mer»-boksen la seg feil når bildet var zoomet inn | Boksen legger seg der elementet syns, og følger med når et steg zoomer |
+| Testen for video under innlesing gikk over tidsfristen under belastning | Alle ti tester som lager video, har fått en frist som holder |
+| Gamle opptak og ubrukte filer ble liggende for alltid | «Fil → Rydd i prosjektmappa» teller dem, sier hvor mye plass de tar, og legger dem i papirkurven når du sier ja. Aldri en fil prosjektet eller «Angre» kan trenge |
+| Programmet kunne ikke lukkes hvis lagringen av et opptak hang seg | Andre gang du prøver å lukke, spør Lysark: «Opptaket lagres ennå. Vil du avslutte likevel? Da går opptaket tapt.» med «Vent» og «Avslutt likevel» |
+
+**Prøvd på Linux Mint:** nye enhetstester og tre nye prøver i det bygde
+programmet uten vindu (blant annet et ekte opptak med prøvemikrofon som
+hopper over et lysark, og målt lengde på videoen). Musikken er målt i
+fila: ingen dupp rundt lysarkskiftet. Hele testsamlingen: 614 besto, 1
+hoppes over, 2 feilet. De to er tidsmålingene i testen for fritt opptak
+(`tests/e2e-free.test.ts`), som har feilet under belastning før i dag;
+den besto alene (6 av 6).
+
+**Ikke prøvd:** Windows. «Lær mer»-boksen under zoom i en ferdig
+videofil og i innlesingsvinduet (samme kode som enhetstesten prøver).
+Papirkurven på ekte (testen svarer for den). Jeg har lest koden for
+feltene i fanen «Lysark», men ikke sett dem på et bilde.
+
+**Kjent:** forhåndsvisningen lager musikkfila for hele forelesningen
+hver gang den åpnes. Et gammelt lysark med bare pauser beholder pausene
+til du skriver et tall.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

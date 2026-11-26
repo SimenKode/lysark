@@ -407,7 +407,23 @@ instead of choosing silently.
   One piece of code mixes them into the sound, with the music lowered
   under the voice (`src/shared/audio/mix.ts`): the video export, the
   HTML export and the editor's playback all use it, so they sound the
-  same. The program ships no music.
+  same. The program ships no music. In an exported HTML file the tracks
+  are one sound file for the whole lecture, lowered under the voice but
+  without it, and the slides' files carry only the voice: while it
+  plays, the music is the clock of "Spill av", so it has no gap where
+  the slide changes (the owner's known fault, fixed 26.11.2026).
+- A slide without sound stands as long as its own number says
+  (`Scene.seconds`, "Tid uten lyd" in the interface; the owner,
+  26.11.2026, could not find how to change it when it was a pause in the
+  sound panel). A slide can be left out of the video and "Spill av"
+  (`Scene.skip`): it takes no time there, and a student who turns the
+  pages by hand still sees it. A recording that jumps forward over
+  slides without sound leaves those out and says so. The clock decides
+  both (`sceneDuration`, `schedule` in `src/shared/render/clock.ts`).
+- Files in a project's media folder that nothing uses are never deleted
+  by the program. "Rydd i prosjektmappa" under "Fil" moves them to the
+  system's waste bin after a yes, and never one that the project, the
+  saved project or anything "Angre" can bring back uses.
 - The interface reads project media with `fetch` to draw and play sound.
   The `lysark-media` scheme must therefore stay CORS-enabled and answer
   with `Access-Control-Allow-Origin` (`src/main/index.ts`). Without it
