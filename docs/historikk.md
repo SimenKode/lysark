@@ -3269,6 +3269,31 @@ bare får en release»):
 - En feil hos meg underveis, rettet før noe ble pushet: den nye testen
   hadde en typefeil som typekontrollen fant.
 
+### 6.49 Versjon 0.5.0 prøvd på Windows (26.11.2026)
+
+Eieren svarte «Ja, prøv Windows» etter utgivelsen. VM-en var ledig (sto
+på skrivebordet). Installasjonsfila fra `release/`, den samme som ligger
+på GitHub, ble lagt på en CD-avbildning og kjørt i Windows 11-VM-en. Alt
+ble gjort for hånd med mus og tastatur, og sett på i skjermbilder.
+
+| Hva | Hva jeg så |
+| --- | --- |
+| Installasjon rett over 0.4.0 | «Installasjonen ble fullført uten feil», etter omtrent ett minutt. Ingen spørsmål |
+| Start | Lysark startet av seg selv. De åtte sist brukte prosjektene sto der som før |
+| «Om Lysark» | «Lysark 0.5.0» |
+| Åpne et prosjekt | Prøveprosjektet fra 6.46 (`lysark-test\nytt`) åpnet seg, med de tre lysarkene |
+| «Forhåndsvis» og «Lær mer» | Boksen med prosessen spratt ut ved siden av teksten |
+| **Rullefeltet** | Med forhåndsvisningsvinduet gjort lavt nok til at boksen måtte rulle: en smal lilla stripe innenfor de runde hjørnene. Den går ikke over den lilla kanten |
+
+**Ikke prøvd på Windows:** zip-fila for 0.5.0. Rullefeltet i «Hjelp»,
+«Bildekilder», byggeren, innlesingsvinduet og dialogene. En
+installasjonsfil lastet ned fra nettet (denne kom fra CD, så Windows
+advarte ikke). Ellers det som sto i 6.46.
+
+**I VM-en:** Lysark 0.5.0 er installert (i stedet for 0.4.0), og er
+lukket. CD-en er tatt ut, og avbildningen er slettet. Ingenting er
+endret i `lysark-test\`.
+
 ## 7. Hvordan importen sammenlignes med PDF-ene
 
 Slik sammenlignes importen med PDF-ene: `tests/real-screens.test.ts`

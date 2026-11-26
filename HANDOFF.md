@@ -18,6 +18,8 @@ foreleser uten opplæring. Det styrer ordvalg og knapper.
 
 Du ba om en utgivelse, nye bilder på GitHub og et rullefelt som ikke
 stikker ut over den lilla kanten. Alt tre er gjort (historikken, 6.48).
+Installasjonsfila er prøvd i Windows-VM-en etterpå, rett over 0.4.0,
+og rullefeltet er sett på der (historikken, 6.49).
 
 - **Utgivelsen:** <https://github.com/SimenKode/lysark/releases/tag/v0.5.0>
 - **Du kan prøve den nå.** Filene ligger i `release/`:
@@ -148,7 +150,7 @@ innhold i «Forhåndsvis», og se om rullefeltet er slik du vil ha det.
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
 | Automatiske tester (581) | Ja | – |
-| **Den pakkede utgaven 0.5.0** | Ja: 115 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Nei.** Installasjonsfila og zip-fila for 0.5.0 er ikke startet der |
+| **Den pakkede utgaven 0.5.0** | Ja: 115 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Ja, 26.11:** installasjonsfila kjørt rett over 0.4.0, start, «Om Lysark», et prosjekt åpnet, og rullefeltet i «Lær mer» sett på. Zip-fila er ikke prøvd |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -227,8 +229,7 @@ festede piler er ikke prøvd der.
   (importen sier fra). En skannet side er fortsatt ett bilde. 94 sider
   tar omtrent ett minutt å importere.
 - **Rullefeltet** som holder seg innenfor hjørnene, virker i Chrome,
-  Edge og Safari. I Firefox er rullefeltet som før. Ikke sett på
-  Windows.
+  Edge og Safari. I Firefox er rullefeltet som før.
 - **Kamerasirkelen er ikke i HTML-fila** (ditt valg; kan bygges senere).
 - **Windows kan advare** første gang en nedlastet installasjonsfil
   kjøres, fordi programmet ikke er signert.
@@ -254,7 +255,7 @@ Hele lista står i [docs/historikk.md](docs/historikk.md), del 5.
 | Loggen: alt som er gjort, prøvd og sagt | [docs/historikk.md](docs/historikk.md) |
 | Planen | [docs/plan.md](docs/plan.md) |
 | Reglene for den som bygger | [AGENTS.md](AGENTS.md) |
-| I Windows-VM-en | Lysark er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappene `diagram`, `diagram-usn` og `nytt` |
+| I Windows-VM-en | Lysark 0.5.0 er installert (kan avinstalleres fra Innstillinger), og `C:\Users\simen\lysark-test\` ligger der fra før, nå også med mappene `diagram`, `diagram-usn` og `nytt` |
 | Prøvefila med diagrammer fra PowerPoint | `eksempler/fra-powerpoint/diagram.pptx` (ikke i git) |
 
 ## Sjekkliste for Canvas
