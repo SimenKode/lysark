@@ -3607,6 +3607,10 @@ og streken og se at endene følger; et nettverk med tre noder og to
 koblinger, et T-kryss, «Forhåndsvis» og HTML-fila. I en kort video er
 den bøyde pila målt: mørk i knekken, og tomt der den rette pila gikk.
 
+**Hele testsamlingen, kjørt av meg til slutt på alt som er bygget etter
+0.5.0:** typekontrollen er ren, og 694 tester besto i én kjøring, 2
+hoppes over. Ingen fil måtte kjøres alene denne gangen.
+
 **Ikke prøvd:** Windows. Video av et nettverk på et stående lysark.
 
 **Kjent:**

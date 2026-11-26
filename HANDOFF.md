@@ -170,7 +170,7 @@ om en utgivelse, så ligger det i `release/`.
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (581) | Ja | – |
+| Automatiske tester (696) | Ja, alle besto 26.11 på det som er bygget etter 0.5.0 | – |
 | **Den pakkede utgaven 0.5.0** | Ja: 115 tester mot det pakkede programmet (utpakket, ikke selve AppImage-fila) | **Ja, 26.11:** installasjonsfila kjørt rett over 0.4.0, start, «Om Lysark», et prosjekt åpnet, og rullefeltet i «Lær mer» sett på. Zip-fila er ikke prøvd |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
