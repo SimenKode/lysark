@@ -21,6 +21,10 @@ Usage: tools/windows-vm.py <command> [args] [<command> [args] ...]
   shot PATH         save PATH.ppm (full size) and PATH.jpg (1280 wide, for viewing)
 
 Things that bit the first time:
+  - Take a screenshot before the first key press or click. The VM is not
+    Lysark's alone: when something else is open and in use there, do not
+    type or click, take the CD image out again, and say that the trial was
+    not done.
   - A window that opens does not always get keyboard focus. Click in it
     before typing, and look at a screenshot before pressing Enter.
   - The Run dialog (Win+R) remembers the last command. Select all and type
