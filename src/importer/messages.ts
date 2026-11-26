@@ -44,6 +44,11 @@ export const WARNINGS = {
       ? 'SmartArt-figuren er tatt med som et bilde. Lag den på nytt hvis den skal kunne endres.'
       : 'SmartArt-figuren følger ikke med og må lages på nytt.',
   }),
+  chartConverted: (): ImportWarning => ({
+    code: 'chart',
+    message:
+      'Diagrammet er gjort om til et Lysark-diagram med tallene fra PowerPoint. Se over at det stemmer.',
+  }),
   chart: (asPicture: boolean): ImportWarning => ({
     code: 'chart',
     message: asPicture

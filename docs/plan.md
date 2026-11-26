@@ -12,7 +12,7 @@ prøvd på både Linux Mint og Windows 11.
 | 1 | PPTX-import, tema, redigering og interaktiv HTML | Bygget. Gjenstår: Canvas og godkjenning av uttrykket |
 | 2 | «Lær mer»-byggeren | Bygget, også endringene eieren ba om (runde 2, under), og prøvd på Linux Mint. Gjenstår: Windows, og Canvas som eieren prøver selv |
 | 3 | Lyd og video | Bygget, og prøvd på Linux Mint og Windows 11 (økt 5). Gitt ut som versjon 0.2.0. Etterpå er tidslinje, musikk- og lydspor og «Lær mer» og video under innlesing bygget (23.11.2026, gitt ut som versjon 0.3.0). Gjenstår: en ekte mikrofon |
-| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde, fri figur og fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse) er bygget. Gjenstår: søyle- og linjediagram, figur i «Lær mer» og bevegelsene |
+| 4 | Figurer og bevegelser | Påbegynt 25.11.2026: merket bilde, fri figur, fire maler med skjema (prosess, lagvis oppbygging, sammenligning, tidsakse) og søyle- og linjediagram er bygget. Gjenstår: figur i «Lær mer» og bevegelsene |
 | 5 | Håndlaget stil | Ikke påbegynt; venter på USNs svar om indigo tavle |
 
 ## Leveranse 1: PPTX-import, tema og interaktiv HTML
@@ -428,9 +428,10 @@ starter tomme.
 
 Det som gjenstår av leveranse 4, i denne rekkefølgen:
 
-1. **Resten av malene:** søyle- og linjediagram. Venndiagram og
-   årsak-virkning etterpå ved behov. Diagrammene trenger svar fra eieren
-   først (blant annet hvordan tallene skrives inn).
+1. **Søyle- og linjediagram er bygget** 26.11.2026, med en tabell i
+   egenskapene, og diagrammer fra PowerPoint gjøres om ved import til
+   USN-stil (historikken, 6.37 til 6.39). Liggende og stablede søyler,
+   venndiagram og årsak-virkning kommer ved behov.
 2. **Figur i «Lær mer»** (egen del i byggeren): eieren valgte 25.11.2026
    at figuren **hentes fra et lysark**. Den lages på et lysark, og i
    byggeren velger man «Figur» og peker på den; en kopi legges i boksen.

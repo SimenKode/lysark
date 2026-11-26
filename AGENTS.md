@@ -334,6 +334,12 @@ instead of choosing silently.
   For those who cannot see it, the numbers are in the HTML as a table
   that is read and not shown. `charts.ts` takes only types from the
   format, like `rows.ts`.
+- A chart in a PowerPoint file becomes such a diagram when it is made
+  over into the theme and Lysark can draw it truthfully (the owner's
+  choice, 26.11.2026): standing bars side by side, and lines whose
+  points have numbers along the axis (`src/importer/chart.ts`). Every
+  other chart stays what it was. A line chart with names along its axis
+  is not made over: where its points stand would have to be made up.
 - Music and other sound that run under several slides lie on the
   lecture's own tracks (`Project.tracks`), each clip fastened to a slide.
   One piece of code mixes them into the sound, with the music lowered

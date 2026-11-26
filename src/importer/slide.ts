@@ -1,11 +1,12 @@
 // One slide to one scene: walks the shape tree in z-order and builds the
 // elements, the import warnings, the scene title and the manuscript.
-import { newId } from '../shared/format/factory';
+import { newId, richText } from '../shared/format/factory';
 import { STAGE } from '../shared/format/constants';
 import type {
   Box,
   Crop,
   Element,
+  FigureElement,
   ImageElement,
   ImportWarning,
   Inset,
@@ -19,6 +20,8 @@ import type {
   VideoElement,
   VideoSource,
 } from '../shared/format/schema';
+import { followFigures } from '../shared/layout/groups';
+import { followTemplates } from '../shared/layout/templates';
 import { nearestPaletteColor } from '../shared/theme/palette';
 import { THEME_REN, logoArea, overlapsDecoration } from '../shared/theme/theme';
 import { arrowEnds, readFill, shapeFill, shapeLine, type ColorContext, type Paint } from './color';
@@ -48,6 +51,7 @@ import {
   type Xfrm,
 } from './geometry';
 import { imageFormat, isAudioExtension, videoFormat, type MediaStore } from './media';
+import { readChart } from './chart';
 import { WARNINGS } from './messages';
 import { extensionOf, type Relationship } from './package';
 import {
@@ -363,6 +367,10 @@ class SlideImporter {
       script: this.script(),
       imported: { slide: number, warnings: this.warnings },
     };
+    // A diagram is drawn from its table: its bars and curves are made here,
+    // as they are after every change in the editor.
+    followTemplates(scene);
+    followFigures(scene);
     return { scene, counts: this.counts };
   }
 
@@ -954,6 +962,7 @@ class SlideImporter {
       this.table(node, child(data, 'a:tbl'), groups);
       return;
     }
+    if (kind === 'chart' && this.chart(node, data, groups)) return;
     // Embedded objects usually carry a preview picture of themselves.
     const preview =
       findDescendant(findDescendant(data, FALLBACK), PICTURE) ?? findDescendant(data, PICTURE);
@@ -961,6 +970,60 @@ class SlideImporter {
       ? this.picture(preview, groups, { xfrm: this.xfrmOf(node), quiet: true })
       : false;
     this.warn(frameWarning(kind, asPicture));
+  }
+
+  /**
+   * A chart that Lysark can draw itself (standing bars, or lines with numbers
+   * along the axis) becomes a diagram with the chart's own numbers, which the
+   * lecturer can change (the owner's choice, 26.11.2026). Returns false for
+   * any other chart; it is then kept as the picture it was.
+   */
+  private chart(node: XmlNode, data: XmlNode | undefined, groups: GroupFrame[]): boolean {
+    const rel = this.rels.get(attr(child(data, 'c:chart'), 'r:id') ?? '');
+    const xfrm = this.xfrmOf(node);
+    if (!rel || rel.external || !xfrm) return false;
+    const table = readChart(this.deck.pkg.xml(rel.target));
+    if (!table) return false;
+    const box = { ...this.place(xfrm, groups).box, rotation: 0 };
+    // Too small to hold axes and numbers: the picture says more.
+    if (box.w < 240 || box.h < 180) return false;
+    if (table.title) {
+      // The chart's own heading stands over the diagram, in the room the chart had.
+      const height = Math.round(Math.min(64, box.h * 0.14));
+      this.elements.push({
+        id: newId('e'),
+        type: 'text',
+        role: 'body',
+        content: richText(table.title),
+        fontSize: Math.round(height * 0.55),
+        align: 'center',
+        valign: 'middle',
+        box: { ...box, h: height },
+      });
+      this.counts.texts += 1;
+      box.y += height;
+      box.h -= height;
+    }
+    const figure: FigureElement = {
+      id: newId('e'),
+      type: 'figure',
+      template: table.template,
+      box,
+      series: table.series.map((name) => ({ id: newId('e'), name })),
+      items: table.rows.map((row) => ({
+        id: newId('e'),
+        text: row.text,
+        values: row.values,
+        ...(table.template === 'line' ? { x: row.x } : {}),
+      })),
+    };
+    for (const key of ['xTitle', 'yTitle', 'xMin', 'xMax', 'yMin', 'yMax', 'dots'] as const) {
+      if (table[key] !== undefined) Object.assign(figure, { [key]: table[key] });
+    }
+    this.elements.push(figure);
+    this.counts.shapes += 1;
+    this.warn(WARNINGS.chartConverted());
+    return true;
   }
 
   /**

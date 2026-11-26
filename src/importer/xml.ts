@@ -17,6 +17,8 @@ export interface XmlNode {
 const CANONICAL_PREFIX: Record<string, string> = {
   'http://schemas.openxmlformats.org/drawingml/2006/main': 'a',
   'http://purl.oclc.org/ooxml/drawingml/main': 'a',
+  'http://schemas.openxmlformats.org/drawingml/2006/chart': 'c',
+  'http://purl.oclc.org/ooxml/drawingml/chart': 'c',
   'http://schemas.openxmlformats.org/presentationml/2006/main': 'p',
   'http://purl.oclc.org/ooxml/presentationml/main': 'p',
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships': 'r',

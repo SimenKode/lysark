@@ -84,8 +84,8 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 - **Format 4**, med automatisk løft av eldre prosjekter.
 
 Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
-fri figur (6.32) og fire maler (6.33 og 6.36) er bygget. Søyle- og
-linjediagram, figur i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
+fri figur (6.32), fire maler (6.33 og 6.36) og søyle- og linjediagram
+(6.38 og 6.39) er bygget. Figur i «Lær mer» og bevegelsene gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2702,6 +2702,53 @@ rader. En skjermleser er ikke brukt.
 **Kjent:** radene kan ikke flyttes opp og ned i tabellen. Lange navn
 under søylene brytes eller går over hverandre; skriften krymper ikke.
 Liggende og stablede søyler, kake- og punktdiagram finnes ikke.
+
+### 6.39 Diagrammer fra PowerPoint blir Lysark-diagram (26.11.2026)
+
+Eieren valgte dette i 6.37, mot anbefalingen min om å la dem være bilder.
+
+**Bygget** (`src/importer/chart.ts`, brukt av PowerPoint-importen):
+
+- **Stående søyler ved siden av hverandre** blir et søylediagram, med
+  navnene, seriene og tallene fra PowerPoint-fila.
+- **Punktdiagram med linjer** blir et linjediagram, når seriene har de
+  samme x-tallene (tabellen har én x-kolonne).
+- **Linjediagram** blir et linjediagram bare når alt som står langs
+  aksen, er tall. Står det navn der, har PowerPoint gitt dem lik avstand,
+  og Lysark måtte ha funnet på hvor de skulle stå. Da gjøres det ikke om.
+- **Med på lasset:** teksten ved aksene, laveste og høyeste tall der de
+  er satt i PowerPoint, prikker i punktene, og diagrammets egen
+  overskrift (som en tekstboks over diagrammet).
+- **Ikke gjort om:** liggende og stablede søyler, kake, areal, 3D,
+  flere typer i ett diagram, datoer langs aksen, punkter uten linjer, og
+  et diagram som er for lite til akser og tall. De blir som før: et
+  bilde hvis fila har et bilde av dem, ellers en merknad.
+- **Fargene** følger temaets seriefarger, ikke PowerPoint-fargene.
+  Glattede linjer blir rette.
+- **Merknaden under «Fra importen»:** «Diagrammet er gjort om til et
+  Lysark-diagram med tallene fra PowerPoint. Se over at det stemmer.»
+- Tallene leses fra diagrammet selv (det PowerPoint har lagret der).
+  Regnearket som ligger inni fila, åpnes aldri.
+
+**Viktig begrensning:** dette gjelder bare når du velger **«Gjør om til
+USN-stil»**. Med «Behold utseendet» hentes lysarkene inn via en PDF, og
+da ligger diagrammet i bildet bak, som resten av det som ikke er tekst
+eller bilder.
+
+**Prøvd på Linux Mint:** 4 nye tester (`tests/importer-chart.test.ts`)
+med PowerPoint-filer bygd i testen: søyler med to serier, hull, negativt
+tall, aksetekster, fast høyeste tall og overskrift; linjediagram med
+tall langs aksen; punktdiagram; og ti tilfeller som ikke skal gjøres om.
+Hele testsamlingen: 541 består, 1 hoppes over som før, i én kjøring.
+
+**Ikke prøvd, og det er det viktigste hullet:** et diagram som
+PowerPoint selv har laget. De ni PowerPoint-filene i `eksempler/` har
+ingen diagrammer (jeg telte: null diagramdeler). Jeg gjorde klar en
+prøve i Windows-VM-en, der PowerPoint lager seks diagrammer og Lysarks
+import leser dem, men VM-en var i bruk til annet arbeid da jeg kom dit.
+Jeg skrev og klikket ingenting der, og tok CD-avbildningen ut igjen.
+Filene i testene er skrevet etter hvordan jeg kjenner formatet, ikke
+etter en fil fra PowerPoint.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

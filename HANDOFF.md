@@ -48,6 +48,22 @@ Deretter malene (historikken, 6.33 og 6.36):
 - **«Gjør om til fri figur»** tar bort skjemaet for godt, så du kan
   endre hver del for hånd.
 
+Og diagrammene (historikken, 6.37 til 6.39), etter fire svar fra deg:
+
+- **«Sett inn → Figur»** gir også **Søylediagram** og **Linjediagram**.
+  Du skriver tallene i en liten tabell i egenskapene, eller **limer inn
+  rett fra Excel**. Et nytt diagram er tomt; ingen tall er funnet på.
+- **Søyler starter alltid på null.** I et linjediagram står punktene
+  der x-tallet sier, ikke med lik avstand. Aksene velger runde tall
+  selv, og du kan sette laveste og høyeste tall for hånd.
+- **«Ett steg per rad»** og **«Ett steg per serie»**.
+- **Diagrammer i PowerPoint-fila** blir Lysark-diagram når du velger
+  «Gjør om til USN-stil»: stående søyler, og linjer med tall langs
+  aksen. Andre typer blir som før. **Dette er ikke prøvd på et diagram
+  PowerPoint selv har laget** (se under).
+- En hel figur har nå **én ramme** når den er valgt, ikke en rundt hver
+  del.
+
 Rettet i samme slengen: **«Lag kopi» av et lysark mistet merkene på
 bildene.** Nå følger de med.
 
@@ -84,8 +100,8 @@ etiketter oppå et bilde).
 2. **Rette opp** lysarkene: flytte, skrive, legge inn steg, og dele inn
    i kapitler.
 3. **Lage figurer:** fra en mal med skjema (prosess, lagvis oppbygging,
-   sammenligning, tidsakse), eller fritt av bokser, ellipser og piler
-   som henger sammen.
+   sammenligning, tidsakse), **søyle- og linjediagram** fra en tabell
+   med tall, eller fritt av bokser, ellipser og piler som henger sammen.
 4. **Legge til «Lær mer»** på hva som helst, med bilder fra Wikimedia
    Commons og Openverse, og **sette merker på et bilde**.
 5. **Lese inn stemmen** og ansiktet ditt i en sirkel. Gå fram og tilbake
@@ -135,25 +151,31 @@ Startmeldingen til denne chatten hadde ingen funn eller innspill, så
 punktene fra sist står fortsatt.
 
 1. **Prøv figurene** på et av dine egne lysark. Sett inn en prosess og
-   en tidsakse, og fyll ut skjemaene. Tegn så en fri figur: tre bokser,
-   piler mellom dem, flytt en boks, grupper, og gi delene steg. Si hva
-   som er tungvint eller uventet, og om farger og størrelser er som du
-   vil ha dem.
-2. **Prøv «Behold utseendet» på Windows med en av dine egne
+   en tidsakse, og fyll ut skjemaene. Sett inn et diagram og lim inn
+   tall fra Excel. Tegn så en fri figur: tre bokser, piler mellom dem,
+   flytt en boks, grupper, og gi delene steg. Si hva som er tungvint
+   eller uventet, og om farger og størrelser er som du vil ha dem.
+2. **Importer en PowerPoint-fil med et søyle- eller linjediagram**, med
+   «Gjør om til USN-stil», og se om tallene stemmer. Forelesningene dine
+   i `eksempler/` har ingen diagrammer, og VM-en var opptatt da jeg
+   skulle prøve med PowerPoint der, så dette er bare prøvd på filer jeg
+   har bygd selv. **Ett valg:** med «Behold utseendet» blir diagrammet
+   liggende i bildet bak. Skal det gjøres om der også?
+3. **Prøv «Behold utseendet» på Windows med en av dine egne
    forelesninger.** Veien gjennom PowerPoint er prøvd i VM-en og virker
    (historikken, 6.35), men bare med én liten prøvefil. Glitchen i
    popupvinduet fikk jeg aldri fram; si hvordan den ser ut hvis den
    fortsatt plager deg.
-3. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
+4. **Prøv et opptak med ekte kamera.** Fryser bildet fortsatt mellom
    lysark? Følger munn og lyd hverandre, også sent i et langt opptak?
    Det kan jeg ikke måle.
-4. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
+5. **Prøv å gå fram og tilbake under opptak**, og si om videoen ble slik
    du ventet. Særlig: er det riktig at et lysark du bare blar forbi
    (under et halvt sekund), ikke vises?
-5. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
+6. **Prøv PDF-importen på nytt.** Står teksten der den sto? Er noe som
    burde vært tekst, blitt liggende i bakgrunnsbildet? Lysarkene med
    «å ordne» i lista sier hvor importen selv var i tvil.
-6. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
+7. **Det som sto fra før:** installasjonsfila på en USN-PC, vilkårene
    til Openverse (historikken, 6.24), egen mikrofon, musikk, merket
    bilde på dine egne bilder, og Canvas (bare du, ingen KI). Sjekklista
    står nederst.
@@ -162,8 +184,8 @@ punktene fra sist står fortsatt.
 
 1. **Det du melder** etter å ha prøvd figurene, opptaket, importen og
    valget av utseende.
-2. **Søyle- og linjediagram** (leveranse 4). Jeg kommer med spørsmål
-   først, blant annet om hvordan du vil skrive inn tallene.
+2. **Prøve diagramimporten på et ekte PowerPoint-diagram** i VM-en, når
+   den er ledig.
 3. **Figur i «Lær mer»**, hentet fra et lysark.
 4. **Bevegelsene:** tone inn, gli inn, tegne strek, vokse, markere, telle
    opp, forsvinne og zoome inn på et utsnitt.
@@ -173,7 +195,7 @@ punktene fra sist står fortsatt.
 
 | Hva | Linux Mint | Windows 11 (VM) |
 | --- | --- | --- |
-| Automatiske tester (516) | Ja | – |
+| Automatiske tester (541) | Ja | – |
 | Import, redigering, HTML, «Lær mer» | Ja | Ja, for hånd (0.4.0) |
 | Innlesing | Med prøvemikrofon | Med stille inndata (0.4.0) |
 | Video (MP4), GIF, «Spill av» i HTML | Ja | Ja (0.4.0) |
@@ -188,6 +210,8 @@ punktene fra sist står fortsatt.
 | Merket bilde | Ja, også målt i videoen | Nei |
 | **Fri figur: grupper og festede piler** | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | **Nei** |
 | **Maler med skjema** (også tidsaksen) | Ja, i programmet og i forhåndsvisningen. Ikke målt i videoen | Bare at «Prosess» settes inn og skjemaet vises (26.11) |
+| **Søyle- og linjediagram** | Ja, i programmet og i forhåndsvisningen. Ikke limt inn fra et ekte regneark, ikke målt i videoen | **Nei** |
+| **Diagram fra PowerPoint** | Bare på filer bygd i testene | **Nei.** Ikke på et diagram PowerPoint har laget |
 
 **Ikke prøvd noe sted:** et ekte kamera, en ekte mikrofon, et langt
 opptak (45 minutter) i ett strekk, selve Openverse-fanen mot det ekte
@@ -201,8 +225,13 @@ prosessfigur kan settes inn.
 - **Maler med skjema:** teksten krymper ikke av seg selv når den er for
   lang for boksen. En del kan ikke flyttes eller få egen farge før du
   gjør figuren om til fri figur. På tidsaksen står hendelsene med lik
-  avstand, ikke etter hvor lang tid det er mellom dem. Diagrammer er
-  ikke laget.
+  avstand, ikke etter hvor lang tid det er mellom dem.
+- **Diagrammer:** bare stående søyler og linjer. Linjene er rette
+  mellom punktene. Radene kan ikke flyttes i tabellen. Lange navn under
+  søylene kan gå over hverandre.
+- **Diagrammer fra PowerPoint** gjøres bare om med «Gjør om til
+  USN-stil», og bare stående søyler og linjer med tall langs aksen.
+  Fargene blir temaets. Det er ikke prøvd på en fil fra PowerPoint.
 - **Fri figur:** teksten i boksene endrer ikke størrelse når du gjør en
   gruppe større eller mindre. En pil går alltid korteste vei mellom to
   bokser; du velger ikke selv hvor på kanten den fester seg, og den kan
@@ -290,8 +319,10 @@ bilde, fritt opptak (tilbake, sidemeny, et lysark kan vises igjen, én
 film for hele opptaket), kapitler, PDF-import der tekst, bilder og
 lenker er egne elementer, fritt valg ved import mellom «Behold
 utseendet» og «Gjør om til USN-stil», fri figur (grupper, og piler som
-fester seg til bokser), og fire maler med skjema (prosess, lagvis
-oppbygging, sammenligning, tidsakse).
+fester seg til bokser), fire maler med skjema (prosess, lagvis
+oppbygging, sammenligning, tidsakse), og søyle- og linjediagram med en
+tabell for tallene (diagrammer i PowerPoint-fila gjøres om ved import
+til USN-stil).
 
 Før du gjør noe annet:
 1. Les AGENTS.md. Reglene er bindende.
@@ -313,10 +344,11 @@ Rammer:
 - Hold HANDOFF.md kort og lettlest for meg. Det som er gjort og prøvd i
   detalj, hører hjemme i docs/historikk.md.
 
-Det jeg har funnet siden sist (figurene, opptak med ekte kamera, fram
-og tilbake under opptak, import med «Behold utseendet» og «USN-stil»,
-særlig PowerPoint på Windows, kapitler, mikrofon, musikk,
-installasjonsfila på USN-PC, Openverse, merket bilde, Canvas):
+Det jeg har funnet siden sist (figurene og diagrammene, en
+PowerPoint-fil med diagram, opptak med ekte kamera, fram og tilbake
+under opptak, import med «Behold utseendet» og «USN-stil», særlig
+PowerPoint på Windows, kapitler, mikrofon, musikk, installasjonsfila på
+USN-PC, Openverse, merket bilde, Canvas):
 (skriv her)
 
 Innspill til produktet:
