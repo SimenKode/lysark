@@ -208,7 +208,11 @@ describe.skipIf(!built || !existsSync(ffmpeg))(
       await expect.poll(where).toContain('Lysark 3 av 3');
       await page.waitForTimeout(1100);
       await recorder.getByRole('button', { name: 'Ferdig' }).click();
-      await recorder.waitFor({ state: 'detached', timeout: 60_000 });
+      // The window closes at once; the recording lands when it has been saved.
+      await recorder.waitFor({ state: 'detached', timeout: 15_000 });
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+        .toContain('Opptaket er lagt på');
       const notice = await page.locator('.notice').textContent();
       expect(notice).toContain('Opptaket er lagt på 3 lysark.');
       expect(notice).toContain('Ett sted gikk du tilbake til et lysark');
@@ -250,8 +254,9 @@ describe.skipIf(!built || !existsSync(ffmpeg))(
       expect(await items.count()).toBe(4);
       expect(await page.locator('.scene-number').allTextContents()).toEqual(['1', '2', '↩', '3']);
       expect(await items.nth(2).locator('.scene-title').textContent()).toBe('Lysark 1 igjen');
-      // The recording ended on C, which is slide 3.
-      expect(await items.nth(3).getAttribute('aria-current')).toBe('true');
+      // The slide that was selected when the recording began is still selected:
+      // the recording is put on the slides in the background, under the lecturer's hands.
+      expect(await items.nth(0).getAttribute('aria-current')).toBe('true');
 
       await items.nth(2).click();
       const note = page.locator('.repeat-note');
@@ -451,10 +456,10 @@ describe.skipIf(!built || !existsSync(ffmpeg))(
       // Breaking off drops the slide the lecturer stands on, and keeps what was read before it.
       page.once('dialog', (dialog) => void dialog.accept());
       await recorder.getByRole('button', { name: 'Avbryt' }).click();
-      await recorder.waitFor({ state: 'detached', timeout: 60_000 });
-      expect(await page.locator('.notice').textContent()).toContain(
-        'Opptaket er lagt på 2 lysark.',
-      );
+      await recorder.waitFor({ state: 'detached', timeout: 15_000 });
+      await expect
+        .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+        .toContain('Opptaket er lagt på 2 lysark.');
       await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
       const project = await save();

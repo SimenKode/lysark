@@ -31,7 +31,7 @@ import {
 import { Icon } from './Icon';
 import { importSoundFile } from './actions';
 import { loadSceneSamples, playScene, samplesOf, type Playback } from './audio/engine';
-import { currentScene, useStore } from './store';
+import { WAIT_FOR_SAVING, currentScene, useStore } from './store';
 
 const clipId = (): string => newId('c');
 
@@ -338,6 +338,7 @@ function Track(props: TrackProps) {
 
 export function AudioPanel() {
   const project = useStore((s) => s.project)!;
+  const saving = useStore((s) => s.savingRecording);
   const scene = useStore(currentScene);
   const updateScene = useStore((s) => s.updateScene);
   const setScene = useStore((s) => s.setScene);
@@ -528,6 +529,7 @@ export function AudioPanel() {
           type="button"
           className="with-icon"
           disabled={repeat}
+          aria-disabled={saving || undefined}
           onClick={() => {
             stop();
             useStore.getState().openRecorder({});
@@ -535,7 +537,9 @@ export function AudioPanel() {
           title={
             repeat
               ? 'Her vises et lysark igjen. Gå til lysarket selv for å lese inn fra det.'
-              : 'Les inn stemmen, fra dette lysarket og utover (Ctrl+R)'
+              : saving
+                ? WAIT_FOR_SAVING
+                : 'Les inn stemmen, fra dette lysarket og utover (Ctrl+R)'
           }
         >
           <Icon name="mic" />
@@ -549,7 +553,12 @@ export function AudioPanel() {
               stop();
               useStore.getState().openRecorder({ keepBefore: playhead });
             }}
-            title="Behold lyden fram til spillehodet, og les inn resten på nytt"
+            aria-disabled={saving || undefined}
+            title={
+              saving
+                ? WAIT_FOR_SAVING
+                : 'Behold lyden fram til spillehodet, og les inn resten på nytt'
+            }
           >
             <Icon name="mic" />
             Ta om herfra

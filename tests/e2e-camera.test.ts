@@ -176,7 +176,10 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the camera circle, end to end', 
       .toContain('Lysark 2 av 2');
     await page.waitForTimeout(1600);
     await recorder.getByRole('button', { name: 'Ferdig' }).click();
-    await recorder.waitFor({ state: 'detached', timeout: 60_000 });
+    await recorder.waitFor({ state: 'detached', timeout: 15_000 });
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+      .toContain('Opptaket er lagt på');
     await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
     const project = await save();
@@ -234,7 +237,8 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the camera circle, end to end', 
   }, 150_000);
 
   it('shows the circle in the editor, where it can be moved, made smaller and hidden', async () => {
-    // The last slide that was read is the one that is shown.
+    // The slide the recording began on is still the one that is shown; go to the second.
+    await page.locator('.scene-item').nth(1).click();
     const stage = page.locator('.stage-inner');
     const circle = stage.locator('.camera-circle');
     await circle.waitFor();

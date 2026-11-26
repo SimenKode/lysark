@@ -95,7 +95,8 @@ button.icon-only {
   min-width: 36px;
   padding: 4px 8px;
 }
-button:disabled {
+button:disabled,
+button[aria-disabled='true'] {
   opacity: 0.45;
   cursor: default;
 }
@@ -287,6 +288,13 @@ textarea {
 }
 .topbar button.strong:hover:not(:disabled) {
   background: var(--lys-indigo);
+}
+/* A calm word while a recording is saved in the background; nothing moves. */
+.topbar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 .topbar :focus-visible {
   outline-color: var(--syregronn);

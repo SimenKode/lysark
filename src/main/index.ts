@@ -136,13 +136,25 @@ let currentDir: string | null = null;
 let pdfImport: { sourceName: string; folder: ImportFolder | null } | null = null;
 /** The PowerPoint file the owner has picked for import. */
 let pptxSource: string | null = null;
-let documentState = { dirty: false, title: '' };
+/** What the interface says about the project; `saving` while a recording is being saved. */
+let documentState = { dirty: false, title: '', saving: false };
 /** The video export that is running, if any. One at a time. */
 let videoJob: VideoJob | null = null;
 let closeConfirmed = false;
 
 function send(command: MenuCommand): void {
   mainWindow?.webContents.send('lysark:command', command);
+}
+
+/**
+ * True when a recording is being saved: the program is kept open, and the
+ * interface tells the lecturer so in the window. Never a box that waits for
+ * an answer, so that this holds also when the program runs without windows.
+ */
+function keptOpenWhileSaving(): boolean {
+  if (!documentState.saving) return false;
+  send('close-while-saving');
+  return true;
 }
 
 function updateTitle(): void {
@@ -423,6 +435,11 @@ function createWindow(): void {
   mainWindow.on('page-title-updated', (event) => event.preventDefault());
 
   mainWindow.on('close', (event) => {
+    if (keptOpenWhileSaving()) {
+      event.preventDefault();
+      closeConfirmed = false;
+      return;
+    }
     if (!documentState.dirty || closeConfirmed || !mainWindow) return;
     event.preventDefault();
     const choice = dialog.showMessageBoxSync(mainWindow, {
@@ -1016,10 +1033,17 @@ function registerHandlers(): void {
     shell.showItemInFolder(path);
   });
 
-  ipcMain.on('lysark:document-state', (_event, state: { dirty: boolean; title: string }) => {
-    documentState = { dirty: !!state.dirty, title: String(state.title ?? '') };
-    updateTitle();
-  });
+  ipcMain.on(
+    'lysark:document-state',
+    (_event, state: { dirty: boolean; title: string; saving?: boolean }) => {
+      documentState = {
+        dirty: !!state.dirty,
+        title: String(state.title ?? ''),
+        saving: state.saving === true,
+      };
+      updateTitle();
+    },
+  );
 
   ipcMain.on('lysark:close-window', () => {
     closeConfirmed = true;
@@ -1066,7 +1090,12 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   // An export that is running when the program closes is stopped, FFmpeg included.
-  app.on('before-quit', () => {
+  app.on('before-quit', (event) => {
+    // A recording that is being saved is let finish: its film is not thrown away.
+    if (keptOpenWhileSaving()) {
+      event.preventDefault();
+      return;
+    }
     videoJob?.cancel();
     // A film that was being taken when the program was closed is not kept.
     dropCameraFilms();

@@ -141,7 +141,9 @@ describe.skipIf(!built || !existsSync(ffmpeg))('sound and video, end to end', ()
     await page.waitForTimeout(800);
     await recorder.getByRole('button', { name: 'Ferdig' }).click();
     await recorder.waitFor({ state: 'detached' });
-    expect(await page.locator('.notice').textContent()).toContain('Opptaket er lagt på lysarket');
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+      .toContain('Opptaket er lagt på lysarket');
     await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
     await save();

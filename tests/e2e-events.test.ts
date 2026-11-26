@@ -237,6 +237,9 @@ describe.skipIf(!built || !existsSync(ffmpeg))('"Lær mer" and video while readi
     await page.waitForTimeout(900);
     await recorder.getByRole('button', { name: 'Ferdig' }).click();
     await recorder.waitFor({ state: 'detached' });
+    await expect
+      .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
+      .toContain('Opptaket er lagt på');
     await page.locator('.notice button', { hasText: 'Lukk' }).click();
 
     await page

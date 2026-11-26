@@ -165,7 +165,9 @@ export type MenuCommand =
   | 'pack'
   | 'unpack'
   | 'open-html'
-  | 'import-pdf';
+  | 'import-pdf'
+  /** The program was asked to close while a recording is being saved: it stays open. */
+  | 'close-while-saving';
 
 export interface LysarkApi {
   newProject(): Promise<OpenedProject | null>;
@@ -268,7 +270,8 @@ export interface LysarkApi {
   clearClosingAnimation(): Promise<LogoStatus>;
   showInFolder(path: string): Promise<void>;
   /** Tells the main process whether there are unsaved changes. */
-  setDocumentState(state: { dirty: boolean; title: string }): void;
+  /** What the main process must know to close the window: `saving` keeps it open. */
+  setDocumentState(state: { dirty: boolean; title: string; saving?: boolean }): void;
   /** Closes the window after "save, then close". */
   closeWindow(): void;
   /**

@@ -49,6 +49,9 @@ export interface LookRequest {
   resolve: (look: ImportLook | undefined) => void;
 }
 
+/** What the lecturer is told when something must wait for a recording to be saved. */
+export const WAIT_FOR_SAVING = 'Opptaket lagres. Vent til det er ferdig.';
+
 interface State {
   dir: string | null;
   project: Project | null;
@@ -85,6 +88,13 @@ interface State {
    * is recorded anew.
    */
   recorder: { keepBefore?: number } | null;
+  /**
+   * A recording is being saved after the recording window was closed: its
+   * film is finished and its sound stored while the lecturer goes on
+   * working. Until it is done, it is put on the project; a new recording,
+   * an export, another project and closing the program wait for it.
+   */
+  savingRecording: boolean;
   /** The dialog for exporting video is open. */
   videoDialog: boolean;
   /** How far a running video export has come. */
@@ -123,7 +133,9 @@ interface State {
   openBuilder(elementId: string | null): void;
   setMediaRequest(request: MediaRequest | null): void;
   setBottomTab(tab: 'script' | 'sound' | 'timeline'): void;
+  /** Opens or closes the recording window. Not opened while a recording is being saved. */
   openRecorder(recorder: State['recorder']): void;
+  setSavingRecording(saving: boolean): void;
   setVideoDialog(open: boolean): void;
   setVideoProgress(progress: VideoProgress | null): void;
   setPdfProgress(progress: PdfProgress | null): void;
@@ -155,6 +167,7 @@ export const useStore = create<State>((set, get) => ({
   mediaRequest: null,
   bottomTab: 'script',
   recorder: null,
+  savingRecording: false,
   videoDialog: false,
   videoProgress: null,
   pdfProgress: null,
@@ -335,10 +348,22 @@ export const useStore = create<State>((set, get) => ({
   },
 
   openRecorder(recorder) {
+    if (recorder && get().savingRecording) {
+      set({ notice: { kind: 'info', text: WAIT_FOR_SAVING } });
+      return;
+    }
     set({ recorder, editing: null, coalesce: null, previewSteps: null });
   },
 
+  setSavingRecording(saving) {
+    set({ savingRecording: saving });
+  },
+
   setVideoDialog(open) {
+    if (open && get().savingRecording) {
+      set({ notice: { kind: 'info', text: WAIT_FOR_SAVING } });
+      return;
+    }
     set({ videoDialog: open, editing: null });
   },
 

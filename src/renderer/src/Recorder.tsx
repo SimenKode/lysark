@@ -41,7 +41,7 @@ import { createPopover, type SlidePopover } from '../../shared/render/popover';
 import { moreOf } from '../../shared/render/scene';
 import {
   openFilmStore,
-  saveRecording,
+  saveRecordingLater,
   storeTakeSound,
   type FilmStore,
   type RecordedTake,
@@ -69,7 +69,7 @@ import { Icon } from './Icon';
 import { SceneView, renderContext } from './SceneView';
 import { useStore } from './store';
 
-type Phase = 'setup' | 'countdown' | 'recording' | 'paused' | 'saving';
+type Phase = 'setup' | 'countdown' | 'recording' | 'paused';
 
 const SETTINGS_KEY = 'lysark.mikrofon';
 /**
@@ -988,7 +988,13 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     }
   };
 
-  const close = async (keepCurrent: boolean): Promise<void> => {
+  /**
+   * Closes the window at once. The microphone and the camera are let go as
+   * it closes; the film is finished and the sound stored in the background,
+   * and the recording is put on the slides when that is done
+   * (`saveRecordingLater`), while the lecturer works on.
+   */
+  const close = (keepCurrent: boolean): void => {
     const state = live.current;
     state.keeping = false;
     state.film?.keep(false);
@@ -1000,34 +1006,15 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       store(state.waiting);
       state.waiting = null;
     }
-    setPhase('saving');
     const takes = state.takes;
-    let film: Awaited<ReturnType<FilmStore['end']>>;
-    if (state.film && state.filmStore) {
-      const pictures = await state.film.end().catch(() => 0);
-      if (takes.length > 0 && pictures > 0) film = await state.filmStore.end();
-      else state.filmStore.drop();
-      state.film = null;
-      state.filmStore = null;
-    }
-    const applied = takes.length > 0 ? await saveRecording(takes, film) : null;
-    const app = useStore.getState();
-    if (applied && applied.last && applied.slides + applied.repeats > 0) {
-      app.setScene(applied.last);
-      app.setBottomTab('sound');
-      const where =
-        applied.slides === 1
-          ? 'Opptaket er lagt på lysarket.'
-          : `Opptaket er lagt på ${applied.slides} lysark.`;
-      const again =
-        applied.repeats === 0
-          ? ''
-          : applied.repeats === 1
-            ? ' Ett sted gikk du tilbake til et lysark; det står i lista som «igjen».'
-            : ` ${applied.repeats} steder gikk du tilbake til et lysark; de står i lista som «igjen».`;
-      app.setNotice({ kind: 'info', text: `${where}${again} Husk å lagre prosjektet.` });
-    }
-    app.openRecorder(null);
+    state.takes = [];
+    const camera =
+      state.film && state.filmStore ? { film: state.film, store: state.filmStore } : null;
+    // The film is the job's now: the window must not throw it away as it closes.
+    state.film = null;
+    state.filmStore = null;
+    saveRecordingLater(takes, camera);
+    useStore.getState().openRecorder(null);
   };
 
   const cancel = (): void => {
@@ -1038,7 +1025,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
     ) {
       return;
     }
-    void close(false);
+    close(false);
   };
 
   /**
@@ -1094,7 +1081,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
       event.preventDefault();
       if (forward) advance();
       else back();
-    } else if (event.key.toLowerCase() === 'l' && phase !== 'countdown' && phase !== 'saving') {
+    } else if (event.key.toLowerCase() === 'l' && phase !== 'countdown') {
       event.preventDefault();
       setMenuOpen((open) => !open);
     }
@@ -1127,7 +1114,7 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
           type="button"
           className="recorder-pick with-icon"
           aria-expanded={menuOpen}
-          disabled={phase === 'countdown' || phase === 'saving'}
+          disabled={phase === 'countdown'}
           title="Velg lysark (L)"
           onClick={() => setMenuOpen(!menuOpen)}
         >
@@ -1382,13 +1369,12 @@ export function Recorder({ keepBefore }: { keepBefore?: number }) {
                 type="button"
                 className="strong big"
                 disabled={phase === 'countdown'}
-                onClick={() => void close(true)}
+                onClick={() => close(true)}
               >
                 Ferdig
               </button>
             </>
           )}
-          {phase === 'saving' && <span role="status">Lagrer opptaket …</span>}
         </div>
       </footer>
 

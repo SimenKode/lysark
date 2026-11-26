@@ -39,6 +39,11 @@ export interface Applied {
   /** How many slides got sound, and how many times a slide was shown once more. */
   slides: number;
   repeats: number;
+  /**
+   * The takes (by number) whose slide is no longer in the lecture: it was
+   * deleted while the recording was being saved. They are left out.
+   */
+  skipped?: number[];
 }
 
 /** Takes away the repeats that stand right after a slide. */
@@ -61,6 +66,8 @@ function removeFollowers(project: Lecture, index: number): void {
  * - Repeats from an earlier recording that stood after a slide are taken
  *   away when this recording went on from that slide: what follows it now
  *   is what the lecturer did this time.
+ * - A take on a slide that is no longer there (it was deleted while the
+ *   recording was being saved) is left out, and said in `skipped`.
  */
 export function applyRecording(
   project: Lecture,
@@ -76,7 +83,11 @@ export function applyRecording(
   takes.forEach((take, number) => {
     const index = project.scenes.findIndex((s) => s.id === take.scene && !s.repeat);
     const scene = project.scenes[index];
-    if (!scene) return;
+    if (!scene) {
+      // A repeat after it stands after the nearest slide before it that is still there.
+      (applied.skipped ??= []).push(number);
+      return;
+    }
     const place = project.scenes.slice(0, index).filter((s) => !s.repeat).length;
     const shown = new Set(take.shown);
 

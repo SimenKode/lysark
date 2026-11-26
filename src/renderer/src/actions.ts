@@ -25,7 +25,15 @@ import { formatTime, videoOptions } from '../../shared/render/clock';
 import { rememberSamples } from './audio/engine';
 import { getTheme } from '../../shared/theme/theme';
 import { placeNew } from './ops';
-import { currentScene, isDirty, useStore, type ImportLook, type LookRequest } from './store';
+import {
+  WAIT_FOR_SAVING,
+  currentScene,
+  isDirty,
+  useStore,
+  type ImportLook,
+  type LookRequest,
+} from './store';
+import type { Film } from './audio/camera';
 
 declare global {
   interface Window {
@@ -67,12 +75,14 @@ async function leaveCurrent(): Promise<boolean> {
 }
 
 export async function newProject(): Promise<void> {
+  if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
   const opened = await guard(() => api().newProject());
   if (opened) useStore.getState().load(opened.dir, opened.project);
 }
 
 export async function openProject(dir?: string): Promise<void> {
+  if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
   const opened = await guard(() => api().openProject(dir));
   if (opened) useStore.getState().load(opened.dir, opened.project);
@@ -91,6 +101,7 @@ function askLook(kind: LookRequest['kind'], name: string): Promise<ImportLook | 
  */
 export async function importPptx(): Promise<void> {
   if (pdfImport) return;
+  if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
   const picked = await guard(() => api().pickPptx());
   if (!picked) return;
@@ -140,6 +151,7 @@ function megabytes(bytes: number): string {
 }
 
 export async function exportHtml(): Promise<void> {
+  if (waitsForSaving()) return;
   const state = useStore.getState();
   if (!state.dir || !state.project) return;
   if (state.project.scenes.length === 0) {
@@ -167,6 +179,7 @@ export async function exportVideo(
   choices: NonNullable<Project['video']>,
   request: VideoRequest,
 ): Promise<void> {
+  if (waitsForSaving()) return;
   const state = useStore.getState();
   if (!state.dir || !state.project) return;
   if (state.project.scenes.length === 0) {
@@ -241,13 +254,15 @@ export async function storeTakeSound(
 ): Promise<AddedSound | undefined> {
   const { dir } = useStore.getState();
   if (!dir) return undefined;
-  const added = await guard(async () => {
+  try {
     const sound = await encodeSound(pieces);
     const stored = await api().addRecording(dir, sound.wav, name);
     rememberSamples(stored.asset.file, sound.samples);
     return stored;
-  });
-  return added;
+  } catch {
+    // Said when the recording has been saved, with what could be kept.
+    return undefined;
+  }
 }
 
 /**
@@ -273,7 +288,11 @@ export function openFilmStore(): FilmStore | null {
     async end() {
       // The sound is kept even when the film cannot be: the owner is told,
       // and the slides are then simply without the camera circle.
-      return (await guard(async () => api().endCameraFilm(await film, 'Kamera'))) ?? undefined;
+      try {
+        return (await api().endCameraFilm(await film, 'Kamera')) ?? undefined;
+      } catch {
+        return undefined;
+      }
     },
     drop() {
       void film.then((id) => api().dropCameraFilm(id)).catch(() => undefined);
@@ -281,29 +300,46 @@ export function openFilmStore(): FilmStore | null {
   };
 }
 
+/** What became of a recording when it was put into the lecture. */
+export interface SavedRecording extends Applied {
+  /** Takes whose sound could not be stored. */
+  lost: number;
+  /** Slides that were read in and deleted meanwhile. */
+  deleted: number;
+}
+
 /**
- * Puts a recording into the lecture: the sound of every stretch, the film
- * when the camera was on, and slides shown once more where the lecturer
- * went back. All of it is one change, so one undo takes the recording away.
+ * Puts a recording into the lecture as it is now: the sound of every
+ * stretch, the film when the camera was on, and slides shown once more
+ * where the lecturer went back. All of it is one change, so one undo takes
+ * the recording away. A take whose slide has been deleted meanwhile is left
+ * out (its sound file stays in the project folder).
  */
 export async function saveRecording(
   takes: ReadonlyArray<RecordedTake>,
   film: AddedMedia | undefined,
-): Promise<Applied | null> {
+): Promise<SavedRecording> {
   const sounds = await Promise.all(takes.map((take) => take.sound));
-  let applied: Applied | null = null;
+  let saved: SavedRecording = { slides: 0, repeats: 0, lost: 0, deleted: 0 };
   useStore.getState().update((draft) => {
     if (film) draft.assets[film.id] = film.asset;
     const ready: Take[] = [];
+    /** Which sound asset each take that is put in has. */
+    const assetOf: string[] = [];
+    let lost = 0;
     takes.forEach((take, index) => {
       const sound = sounds[index];
-      if (!sound) return;
+      if (!sound) {
+        lost += 1;
+        return;
+      }
       const filmed = film && take.camera;
       draft.assets[sound.id] = filmed
         ? // The film has the recording's own time: this stretch began `filmAt` into it.
           { ...sound.asset, camera: { asset: film.id, offset: -take.camera!.filmAt } }
         : sound.asset;
       const { sound: _sound, camera: _camera, ...rest } = take;
+      assetOf.push(sound.id);
       ready.push({
         ...rest,
         asset: sound.id,
@@ -311,9 +347,120 @@ export async function saveRecording(
         ...(filmed ? { camera: take.camera!.place } : {}),
       });
     });
-    applied = applyRecording(draft, ready, newId);
+    const applied = applyRecording(draft, ready, newId);
+    for (const number of applied.skipped ?? []) delete draft.assets[assetOf[number]!];
+    const deleted = new Set((applied.skipped ?? []).map((number) => ready[number]!.scene));
+    if (film && !Object.values(draft.assets).some((asset) => asset.camera?.asset === film.id)) {
+      delete draft.assets[film.id];
+    }
+    saved = { ...applied, lost, deleted: deleted.size };
   });
-  return applied;
+  return saved;
+}
+
+/** Says what became of a recording, in the words the lecturer meets. */
+function recordingNotice(saved: SavedRecording, filmLost: boolean): void {
+  const parts: string[] = [];
+  const placed = saved.slides + saved.repeats > 0;
+  if (placed) {
+    parts.push(
+      saved.slides === 1
+        ? 'Opptaket er lagt på lysarket.'
+        : `Opptaket er lagt på ${saved.slides} lysark.`,
+    );
+    if (saved.repeats === 1) {
+      parts.push('Ett sted gikk du tilbake til et lysark; det står i lista som «igjen».');
+    } else if (saved.repeats > 1) {
+      parts.push(
+        `${saved.repeats} steder gikk du tilbake til et lysark; de står i lista som «igjen».`,
+      );
+    }
+  }
+  if (saved.deleted > 0) {
+    parts.push(
+      saved.deleted === 1
+        ? 'Ett lysark du leste inn, ble slettet mens opptaket ble lagret. Det du sa der, er ikke lagt på.'
+        : `${saved.deleted} lysark du leste inn, ble slettet mens opptaket ble lagret. Det du sa der, er ikke lagt på.`,
+    );
+  }
+  if (saved.lost > 0) {
+    parts.push(
+      placed
+        ? 'Noe av lyden kunne ikke lagres. Det som ble lagret, er lagt på.'
+        : 'Lyden kunne ikke lagres. Se at det er plass på disken, og prøv igjen.',
+    );
+  }
+  if (filmLost && placed) {
+    parts.push('Kameraopptaket kunne ikke lagres, så lysarkene har lyd uten kamerasirkel.');
+  }
+  if (placed) parts.push('Husk å lagre prosjektet.');
+  if (parts.length === 0) return;
+  const failed = saved.lost > 0 || (filmLost && placed) || !placed;
+  useStore.getState().setNotice({ kind: failed ? 'error' : 'info', text: parts.join(' ') });
+}
+
+/** The camera's part of a recording that is being saved. */
+export interface FilmParts {
+  film: Film;
+  store: FilmStore;
+}
+
+/**
+ * Saves a recording after the recording window has closed: the film is
+ * finished and stored, the sound of every stretch is stored, and then all
+ * of it is put on the project as it is at that moment, as one change. The
+ * lecturer works on meanwhile; the slide that is selected and the panel
+ * that is open are left as they are. While it runs, the store knows
+ * (`savingRecording`), and what must wait for it says so.
+ */
+export function saveRecordingLater(takes: RecordedTake[], camera: FilmParts | null): void {
+  if (takes.length === 0) {
+    // Nothing was read in: a film that was begun is thrown away.
+    if (camera) {
+      void camera.film
+        .end()
+        .catch(() => 0)
+        .then(() => camera.store.drop());
+    }
+    return;
+  }
+  const app = useStore.getState();
+  app.setSavingRecording(true);
+  void (async () => {
+    try {
+      let film: AddedMedia | undefined;
+      let filmLost = false;
+      if (camera) {
+        const pictures = await camera.film.end().catch(() => 0);
+        if (pictures > 0) {
+          film = await camera.store.end();
+          filmLost = !film && takes.some((take) => take.camera);
+        } else {
+          camera.store.drop();
+        }
+      }
+      recordingNotice(await saveRecording(takes, film), filmLost);
+    } catch (error) {
+      const reason = error instanceof Error ? ` (${error.message})` : '';
+      useStore.getState().setNotice({
+        kind: 'error',
+        text: `Opptaket kunne ikke lagres helt${reason}. Det som ble lagret, ligger i prosjektmappa.`,
+      });
+    } finally {
+      useStore.getState().setSavingRecording(false);
+    }
+  })();
+}
+
+/**
+ * True, with the lecturer told why, when a recording is being saved and
+ * what was asked for must wait until it is done.
+ */
+function waitsForSaving(): boolean {
+  const state = useStore.getState();
+  if (!state.savingRecording) return false;
+  state.setNotice({ kind: 'info', text: WAIT_FOR_SAVING });
+  return true;
 }
 
 /** Lets the owner pick a sound file and puts it at the end of the current slide's sound. */
@@ -364,6 +511,7 @@ export async function packProject(): Promise<void> {
 }
 
 export async function unpackProject(): Promise<void> {
+  if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
   const opened = await guard(() => api().unpackProject());
   if (opened) useStore.getState().load(opened.dir, opened.project);
@@ -371,6 +519,7 @@ export async function unpackProject(): Promise<void> {
 
 /** Opens an HTML file exported by Lysark as a new project. */
 export async function openHtmlFile(): Promise<void> {
+  if (waitsForSaving()) return;
   if (!(await leaveCurrent())) return;
   const opened = await guard(() => api().openHtmlFile());
   if (!opened) return;
@@ -400,6 +549,7 @@ function listed(numbers: number[]): string {
  * leaves nothing behind.
  */
 export async function importPdf(): Promise<void> {
+  if (waitsForSaving()) return;
   if (pdfImport) return;
   if (!(await leaveCurrent())) return;
   const picked = await guard(() => api().pickPdf());

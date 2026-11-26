@@ -124,6 +124,20 @@ describe('putting a recording into the lecture', () => {
     expect(schedule(project.scenes).total).toBe(16);
   });
 
+  it('leaves out a slide deleted meanwhile, and puts a repeat after the nearest slide before it', () => {
+    // A, B, back to A, C were read; B was deleted while the recording was saved.
+    const project = lecture(slide('A'), slide('C'));
+    const applied = applyRecording(
+      project,
+      [take('s_A', 4), take('s_B', 3), take('s_A', 2), take('s_C', 2)],
+      counter(),
+    );
+    expect(applied.skipped).toEqual([1]);
+    expect(applied.slides).toBe(2);
+    expect(applied.repeats).toBe(1);
+    expect(names(project)).toEqual(['s_A', 's_A*', 's_C']);
+  });
+
   it('makes going back one step a showing of its own, with one step fewer', () => {
     const project = lecture(slide('A', 2));
     applyRecording(

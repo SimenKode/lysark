@@ -54,7 +54,7 @@ import {
   newTextElement,
   placeNew,
 } from './ops';
-import { currentScene, isDirty, useStore } from './store';
+import { WAIT_FOR_SAVING, currentScene, isDirty, useStore } from './store';
 
 function isTextInput(el: Element | null): boolean {
   if (!el) return false;
@@ -129,6 +129,10 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
   const canUndo = useStore((s) => s.past.length > 0);
   const canRedo = useStore((s) => s.future.length > 0);
   const update = useStore((s) => s.update);
+  const saving = useStore((s) => s.savingRecording);
+  /** What an export button says about itself while it must wait for the recording. */
+  const waits = (title: string) =>
+    saving ? { 'aria-disabled': true, title: WAIT_FOR_SAVING } : { title };
   return (
     <header className="topbar">
       <span className="brand">Lysark</span>
@@ -164,6 +168,14 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
           <Icon name="redo" />
         </button>
         <span className="gap" />
+        <span className="topbar-status" role="status" aria-live="polite">
+          {saving && (
+            <>
+              <Icon name="save" />
+              Lagrer opptaket
+            </>
+          )}
+        </span>
         <button
           type="button"
           className="with-icon"
@@ -190,7 +202,7 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
           type="button"
           className="strong with-icon"
           onClick={() => void exportHtml()}
-          title="Eksporter HTML (Ctrl+E)"
+          {...waits('Eksporter HTML (Ctrl+E)')}
         >
           <Icon name="export" />
           Eksporter HTML
@@ -199,7 +211,7 @@ function TopBar({ onSettings }: { onSettings: () => void }) {
           type="button"
           className="strong with-icon"
           onClick={() => useStore.getState().setVideoDialog(true)}
-          title="Eksporter video eller GIF (Ctrl+Shift+E)"
+          {...waits('Eksporter video eller GIF (Ctrl+Shift+E)')}
         >
           <Icon name="film" />
           Eksporter video
@@ -484,6 +496,7 @@ export function App() {
   const project = useStore((s) => s.project);
   const dirty = useStore(isDirty);
   const title = project?.meta.title ?? '';
+  const saving = useStore((s) => s.savingRecording);
   const report = useStore((s) => s.report);
   const builder = useStore((s) => s.builder);
   const mediaRequest = useStore((s) => s.mediaRequest);
@@ -502,9 +515,10 @@ export function App() {
     });
   }, []);
 
+  // The main process keeps the program open while a recording is being saved.
   useEffect(() => {
-    window.lysark.setDocumentState({ dirty, title });
-  }, [dirty, title]);
+    window.lysark.setDocumentState({ dirty, title, saving });
+  }, [dirty, title, saving]);
 
   // Commands from the application menu.
   useEffect(() => {
@@ -538,6 +552,10 @@ export function App() {
           if (state.project && !state.recorder) state.setVideoDialog(true);
           return;
         case 'record':
+          if (state.savingRecording) {
+            state.openRecorder({});
+            return;
+          }
           if (state.project && currentScene(state) && !state.builder && !state.videoProgress) {
             state.setBottomTab('sound');
             // A slide that is shown once more is read in from the slide itself.
@@ -586,6 +604,12 @@ export function App() {
           return openHtmlFile();
         case 'import-pdf':
           return importPdf();
+        case 'close-while-saving':
+          state.setNotice({
+            kind: 'info',
+            text: 'Opptaket lagres ennå. Lysark avslutter ikke før det er ferdig; prøv igjen om litt.',
+          });
+          return;
       }
     };
     return window.lysark.onCommand((command) => void run(command));

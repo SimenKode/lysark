@@ -307,7 +307,7 @@ describe.skipIf(!built || !existsSync(ffmpeg))('the film where the slide changes
       .toBeGreaterThan(lastChange + 2500);
 
     await recorder.getByRole('button', { name: 'Ferdig' }).click();
-    await recorder.waitFor({ state: 'detached', timeout: 60_000 });
+    await recorder.waitFor({ state: 'detached', timeout: 15_000 });
     await expect
       .poll(() => page.locator('.notice').textContent(), { timeout: 60_000 })
       .toContain('Opptaket er lagt på');
