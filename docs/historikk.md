@@ -85,8 +85,8 @@ Leveranse 3, lyd og video (detaljer i [docs/plan.md](plan.md)):
 
 Leveranse 4 (figurer og bevegelser) er påbegynt: merket bilde (6.25) og
 fri figur (6.32), fire maler (6.33 og 6.36) og søyle- og linjediagram
-(6.38 og 6.39) og figur i «Lær mer» (6.41) er bygget. Bevegelsene
-gjenstår. Leveranse 5 (håndlaget stil) er ikke påbegynt.
+(6.38 og 6.39), figur i «Lær mer» (6.41) og bevegelsene (6.45) er
+bygget. Leveranse 5 (håndlaget stil) er ikke påbegynt.
 
 ## 3. Hva som er prøvd, og hvordan
 
@@ -2994,6 +2994,108 @@ med navn, og den bredere boksen hos studenten.
 **Ikke prøvd:** Windows. Mange eller lange navn (de kan gå over
 hverandre, som under søyler). Den rettede knappefargen er ikke sett på
 et skjermbilde etter rettingen.
+
+### 6.45 Bevegelsene (26.11.2026)
+
+Bygget på de to siste svarene i 6.43: **programmet foreslår** hvordan
+noe kommer inn, og markere, ta bort og zoome er **egne steg**.
+
+**Hvordan noe kommer inn.** Hvert element i et steg har en bevegelse:
+
+| Bevegelse | Hva som skjer | Foreslås for |
+| --- | --- | --- |
+| Toner inn | Som før: toner inn og glir opp det siste stykket | Alt annet |
+| Glir inn fra siden | Kommer inn fra venstre | (velges selv) |
+| Vokser fram | Vokser ut til størrelsen sin. En søyle vokser fra aksen: opp fra null, eller ned når tallet er negativt | Søylene i et søylediagram |
+| Tegnes | Streken tegnes fra start til slutt. Pilspissen kommer når streken er framme, og prikkene på en kurve etter hvert som kurven når dem | Linjer, piler og kurver |
+| Teller opp | Tallet i teksten teller fra null til det som står der, skrevet på samme måte (mellomrom mellom tusener, komma) | Tekst av typen «Stort tall» med et tall i |
+| Vises med en gang | Ingen bevegelse | (velges selv) |
+
+- **Forslaget gjelder nye steg.** Steg du har fra før, er som de var.
+- **Du bytter bevegelse** i fanen «Steg», i en liste ved hvert element.
+  Lista viser bare det som passer: bare en strek kan tegnes, og bare en
+  tekst med et tall kan telle opp.
+- **Fart per steg:** Rask, Vanlig eller Langsom (halv, vanlig og dobbel
+  tid).
+
+**Steg som gjør noe annet enn å vise.** Fire knapper i fanen «Steg»:
+
+- **«Marker det som er valgt»:** en oransje ramme rundt elementet. Den
+  står til neste steg kommer, og toner så bort.
+- **«Ta bort det som er valgt»:** elementet toner bort der det står. Et
+  senere steg kan hente det inn igjen.
+- **«Zoom inn»:** bildet glir inn på en del av lysarket. En oransje,
+  stiplet ramme på lysarket viser utsnittet. Du drar den dit du vil, og
+  drar i hjørnet for å gjøre utsnittet større eller mindre. Rammen har
+  alltid lysarkets form. Har du valgt noe, legger rammen seg rundt det.
+- **«Zoom ut igjen»:** bildet glir ut til hele lysarket.
+- Et element kommer inn i ett steg, men kan markeres og tas bort i
+  flere. Stegene har tidspunkt under innlesing som alle andre steg, og
+  kan flyttes opp og ned i lista.
+
+**Hvor det virker:** i HTML-fila når studenten blar, i «Spill av», i
+videoen, og i innlesingsvinduet (der du ser zoom og markering mens du
+leser inn). Der lysarket redigeres, zoomes det ikke; rammen viser
+utsnittet.
+
+**Valg jeg tok uten å spørre** (si fra hvis noe skal være annerledes):
+
+- Navnene på bevegelsene, og at «Toner inn» er den gamle bevegelsen
+  uendret.
+- Tidene: tone 0,4 s, gli 0,5 s, vokse 0,6 s, tegne 0,8 s, telle 1 s,
+  zoom 0,9 s.
+- Markeringen er en oransje ramme (samme oransje som merkene på bilder),
+  ikke en farget flate, og den varer til neste steg.
+- Utsnittet i en zoom kan ikke være mindre enn en femdel av lysarket.
+- Logoen zoomes sammen med lysarket. Kamerasirkelen zoomes ikke.
+- For dem som har bedt systemet om lite bevegelse, skjer alt med en
+  gang, som før; det zoomede utsnittet vises likevel.
+
+**Slik er det laget.** Ett sted regner ut hva stegene har gjort til
+enhver tid (`movesFrom` i `src/shared/render/timeline.ts`), og ett sted
+tegner det (`applySceneMoves`). Spilleren, videoen og innlesingsvinduet
+bruker de samme to. Alt på lysarket ligger nå i ett lag som zoomen gjør
+større; lysarket selv beholder størrelsen. Formatet er 16.
+
+**Prøvd på Linux Mint:**
+
+- 11 enhetstester (`tests/moves.test.ts`): forslagene, farten, hva
+  stegene har gjort for hånd og etter klokka, hver bevegelse tegnet,
+  tellingen (også «1 250,5 kr» og «40 %»), rammen rundt det markerte, og
+  zoomen.
+- 3 prøver i det bygde programmet uten vindu (`tests/e2e-moves.test.ts`):
+  forslagene når steg lages, bytte av bevegelse og fart, steg som
+  markerer, tar bort og zoomer, rammen dratt og gjort mindre, og en
+  student som blar gjennom alle sju stegene.
+- **Målt i en videofil:** et lysark med en lilla boks og fire steg med
+  tidspunkt. Boksen er fire ganger så stor i bildet mens det er zoomet
+  inn på en firedel av lysarket, den oransje rammen er der mens boksen
+  er markert og borte etterpå, boksen er tilbake i vanlig størrelse etter
+  zoom ut, og borte etter at den er tatt bort. Tallene stemmer innenfor
+  seks prosent.
+- Fem skjermbilder er sett på.
+- Hele testsamlingen: 578 består, 1 hoppes over som før, i én kjøring
+  (med maskinen tungt belastet av annet arbeid).
+
+**En feil i testen min, ikke i programmet:** videomålingen feilet først
+fordi jeg hadde lagt boksen delvis utenfor utsnittet. Bildet viste
+nøyaktig det utsnittet skulle vise.
+
+**Ikke prøvd:** Windows. Innlesingsvinduet med de nye stegene (det
+bruker samme kode, men ingen prøve åpner det). «Spill av» i HTML-fila
+med de nye stegene (klokka er prøvd i enhetstester, ikke i en
+nettleser). «Vokser fram» og «Glir inn» i det bygde programmet (bare i
+enhetstester). Firefox og Safari. En skjermleser.
+
+**Kjent:**
+
+- «Ett steg per element» og «Fjern alle steg» fjerner også steg som
+  markerer og zoomer.
+- En «Lær mer»-boks som åpnes mens bildet er zoomet inn, legger seg der
+  elementet står på det hele lysarket.
+- Bare det første tallet i en tekst teller opp.
+- En form med omriss kan ikke tegnes; bare linjer, piler og kurver.
+- Zoom vises ikke der lysarket redigeres, bare rammen.
 
 ## 7. Hvordan importen sammenlignes med PDF-ene
 

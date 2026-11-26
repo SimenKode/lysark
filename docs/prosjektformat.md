@@ -4,7 +4,7 @@ Ett format leses av redigeringsprogrammet, HTML-spilleren og
 videoeksporten. Den bindende beskrivelsen er koden i
 `src/shared/format/schema.ts`, som også kontrollerer hver prosjektfil når
 den åpnes og lagres. Denne fila forklarer tankegangen. Formatet har
-versjonsnummer (nå 15), og eldre prosjekter løftes automatisk når de
+versjonsnummer (nå 16), og eldre prosjekter løftes automatisk når de
 åpnes (`src/shared/format/migrate.ts`).
 
 ## Tre prinsipper
@@ -51,6 +51,44 @@ En video som er en lenke til en videoside, tegnes som et kort med
 stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
+
+## Format 16: bevegelser, og steg som markerer, tar bort og zoomer
+
+```ts
+interface StepAction {
+  target: ElementId;
+  effect: 'appear' | 'fade' | 'slide' | 'grow' | 'draw' | 'count';
+  duration: number;                  // sekunder
+  delay?: number;
+}
+
+interface Step {
+  id: string;
+  at?: number;                       // tidspunkt i lysarket, satt under innlesing
+  actions: StepAction[];
+  kind?: 'mark' | 'hide' | 'zoom';   // uten: steget viser elementene sine
+  zoom?: { x; y; w; h };             // zoom-steg: utsnittet. Uten: hele lysarket
+  seconds?: number;                  // zoom-steg: hvor lenge gliden varer
+}
+```
+
+- **`effect`** er hvordan elementet kommer inn. Programmet foreslår den
+  som passer (`proposedEffect` i `src/shared/layout/steps.ts`), og
+  foreleseren kan velge en annen. Før format 16 fantes bare `appear` og
+  `fade`, og de betyr det samme som før.
+- **Et steg uten `kind`** viser elementene sine. Det første slike steget
+  for et element bestemmer; elementer uten et slikt steg er der fra
+  starten.
+- **`mark`:** elementene er markert til neste steg kommer.
+- **`hide`:** elementene toner bort. Et senere steg kan vise dem igjen.
+- **`zoom`:** bildet glir inn på `zoom`, eller ut til hele lysarket når
+  `zoom` mangler. Et slikt steg har ingen elementer, og tas derfor ikke
+  bort når det er tomt (`stepStands`).
+- **Én funksjon** sier hva stegene har gjort til enhver tid (`movesFrom`
+  i `src/shared/render/timeline.ts`), og én tegner det
+  (`applySceneMoves`). Spilleren, videoen og innlesingsvinduet bruker
+  begge.
+- Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 15: navn langs aksen i et linjediagram
 

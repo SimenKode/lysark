@@ -351,6 +351,26 @@ instead of choosing silently.
   stand would have to be made up. A presentation that keeps its look
   keeps its charts in the picture of the page; the owner chose that too
   (26.11.2026).
+- A step does one of four things (the owner's choices, 26.11.2026): it
+  brings elements in, marks them, takes them away, or zooms
+  (`Step.kind`). An element that comes in has a movement (`StepAction
+  .effect`: toned in, glided in, grown, drawn, counted up, or there at
+  once). The program proposes the one that suits the element when a step
+  is made, and the lecturer can choose another, and the speed
+  (`src/shared/layout/steps.ts`). Steps that were there before keep what
+  they had. One function says what the steps have done at any moment,
+  by hand or by the clock (`movesFrom` in
+  `src/shared/render/timeline.ts`), and one draws it
+  (`applySceneMoves`); the HTML player, the video export and the
+  recording window all use both, so they move alike. A step that zooms
+  has no elements and is never taken away for being empty (`stepStands`;
+  use it wherever empty steps are removed). Everything on a slide lies in
+  one layer (`.ls-zoom`), which a zoom makes larger; the slide itself
+  keeps its size and cuts what goes outside. What lies on top of the
+  slide without being part of it (the "Lær mer" box, the camera circle)
+  is outside that layer. Where the slide is edited it is never zoomed:
+  a frame shows the part (`ZoomFrame.tsx`), so what is chosen stands
+  where its handles are drawn.
 - A figure in a "Lær mer" box is fetched from a slide (the owner's
   choice, 25.11.2026): it is made on a slide, with the tools that are
   there, and the builder puts a copy of it in the box (a block of the
@@ -449,9 +469,10 @@ instead of choosing silently.
 - "Lær mer" is a box that pops out beside its element, on top of the
   slide. It never pushes the slide aside, in the player or in the
   builder's preview (`placePopover` in `src/shared/render/more.ts`).
-- Motion is in how things answer, not in the subject matter, and all of
-  it is left out under `prefers-reduced-motion`. What is to be in the
-  video is a pure function of time.
+- Motion is in how things answer, and in the steps the lecturer makes;
+  the program never moves subject matter by itself. All of it is left
+  out under `prefers-reduced-motion`. What is to be in the video is a
+  pure function of time.
 - In the interface, the same thing has one name. The owner chose these
   on 22.11.2026: "Lær mer" (never "utdyping"), "Innhold" for what a
   "Lær mer" panel holds (never "byggestein"), "Nettside" for an embedded
