@@ -122,6 +122,11 @@ export function exportVideo(options: Options): VideoJob {
   const scenes = videoScenes(project, request);
   if (scenes.length === 0) throw new Error('Prosjektet har ingen lysark å lage video av.');
   const plan = schedule(scenes);
+  if (plan.total <= 0) {
+    throw new Error(
+      'Ingen av de valgte lysarkene er med i videoen. Ta dem med igjen i fanen «Lysark».',
+    );
+  }
   if (gif && plan.total > GIF_MAX_SECONDS + 0.5) {
     throw new Error(
       `En GIF kan være høyst ${GIF_MAX_SECONDS / 60} minutter. Velg færre lysark, eller eksporter video.`,

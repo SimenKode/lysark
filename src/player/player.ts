@@ -23,6 +23,7 @@ import {
 } from '../shared/render/scene';
 import {
   hasSound,
+  isPlayed,
   moreAt,
   sceneDuration,
   sceneMovesAt,
@@ -109,7 +110,7 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const hasScript = project.export.showScript && scenes.some((s) => s.script.trim() !== '');
   /** The lecture carries the lecturer's voice and can play itself. */
-  const hasVoice = scenes.some(hasSound);
+  const hasVoice = scenes.some((scene) => hasSound(scene) && isPlayed(scene));
 
   document.documentElement.lang = lang;
   document.title = project.meta.title;
@@ -142,6 +143,11 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
   const sceneTitle = (scene: Scene, index: number): string =>
     scene.title.trim() || t.untitled(numbers[index] ?? index + 1);
   /** The slide after or before a scene, repeats not counted; -1 when there is none. */
+  /** The next scene "Spill av" shows after `from` (slides left out are passed); -1 at the end. */
+  const nextPlayed = (from: number): number => {
+    for (let at = from + 1; at < scenes.length; at++) if (isPlayed(scenes[at]!)) return at;
+    return -1;
+  };
   const neighbour = (from: number, direction: 1 | -1): number => {
     for (let at = from + direction; at >= 0 && at < scenes.length; at += direction) {
       if (!scenes[at]!.repeat) return at;
@@ -552,7 +558,10 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
       }
     }
 
-    if (playing) {
+    if (playing && !isPlayed(scene)) {
+      // A slide that is left out of "Spill av" is only seen by hand: the voice stops.
+      setPlaying(false);
+    } else if (playing) {
       // While the voice plays, going to a step or a slide by hand moves the voice there.
       cancelAnimationFrame(frame);
       startVoice(stepsShown > 0 ? (stepTimes(scene)[stepsShown - 1] ?? 0) : 0);
@@ -670,10 +679,12 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
     const duration = sceneDuration(scene);
     const done = hasSound(scene) ? voice.ended || now >= duration : now >= duration;
     if (done) {
-      if (index < scenes.length - 1) {
-        // Goes on with the voice of the next slide. Where the lecturer came
-        // back to a slide, the steps that were there are there from the start.
-        show(index + 1, stepsShownBefore(scenes[index + 1]!), false);
+      const to = nextPlayed(index);
+      if (to >= 0) {
+        // Goes on with the voice of the next slide that is in "Spill av".
+        // Where the lecturer came back to a slide, the steps that were there
+        // are there from the start.
+        show(to, stepsShownBefore(scenes[to]!), false);
       } else {
         stepsShown = scene.timeline.length;
         applySceneMoves(el, sceneMoves(scene, stepsShown, Infinity));
@@ -698,11 +709,16 @@ export function mountPlayer(root: HTMLElement, data: PlayerData): void {
 
   function setPlaying(on: boolean): void {
     if (!hasVoice || on === playing) return;
+    // On a slide that is left out, "Spill av" starts on the next one that is in.
+    const skipTo = on && !isPlayed(scenes[index]!) ? nextPlayed(index) : index;
+    if (skipTo < 0) return;
     playing = on;
     playButton.textContent = on ? t.pause : t.play;
     playButton.setAttribute('aria-pressed', String(on));
     const scene = scenes[index]!;
-    if (on) {
+    if (skipTo !== index) {
+      show(skipTo, stepsShownBefore(scenes[skipTo]!), false);
+    } else if (on) {
       cancelAnimationFrame(frame);
       const times = stepTimes(scene);
       // Go on from the step that is shown; a finished slide starts again.

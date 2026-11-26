@@ -1994,6 +1994,25 @@ function ScenePanel({ scene, onLogo }: { scene: Scene; onLogo: () => void }) {
           )}
         </>
       )}
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={!scene.skip}
+          onChange={(e) =>
+            updateScene((s) => {
+              if (e.target.checked) delete s.skip;
+              else s.skip = true;
+            })
+          }
+        />
+        Ta med i videoen og i «Spill av»
+      </label>
+      {scene.skip && (
+        <p className="hint">
+          Lysarket er ikke med i videoen og i «Spill av», og tar ingen tid der. Den som blar i
+          HTML-fila for hånd, ser det likevel.
+        </p>
+      )}
       <SceneTime scene={scene} />
       <label className="check">
         <input

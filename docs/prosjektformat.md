@@ -52,12 +52,13 @@ stillbildet sitt (`poster`) når det finnes.
 Figurer med skjema kom i format 11; diagrammer er ikke i formatet ennå.
 Lyd kom i format 4.
 
-## Format 18: tid uten lyd
+## Format 18: tid uten lyd, og lysark som ikke er med i videoen
 
 ```ts
 interface Scene {
   // ... som før
   seconds?: number;   // 0,5 til 600: så lenge står lysarket når det ikke har lyd
+  skip?: boolean;     // lysarket er ikke med i videoen, GIF-en og «Spill av»
 }
 ```
 
@@ -76,6 +77,19 @@ interface Scene {
 - Et lysark som vises igjen (`repeat`) og et lysark med
   avslutningsanimasjonen har sine egne regler; der brukes ikke feltet
   (`ownsSeconds` i `src/shared/render/clock.ts`).
+- **`skip`** tar lysarket ut av videoen, GIF-en og «Spill av»: det tar
+  ingen tid der, og klokka hopper over det (`schedule` gir det lengden 0,
+  og `frameAt` viser det aldri). Den som blar i HTML-fila for hånd, ser
+  det likevel. Foreleseren slår det av og på med «Ta med i videoen og i
+  «Spill av»» i fanen «Lysark».
+- Et opptak der foreleseren hopper framover over lysark uten lyd, setter
+  `skip` på akkurat de lysarkene (`applyRecording` i
+  `src/shared/audio/session.ts`), og meldingen etter opptaket sier det.
+  Lysark før stedet opptaket startet, røres aldri, og et lysark som får
+  lyd fra opptaket, tas med igjen.
+- Et kapittel som begynner på et lysark som ikke er med, begynner i
+  videoen og i «Spill av» på neste lysark som er med. Numrene på
+  lysarkene (`slideNumbers`) endres ikke.
 - Eldre prosjekter løftes ved at versjonsnummeret økes.
 
 ## Format 17: tabeller fra PowerPoint slik de var

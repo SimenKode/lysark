@@ -184,9 +184,14 @@ export async function playLecture(project: Project, from: number): Promise<Lectu
     return buffer;
   };
 
+  // Slides left out of the video take no time and have no sound here.
+  let lastPlayed = plan.entries.length - 1;
+  while (lastPlayed > 0 && plan.entries[lastPlayed]!.duration <= 0) lastPlayed -= 1;
+
   const run = async (): Promise<void> => {
-    for (let i = index; i < plan.entries.length && !stopped; i++) {
+    for (let i = index; i <= lastPlayed && !stopped; i++) {
       const entry = plan.entries[i]!;
+      if (entry.duration <= 0 && i < lastPlayed) continue;
       const buffer = await build(i);
       if (stopped) return;
       const offset = i === index ? Math.max(0, begin - entry.start) : 0;
@@ -211,10 +216,10 @@ export async function playLecture(project: Project, from: number): Promise<Lectu
       source.start(when, Math.min(offset, buffer.duration));
       // The next slide is put together while this one plays; near its end is early enough.
       const wait = (when + buffer.duration - offset - ctx.currentTime - 1.5) * 1000;
-      if (wait > 0 && i < plan.entries.length - 1) {
+      if (wait > 0 && i < lastPlayed) {
         await Promise.race([over, new Promise((resolve) => setTimeout(resolve, wait))]);
       }
-      if (i === plan.entries.length - 1) {
+      if (i === lastPlayed) {
         await over;
         if (!stopped) finish(true);
       }

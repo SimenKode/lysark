@@ -23,6 +23,7 @@ import {
   SILENT_SECONDS,
   formatTime,
   hasSound,
+  isPlayed,
   ownsSeconds,
   schedule,
   sceneDuration,
@@ -33,6 +34,7 @@ import {
 } from '../../shared/render/clock';
 import { Icon } from './Icon';
 import { SecondsInput } from './SecondsInput';
+import { SKIPPED } from './SceneList';
 import { importSoundFile } from './actions';
 import { loadSceneSamples, playScene, samplesOf, type Playback } from './audio/engine';
 import { WAIT_FOR_SAVING, currentScene, useStore } from './store';
@@ -66,15 +68,18 @@ function LectureStrip({ project, sceneId }: { project: Project; sceneId: string 
           const number = numbers[entry.index]!;
           const label = scene.repeat ? `Lysark ${number} igjen` : `Lysark ${number}`;
           const name = scene.title.trim() || `Lysark ${number}`;
+          const what = scene.skip
+            ? SKIPPED.toLowerCase()
+            : `${formatTime(entry.duration)}${hasSound(scene) ? '' : ', uten lyd'}`;
           return (
             <button
               key={scene.id}
               type="button"
-              className={`lecture-block${hasSound(scene) ? ' has-sound' : ''}`}
+              className={`lecture-block${hasSound(scene) ? ' has-sound' : ''}${scene.skip ? ' is-skipped' : ''}`}
               style={{ flexGrow: Math.max(0.2, entry.duration) }}
               aria-current={scene.id === sceneId ? 'true' : undefined}
-              aria-label={`${label}: ${name}, ${formatTime(entry.duration)}${hasSound(scene) ? '' : ', uten lyd'}`}
-              title={`${label}: ${name} – ${formatTime(entry.duration)}${hasSound(scene) ? '' : ' (uten lyd)'}`}
+              aria-label={`${label}: ${name}, ${what}`}
+              title={`${label}: ${name} – ${what}`}
               onClick={() => setScene(scene.id)}
             >
               {scene.repeat ? '↩' : number}
@@ -431,7 +436,10 @@ export function AudioPanel() {
         playback.current = null;
         const latest = useStore.getState();
         const scenes = latest.project?.scenes ?? [];
-        const next = scenes[scenes.findIndex((s) => s.id === current.id) + 1];
+        // The next slide that is in the video; one that is left out is passed.
+        const next = scenes
+          .slice(scenes.findIndex((s) => s.id === current.id) + 1)
+          .find((s) => isPlayed(s));
         if (toEnd && goOnRef.current && next) {
           setScene(next.id);
           setPlayhead(0);

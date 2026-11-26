@@ -17,6 +17,7 @@ import { appendSound } from '../../shared/audio/edit';
 import { applyPptxSlides, type PptxSlide } from '../../importer/pptxSlides';
 import { applyRecording, type Applied, type Take } from '../../shared/audio/session';
 import { addTrackClip } from '../../shared/audio/tracks';
+import { slideNumbers } from '../../shared/layout/slides';
 import { encodeSound } from './audio/capture';
 import { newId } from '../../shared/format/factory';
 import { FETCHED_PICTURE_MAX_WIDTH } from '../../shared/limits';
@@ -306,6 +307,8 @@ export interface SavedRecording extends Applied {
   lost: number;
   /** Slides that were read in and deleted meanwhile. */
   deleted: number;
+  /** The numbers (as the lecturer counts) of the slides the recording jumped over and left out. */
+  leftOut: number[];
 }
 
 /**
@@ -320,7 +323,7 @@ export async function saveRecording(
   film: AddedMedia | undefined,
 ): Promise<SavedRecording> {
   const sounds = await Promise.all(takes.map((take) => take.sound));
-  let saved: SavedRecording = { slides: 0, repeats: 0, lost: 0, deleted: 0 };
+  let saved: SavedRecording = { slides: 0, repeats: 0, lost: 0, deleted: 0, leftOut: [] };
   useStore.getState().update((draft) => {
     if (film) draft.assets[film.id] = film.asset;
     const ready: Take[] = [];
@@ -353,7 +356,11 @@ export async function saveRecording(
     if (film && !Object.values(draft.assets).some((asset) => asset.camera?.asset === film.id)) {
       delete draft.assets[film.id];
     }
-    saved = { ...applied, lost, deleted: deleted.size };
+    const numbers = slideNumbers(draft.scenes);
+    const leftOut = (applied.left ?? [])
+      .map((id) => numbers[draft.scenes.findIndex((scene) => scene.id === id)] ?? 0)
+      .filter((n) => n > 0);
+    saved = { ...applied, lost, deleted: deleted.size, leftOut };
   });
   return saved;
 }
@@ -375,6 +382,12 @@ function recordingNotice(saved: SavedRecording, filmLost: boolean): void {
         `${saved.repeats} steder gikk du tilbake til et lysark; de står i lista som «igjen».`,
       );
     }
+  }
+  if (saved.leftOut.length > 0) {
+    const one = saved.leftOut.length === 1;
+    parts.push(
+      `${one ? 'Lysark' : 'Lysarkene'} ${listed(saved.leftOut)} er ikke med i videoen, fordi du hoppet over ${one ? 'det' : 'dem'} i opptaket. Du kan ta ${one ? 'det' : 'dem'} med igjen i fanen «Lysark».`,
+    );
   }
   if (saved.deleted > 0) {
     parts.push(

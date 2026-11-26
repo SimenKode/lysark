@@ -1,8 +1,12 @@
 // Runs the built program end to end for how long a slide stands: the field
 // «Tid uten lyd» in the tab «Lysark», the same number in the tab «Lyd» with
-// «Bruk på alle lysark uten lyd», and the edge of a slide on the timeline.
-// Needs `npm run build`. The window is never shown, and nothing touches the
-// network.
+// «Bruk på alle lysark uten lyd», and the edge of a slide on the timeline;
+// and for slides left out of the video: by their checkbox, by a recording
+// that jumps over them, in "Spill av" and in the video.
+// Needs `npm run build`, and FFmpeg in vendor/ffmpeg for the HTML file and
+// the video. The window is never shown, the microphone is Chromium's fake
+// one, and nothing touches the network.
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -11,11 +15,19 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { encodeWav } from '../src/shared/audio/wav';
 import { newProject, newScene, richText } from '../src/shared/format/factory';
 import type { Project } from '../src/shared/format/schema';
+import { sceneDuration } from '../src/shared/render/clock';
 import { OFFLINE } from './fixtures/offline';
 
 const root = resolve(__dirname, '..');
 const built = existsSync(join(root, 'out/main/index.js'));
 const packaged = process.env.LYSARK_APP;
+const ffmpeg = join(
+  root,
+  'vendor/ffmpeg',
+  `${process.platform}-${process.arch}`,
+  process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
+);
+const SKIPPED = 'Ikke med i videoen';
 
 describe.skipIf(!built)('how long a slide stands, end to end', () => {
   let work: string;
@@ -34,6 +46,12 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
   };
   const slide = (n: number) => page.locator('.scene-item').nth(n);
   const field = () => page.locator('#scene-seconds');
+  const notice = (): Promise<string | null> => page.locator('.notice').textContent();
+  const answerSaveDialog = (file: string): Promise<void> =>
+    app.evaluate(({ dialog }, path) => {
+      dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path });
+    }, file);
+  const included = () => page.getByLabel('Ta med i videoen og i «Spill av»');
 
   beforeAll(async () => {
     work = mkdtempSync(join(tmpdir(), 'lysark-tid-'));
@@ -76,7 +94,13 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
     project.scenes[2]!.audio = { clips: [{ id: 'c_c', kind: 'pause', duration: 4 }] };
     writeFileSync(join(projectDir, 'prosjekt.json'), JSON.stringify(project, null, 2), 'utf8');
 
-    const args = [OFFLINE, `--user-data-dir=${join(work, 'userdata')}`, projectDir];
+    const args = [
+      OFFLINE,
+      `--user-data-dir=${join(work, 'userdata')}`,
+      '--use-fake-device-for-media-stream',
+      '--use-fake-ui-for-media-stream',
+      projectDir,
+    ];
     app = await electron.launch({
       ...(packaged ? { executablePath: packaged, args } : { args: [root, ...args] }),
       env: { ...process.env, LYSARK_HIDDEN: '1' },
@@ -177,4 +201,139 @@ describe.skipIf(!built)('how long a slide stands, end to end', () => {
       .poll(async () => Number((await field().inputValue()).replace(',', '.')))
       .toBeCloseTo(saved().scenes[3]!.seconds!, 1);
   });
+
+  it('leaves a slide out of the video by its checkbox, and shows it toned down with a sign', async () => {
+    await page.getByRole('tab', { name: 'Lysark' }).click();
+    await slide(3).click();
+    await field().fill('2');
+    await field().press('Enter');
+    await slide(2).click();
+    expect(await included().isChecked()).toBe(true);
+    await included().uncheck();
+    await save();
+    expect(saved().scenes[2]!.skip).toBe(true);
+    // In the list of slides.
+    expect(await slide(2).locator('.scene-skip').textContent()).toBe(SKIPPED);
+    expect(await slide(2).getAttribute('title')).toBe(SKIPPED);
+    expect(await page.locator('.scene-skip').count()).toBe(1);
+    // On the timeline it takes no time: 12,5 + 3 + 2 seconds.
+    await page.getByRole('tab', { name: 'Tidslinje' }).click();
+    await expect.poll(() => page.locator('.tl-time').textContent()).toMatch(/ \/ 0:18$/);
+    const sign = page.locator('.tl-slide-box.is-skipped .tl-slide');
+    expect(await sign.count()).toBe(1);
+    expect(await sign.getAttribute('aria-label')).toContain(SKIPPED);
+    // In the row of slides in the tab «Lyd».
+    await page.getByRole('tab', { name: /^Lyd/ }).click();
+    expect(await page.locator('.lecture-block.is-skipped').getAttribute('title')).toContain(
+      SKIPPED.toLowerCase(),
+    );
+    // And taken in again.
+    await included().check();
+    await save();
+    expect(saved().scenes[2]!.skip).toBeUndefined();
+    await expect.poll(() => page.locator('.scene-skip').count()).toBe(0);
+  });
+
+  it('leaves out the slides without sound a recording jumps over, and says how to take them in', async () => {
+    await slide(0).click();
+    await page.getByRole('tab', { name: /^Lyd/ }).click();
+    await page.getByRole('button', { name: 'Les inn', exact: true }).click();
+    const recorder = page.locator('.recorder');
+    await recorder.waitFor();
+    await recorder.getByLabel('Kamera', { exact: true }).uncheck();
+    await recorder.getByRole('button', { name: 'Start opptak' }).click();
+    await recorder.locator('.recorder-clock.is-on').waitFor({ timeout: 15_000 });
+    await page.waitForTimeout(1500);
+    // From slide 1 straight to slide 4, over 2 (which has sound) and 3 (which has none).
+    await page.keyboard.press('l');
+    await recorder.locator('.recorder-menu-item').nth(3).click();
+    await expect.poll(() => recorder.locator('.recorder-where').textContent()).toContain(
+      'Lysark 4 av',
+    );
+    await page.waitForTimeout(1500);
+    await recorder.getByRole('button', { name: 'Ferdig' }).click();
+    await expect
+      .poll(notice, { timeout: 60_000 })
+      .toContain(
+        'Lysark 3 er ikke med i videoen, fordi du hoppet over det i opptaket. Du kan ta det med igjen i fanen «Lysark».',
+      );
+    expect(await notice()).toContain('Opptaket er lagt på 2 lysark.');
+    await page.locator('.notice button', { hasText: 'Lukk' }).click();
+    const project = await (async () => {
+      await save();
+      return saved();
+    })();
+    expect(project.scenes.map((s) => s.skip ?? false)).toEqual([false, false, true, false]);
+    expect(project.scenes.map((s) => (s.audio?.clips ?? []).length > 0)).toEqual([
+      true,
+      true,
+      false,
+      true,
+    ]);
+    expect(await slide(2).locator('.scene-skip').textContent()).toBe(SKIPPED);
+  }, 120_000);
+
+  it.skipIf(!existsSync(ffmpeg))(
+    'passes the slide in "Spill av" in the HTML file, where it is still seen by hand',
+    async () => {
+      await slide(1).click();
+      const opened = app.waitForEvent('window');
+      await page.getByRole('button', { name: 'Forhåndsvis' }).click();
+      const player = await opened;
+      await player.waitForSelector('.lp-stage .ls-scene');
+      const counter = player.locator('.lp-counter');
+      await expect.poll(() => counter.textContent()).toBe('2 / 4');
+      // Every slide "Spill av" shows is written down.
+      await player.evaluate(() => {
+        const seen: string[] = [];
+        (window as unknown as { seen: string[] }).seen = seen;
+        const el = document.querySelector('.lp-counter')!;
+        new MutationObserver(() => seen.push(el.textContent ?? '')).observe(el, {
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+      });
+      await player.getByRole('button', { name: 'Spill av' }).click();
+      await expect.poll(() => counter.textContent(), { timeout: 20_000 }).toBe('4 / 4');
+      await expect
+        .poll(() => player.locator('.lp-play').textContent(), { timeout: 15_000 })
+        .toBe('Spill av');
+      const seen = await player.evaluate(() => (window as unknown as { seen: string[] }).seen);
+      expect(seen).not.toContain('3 / 4');
+      // By hand, the slide is there.
+      await player.keyboard.press('ArrowLeft');
+      await expect.poll(() => counter.textContent()).toBe('3 / 4');
+      await player.close();
+    },
+    120_000,
+  );
+
+  it.skipIf(!existsSync(ffmpeg))(
+    'leaves the slide out of the video, also when slides are chosen by number',
+    async () => {
+      const out = join(work, 'utvalg.mp4');
+      await answerSaveDialog(out);
+      await page
+        .locator('.topbar-actions')
+        .getByRole('button', { name: 'Eksporter video' })
+        .click();
+      const dialog = page.locator('dialog.video-dialog');
+      await dialog.waitFor();
+      await dialog.getByLabel('Første lysark').fill('2');
+      await dialog.getByLabel('Siste lysark').fill('4');
+      expect(await dialog.textContent()).toContain('(2 lysark; ett er ikke med, 2 med lyd)');
+      await dialog.getByRole('button', { name: 'Velg fil og eksporter' }).click();
+      await expect
+        .poll(notice, { timeout: 400_000, interval: 1000 })
+        .toContain('Videoen er lagret');
+      await page.locator('.notice button', { hasText: 'Lukk' }).click();
+      const probe = spawnSync(ffmpeg, ['-hide_banner', '-i', out], { encoding: 'utf8' }).stderr;
+      const duration = /Duration: (\d+):(\d+):([\d.]+)/.exec(probe)!;
+      const seconds = Number(duration[2]) * 60 + Number(duration[3]);
+      const [, b, , d] = saved().scenes;
+      expect(Math.abs(seconds - (sceneDuration(b!) + sceneDuration(d!)))).toBeLessThan(0.3);
+    },
+    480_000,
+  );
 });

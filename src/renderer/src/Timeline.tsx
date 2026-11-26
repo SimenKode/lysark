@@ -41,6 +41,7 @@ import {
   type LecturePlayback,
 } from './audio/engine';
 import { Icon } from './Icon';
+import { SKIPPED } from './SceneList';
 import { CreditFields } from './MediaDialog';
 import { useStore } from './store';
 import './timeline.css';
@@ -408,6 +409,27 @@ export function Timeline() {
                 const number = numbers[entry.index]!;
                 const label = scene.repeat ? `Lysark ${number} igjen` : `Lysark ${number}`;
                 const name = scene.title.trim() || `Lysark ${number}`;
+                if (scene.skip) {
+                  // Left out of the video: it takes no time, and stands as a small sign.
+                  return (
+                    <div
+                      key={scene.id}
+                      className="tl-slide-box is-skipped"
+                      style={{ left: Math.max(0, x(entry.start) - 9) }}
+                    >
+                      <button
+                        type="button"
+                        className="tl-slide"
+                        aria-current={scene.id === sceneId ? 'true' : undefined}
+                        aria-label={`${label}: ${name}. ${SKIPPED}`}
+                        title={`${label}: ${name} – ${SKIPPED}`}
+                        onClick={() => setScene(scene.id)}
+                      >
+                        <b>{number}</b>
+                      </button>
+                    </div>
+                  );
+                }
                 return (
                   <div
                     key={scene.id}

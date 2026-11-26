@@ -857,6 +857,12 @@ export const Scene = z.object({
    * step. Not used on a repeat or a slide that plays the closing animation.
    */
   seconds: z.number().min(0.5).max(600).optional(),
+  /**
+   * The slide is left out of the video, the GIF and "Spill av", and takes no
+   * time; a student who turns the pages of the HTML file by hand still sees
+   * it. Set by the lecturer, and by a recording that jumped over the slide.
+   */
+  skip: z.boolean().optional(),
   /** What was opened and played while the slide was read in, in order of time. */
   events: z.array(SceneEvent).optional(),
   /** Where the camera circle stands on this slide, when a recording of it has a film. */

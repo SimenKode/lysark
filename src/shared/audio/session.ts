@@ -5,7 +5,7 @@
 // lecturer went back. The function changes the project it is given (the
 // editor calls it on a draft, so a whole recording is one undo step).
 import type { CameraPlace, Project, Scene, SceneEvent } from '../format/schema';
-import { cameraPlaceAt, trackDuration } from '../render/clock';
+import { cameraPlaceAt, hasSound, trackDuration } from '../render/clock';
 import { continueSound, replaceSound } from './edit';
 import { releaseScene } from './tracks';
 
@@ -44,6 +44,11 @@ export interface Applied {
    * deleted while the recording was being saved. They are left out.
    */
   skipped?: number[];
+  /**
+   * The slides (by id) the recording jumped forward over that have no sound:
+   * they are left out of the video and "Spill av" now (`Scene.skip`).
+   */
+  left?: string[];
 }
 
 /** Takes away the repeats that stand right after a slide. */
@@ -68,6 +73,10 @@ function removeFollowers(project: Lecture, index: number): void {
  *   is what the lecturer did this time.
  * - A take on a slide that is no longer there (it was deleted while the
  *   recording was being saved) is left out, and said in `skipped`.
+ * - The recording is what the lecturer did: slides without sound that it
+ *   jumped forward over are left out of the video and "Spill av"
+ *   (`Scene.skip`), and said in `left`. Slides before the place it started
+ *   are never touched. A slide that gets sound from it is taken in again.
  */
 export function applyRecording(
   project: Lecture,
@@ -92,6 +101,19 @@ export function applyRecording(
     const shown = new Set(take.shown);
 
     if (cursor === undefined || place > frontier) {
+      if (cursor !== undefined && place > frontier + 1) {
+        // The lecturer jumped forward: what was jumped over and says nothing is not in the film.
+        let count = 0;
+        for (const between of project.scenes) {
+          if (between.repeat) continue;
+          if (count > frontier && count < place && !hasSound(between) && !between.skip) {
+            between.skip = true;
+            (applied.left ??= []).push(between.id);
+          }
+          count += 1;
+        }
+      }
+      delete scene.skip;
       if (number < takes.length - 1) removeFollowers(project, index);
       const keep = take.keepBefore;
       const goesOn = keep !== undefined && keep > 0 && trackDuration(scene.audio) > 0;

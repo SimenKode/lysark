@@ -101,7 +101,8 @@ export function lectureCues(
   const cues: Cue[] = [];
   for (const entry of plan.entries) {
     const scene = scenes[entry.index];
-    if (!scene) continue;
+    // A slide that is left out of the video says nothing in it.
+    if (!scene || entry.duration <= 0) continue;
     for (const cue of sceneCues(scene)) {
       cues.push({
         start: entry.start + cue.start,
@@ -238,7 +239,8 @@ export function chapterMarks(
     if (first > last) continue;
     const head = plan.entries[first - from];
     const tail = plan.entries[last - from];
-    if (!head || !tail) continue;
+    // A chapter whose slides are all left out of the video is not in it.
+    if (!head || !tail || tail.start + tail.duration <= head.start + 1e-6) continue;
     marks.push({
       title: chapter.name.trim() || names.lecture,
       start: head.start,

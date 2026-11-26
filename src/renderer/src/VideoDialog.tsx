@@ -79,17 +79,21 @@ export function VideoDialog() {
   const gif = format === 'gif';
   const tooLong = gif && seconds > GIF_MAX_SECONDS + 0.5;
 
-  const withSound = chosen.filter(hasSound).length;
+  // Slides left out of the video are simply not in it.
+  const left = chosen.filter((s) => s.skip).length;
+  const nothing = span !== null && chosen.length > 0 && seconds <= 0;
+  const withSound = chosen.filter((s) => hasSound(s) && !s.skip).length;
   const withScript = chosen.filter((s) => s.script.trim() !== '').length;
   const credits = collectCredits(project).length;
   const hasVideoElements = chosen.some((s) => s.elements.some((e) => e.type === 'video'));
   const done = progress ? Math.round((progress.frame / Math.max(1, progress.frames)) * 100) : 0;
   const gifHeight = Math.round((gifWidth * VIDEO_SIZE.height) / VIDEO_SIZE.width);
-  const again = chosen.filter((s) => s.repeat).length;
-  const own = chosen.length - again;
+  const again = chosen.filter((s) => s.repeat && !s.skip).length;
+  const own = chosen.filter((s) => !s.repeat && !s.skip).length;
   const slides =
     (own === 1 ? '1 lysark' : `${own} lysark`) +
-    (again === 0 ? '' : again === 1 ? ' og ett som vises igjen' : ` og ${again} som vises igjen`);
+    (again === 0 ? '' : again === 1 ? ' og ett som vises igjen' : ` og ${again} som vises igjen`) +
+    (left === 0 ? '' : left === 1 ? '; ett er ikke med' : `; ${left} er ikke med`);
 
   return (
     <dialog
@@ -184,6 +188,11 @@ export function VideoDialog() {
           <p>
             MP4, {VIDEO_SIZE.width} × {VIDEO_SIZE.height}, {VIDEO_FPS} bilder i sekundet. Lengde:{' '}
             <strong>{formatTime(seconds)}</strong> ({slides}, {withSound} med lyd).
+          </p>
+        )}
+        {nothing && (
+          <p className="video-missing" role="alert">
+            Ingen av disse lysarkene er med i videoen. Ta dem med igjen i fanen «Lysark».
           </p>
         )}
         {tooLong && (
@@ -304,7 +313,7 @@ export function VideoDialog() {
             <button
               type="button"
               className="strong"
-              disabled={busy || ffmpeg !== true || span === null || tooLong}
+              disabled={busy || ffmpeg !== true || span === null || tooLong || nothing}
               onClick={() => {
                 if (!span) return;
                 setBusy(true);

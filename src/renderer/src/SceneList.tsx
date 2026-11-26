@@ -14,6 +14,8 @@ import { KIND_NAMES, cloneScene, playClosingAnimation } from './ops';
 import { useStore } from './store';
 
 const STAGE_WIDTH = 1920;
+/** The sign on a slide that is left out of the video and "Spill av". */
+export const SKIPPED = 'Ikke med i videoen';
 
 export function SceneList() {
   const project = useStore((s) => s.project)!;
@@ -247,8 +249,9 @@ export function SceneList() {
               )}
               <button
                 type="button"
-                className={`scene-item${repeat ? ' is-repeat' : ''}`}
+                className={`scene-item${repeat ? ' is-repeat' : ''}${scene.skip ? ' is-skipped' : ''}`}
                 aria-current={selected ? 'true' : undefined}
+                title={scene.skip ? SKIPPED : undefined}
                 onClick={() => setScene(scene.id)}
               >
                 <span className="scene-number">{repeat ? '↩' : numbers[i]}</span>
@@ -267,6 +270,11 @@ export function SceneList() {
                     <span className="scene-title">Lysark {numbers[i]} igjen</span>
                   ) : (
                     <span className="scene-title">{scene.title.trim() || 'Uten navn'}</span>
+                  )}
+                  {scene.skip && (
+                    <span className="scene-skip" aria-label={SKIPPED} title={SKIPPED}>
+                      {SKIPPED}
+                    </span>
                   )}
                   {warnings > 0 && !repeat && (
                     <span className="scene-warning" title="Merknader fra importen">

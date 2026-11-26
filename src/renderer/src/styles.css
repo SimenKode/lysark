@@ -470,6 +470,18 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A slide left out of the video and "Spill av": toned down, with a short sign. */
+.scene-item.is-skipped .scene-thumb {
+  opacity: 0.45;
+}
+.scene-skip {
+  font-size: 0.85em;
+  font-style: italic;
+}
+.lecture-block.is-skipped {
+  border-style: dashed;
+  opacity: 0.55;
+}
 .scene-warning {
   font-size: 0.85em;
   color: var(--danger);

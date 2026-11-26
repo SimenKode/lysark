@@ -54,7 +54,7 @@ export function hasSound(scene: Pick<Scene, 'audio'>): boolean {
 
 /** What the clock needs to know about a slide. */
 export type Timed = Pick<Scene, 'audio' | 'timeline'> &
-  Partial<Pick<Scene, 'closingAnimation' | 'events' | 'repeat' | 'seconds'>>;
+  Partial<Pick<Scene, 'closingAnimation' | 'events' | 'repeat' | 'seconds' | 'skip'>>;
 
 /** The least and the most a slide without sound can be set to stand. */
 export const SILENT_SECONDS = { min: 0.5, max: 600 } as const;
@@ -80,6 +80,19 @@ export function sceneDuration(scene: Timed): number {
   // A slide without sound stands as long as the lecturer has said, or a default time.
   if (scene.seconds !== undefined && ownsSeconds(scene)) return scene.seconds;
   return SILENT_SCENE_SECONDS + SILENT_STEP_SECONDS * scene.timeline.length;
+}
+
+/** True when the slide is in the video, the GIF and "Spill av" (`Scene.skip`). */
+export function isPlayed(scene: Pick<Timed, 'skip'>): boolean {
+  return scene.skip !== true;
+}
+
+/**
+ * How long a slide takes in the video and in "Spill av": its length, or
+ * nothing for a slide that is left out.
+ */
+export function playedDuration(scene: Timed): number {
+  return isPlayed(scene) ? sceneDuration(scene) : 0;
 }
 
 /**
@@ -299,12 +312,15 @@ export interface Schedule {
   total: number;
 }
 
-/** When each slide starts and how long it stands. */
+/**
+ * When each slide starts and how long it stands. A slide that is left out
+ * of the video stands for no time, where the next slide starts.
+ */
 export function schedule(scenes: ReadonlyArray<Timed>): Schedule {
   const entries: ScheduleEntry[] = [];
   let start = 0;
   scenes.forEach((scene, index) => {
-    const duration = sceneDuration(scene);
+    const duration = playedDuration(scene);
     entries.push({ index, start, duration });
     start += duration;
   });
@@ -320,21 +336,36 @@ export interface FrameState {
   fade?: { from: number; progress: number };
 }
 
+/**
+ * The entry of the slide that stands `time` seconds into the lecture: after
+ * the end, the last slide that takes time. Slides left out are never it,
+ * unless no slide takes time at all.
+ */
+function entryAt(plan: Schedule, time: number): ScheduleEntry | undefined {
+  const entries = plan.entries;
+  if (entries.length === 0) return undefined;
+  for (const candidate of entries) {
+    if (time < candidate.start + candidate.duration) return candidate;
+  }
+  for (let i = entries.length - 1; i >= 0; i--) if (entries[i]!.duration > 0) return entries[i];
+  return entries[entries.length - 1];
+}
+
+/** The slide shown before slide number `index` in the video: -1 when it is the first. */
+export function playedBefore(plan: Schedule, index: number): number {
+  for (let i = index - 1; i >= 0; i--) if ((plan.entries[i]?.duration ?? 0) > 0) return i;
+  return -1;
+}
+
 /** What is on screen `time` seconds into the lecture. */
 export function frameAt(plan: Schedule, time: number, transition: 'cut' | 'fade'): FrameState {
-  const entries = plan.entries;
-  if (entries.length === 0) return { index: 0, t: 0 };
-  let entry = entries[entries.length - 1]!;
-  for (const candidate of entries) {
-    if (time < candidate.start + candidate.duration) {
-      entry = candidate;
-      break;
-    }
-  }
+  const entry = entryAt(plan, time);
+  if (!entry) return { index: 0, t: 0 };
   const t = Math.max(0, Math.min(entry.duration, time - entry.start));
   const fadeLength = Math.min(FADE_SECONDS, entry.duration / 2);
-  if (transition === 'fade' && entry.index > 0 && t < fadeLength) {
-    return { index: entry.index, t, fade: { from: entry.index - 1, progress: t / fadeLength } };
+  const before = playedBefore(plan, entry.index);
+  if (transition === 'fade' && before >= 0 && t < fadeLength) {
+    return { index: entry.index, t, fade: { from: before, progress: t / fadeLength } };
   }
   return { index: entry.index, t };
 }
@@ -532,7 +563,10 @@ export function cameraAt(
   const film = cameraFilmAt(scene, assets, t);
   if (!film) return undefined;
   // When the slide before also ended with the circle, it glides from there.
-  const before = scenes[index - 1];
+  // A slide that is left out of the video is not the slide before.
+  let previous = index - 1;
+  while (previous >= 0 && !isPlayed(scenes[previous]!)) previous -= 1;
+  const before = scenes[previous];
   let from: { x: number; y: number } | undefined;
   if (before) {
     const end = sceneDuration(before);
@@ -588,14 +622,8 @@ export function anchorAt(
   plan: Schedule,
   time: number,
 ): { scene: string; offset: number } | undefined {
-  if (plan.entries.length === 0) return undefined;
-  let entry = plan.entries[plan.entries.length - 1]!;
-  for (const candidate of plan.entries) {
-    if (time < candidate.start + candidate.duration) {
-      entry = candidate;
-      break;
-    }
-  }
+  const entry = entryAt(plan, time);
+  if (!entry) return undefined;
   return { scene: scenes[entry.index]!.id, offset: Math.max(0, time - entry.start) };
 }
 

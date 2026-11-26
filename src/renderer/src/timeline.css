@@ -124,6 +124,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* A slide left out of the video takes no time: a small sign where it would stand. */
+.tl-slide-box.is-skipped {
+  width: 18px;
+  z-index: 2;
+}
+.tl-slide-box.is-skipped .tl-slide {
+  padding: 0;
+  text-align: center;
+  border-style: dashed;
+  opacity: 0.6;
+}
 .tl-slide[aria-current='true'] {
   background: var(--lilla);
   border-color: var(--lilla);
